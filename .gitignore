@@ -1,0 +1,4 @@
+.env
+money_flow/.env
+money_flow/target/
+CLAUDE.md
