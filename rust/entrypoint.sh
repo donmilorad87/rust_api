@@ -1,6 +1,21 @@
 #!/bin/bash
 set -e
 
+# Sync PORT from docker environment to money_flow/.env
+sync_port() {
+    local env_file=".env"
+    if [ -n "$PORT" ] && [ -f "$env_file" ]; then
+        if grep -q "^PORT=" "$env_file"; then
+            sed -i "s/^PORT=.*/PORT=$PORT/" "$env_file"
+        else
+            echo "PORT=$PORT" >> "$env_file"
+        fi
+        echo "Synced PORT=$PORT to $env_file"
+    fi
+}
+
+sync_port
+
 if [ "$BUILD_ENV" = "dev" ]; then
     echo "Starting in DEVELOPMENT mode..."
     
@@ -22,7 +37,7 @@ if [ "$BUILD_ENV" = "dev" ]; then
     cargo sqlx prepare || true
     
     echo "Starting with hot reload..."
-    exec cargo watch -s "cargo sqlx prepare && cargo run"
+    exec cargo watch -i ".sqlx" -i "*.json" -x run
 else
     echo "Starting in PRODUCTION mode..."
     

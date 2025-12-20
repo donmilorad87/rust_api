@@ -26,6 +26,7 @@ configure_iptables() {
     # Allow app port (nginx external)
     iptables -A INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
     iptables -A INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || true
+    iptables -A INPUT -p udp --dport 443 -j ACCEPT 2>/dev/null || true  # HTTP/3 (QUIC)
     
     # Allow internal app port
     iptables -A INPUT -p tcp --dport 8888 -j ACCEPT 2>/dev/null || true
@@ -45,6 +46,7 @@ configure_ufw() {
         ufw allow 22/tcp 2>/dev/null || true
         ufw allow 80/tcp 2>/dev/null || true
         ufw allow 443/tcp 2>/dev/null || true
+        ufw allow 443/udp 2>/dev/null || true  # HTTP/3 (QUIC)
         ufw allow 8888/tcp 2>/dev/null || true
         ufw allow from 192.168.0.0/24 to any port 5432 proto tcp 2>/dev/null || true
         ufw --force enable 2>/dev/null || true

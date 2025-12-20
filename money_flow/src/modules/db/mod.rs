@@ -8,6 +8,7 @@ pub use controllers::user;
 
 pub struct AppState {
     pub db: Mutex<sqlx::Pool<sqlx::Postgres>>,
+    pub jwt_secret: String,
 }
 
 pub async fn state() -> web::Data<AppState> {
@@ -21,5 +22,6 @@ pub async fn state() -> web::Data<AppState> {
                 .await
                 .unwrap(),
         ),
+        jwt_secret: std::env::var("JWT_SECRET").unwrap(),
     })
 }

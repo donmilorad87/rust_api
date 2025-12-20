@@ -1,4 +1,4 @@
-FROM nginx:alpine
+FROM nginx:mainline-alpine
 
 # Install openssl
 RUN apk add --no-cache openssl
@@ -17,6 +17,10 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 RUN chmod 600 /etc/nginx/ssl/server.key \
     && chmod 644 /etc/nginx/ssl/server.crt
 
-EXPOSE 80 443
+# Copy nginx config template (envsubst will convert to default.conf on start)
+COPY default.conf.template /etc/nginx/templates/default.conf.template
+
+# Expose TCP for HTTP/1.1 and HTTP/2, UDP for HTTP/3 (QUIC)
+EXPOSE 80 443/tcp 443/udp
 
 CMD ["nginx", "-g", "daemon off;"]
