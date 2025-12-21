@@ -1,3 +1,4 @@
+use crate::config::JwtConfig;
 use crate::db::AppState;
 use crate::db::read::user as db_user;
 use crate::modules::routes::validators::auth::{
@@ -5,6 +6,7 @@ use crate::modules::routes::validators::auth::{
 };
 use crate::mq::{self, JobOptions, JobStatus};
 use crate::mq::jobs::create_user::CreateUserParams;
+use crate::mq::jobs::email::{EmailTemplate, SendEmailParams};
 use actix_web::{HttpResponse, post, web};
 use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
@@ -116,6 +118,20 @@ pub async fn sign_up(
 
     match mq::enqueue_and_wait_dyn(mq, "create_user", &params, options, 30000).await {
         Ok(JobStatus::Completed) => {
+            // Queue welcome email (fire and forget)
+            let email_params = SendEmailParams::new(&user.email, &user.first_name, EmailTemplate::Welcome)
+                .with_variable("first_name", &user.first_name)
+                .with_variable("email", &user.email);
+
+            let email_options = JobOptions::new()
+                .priority(1)  // Low priority
+                .fault_tolerance(3);
+
+            // Fire and forget - don't wait for email
+            if let Err(e) = mq::enqueue_job_dyn(mq, "send_email", &email_params, email_options).await {
+                tracing::warn!("Failed to queue welcome email: {}", e);
+            }
+
             HttpResponse::Created().json(BaseResponse {
                 status: "success",
                 message: "User created successfully",
@@ -272,11 +288,10 @@ pub async fn sign_in(state: web::Data<AppState>, raw: web::Json<SigninRequestRaw
             message: "Invalid email or password2",
         });
     }
-    let minutes: i64 = std::env::var("EXPIRATION_TIME").unwrap().parse().unwrap();
     let claims: Claims = Claims {
         sub: user.id,
         role: "user".to_string(),
-        exp: (Utc::now() + Duration::minutes(minutes)).timestamp(),
+        exp: (Utc::now() + Duration::minutes(JwtConfig::expiration_minutes())).timestamp(),
     };
 
     let token = jsonwebtoken::encode(

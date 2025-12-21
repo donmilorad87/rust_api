@@ -1,6 +1,6 @@
 use actix_web::web::{Data, JsonConfig};
 use actix_web::{App, HttpServer};
-use dotenv::dotenv;
+use money_flow::config::AppConfig;
 use money_flow::crons;
 use money_flow::middleware::{cors, security_headers, tracing_logger};
 use money_flow::db::{create_pool, state_with_mq, AppState};
@@ -10,14 +10,10 @@ use tracing::{error, info};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
     tracing_logger::init();
 
-    let host: String = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
-    let port: u16 = std::env::var("PORT")
-        .unwrap_or_else(|_| "8888".to_string())
-        .parse()
-        .expect("PORT must be a valid number");
+    let host = AppConfig::host();
+    let port = AppConfig::port();
 
     // Initialize cron jobs with a separate database pool
     let cron_pool = create_pool().await;
@@ -55,7 +51,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(JsonConfig::default().error_handler(json_error_handler))
             .configure(configure)
     })
-    .bind((&host[..], port))?;
+    .bind((host, port))?;
 
     info!("Server running on {}:{}", host, port);
 

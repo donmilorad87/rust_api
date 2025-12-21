@@ -1,6 +1,7 @@
 pub mod jobs;
 pub mod workers;
 
+use crate::config::RedisConfig;
 use redis::aio::ConnectionManager;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
@@ -138,10 +139,7 @@ pub struct MessageQueue {
 
 impl MessageQueue {
     pub async fn new(db: Pool<Postgres>) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let redis_url = std::env::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-
-        let client = redis::Client::open(redis_url)?;
+        let client = redis::Client::open(RedisConfig::url())?;
         let redis = ConnectionManager::new(client).await?;
 
         Ok(Self {
@@ -340,10 +338,38 @@ pub async fn enqueue_and_wait<T: serde::Serialize>(
         let mq = queue.lock().await;
         mq.enqueue(job).await?
     };
+    // Lock is released here
 
-    // Wait for completion
-    let mq = queue.lock().await;
-    mq.wait_for_completion(&job_id, timeout_ms).await
+    // Wait for completion - acquire lock briefly for each status check
+    let start = std::time::Instant::now();
+    let timeout = std::time::Duration::from_millis(timeout_ms);
+
+    loop {
+        if start.elapsed() > timeout {
+            return Err("Job timeout".into());
+        }
+
+        // Briefly acquire lock to check status
+        let status = {
+            let mq = queue.lock().await;
+            if let Some(job) = mq.get_job(&job_id).await? {
+                Some(job.status)
+            } else {
+                None
+            }
+        };
+        // Lock is released here
+
+        if let Some(status) = status {
+            match status {
+                JobStatus::Completed => return Ok(JobStatus::Completed),
+                JobStatus::Failed => return Ok(JobStatus::Failed),
+                _ => {}
+            }
+        }
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+    }
 }
 
 // Type alias for DynMq from db module (used to avoid circular dependency)
@@ -381,12 +407,40 @@ pub async fn enqueue_and_wait_dyn<T: serde::Serialize>(
             .ok_or("Failed to downcast message queue")?;
         mq.enqueue(job).await?
     };
+    // Lock is released here
 
-    // Wait for completion
-    let guard = queue.lock().await;
-    let mq = guard.downcast_ref::<MessageQueue>()
-        .ok_or("Failed to downcast message queue")?;
-    mq.wait_for_completion(&job_id, timeout_ms).await
+    // Wait for completion - acquire lock briefly for each status check
+    let start = std::time::Instant::now();
+    let timeout = std::time::Duration::from_millis(timeout_ms);
+
+    loop {
+        if start.elapsed() > timeout {
+            return Err("Job timeout".into());
+        }
+
+        // Briefly acquire lock to check status
+        let status = {
+            let guard = queue.lock().await;
+            let mq = guard.downcast_ref::<MessageQueue>()
+                .ok_or("Failed to downcast message queue")?;
+            if let Some(job) = mq.get_job(&job_id).await? {
+                Some(job.status)
+            } else {
+                None
+            }
+        };
+        // Lock is released here
+
+        if let Some(status) = status {
+            match status {
+                JobStatus::Completed => return Ok(JobStatus::Completed),
+                JobStatus::Failed => return Ok(JobStatus::Failed),
+                _ => {}
+            }
+        }
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+    }
 }
 
 /// Shared message queue instance

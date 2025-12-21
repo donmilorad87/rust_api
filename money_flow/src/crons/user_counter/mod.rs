@@ -1,17 +1,17 @@
 pub mod controller;
 
+use crate::config::CronConfig;
 use controller::user_counter::count_users;
 use sqlx::{Pool, Postgres};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::info;
 
 pub async fn init(scheduler: &JobScheduler, db: Pool<Postgres>) -> Result<(), Box<dyn std::error::Error>> {
-    let cron_expression = std::env::var("USER_COUNTER")
-        .unwrap_or_else(|_| "0 * * * * *".to_string()); // Default: every minute
+    let cron_expression = CronConfig::user_counter();
 
     info!("Initializing user_counter cron job with schedule: {}", cron_expression);
 
-    let job = Job::new_async(cron_expression.as_str(), move |_uuid, _lock| {
+    let job = Job::new_async(cron_expression, move |_uuid, _lock| {
         let db = db.clone();
         Box::pin(async move {
             info!("Running user_counter cron job...");

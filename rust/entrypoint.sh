@@ -53,6 +53,15 @@ sync_env_vars() {
         sync_env_var "REDIS_URL" "$redis_url"
     fi
 
+    # Sync Email variables
+    sync_env_var "MAIL_MAILER" "$MAIL_MAILER"
+    sync_env_var "MAIL_HOST" "$MAIL_HOST"
+    sync_env_var "MAIL_PORT" "$MAIL_PORT"
+    sync_env_var "MAIL_USERNAME" "$MAIL_USERNAME"
+    sync_env_var "MAIL_PASSWORD" "$MAIL_PASSWORD"
+    sync_env_var "MAIL_FROM_ADDRESS" "$MAIL_FROM_ADDRESS"
+    sync_env_var "MAIL_FROM_NAME" "$MAIL_FROM_NAME"
+
     echo ""
 }
 

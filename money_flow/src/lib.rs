@@ -1,3 +1,4 @@
+pub mod config;
 pub mod crons;
 pub mod db;
 pub mod middleware;
