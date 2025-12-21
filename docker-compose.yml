@@ -11,6 +11,18 @@ services:
       - ./money_flow/.env
     environment:
       - PORT=${APP_PORT}
+      - POSTGRES_IP=${POSTGRES_IP}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - REDIS_IP=${REDIS_IP}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}
     volumes:
       - ./money_flow:/home/rust/money_flow
       - cargo-cache:/usr/local/cargo/registry
@@ -20,6 +32,7 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+      - redis
     networks:
       devnet:
         ipv4_address: 172.28.0.10
@@ -46,20 +59,59 @@ services:
     build:
       context: ./postgres
       dockerfile: Dockerfile
+      args:
+        POSTGRES_IP: ${POSTGRES_IP}
+        POSTGRES_PORT: ${POSTGRES_PORT}
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: ${POSTGRES_DB}
     image: postgres-ssl
     env_file:
       - .env
+    environment:
+      - POSTGRES_IP=${POSTGRES_IP}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     restart: unless-stopped
     networks:
       devnet:
-        ipv4_address: 172.28.0.11
+        ipv4_address: ${POSTGRES_IP}
+
+  redis:
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+      args:
+        REDIS_IP: ${REDIS_IP}
+        REDIS_PASSWORD: ${REDIS_PASSWORD}
+        REDIS_USER: ${REDIS_USER}
+        REDIS_PORT: ${REDIS_PORT}
+        REDIS_DB: ${REDIS_DB}
+    image: redis-pubsub
+    environment:
+      - REDIS_IP=${REDIS_IP}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB=${REDIS_DB}
+    volumes:
+      - redisdata:/data
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    restart: unless-stopped
+    networks:
+      devnet:
+        ipv4_address: 172.28.0.13
 
 volumes:
   pgdata:
+  redisdata:
   cargo-cache:
   target-cache:
 

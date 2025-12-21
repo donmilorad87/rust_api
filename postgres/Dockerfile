@@ -1,9 +1,24 @@
 FROM postgres:16
 
-# Install openssl for certificate generation
+# Install openssl for certificate generation and gettext for envsubst
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
+    gettext-base \
     && rm -rf /var/lib/apt/lists/*
+
+# Build args
+ARG POSTGRES_IP
+ARG POSTGRES_PORT
+ARG POSTGRES_USER
+ARG POSTGRES_PASSWORD
+ARG POSTGRES_DB
+
+# Environment variables
+ENV POSTGRES_IP=${POSTGRES_IP}
+ENV POSTGRES_PORT=${POSTGRES_PORT}
+ENV POSTGRES_USER=${POSTGRES_USER}
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+ENV POSTGRES_DB=${POSTGRES_DB}
 
 # Create SSL directory
 RUN mkdir -p /var/lib/postgresql/ssl
@@ -21,8 +36,13 @@ RUN chmod 600 /var/lib/postgresql/ssl/server.key \
     && chown postgres:postgres /var/lib/postgresql/ssl/server.crt
 
 # Copy custom configuration
-COPY postgresql.conf /etc/postgresql/postgresql.conf
+COPY postgresql.conf.template /etc/postgresql/postgresql.conf.template
 COPY pg_hba.conf /etc/postgresql/pg_hba.conf
 
-# Use custom config
-CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE ${POSTGRES_PORT}
+
+ENTRYPOINT ["/entrypoint.sh"]

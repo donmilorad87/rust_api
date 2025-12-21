@@ -3,8 +3,8 @@
 # ===========================================
 
 # Connection Settings
-listen_addresses = '*'
-port = 5432
+listen_addresses = '${POSTGRES_IP}, 127.0.0.1'
+port = ${POSTGRES_PORT}
 max_connections = 100
 
 # Memory Settings

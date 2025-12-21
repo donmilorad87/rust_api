@@ -1,20 +1,62 @@
 #!/bin/bash
 set -e
 
-# Sync PORT from docker environment to money_flow/.env
-sync_port() {
-    local env_file=".env"
-    if [ -n "$PORT" ] && [ -f "$env_file" ]; then
-        if grep -q "^PORT=" "$env_file"; then
-            sed -i "s/^PORT=.*/PORT=$PORT/" "$env_file"
+ENV_FILE=".env"
+
+# Sync a single environment variable to money_flow/.env
+sync_env_var() {
+    local var_name=$1
+    local var_value=$2
+
+    if [ -n "$var_value" ] && [ -f "$ENV_FILE" ]; then
+        if grep -q "^${var_name}=" "$ENV_FILE"; then
+            sed -i "s|^${var_name}=.*|${var_name}=${var_value}|" "$ENV_FILE"
         else
-            echo "PORT=$PORT" >> "$env_file"
+            echo "${var_name}=${var_value}" >> "$ENV_FILE"
         fi
-        echo "Synced PORT=$PORT to $env_file"
+        echo "Synced ${var_name}=${var_value}"
     fi
 }
 
-sync_port
+# Sync all environment variables from docker to money_flow/.env
+sync_env_vars() {
+    echo "Syncing environment variables to $ENV_FILE..."
+
+    # Sync PORT
+    sync_env_var "PORT" "$PORT"
+
+    # Sync PostgreSQL variables
+    sync_env_var "POSTGRES_IP" "$POSTGRES_IP"
+    sync_env_var "POSTGRES_USER" "$POSTGRES_USER"
+    sync_env_var "POSTGRES_PASSWORD" "$POSTGRES_PASSWORD"
+    sync_env_var "POSTGRES_DB" "$POSTGRES_DB"
+    sync_env_var "POSTGRES_HOST" "$POSTGRES_HOST"
+    sync_env_var "POSTGRES_PORT" "$POSTGRES_PORT"
+
+    # Construct and sync DATABASE_URL
+    if [ -n "$POSTGRES_HOST" ] && [ -n "$POSTGRES_PORT" ]; then
+        local database_url="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+        sync_env_var "DATABASE_URL" "$database_url"
+    fi
+
+    # Sync Redis variables
+    sync_env_var "REDIS_IP" "$REDIS_IP"
+    sync_env_var "REDIS_HOST" "$REDIS_HOST"
+    sync_env_var "REDIS_PORT" "$REDIS_PORT"
+    sync_env_var "REDIS_USER" "$REDIS_USER"
+    sync_env_var "REDIS_PASSWORD" "$REDIS_PASSWORD"
+    sync_env_var "REDIS_DB" "$REDIS_DB"
+
+    # Construct and sync REDIS_URL
+    if [ -n "$REDIS_HOST" ] && [ -n "$REDIS_PORT" ]; then
+        local redis_url="redis://${REDIS_USER}:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
+        sync_env_var "REDIS_URL" "$redis_url"
+    fi
+
+    echo ""
+}
+
+sync_env_vars
 
 if [ "$BUILD_ENV" = "dev" ]; then
     echo "Starting in DEVELOPMENT mode..."
