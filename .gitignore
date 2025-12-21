@@ -1,6 +1,7 @@
 .env
 money_flow/.env
 money_flow/target/
+money_flow/CLAUDE.md
 CLAUDE.md
 money_flow/AGENTS.md
 AGENTS.md

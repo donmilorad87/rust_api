@@ -2,9 +2,31 @@ use crate::config::EmailConfig;
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tera::{Context, Tera};
 use tracing::{error, info};
+
+/// Initialize Tera template engine with all email templates
+static TEMPLATES: Lazy<Tera> = Lazy::new(|| {
+    let template_dir = format!(
+        "{}/src/resources/views/emails/**/*",
+        env!("CARGO_MANIFEST_DIR")
+    );
+
+    let mut tera = match Tera::new(&template_dir) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("Failed to initialize Tera templates: {}", e);
+        }
+    };
+
+    // Register custom filters if needed
+    tera.autoescape_on(vec![".html"]);
+
+    tera
+});
 
 /// Email template types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,31 +78,22 @@ impl SendEmailParams {
     }
 }
 
-/// Load and render an email template
+/// Render an email template using Tera
 fn render_template(template: &EmailTemplate, variables: &HashMap<String, String>) -> Result<String, String> {
-    let template_path = format!(
-        "{}/src/resources/views/emails/{}",
-        env!("CARGO_MANIFEST_DIR"),
-        template.template_path()
-    );
+    let mut context = Context::new();
 
-    let content = std::fs::read_to_string(&template_path)
-        .map_err(|e| format!("Failed to read template {}: {}", template_path, e))?;
-
-    // Simple template rendering: replace {{variable_name}} with values
-    let mut rendered = content;
+    // Add all user-provided variables
     for (key, value) in variables {
-        let placeholder = format!("{{{{{}}}}}", key);
-        rendered = rendered.replace(&placeholder, value);
+        context.insert(key, value);
     }
 
-    // Add current year if not provided
-    if rendered.contains("{{year}}") {
-        let year = chrono::Utc::now().format("%Y").to_string();
-        rendered = rendered.replace("{{year}}", &year);
-    }
+    // Add common variables
+    context.insert("year", &chrono::Utc::now().format("%Y").to_string());
+    context.insert("app_name", "MoneyFlow");
 
-    Ok(rendered)
+    TEMPLATES
+        .render(template.template_path(), &context)
+        .map_err(|e| format!("Template rendering error: {}", e))
 }
 
 /// Execute the send_email job

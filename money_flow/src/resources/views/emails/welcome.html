@@ -1,89 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to MoneyFlow</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 40px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2563eb;
-        }
-        h1 {
-            color: #1f2937;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .button {
-            display: inline-block;
-            background-color: #2563eb;
-            color: #ffffff;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 14px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">MoneyFlow</div>
-        </div>
+{% extends "base.html" %}
 
-        <h1>Welcome, {{first_name}}!</h1>
+{% block title %}Welcome to {{ app_name }}{% endblock %}
 
-        <div class="content">
-            <p>Thank you for joining MoneyFlow. We're excited to help you take control of your personal finances.</p>
+{% block content %}
+<h1>Welcome, {{ first_name }}!</h1>
 
-            <p>Your account has been created with the email: <strong>{{email}}</strong></p>
+<div class="content">
+    <p>Thank you for joining {{ app_name }}. We're excited to help you take control of your personal finances.</p>
 
-            <p>With MoneyFlow, you can:</p>
-            <ul>
-                <li>Track your income and expenses</li>
-                <li>Organize transactions by categories</li>
-                <li>Monitor your balance in real-time</li>
-                <li>Get insights into your spending habits</li>
-            </ul>
+    <p>Your account has been created with the email: <strong>{{ email }}</strong></p>
 
-            <p>Get started by logging into your account and setting up your first category.</p>
-        </div>
+    <p>With {{ app_name }}, you can:</p>
+    <ul>
+        <li>Track your income and expenses</li>
+        <li>Organize transactions by categories</li>
+        <li>Monitor your balance in real-time</li>
+        <li>Get insights into your spending habits</li>
+    </ul>
 
-        <div class="footer">
-            <p>This email was sent to {{email}}</p>
-            <p>&copy; {{year}} MoneyFlow. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+    {% if activation_link %}
+    <p style="text-align: center; margin-top: 30px;">
+        <a href="{{ activation_link }}" class="button">Activate Your Account</a>
+    </p>
+    {% endif %}
+
+    <p>Get started by logging into your account and setting up your first category.</p>
+</div>
+{% endblock %}

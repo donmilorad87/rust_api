@@ -32,7 +32,9 @@ uuid = { version = "1.11", features = ["v4", "serde"] }
 async-trait = "0.1"
 once_cell = "1.20"
 lettre = { version = "0.11", features = ["tokio1-native-tls", "builder", "smtp-transport"] }
+tera = "1.20"
 [dev-dependencies]
 actix-rt = "2"
+tabled = "0.17"
 [profile.dev.package.sqlx-macros]
 opt-level = 3

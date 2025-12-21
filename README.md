@@ -1,139 +1,306 @@
-# Money Flow
+# Money Flow - Infrastructure
 
-A Rust web application for personal finance tracking built with Actix-web and PostgreSQL.
+Docker-based infrastructure for the Money Flow application.
 
-## Docker Structure
+> **Application code is located in the `money_flow/` folder.** See [money_flow/README.md](money_flow/README.md) for application documentation.
+
+---
+
+## Project Structure
 
 ```
 .
-├── docker-compose.yml      # Orchestrates all services
-├── rust/
-│   ├── Dockerfile          # Rust container build
-│   ├── entrypoint.sh       # Dev/prod startup logic
-│   ├── install.dev.sh      # Dev dependencies (sqlx-cli, cargo-watch)
-│   └── install.prod.sh     # Production build
-├── postgres/
+├── docker-compose.yml          # Orchestrates all services
+├── .env                        # Environment variables for Docker
+├── .env.example                # Example environment file
+├── firewall-setup.sh           # UFW firewall configuration
+│
+├── rust/                       # Rust container configuration
+│   ├── Dockerfile              # Multi-stage build (dev/prod)
+│   ├── entrypoint.sh           # Startup script, syncs env vars
+│   ├── cargo.config.toml       # Cargo configuration
+│   ├── install.dev.sh          # Dev dependencies (sqlx-cli, cargo-watch)
+│   └── install.prod.sh         # Production build script
+│
+├── postgres/                   # PostgreSQL container
 │   ├── Dockerfile
-│   ├── pg_hba.conf         # Authentication config
-│   └── postgresql.conf     # PostgreSQL settings
-└── nginx/
-    ├── Dockerfile
-    └── default.conf        # Reverse proxy config
+│   ├── entrypoint.sh           # Database initialization
+│   ├── pg_hba.conf             # Authentication config
+│   └── postgresql.conf.template # PostgreSQL settings
+│
+├── redis/                      # Redis container (message queue)
+│   ├── Dockerfile
+│   ├── entrypoint.sh
+│   └── redis.conf              # Redis configuration
+│
+├── nginx/                      # Nginx reverse proxy
+│   ├── Dockerfile
+│   └── default.conf.template   # SSL/HTTPS proxy config
+│
+└── money_flow/                 # APPLICATION SOURCE CODE
+    └── README.md               # Application documentation
 ```
 
-### Running the Project
+---
+
+## Services
+
+| Service  | Container IP  | Port  | Description                        |
+|----------|---------------|-------|------------------------------------|
+| rust     | 172.28.0.10   | 9999  | Actix-web application              |
+| nginx    | 172.28.0.12   | 80/443| Reverse proxy with SSL             |
+| postgres | 172.28.0.11   | 5432  | PostgreSQL database                |
+| redis    | 172.28.0.13   | 6379  | Redis for message queue            |
+
+### Network
+
+All services run on a custom bridge network `devnet` with subnet `172.28.0.0/16`.
+
+---
+
+## Quick Start
 
 ```bash
+# Clone and setup
+cp .env.example .env
+# Edit .env with your values
+
 # Start all services
 docker compose up -d
-
-# Enter the rust container
-docker compose exec rust bash
 
 # View logs
 docker compose logs -f rust
 
-# Stop everything
-docker compose down
+# Enter the rust container
+docker compose exec rust bash
 ```
 
-### Environment Modes
+---
+
+## Docker Commands
+
+```bash
+# Start services
+docker compose up -d
+
+# Stop services
+docker compose down
+
+# Restart specific service
+docker compose restart rust
+
+# Rebuild containers
+docker compose up -d --build
+
+# View logs
+docker compose logs -f rust
+docker compose logs -f postgres
+docker compose logs -f redis
+
+# Enter containers
+docker compose exec rust bash
+docker compose exec postgres psql -U app -d money_flow
+docker compose exec redis redis-cli
+
+# Remove volumes (WARNING: deletes data)
+docker compose down -v
+```
+
+---
+
+## Environment Variables
+
+### Root `.env` (Docker)
+
+```env
+# Build mode
+BUILD_ENV=dev                    # dev or prod
+
+# App
+APP_PORT=9999
+
+# PostgreSQL
+POSTGRES_IP=172.28.0.11
+POSTGRES_USER=app
+POSTGRES_PASSWORD=app
+POSTGRES_DB=money_flow
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+
+# Redis
+REDIS_IP=172.28.0.13
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_USER=app
+REDIS_PASSWORD=redis_secret_password
+REDIS_DB=0
+
+# Email (SMTP)
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USERNAME=user
+MAIL_PASSWORD=pass
+MAIL_FROM_ADDRESS=noreply@example.com
+MAIL_FROM_NAME=MoneyFlow
+```
+
+### Environment Sync
+
+The `rust/entrypoint.sh` automatically syncs environment variables from Docker to `money_flow/.env` on container startup.
+
+---
+
+## Build Modes
 
 Set `BUILD_ENV` in `.env`:
-- `dev` - Hot reload with cargo-watch, auto-runs `cargo sqlx prepare` on changes
-- `prod` - Release build, runs compiled binary
 
-## Rust Project Structure
+### Development (`dev`)
+- Hot reload with cargo-watch
+- Auto-runs `cargo sqlx prepare` on file changes
+- Debug logging enabled
+- Source maps included
 
-```
-money_flow/
-├── Cargo.toml
-├── migrations/                 # SQLx database migrations
-├── .sqlx/                      # Cached query metadata (commit to git)
-├── src/
-│   ├── main.rs                 # Entry point
-│   ├── lib.rs                  # Module exports
-│   └── modules/
-│       ├── mod.rs
-│       ├── db/
-│       │   ├── mod.rs          # AppState, database connection
-│       │   └── controllers/
-│       │       ├── mod.rs
-│       │       └── user.rs     # User database operations
-│       └── routes/
-│           ├── mod.rs          # Route configuration
-│           └── controllers/
-│               ├── mod.rs
-│               ├── auth.rs     # Auth endpoints
-│               └── me.rs       # Profile endpoints
-└── tests/
-    └── routes_test.rs          # Integration tests
-```
+### Production (`prod`)
+- Release build with optimizations
+- Runs compiled binary directly
+- Minimal logging
+- No development tools
 
-## Tests
+---
 
-Run tests inside the Docker container:
+## Container Details
 
-```bash
-# Run all tests
-cargo test
+### Rust Container
 
-# Run a specific test
-cargo test test_name
+- **Base**: `rust:latest`
+- **Working dir**: `/home/rust/money_flow`
+- **Volumes**:
+  - `./money_flow` → `/home/rust/money_flow` (source code)
+  - `cargo-cache` → `/usr/local/cargo/registry` (dependencies)
+  - `target-cache` → `/home/rust/money_flow/target` (build cache)
+- **Dev tools**: sqlx-cli, cargo-watch
 
-# Run tests with output
-cargo test -- --nocapture
-```
+### PostgreSQL Container
 
-## SQLx Migrations
+- **Base**: `postgres:latest`
+- **Data volume**: `pgdata`
+- **Config**: Custom `pg_hba.conf` and `postgresql.conf`
+- **Auth**: Password authentication
 
-Migrations are SQL files in the `migrations/` directory.
+### Redis Container
 
-```bash
-# Run pending migrations
-sqlx migrate run
+- **Base**: `redis:latest`
+- **Data volume**: `redisdata`
+- **Config**: Custom `redis.conf` with ACL
+- **Auth**: Username/password authentication
 
-# Create a new migration
-sqlx migrate add <name>
+### Nginx Container
 
-# Revert last migration
-sqlx migrate revert
-```
+- **Base**: `nginx:latest`
+- **Ports**: 80 (HTTP → HTTPS redirect), 443 (HTTPS)
+- **SSL**: Self-signed certificates (replace for production)
+- **Proxy**: Routes to rust container on port 9999
 
-Migration files follow the naming convention:
-```
-YYYYMMDDHHMMSS_description.sql
-```
+---
 
-## SQLx Offline Mode
+## Volumes
 
-SQLx verifies SQL queries at compile time. To build without a database connection, it uses cached query metadata.
+| Volume       | Purpose                          |
+|--------------|----------------------------------|
+| pgdata       | PostgreSQL data persistence      |
+| redisdata    | Redis data persistence           |
+| cargo-cache  | Cargo registry cache             |
+| target-cache | Rust build artifacts cache       |
 
-### How It Works
+---
 
-1. `SQLX_OFFLINE=true` in `.env` enables offline mode in dev mode
-2. `.sqlx/` directory contains cached query metadata
-3. `cargo sqlx prepare` regenerates the cache
+## Firewall Setup
 
-### Workflow
-
-When you modify SQL queries:
+For production servers, run the firewall setup script:
 
 ```bash
-# Regenerate query cache (requires running database)
-cargo sqlx prepare
+sudo ./firewall-setup.sh
 ```
 
-The development environment auto-runs this on file changes via cargo-watch.
+This configures UFW to:
+- Allow SSH (22)
+- Allow HTTP (80)
+- Allow HTTPS (443)
+- Block direct access to internal ports (5432, 6379, 9999)
 
-### Important
+---
 
-- **Commit `.sqlx/` to version control** - allows CI/CD and other developers to build without a database
-- Run `cargo sqlx prepare` after changing any `sqlx::query!` macros
+## SSL Certificates
 
-## Tech Stack
+### Development
 
-- **Framework**: Actix-web 4
-- **Database**: PostgreSQL with SQLx (compile-time checked queries)
-- **Runtime**: Tokio async runtime
-- **Hot Reload**: cargo-watch (dev mode)
+Uses self-signed certificates generated in the nginx container.
+
+### Production
+
+Replace certificates in nginx:
+
+```bash
+# Copy your certificates
+docker cp your-cert.pem rust-nginx-1:/etc/nginx/ssl/cert.pem
+docker cp your-key.pem rust-nginx-1:/etc/nginx/ssl/key.pem
+
+# Restart nginx
+docker compose restart nginx
+```
+
+Or mount certificates via docker-compose.yml volumes.
+
+---
+
+## Troubleshooting
+
+### Container won't start
+
+```bash
+# Check logs
+docker compose logs rust
+
+# Rebuild from scratch
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+### Database connection issues
+
+```bash
+# Check postgres is running
+docker compose ps postgres
+
+# Test connection
+docker compose exec postgres pg_isready -U app -d money_flow
+
+# Check logs
+docker compose logs postgres
+```
+
+### Redis connection issues
+
+```bash
+# Test connection
+docker compose exec redis redis-cli -a redis_secret_password ping
+
+# Check logs
+docker compose logs redis
+```
+
+### Permission issues
+
+```bash
+# Fix ownership (inside container)
+chown -R rust:rust /home/rust/money_flow
+```
+
+### Stale files in container
+
+```bash
+# Restart to refresh volume mounts
+docker compose restart rust
+```
