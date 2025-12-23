@@ -1,6 +1,18 @@
+//! Authentication Validators
+//!
+//! Validation rules for authentication requests.
+
 use serde::Deserialize;
 use validator::Validate;
 
+/// Validate password strength
+///
+/// Password must contain:
+/// - Minimum 8 characters
+/// - At least one uppercase letter
+/// - At least one lowercase letter
+/// - At least one number
+/// - At least one special character
 pub fn validate_password(password: &str) -> Vec<String> {
     let mut errors = Vec::new();
 
@@ -23,6 +35,7 @@ pub fn validate_password(password: &str) -> Vec<String> {
     errors
 }
 
+/// Raw sign-up request (allows optional fields for better error messages)
 #[derive(Deserialize, Debug)]
 pub struct SignupRequestRaw {
     pub email: Option<String>,
@@ -31,6 +44,7 @@ pub struct SignupRequestRaw {
     pub last_name: Option<String>,
 }
 
+/// Validated sign-up request
 #[derive(Debug, Validate)]
 pub struct SignupRequest {
     #[validate(email(message = "invalid email format"))]
@@ -42,12 +56,14 @@ pub struct SignupRequest {
     pub last_name: String,
 }
 
+/// Raw sign-in request (allows optional fields for better error messages)
 #[derive(Deserialize, Debug)]
 pub struct SigninRequestRaw {
     pub email: Option<String>,
     pub password: Option<String>,
 }
 
+/// Validated sign-in request
 #[derive(Debug, Validate)]
 pub struct SigninRequest {
     #[validate(email(message = "invalid email format"))]

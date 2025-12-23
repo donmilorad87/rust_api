@@ -17,6 +17,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_VHOST=${RABBITMQ_VHOST}
       - REDIS_IP=${REDIS_IP}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
@@ -31,8 +36,12 @@ services:
     tty: true
     restart: unless-stopped
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       devnet:
         ipv4_address: 172.28.0.10
@@ -83,6 +92,44 @@ services:
       devnet:
         ipv4_address: ${POSTGRES_IP}
 
+  rabbitmq:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile
+      args:
+        RABBITMQ_USER: ${RABBITMQ_USER}
+        RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+        RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+        RABBITMQ_PORT: ${RABBITMQ_PORT}
+        RABBITMQ_MANAGEMENT_PORT: ${RABBITMQ_MANAGEMENT_PORT}
+    image: rabbitmq-mq
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_VHOST=${RABBITMQ_VHOST}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_MANAGEMENT_PORT=${RABBITMQ_MANAGEMENT_PORT}
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    ports:
+      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+      - "${RABBITMQ_MANAGEMENT_PORT}:${RABBITMQ_MANAGEMENT_PORT}"
+      - "15692:15692"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      devnet:
+        ipv4_address: 172.28.0.14
+
   redis:
     build:
       context: ./redis
@@ -107,13 +154,55 @@ services:
     restart: unless-stopped
     networks:
       devnet:
-        ipv4_address: 172.28.0.13
+        ipv4_address: ${REDIS_IP}
+
+  prometheus:
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+    image: prometheus-monitoring
+    volumes:
+      - prometheusdata:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
+    networks:
+      devnet:
+        ipv4_address: 172.28.0.15
+
+  grafana:
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
+    image: grafana-monitoring
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://local.rust.com/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ENFORCE_DOMAIN=false
+    volumes:
+      - grafanadata:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      devnet:
+        ipv4_address: 172.28.0.16
 
 volumes:
   pgdata:
+  rabbitmqdata:
   redisdata:
   cargo-cache:
   target-cache:
+  prometheusdata:
+  grafanadata:
 
 networks:
   devnet:

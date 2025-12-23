@@ -8,10 +8,18 @@ pub struct EmailConfig {
     pub password: String,
     pub from_address: String,
     pub from_name: String,
+    pub template_dir: String,
 }
 
 pub static EMAIL: Lazy<EmailConfig> = Lazy::new(|| {
     dotenv::dotenv().ok();
+
+    let template_dir = std::env::var("MAIL_TEMPLATE_DIR").unwrap_or_else(|_| {
+        format!(
+            "{}/src/resources/views/emails/**/*",
+            env!("CARGO_MANIFEST_DIR")
+        )
+    });
 
     EmailConfig {
         mailer: std::env::var("MAIL_MAILER")
@@ -30,6 +38,7 @@ pub static EMAIL: Lazy<EmailConfig> = Lazy::new(|| {
             .unwrap_or_else(|_| "noreply@example.com".to_string()),
         from_name: std::env::var("MAIL_FROM_NAME")
             .unwrap_or_else(|_| "App".to_string()),
+        template_dir,
     }
 });
 
@@ -60,5 +69,9 @@ impl EmailConfig {
 
     pub fn from_name() -> &'static str {
         &EMAIL.from_name
+    }
+
+    pub fn template_dir() -> &'static str {
+        &EMAIL.template_dir
     }
 }

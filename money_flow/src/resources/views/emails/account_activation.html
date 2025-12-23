@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Activate Your {{ app_name }} Account{% endblock %}
+
+{% block content %}
+<h1>Activate Your Account</h1>
+
+<div class="content">
+    <p>Hello {{ first_name }},</p>
+
+    <p>Thank you for signing up for {{ app_name }}! To complete your registration and start using your account, please use the activation code below:</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; display: inline-block;">
+            <span style="font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #1f2937;">{{ activation_code }}</span>
+        </div>
+    </div>
+
+    <p>Copy this code and paste it into the activation form on our website.</p>
+
+    <p style="color: #6b7280; font-size: 14px;">This activation code will expire in 60 minutes. If you did not create an account, you can safely ignore this email.</p>
+</div>
+{% endblock %}

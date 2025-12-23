@@ -42,6 +42,26 @@
         "ordinal": 7,
         "name": "updated_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "activated",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 9,
+        "name": "verified",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 10,
+        "name": "two_factor",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 11,
+        "name": "user_must_set_password",
+        "type_info": "Int2"
       }
     ],
     "parameters": {
@@ -50,6 +70,10 @@
       ]
     },
     "nullable": [
+      false,
+      false,
+      false,
+      false,
       false,
       false,
       false,

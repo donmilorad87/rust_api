@@ -39,6 +39,26 @@ sync_env_vars() {
         sync_env_var "DATABASE_URL" "$database_url"
     fi
 
+    # Sync RabbitMQ variables
+    sync_env_var "RABBITMQ_HOST" "$RABBITMQ_HOST"
+    sync_env_var "RABBITMQ_PORT" "$RABBITMQ_PORT"
+    sync_env_var "RABBITMQ_USER" "$RABBITMQ_USER"
+    sync_env_var "RABBITMQ_PASSWORD" "$RABBITMQ_PASSWORD"
+    sync_env_var "RABBITMQ_VHOST" "$RABBITMQ_VHOST"
+
+    # Construct and sync RABBITMQ_URL
+    if [ -n "$RABBITMQ_HOST" ] && [ -n "$RABBITMQ_PORT" ]; then
+        # Encode vhost (/ becomes %2F)
+        local encoded_vhost
+        if [ "$RABBITMQ_VHOST" = "/" ]; then
+            encoded_vhost="%2F"
+        else
+            encoded_vhost="$RABBITMQ_VHOST"
+        fi
+        local rabbitmq_url="amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_PORT}/${encoded_vhost}"
+        sync_env_var "RABBITMQ_URL" "$rabbitmq_url"
+    fi
+
     # Sync Redis variables
     sync_env_var "REDIS_IP" "$REDIS_IP"
     sync_env_var "REDIS_HOST" "$REDIS_HOST"
@@ -88,7 +108,7 @@ if [ "$BUILD_ENV" = "dev" ]; then
     cargo sqlx prepare || true
     
     echo "Starting with hot reload..."
-    exec cargo watch -i ".sqlx" -i "*.json" -x run
+    exec cargo watch --poll -i ".sqlx" -i "*.json" -x run
 else
     echo "Starting in PRODUCTION mode..."
     

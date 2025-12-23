@@ -1,4 +1,4 @@
-use crate::modules::routes::validators::auth::SigninRequest;
+use crate::app::http::validators::auth::SigninRequest;
 use chrono::{DateTime, Utc};
 use sqlx::{Pool, Postgres};
 
@@ -9,6 +9,10 @@ pub struct User {
     pub first_name: String,
     pub last_name: String,
     pub balance: i64,
+    pub activated: i16,
+    pub verified: i16,
+    pub two_factor: i16,
+    pub user_must_set_password: i16,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -36,4 +40,16 @@ pub async fn count(db: &Pool<Postgres>) -> i64 {
         .await
         .unwrap_or(Some(0))
         .unwrap_or(0)
+}
+
+pub async fn get_by_id(db: &Pool<Postgres>, id: i64) -> Result<User, sqlx::Error> {
+    sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", id)
+        .fetch_one(db)
+        .await
+}
+
+pub async fn get_by_email(db: &Pool<Postgres>, email: &str) -> Result<User, sqlx::Error> {
+    sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", email)
+        .fetch_one(db)
+        .await
 }
