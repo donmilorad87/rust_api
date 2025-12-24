@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ first_name }}!</h1>
+
+<div class="content">
+    <p>Thank you for joining {{ app_name }}. We're excited to help you take control of your personal finances.</p>
+
+    <p>Your account has been created with the email: <strong>{{ email }}</strong></p>
+
+    <p>With {{ app_name }}, you can:</p>
+    <ul>
+        <li>Track your income and expenses</li>
+        <li>Organize transactions by categories</li>
+        <li>Monitor your balance in real-time</li>
+        <li>Get insights into your spending habits</li>
+    </ul>
+
+    {% if activation_link %}
+    <p style="text-align: center; margin-top: 30px;">
+        <a href="{{ activation_link }}" class="button">Activate Your Account</a>
+    </p>
+    {% endif %}
+
+    <p>Get started by logging into your account and setting up your first category.</p>
+</div>
+{% endblock %}

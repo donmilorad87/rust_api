@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Account Activated - {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Account Activated!</h1>
+
+<div class="content">
+    <p>Hello {{ first_name }},</p>
+
+    <p>Great news! Your {{ app_name }} account has been successfully activated.</p>
+
+    <p>You can now log in and start using all the features:</p>
+    <ul>
+        <li>Track your income and expenses</li>
+        <li>Organize transactions by categories</li>
+        <li>Monitor your balance in real-time</li>
+        <li>Get insights into your spending habits</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 30px;">
+        <a href="{{ login_url }}" class="button">Log In Now</a>
+    </p>
+</div>
+{% endblock %}
