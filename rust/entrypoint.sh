@@ -59,6 +59,16 @@ sync_env_vars() {
         sync_env_var "RABBITMQ_URL" "$rabbitmq_url"
     fi
 
+    # Sync Kafka variables
+    sync_env_var "KAFKA_HOST" "$KAFKA_HOST"
+    sync_env_var "KAFKA_PORT" "$KAFKA_PORT"
+
+    # Construct and sync KAFKA_BROKERS (comma-separated list of brokers)
+    if [ -n "$KAFKA_HOST" ] && [ -n "$KAFKA_PORT" ]; then
+        local kafka_brokers="${KAFKA_HOST}:${KAFKA_PORT}"
+        sync_env_var "KAFKA_BROKERS" "$kafka_brokers"
+    fi
+
     # Sync Redis variables
     sync_env_var "REDIS_IP" "$REDIS_IP"
     sync_env_var "REDIS_HOST" "$REDIS_HOST"

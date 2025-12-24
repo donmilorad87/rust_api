@@ -2,6 +2,9 @@ FROM grafana/grafana:latest
 
 USER root
 
+# Update system packages (Alpine-based)
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
+
 # Copy provisioning configurations
 COPY provisioning /etc/grafana/provisioning
 COPY dashboards /var/lib/grafana/dashboards

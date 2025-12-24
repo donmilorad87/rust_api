@@ -1,4 +1,7 @@
-FROM redis:7-alpine
+FROM redis:alpine
+
+# Update system packages (Alpine-based)
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
 
 # Install envsubst for config templating
 RUN apk add --no-cache gettext

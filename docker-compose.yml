@@ -22,6 +22,8 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - KAFKA_HOST=${KAFKA_HOST}
+      - KAFKA_PORT=${KAFKA_PORT}
       - REDIS_IP=${REDIS_IP}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
@@ -37,11 +39,13 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       devnet:
         ipv4_address: 172.28.0.10
@@ -57,6 +61,9 @@ services:
       - "0.0.0.0:443:443/udp"
     environment:
       - APP_PORT=${APP_PORT}
+    volumes:
+      # Mount public storage for static file serving
+      - ./money_flow/storage/app/public:/var/www/storage/public:ro
     restart: unless-stopped
     depends_on:
       - rust
@@ -84,10 +91,16 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       devnet:
         ipv4_address: ${POSTGRES_IP}
@@ -104,6 +117,10 @@ services:
         RABBITMQ_MANAGEMENT_PORT: ${RABBITMQ_MANAGEMENT_PORT}
     image: rabbitmq-mq
     hostname: rabbitmq
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
@@ -152,9 +169,109 @@ services:
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     networks:
       devnet:
         ipv4_address: ${REDIS_IP}
+
+  kafka:
+    build:
+      context: ./kafka
+      dockerfile: Dockerfile
+      args:
+        KAFKA_BROKER_ID: ${KAFKA_BROKER_ID}
+        KAFKA_PORT: ${KAFKA_PORT}
+        KAFKA_CONTROLLER_PORT: ${KAFKA_CONTROLLER_PORT}
+    image: kafka-events
+    hostname: kafka
+    environment:
+      - KAFKA_NODE_ID=${KAFKA_BROKER_ID}
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=${KAFKA_BROKER_ID}@kafka:${KAFKA_CONTROLLER_PORT}
+      - KAFKA_LISTENERS=PLAINTEXT://:${KAFKA_PORT},CONTROLLER://:${KAFKA_CONTROLLER_PORT}
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:${KAFKA_PORT}
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_NUM_PARTITIONS=${KAFKA_NUM_PARTITIONS}
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_LOG_RETENTION_HOURS=${KAFKA_LOG_RETENTION_HOURS}
+      - CLUSTER_ID=${KAFKA_CLUSTER_ID}
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    ports:
+      - "${KAFKA_PORT}:${KAFKA_PORT}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:${KAFKA_PORT} && /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:${KAFKA_PORT} | grep -q 'user.events'"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      devnet:
+        ipv4_address: ${KAFKA_IP}
+
+  kafka-ui:
+    build:
+      context: ./kafka-ui
+      dockerfile: Dockerfile
+    image: kafka-ui-dashboard
+    hostname: kafka-ui
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=${KAFKA_UI_CLUSTER_NAME}
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=${KAFKA_HOST}:${KAFKA_PORT}
+      - SERVER_SERVLET_CONTEXT_PATH=/kafka
+      # Authentication
+      - AUTH_TYPE=LOGIN_FORM
+      - SPRING_SECURITY_USER_NAME=${KAFKA_UI_USER}
+      - SPRING_SECURITY_USER_PASSWORD=${KAFKA_UI_PASSWORD}
+    ports:
+      - "${KAFKA_UI_PORT}:8080"
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      devnet:
+        ipv4_address: ${KAFKA_UI_IP}
+
+  pgadmin:
+    build:
+      context: ./pgadmin
+      dockerfile: Dockerfile
+      args:
+        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    image: pgadmin-dashboard
+    hostname: pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+      - SCRIPT_NAME=/pgadmin
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - pgadmindata:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT}:80"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      devnet:
+        ipv4_address: ${PGADMIN_IP}
 
   prometheus:
     build:
@@ -199,10 +316,12 @@ volumes:
   pgdata:
   rabbitmqdata:
   redisdata:
+  kafkadata:
   cargo-cache:
   target-cache:
   prometheusdata:
   grafanadata:
+  pgadmindata:
 
 networks:
   devnet:

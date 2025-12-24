@@ -1,7 +1,7 @@
-FROM postgres:16
+FROM postgres:latest
 
-# Install openssl for certificate generation and gettext for envsubst
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Update system packages and install dependencies (Debian-based)
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     openssl \
     gettext-base \
     && rm -rf /var/lib/apt/lists/*

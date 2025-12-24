@@ -14,6 +14,14 @@ upstream grafana {
     server grafana:3000;
 }
 
+upstream kafka_ui {
+    server kafka-ui:8080;
+}
+
+upstream pgadmin {
+    server pgadmin:80;
+}
+
 # Redirect HTTP to HTTPS
 server {
     listen 80;
@@ -44,6 +52,12 @@ server {
 
     # Advertise HTTP/3 support to clients
     add_header Alt-Svc 'h3=":443"; ma=86400' always;
+
+    # ===================
+    # Strip trailing slash (redirect /path/ to /path)
+    # Excludes: root /, service paths (rabbitmq, prometheus, grafana, kafka, pgadmin, api, storage)
+    # ===================
+    rewrite ^/((?!rabbitmq|prometheus|grafana|kafka|pgadmin|api|storage).*)(?:/)+$ /$1 permanent;
 
     # ===================
     # RabbitMQ Management
@@ -90,6 +104,52 @@ server {
         proxy_set_header Host $host;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
+    }
+
+    # ===================
+    # Kafka UI
+    # ===================
+    location /kafka/ {
+        proxy_pass http://kafka_ui;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # ===================
+    # pgAdmin (PostgreSQL)
+    # ===================
+    location /pgadmin/ {
+        proxy_pass http://pgadmin;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Script-Name /pgadmin;
+        proxy_redirect off;
+    }
+
+    # ===================
+    # Public Storage Files (static file serving)
+    # ===================
+    location /storage/ {
+        alias /var/www/storage/public/;
+
+        # Security: only serve specific file types
+        location ~* \.(jpg|jpeg|png|gif|webp|svg|ico|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|zip|rar|7z|tar|gz|mp4|mp3|wav|webm)$ {
+            expires 30d;
+            add_header Cache-Control "public, immutable";
+            add_header X-Content-Type-Options "nosniff";
+            try_files $uri =404;
+        }
+
+        # Deny access to other file types
+        return 404;
     }
 
     # ===================

@@ -1,4 +1,7 @@
-FROM nginx:mainline-alpine
+FROM nginx:alpine
+
+# Update system packages (Alpine-based)
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
 
 # Install openssl
 RUN apk add --no-cache openssl

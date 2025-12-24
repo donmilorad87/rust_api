@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - MoneyFlow{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card" style="max-width: 600px;">
+        <h1>My Profile</h1>
+
+        <div id="profileContent" class="profile-info">
+            <div class="loading">Loading profile...</div>
+        </div>
+
+        <div id="profileActions" class="hidden mt-2">
+            <button type="button" class="btn" id="editBtn">Edit Profile</button>
+            <button type="button" class="btn btn-secondary mt-1" id="logoutBtn">Sign Out</button>
+        </div>
+    </div>
+
+    <!-- Edit Profile Form (hidden initially) -->
+    <div class="card hidden" id="editCard" style="max-width: 600px;">
+        <h1>Edit Profile</h1>
+        <form id="editForm">
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" id="first_name" name="first_name" required>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" id="last_name" name="last_name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" disabled>
+                <small style="color: #666;">Email cannot be changed</small>
+            </div>
+            <button type="submit" class="btn" id="saveBtn">Save Changes</button>
+            <button type="button" class="btn btn-secondary mt-1" id="cancelBtn">Cancel</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .profile-info {
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-field {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .profile-field:last-child {
+        border-bottom: none;
+    }
+
+    .profile-label {
+        font-weight: 500;
+        color: #555;
+    }
+
+    .profile-value {
+        color: #333;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        box-shadow: 0 5px 20px rgba(108, 117, 125, 0.4);
+    }
+
+    .loading {
+        text-align: center;
+        color: #666;
+        padding: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get token from cookie
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    const token = getCookie('auth_token');
+
+    const profileContent = document.getElementById('profileContent');
+    const profileActions = document.getElementById('profileActions');
+    const editCard = document.getElementById('editCard');
+    const editForm = document.getElementById('editForm');
+
+    let userData = null;
+
+    // Load user profile
+    async function loadProfile() {
+        const result = await apiRequest('/api/v1/user', 'GET');
+
+        if (result.ok && result.data.user) {
+            userData = result.data.user;
+            renderProfile(userData);
+            profileActions.classList.remove('hidden');
+        } else {
+            // Token invalid, redirect to sign in
+            document.cookie = 'auth_token=; path=/; max-age=0';
+            window.location.href = '/sign-in';
+        }
+    }
+
+    function renderProfile(user) {
+        profileContent.innerHTML = `
+            <div class="profile-field">
+                <span class="profile-label">First Name</span>
+                <span class="profile-value">${user.first_name}</span>
+            </div>
+            <div class="profile-field">
+                <span class="profile-label">Last Name</span>
+                <span class="profile-value">${user.last_name}</span>
+            </div>
+            <div class="profile-field">
+                <span class="profile-label">Email</span>
+                <span class="profile-value">${user.email}</span>
+            </div>
+            <div class="profile-field">
+                <span class="profile-label">Balance</span>
+                <span class="profile-value">$${(user.balance / 100).toFixed(2)}</span>
+            </div>
+            <div class="profile-field">
+                <span class="profile-label">Member Since</span>
+                <span class="profile-value">${new Date(user.created_at).toLocaleDateString()}</span>
+            </div>
+        `;
+    }
+
+    // Override apiRequest to include auth token
+    async function apiRequest(endpoint, method = 'GET', data = null) {
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        };
+
+        if (data) {
+            options.body = JSON.stringify(data);
+        }
+
+        try {
+            const response = await fetch(`${BASE_URL}${endpoint}`, options);
+            const result = await response.json();
+            return { ok: response.ok, data: result };
+        } catch (error) {
+            return { ok: false, data: { message: 'Network error. Please try again.' } };
+        }
+    }
+
+    // Edit button
+    document.getElementById('editBtn').addEventListener('click', () => {
+        document.getElementById('first_name').value = userData.first_name;
+        document.getElementById('last_name').value = userData.last_name;
+        document.getElementById('email').value = userData.email;
+
+        profileContent.parentElement.classList.add('hidden');
+        editCard.classList.remove('hidden');
+    });
+
+    // Cancel button
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+        editCard.classList.add('hidden');
+        profileContent.parentElement.classList.remove('hidden');
+    });
+
+    // Save changes
+    editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const data = {
+            first_name: document.getElementById('first_name').value,
+            last_name: document.getElementById('last_name').value
+        };
+
+        const result = await apiRequest('/api/v1/user', 'PATCH', data);
+
+        if (result.ok) {
+            showToast('Profile updated successfully!', 'success');
+            userData.first_name = data.first_name;
+            userData.last_name = data.last_name;
+            renderProfile(userData);
+            editCard.classList.add('hidden');
+            profileContent.parentElement.classList.remove('hidden');
+        } else {
+            showToast(result.data.message || 'Failed to update profile', 'error');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        window.location.href = '/logout';
+    });
+
+    // Load profile on page load
+    loadProfile();
+</script>
+{% endblock %}

@@ -1,15 +1,13 @@
 //! HTTP Layer
 //!
 //! This module contains all HTTP-related components:
-//! - Controllers: Handle incoming requests and return responses
-//! - Validators: Validate request data
-//! - Middlewares: Process requests/responses (auth, logging, etc.)
+//! - API: REST API controllers, validators, middlewares (JSON responses)
+//! - Web: Web controllers, validators, middlewares (HTML responses)
 
-pub mod controllers;
-pub mod middlewares;
-pub mod validators;
+pub mod api;
+pub mod web;
 
 // Re-export common response types for convenience
-pub use controllers::responses::{
+pub use api::controllers::responses::{
     BaseResponse, MissingFieldsResponse, ValidationErrorResponse,
 };

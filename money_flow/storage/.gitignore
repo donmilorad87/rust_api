@@ -1,0 +1,8 @@
+# Ignore all uploaded files but keep directory structure
+*
+!.gitignore
+!app/
+!app/public/
+!app/public/.gitkeep
+!app/private/
+!app/private/.gitkeep

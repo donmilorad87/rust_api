@@ -1,4 +1,7 @@
-FROM rabbitmq:4-management-alpine
+FROM rabbitmq:management-alpine
+
+# Update system packages (Alpine-based)
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
 
 # Install envsubst for config templating
 RUN apk add --no-cache gettext
@@ -23,8 +26,13 @@ ENV RABBITMQ_MANAGEMENT_PORT=${RABBITMQ_MANAGEMENT_PORT}
 # Create directories
 RUN mkdir -p /etc/rabbitmq
 
-# Copy configuration template
+# Copy configuration template and definitions
 COPY rabbitmq.conf /etc/rabbitmq/rabbitmq.conf.template
+COPY definitions.json /etc/rabbitmq/definitions.json
+
+# Set proper permissions for definitions.json (rabbitmq user needs to read it)
+RUN chown rabbitmq:rabbitmq /etc/rabbitmq/definitions.json && \
+    chmod 644 /etc/rabbitmq/definitions.json
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh

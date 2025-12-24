@@ -1,0 +1,61 @@
+FROM apache/kafka:latest
+
+# Build arguments from docker-compose
+ARG KAFKA_BROKER_ID
+ARG KAFKA_PORT
+ARG KAFKA_CONTROLLER_PORT
+
+USER root
+
+# Update system packages (JDK-based image uses microdnf/yum)
+RUN if command -v microdnf &> /dev/null; then \
+      microdnf update -y && microdnf clean all; \
+    elif command -v yum &> /dev/null; then \
+      yum update -y && yum clean all; \
+    elif command -v apk &> /dev/null; then \
+      apk update && apk upgrade --no-cache; \
+    fi
+
+# Set environment variables
+ENV KAFKA_NODE_ID=${KAFKA_BROKER_ID:-1}
+ENV KAFKA_PORT=${KAFKA_PORT:-9092}
+ENV KAFKA_CONTROLLER_PORT=${KAFKA_CONTROLLER_PORT:-9093}
+
+# KRaft mode configuration (no Zookeeper required)
+ENV KAFKA_PROCESS_ROLES=broker,controller
+ENV KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+ENV KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+ENV KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+ENV KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+ENV KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+ENV KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+
+# Topic configuration
+ENV KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+ENV KAFKA_NUM_PARTITIONS=3
+ENV KAFKA_DEFAULT_REPLICATION_FACTOR=1
+ENV KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+ENV KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+ENV KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+
+# Retention settings (7 days, 1GB per partition)
+ENV KAFKA_LOG_RETENTION_HOURS=168
+ENV KAFKA_LOG_RETENTION_BYTES=1073741824
+
+# Performance tuning
+ENV KAFKA_NUM_IO_THREADS=8
+ENV KAFKA_NUM_NETWORK_THREADS=3
+ENV KAFKA_SOCKET_SEND_BUFFER_BYTES=102400
+ENV KAFKA_SOCKET_RECEIVE_BUFFER_BYTES=102400
+ENV KAFKA_SOCKET_REQUEST_MAX_BYTES=104857600
+
+# Copy entrypoint script
+COPY --chmod=755 entrypoint.sh /custom-entrypoint.sh
+
+VOLUME /var/lib/kafka/data
+
+EXPOSE 9092 9093
+
+USER appuser
+
+ENTRYPOINT ["/custom-entrypoint.sh"]
