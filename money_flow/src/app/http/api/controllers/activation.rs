@@ -43,6 +43,10 @@ pub struct ActivateAccountRequest {
 #[derive(Deserialize, Debug)]
 pub struct ForgotPasswordRequest {
     pub email: Option<String>,
+    /// For testing only: when true, returns the reset code in the response
+    /// This should NEVER be used in production
+    #[serde(default)]
+    pub return_code_for_testing: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -54,6 +58,15 @@ pub struct VerifyHashRequest {
 struct VerifyHashResponse {
     #[serde(flatten)]
     base: BaseResponse,
+    code: String,
+}
+
+/// Response for forgot-password when testing mode is enabled
+#[derive(Serialize)]
+struct ForgotPasswordTestResponse {
+    #[serde(flatten)]
+    base: BaseResponse,
+    /// The reset code (only returned in testing mode)
     code: String,
 }
 
@@ -128,7 +141,7 @@ impl ActivationController {
     ///
     /// # Request Body
     /// ```json
-    /// { "code": "40-character-activation-code" }
+    /// { "code": "20-character-activation-code" }
     /// ```
     ///
     /// # Responses
@@ -146,7 +159,7 @@ impl ActivationController {
                 .json(MissingFieldsResponse::new(vec!["code is required".to_string()]));
         };
 
-        if code.len() != 40 {
+        if code.len() != 20 {
             return HttpResponse::BadRequest()
                 .json(BaseResponse::error("Invalid activation code format"));
         }
@@ -225,6 +238,7 @@ impl ActivationController {
         body: web::Json<ForgotPasswordRequest>,
     ) -> HttpResponse {
         let raw = body.into_inner();
+        let return_code_for_testing = raw.return_code_for_testing;
 
         let Some(email) = raw.email else {
             return HttpResponse::BadRequest()
@@ -272,6 +286,15 @@ impl ActivationController {
             }
         }
 
+        // For testing: return the code in the response
+        // WARNING: This should NEVER be enabled in production
+        if return_code_for_testing {
+            return HttpResponse::Ok().json(ForgotPasswordTestResponse {
+                base: BaseResponse::success("If the email exists, a reset code has been sent"),
+                code: hash,
+            });
+        }
+
         HttpResponse::Ok()
             .json(BaseResponse::success("If the email exists, a reset code has been sent"))
     }
@@ -280,7 +303,7 @@ impl ActivationController {
     ///
     /// # Request Body
     /// ```json
-    /// { "code": "40-character-hash-code" }
+    /// { "code": "20-character-hash-code" }
     /// ```
     ///
     /// # Responses
@@ -298,7 +321,7 @@ impl ActivationController {
                 .json(MissingFieldsResponse::new(vec!["code is required".to_string()]));
         };
 
-        if code.len() != 40 {
+        if code.len() != 20 {
             return HttpResponse::BadRequest().json(BaseResponse::error("Invalid code format"));
         }
 
@@ -337,7 +360,7 @@ impl ActivationController {
     /// # Request Body
     /// ```json
     /// {
-    ///     "code": "40-character-hash-code",
+    ///     "code": "20-character-hash-code",
     ///     "password": "NewPassword123!",
     ///     "confirm_password": "NewPassword123!"
     /// }
@@ -472,7 +495,7 @@ impl ActivationController {
     ///
     /// # Query Parameters
     /// - user_id: The user ID
-    /// - hash: The 40-character hash
+    /// - hash: The 20-character hash
     ///
     /// # Responses
     /// - 200: Link verified, returns token
@@ -484,7 +507,7 @@ impl ActivationController {
     ) -> HttpResponse {
         let params = query.into_inner();
 
-        if params.hash.len() != 40 {
+        if params.hash.len() != 20 {
             return HttpResponse::BadRequest().json(BaseResponse::error("Invalid link format"));
         }
 
@@ -525,7 +548,7 @@ impl ActivationController {
     /// ```json
     /// {
     ///     "user_id": 123,
-    ///     "hash": "40-character-hash",
+    ///     "hash": "20-character-hash",
     ///     "password": "NewPassword123!",
     ///     "confirm_password": "NewPassword123!"
     /// }
@@ -714,7 +737,7 @@ impl ActivationController {
     /// # Request Body
     /// ```json
     /// {
-    ///     "code": "40-character-code",
+    ///     "code": "20-character-code",
     ///     "password": "NewPassword123!",
     ///     "confirm_password": "NewPassword123!"
     /// }

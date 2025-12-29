@@ -92,6 +92,19 @@ sync_env_vars() {
     sync_env_var "MAIL_FROM_ADDRESS" "$MAIL_FROM_ADDRESS"
     sync_env_var "MAIL_FROM_NAME" "$MAIL_FROM_NAME"
 
+    # Sync MongoDB variables
+    sync_env_var "MONGO_HOST" "$MONGO_HOST"
+    sync_env_var "MONGO_PORT" "$MONGO_PORT"
+    sync_env_var "MONGO_USER" "$MONGO_USER"
+    sync_env_var "MONGO_PASSWORD" "$MONGO_PASSWORD"
+    sync_env_var "MONGO_INITDB_DATABASE" "$MONGO_INITDB_DATABASE"
+
+    # Construct and sync MONGO_URL
+    if [ -n "$MONGO_HOST" ] && [ -n "$MONGO_PORT" ]; then
+        local mongo_url="mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/${MONGO_INITDB_DATABASE}"
+        sync_env_var "MONGO_URL" "$mongo_url"
+    fi
+
     echo ""
 }
 
@@ -118,7 +131,7 @@ if [ "$BUILD_ENV" = "dev" ]; then
     cargo sqlx prepare || true
     
     echo "Starting with hot reload..."
-    exec cargo watch --poll -i ".sqlx" -i "*.json" -x run
+    exec cargo watch --poll -i ".sqlx" -i "*.json" -i "tests" -i "*.spec.ts" -i "test-results" -i "**/storage/**" -i "**/storage" -i "src/storage/*" -x run
 else
     echo "Starting in PRODUCTION mode..."
     

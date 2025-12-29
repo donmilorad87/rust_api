@@ -1,0 +1,24 @@
+{
+  "name": "money-flow-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for Money Flow using Playwright",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report ../storage/app/public/test-reports/playwright",
+    "test:sign-in": "playwright test sign_in.spec.ts",
+    "install-browsers": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^25.0.3"
+  },
+  "keywords": [
+    "e2e",
+    "playwright",
+    "testing",
+    "money-flow"
+  ]
+}

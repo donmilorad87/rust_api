@@ -1,0 +1,15 @@
+{
+  "name": "moneyflow-global",
+  "version": "1.0.0",
+  "description": "MoneyFlow Global Assets - Navigation, Theme, Base Styles",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --mode development --watch",
+    "build": "vite build --mode production",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "sass": "^1.69.5",
+    "vite": "^5.0.0"
+  }
+}

@@ -5,7 +5,7 @@
 //!
 
 use actix_files::Files;
-use actix_web::web;
+use actix_web::{web, Route};
 
 use crate::app::http::web::controllers::pages::PagesController;
 use crate::route;
@@ -49,6 +49,23 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     // ============================================
     cfg.route("/profile", web::get().to(PagesController::profile));
     cfg.route("/logout", web::get().to(PagesController::logout));
+
+    // ============================================
+    // Admin Pages (Permission Protected)
+    // ============================================
+    cfg.route(
+        "/admin/uploads",
+        web::get().to(PagesController::uploads),
+    );
+    cfg.route(
+        "/admin/users",
+        web::get().to(PagesController::registered_users),
+    );
+
+    // ============================================
+    // 404 Fallback (must be last)
+    // ============================================
+    cfg.default_service(Route::new().to(PagesController::not_found));
 }
 
 /// Register all web route names for URL generation
@@ -59,4 +76,8 @@ fn register_route_names() {
     route!("web.forgot_password", "/forgot-password");
     route!("web.profile", "/profile");
     route!("web.logout", "/logout");
+
+    // Admin pages
+    route!("admin.uploads", "/admin/uploads");
+    route!("admin.users", "/admin/users");
 }

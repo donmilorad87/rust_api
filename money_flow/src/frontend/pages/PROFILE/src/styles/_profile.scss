@@ -1,0 +1,533 @@
+@use 'variables' as *;
+
+// ============================================
+// PROFILE PAGE LAYOUT
+// ============================================
+
+.profile {
+  min-height: calc(100vh - 60px);
+  padding: $spacing-xl;
+  background: var(--bg-primary);
+}
+
+.profile__container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.profile__header {
+  margin-bottom: $spacing-xl;
+}
+
+.profile__title {
+  font-size: $font-size-2xl;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.profile__grid {
+  display: grid;
+  gap: $spacing-xl;
+
+  @media (min-width: $breakpoint-md) {
+    grid-template-columns: 300px 1fr;
+  }
+}
+
+// ============================================
+// PROFILE CARD (Base Card Component)
+// ============================================
+
+.profile-card {
+  background: var(--card-bg);
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  box-shadow: 0 4px 20px var(--card-shadow);
+  transition: box-shadow $transition-normal;
+
+  &:hover {
+    box-shadow: 0 6px 24px var(--card-shadow);
+  }
+}
+
+.profile-card__title {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid var(--border-color);
+}
+
+// ============================================
+// AVATAR SECTION
+// ============================================
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar {
+  position: relative;
+  width: $avatar-lg;
+  height: $avatar-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.avatar__image {
+  width: 100%;
+  height: 100%;
+  border-radius: $radius-full;
+  object-fit: cover;
+  border: 4px solid var(--border-color);
+  transition: border-color $transition-normal;
+}
+
+.avatar__placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: $radius-full;
+  background: var(--avatar-placeholder-bg, #e5e7eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--avatar-placeholder-color, #9ca3af);
+  border: 4px solid var(--border-color);
+
+  svg {
+    width: 60%;
+    height: 60%;
+  }
+}
+
+.avatar__overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: $radius-full;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity $transition-normal;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.avatar__overlay-icon {
+  width: 32px;
+  height: 32px;
+  color: #fff;
+}
+
+.avatar__input {
+  display: none;
+}
+
+.avatar__name {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: $spacing-xs;
+}
+
+.avatar__email {
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+}
+
+// Avatar preview modal
+.avatar-preview {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: $z-modal;
+  padding: $spacing-xl;
+
+  &.hidden {
+    display: none;
+  }
+}
+
+.avatar-preview__container {
+  background: var(--card-bg);
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  max-width: 400px;
+  width: 100%;
+}
+
+.avatar-preview__image {
+  width: 200px;
+  height: 200px;
+  border-radius: $radius-full;
+  object-fit: cover;
+  margin: 0 auto $spacing-lg;
+  display: block;
+  border: 4px solid var(--border-color);
+}
+
+.avatar-preview__actions {
+  display: flex;
+  gap: $spacing-md;
+  justify-content: center;
+}
+
+// ============================================
+// FORM COMPONENTS
+// ============================================
+
+.form-section {
+  margin-bottom: $spacing-xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.form-section__title {
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 $spacing-md;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.form-group__label {
+  display: block;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: $spacing-xs;
+}
+
+.form-group__input {
+  width: 100%;
+  padding: 0.75rem $spacing-md;
+  border: 2px solid var(--input-border);
+  border-radius: $radius-md;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: $font-size-base;
+  font-family: inherit;
+  transition: border-color $transition-normal, box-shadow $transition-normal;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.form-group__hint {
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+  margin-top: $spacing-xs;
+}
+
+.form-group__error {
+  font-size: $font-size-sm;
+  color: $color-error;
+  margin-top: $spacing-xs;
+}
+
+// Row layout for form groups
+.form-row {
+  display: grid;
+  gap: $spacing-md;
+
+  @media (min-width: $breakpoint-sm) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// ============================================
+// BUTTONS
+// ============================================
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: 0.75rem $spacing-lg;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-size-base;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all $transition-normal;
+  text-decoration: none;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn--primary {
+  background: $gradient-primary;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba($color-primary, 0.4);
+  }
+}
+
+.btn--secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+
+  &:hover:not(:disabled) {
+    border-color: $color-primary;
+    color: $color-primary;
+  }
+}
+
+.btn--danger {
+  background: $color-error;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #d93636; // Darker error color
+  }
+}
+
+.btn--sm {
+  padding: 0.5rem $spacing-md;
+  font-size: $font-size-sm;
+}
+
+.btn--loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.btn--full {
+  width: 100%;
+}
+
+// ============================================
+// PASSWORD STRENGTH INDICATOR
+// ============================================
+
+.password-strength {
+  margin-top: $spacing-sm;
+}
+
+.password-strength__track {
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.password-strength__bar {
+  height: 100%;
+  width: 0;
+  transition: width $transition-normal, background $transition-normal;
+
+  &--weak {
+    width: 25%;
+    background: $color-error;
+  }
+
+  &--fair {
+    width: 50%;
+    background: $color-warning;
+  }
+
+  &--good {
+    width: 75%;
+    background: #84cc16;
+  }
+
+  &--strong {
+    width: 100%;
+    background: $color-success;
+  }
+}
+
+.password-strength-text {
+  font-size: $font-size-sm;
+  margin-top: $spacing-xs;
+  color: var(--text-muted);
+}
+
+// ============================================
+// EMAIL CHANGE STEPS
+// ============================================
+
+.email-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xl;
+}
+
+.email-step {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.email-step__number {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-full;
+  background: var(--border-color);
+  color: var(--text-muted);
+  font-size: $font-size-sm;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-normal;
+}
+
+.email-step__label {
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+  transition: color $transition-normal;
+
+  @media (max-width: $breakpoint-sm) {
+    display: none;
+  }
+}
+
+.email-step--active {
+  .email-step__number {
+    background: $gradient-primary;
+    color: #fff;
+  }
+
+  .email-step__label {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+}
+
+.email-step--completed {
+  .email-step__number {
+    background: $color-success;
+    color: #fff;
+  }
+}
+
+.email-step__connector {
+  width: 30px;
+  height: 2px;
+  background: var(--border-color);
+
+  @media (max-width: $breakpoint-sm) {
+    width: 20px;
+  }
+}
+
+// ============================================
+// SECTION DIVIDER
+// ============================================
+
+.section-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: $spacing-xl 0;
+}
+
+// ============================================
+// MESSAGE/INFO BOX
+// ============================================
+
+.message-box {
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+
+  &--info {
+    background: rgba($color-primary, 0.1);
+    border: 1px solid rgba($color-primary, 0.3);
+    color: var(--text-primary);
+  }
+
+  &--success {
+    background: rgba($color-success, 0.1);
+    border: 1px solid rgba($color-success, 0.3);
+    color: $color-success;
+  }
+
+  &--warning {
+    background: rgba($color-warning, 0.1);
+    border: 1px solid rgba($color-warning, 0.3);
+    color: var(--text-primary);
+  }
+
+  &--error {
+    background: rgba($color-error, 0.1);
+    border: 1px solid rgba($color-error, 0.3);
+    color: $color-error;
+  }
+}
+
+// ============================================
+// RESPONSIVE ADJUSTMENTS
+// ============================================
+
+@media (max-width: $breakpoint-md) {
+  .profile {
+    padding: $spacing-md;
+  }
+
+  .profile__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-card {
+    padding: $spacing-lg;
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .profile {
+    padding: $spacing-sm;
+  }
+
+  .avatar {
+    width: $avatar-md;
+    height: $avatar-md;
+  }
+
+  .avatar__placeholder {
+    font-size: $font-size-xl;
+  }
+}

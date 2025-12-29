@@ -2,134 +2,119 @@
 
 {% block title %}Sign Up - MoneyFlow{% endblock %}
 
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/SIGN_UP/style.css?v={{ assets_version }}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
+<main class="container df jcc aic">
     <!-- Sign Up Form -->
-    <div class="card" id="signupCard">
-        <h1>Create Account</h1>
-        <form id="signupForm">
+    <article class="card" id="signupCard">
+        <h1 class="card__title">Create Account</h1>
+        <form id="signupForm" aria-label="Sign up form">
             <div class="form-group">
-                <label for="first_name">First Name</label>
-                <input type="text" id="first_name" name="first_name" required>
+                <label class="form-group__label" for="first_name">First Name</label>
+                <input
+                    type="text"
+                    id="first_name"
+                    name="first_name"
+                    class="form-group__input"
+                    required
+                    autocomplete="given-name"
+                    aria-required="true"
+                >
             </div>
             <div class="form-group">
-                <label for="last_name">Last Name</label>
-                <input type="text" id="last_name" name="last_name" required>
+                <label class="form-group__label" for="last_name">Last Name</label>
+                <input
+                    type="text"
+                    id="last_name"
+                    name="last_name"
+                    class="form-group__input"
+                    required
+                    autocomplete="family-name"
+                    aria-required="true"
+                >
             </div>
             <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
+                <label class="form-group__label" for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="form-group__input"
+                    required
+                    autocomplete="email"
+                    aria-required="true"
+                >
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required minlength="8">
+                <label class="form-group__label" for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="form-group__input"
+                    required
+                    minlength="8"
+                    autocomplete="new-password"
+                    aria-required="true"
+                    aria-describedby="password-hint"
+                >
+                <small id="password-hint" class="c-muted fs-sm">Minimum 8 characters</small>
             </div>
             <div class="form-group">
-                <label for="password_confirmation">Confirm Password</label>
-                <input type="password" id="password_confirmation" name="password_confirmation" required>
+                <label class="form-group__label" for="confirm_password">Confirm Password</label>
+                <input
+                    type="password"
+                    id="confirm_password"
+                    name="confirm_password"
+                    class="form-group__input"
+                    required
+                    autocomplete="new-password"
+                    aria-required="true"
+                >
             </div>
-            <button type="submit" class="btn" id="signupBtn">Sign Up</button>
+            <button type="submit" class="btn mt3">Sign Up</button>
         </form>
-        <p class="text-center mt-1">
+        <p class="card__footer">
             Already have an account? <a href="/sign-in" class="link">Sign In</a>
         </p>
-    </div>
+    </article>
 
     <!-- Activation Form (hidden initially) -->
-    <div class="card hidden" id="activationCard">
-        <h1>Activate Account</h1>
-        <p class="text-center" style="color: #666; margin-bottom: 1.5rem;">
-            Sign up successful! We've sent an activation code to your email. Please enter it below to activate your account.
+    <article class="card hidden" id="activationCard">
+        <h1 class="card__title">Activate Account</h1>
+        <p class="card__message">
+            Sign up successful! We've sent an activation code to
+            <strong id="activation_email_display"></strong>.
+            Please enter it below to activate your account.
         </p>
-        <form id="activationForm">
+        <form id="activationForm" aria-label="Account activation form">
             <div class="form-group">
-                <label for="activation_code">Activation Code</label>
-                <input type="text" id="activation_code" name="activation_code" required maxlength="6" placeholder="Enter 6-digit code">
+                <label class="form-group__label" for="activation_code">Activation Code</label>
+                <input
+                    type="text"
+                    id="activation_code"
+                    name="activation_code"
+                    class="form-group__input tc"
+                    required
+                    maxlength="20"
+                    placeholder="Enter 20 character code"
+                    autocomplete="one-time-code"
+                    aria-required="true"
+                >
             </div>
-            <input type="hidden" id="activation_email" name="email">
-            <button type="submit" class="btn" id="activateBtn">Activate Account</button>
+            <button type="submit" class="btn mt3">Activate Account</button>
         </form>
-    </div>
-</div>
+    </article>
+</main>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const signupCard = document.getElementById('signupCard');
-    const activationCard = document.getElementById('activationCard');
-    const signupForm = document.getElementById('signupForm');
-    const activationForm = document.getElementById('activationForm');
-
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('signupBtn');
-        btn.disabled = true;
-        btn.textContent = 'Creating account...';
-
-        const password = document.getElementById('password').value;
-        const passwordConfirmation = document.getElementById('password_confirmation').value;
-
-        if (password !== passwordConfirmation) {
-            showToast('Passwords do not match', 'error');
-            btn.disabled = false;
-            btn.textContent = 'Sign Up';
-            return;
-        }
-
-        const data = {
-            first_name: document.getElementById('first_name').value,
-            last_name: document.getElementById('last_name').value,
-            email: document.getElementById('email').value,
-            password: password,
-            password_confirmation: passwordConfirmation
-        };
-
-        const result = await apiRequest('/api/v1/auth/sign-up', 'POST', data);
-
-        if (result.ok) {
-            showToast('Sign up successful! Please check your email for the activation code.', 'success');
-            document.getElementById('activation_email').value = data.email;
-            signupCard.classList.add('hidden');
-            activationCard.classList.remove('hidden');
-        } else {
-            const message = result.data.message || 'Sign up failed. Please try again.';
-            showToast(message, 'error');
-
-            if (result.data.errors) {
-                for (const [field, errors] of Object.entries(result.data.errors)) {
-                    errors.forEach(err => showToast(`${field}: ${err}`, 'error'));
-                }
-            }
-        }
-
-        btn.disabled = false;
-        btn.textContent = 'Sign Up';
-    });
-
-    activationForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('activateBtn');
-        btn.disabled = true;
-        btn.textContent = 'Activating...';
-
-        const data = {
-            email: document.getElementById('activation_email').value,
-            hash: document.getElementById('activation_code').value
-        };
-
-        const result = await apiRequest('/api/v1/account/activate-account', 'POST', data);
-
-        if (result.ok) {
-            showToast('Account activated successfully! Redirecting to sign in...', 'success');
-            setTimeout(() => {
-                window.location.href = '/sign-in';
-            }, 2000);
-        } else {
-            const message = result.data.message || 'Activation failed. Please try again.';
-            showToast(message, 'error');
-            btn.disabled = false;
-            btn.textContent = 'Activate Account';
-        }
-    });
+    // Set base URL for API requests
+    window.BASE_URL = '{{ base_url }}';
 </script>
+<script src="/assets/js/SIGN_UP/app.js?v={{ assets_version }}" defer></script>
 {% endblock %}

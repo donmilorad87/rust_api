@@ -166,6 +166,15 @@ pub trait StorageDriver: Send + Sync {
         visibility: Visibility,
     ) -> Result<StoredFile, StorageError>;
 
+    /// Store a file in a subfolder
+    async fn put_with_subfolder(
+        &self,
+        data: &[u8],
+        filename: &str,
+        visibility: Visibility,
+        subfolder: &str,
+    ) -> Result<StoredFile, StorageError>;
+
     /// Get file contents
     async fn get(&self, path: &str) -> Result<Vec<u8>, StorageError>;
 
@@ -230,6 +239,19 @@ impl Storage {
         visibility: Visibility,
     ) -> Result<StoredFile, StorageError> {
         self.driver.put(data, filename, visibility).await
+    }
+
+    /// Store a file in a subfolder
+    pub async fn put_with_subfolder(
+        &self,
+        data: &[u8],
+        filename: &str,
+        visibility: Visibility,
+        subfolder: &str,
+    ) -> Result<StoredFile, StorageError> {
+        self.driver
+            .put_with_subfolder(data, filename, visibility, subfolder)
+            .await
     }
 
     /// Get file contents

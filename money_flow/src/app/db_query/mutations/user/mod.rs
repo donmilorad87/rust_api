@@ -1,4 +1,5 @@
 use sqlx::{Pool, Postgres};
+use uuid::Uuid;
 
 pub struct CreateUserParams {
     pub email: String,
@@ -188,4 +189,28 @@ pub async fn delete(db: &Pool<Postgres>, user_id: i64) -> Result<bool, sqlx::Err
         .execute(db)
         .await?;
     Ok(result.rows_affected() > 0)
+}
+
+/// Update user's avatar
+pub async fn update_avatar(db: &Pool<Postgres>, user_id: i64, avatar_uuid: Option<Uuid>) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE users SET avatar_uuid = $1, updated_at = NOW() WHERE id = $2",
+        avatar_uuid,
+        user_id
+    )
+    .execute(db)
+    .await?;
+    Ok(())
+}
+
+/// Update user's permissions (admin only)
+pub async fn update_permissions(db: &Pool<Postgres>, user_id: i64, permissions: i16) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE users SET permissions = $1, updated_at = NOW() WHERE id = $2",
+        permissions,
+        user_id
+    )
+    .execute(db)
+    .await?;
+    Ok(())
 }

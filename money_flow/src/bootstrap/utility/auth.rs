@@ -13,6 +13,7 @@ pub struct AuthInfo {
     pub is_logged: bool,
     pub user_id: Option<i64>,
     pub role: Option<String>,
+    pub permissions: Option<i16>,
 }
 
 impl AuthInfo {
@@ -22,16 +23,38 @@ impl AuthInfo {
             is_logged: false,
             user_id: None,
             role: None,
+            permissions: None,
         }
     }
 
     /// Create an authenticated auth info
-    pub fn logged(user_id: i64, role: String) -> Self {
+    pub fn logged(user_id: i64, role: String, permissions: i16) -> Self {
         Self {
             is_logged: true,
             user_id: Some(user_id),
             role: Some(role),
+            permissions: Some(permissions),
         }
+    }
+
+    /// Check if user has admin permissions (level = 10 or 100)
+    pub fn is_admin(&self) -> bool {
+        self.permissions.map(|p| p == 10 || p == 100).unwrap_or(false)
+    }
+
+    /// Check if user has super admin permissions (level = 100)
+    pub fn is_super_admin(&self) -> bool {
+        self.permissions.map(|p| p == 100).unwrap_or(false)
+    }
+
+    /// Check if user has affiliate permissions (level = 50 or 100)
+    pub fn is_affiliate(&self) -> bool {
+        self.permissions.map(|p| p == 50 || p == 100).unwrap_or(false)
+    }
+
+    /// Check if user has the exact permission level or is super admin
+    pub fn has_permission(&self, level: i16) -> bool {
+        self.permissions.map(|p| p == level || p == 100).unwrap_or(false)
     }
 }
 
@@ -68,7 +91,7 @@ pub fn is_logged(req: &HttpRequest) -> AuthInfo {
     match decode::<Claims>(&token, &decoding_key, &Validation::default()) {
         Ok(token_data) => {
             let claims = token_data.claims;
-            AuthInfo::logged(claims.sub, claims.role)
+            AuthInfo::logged(claims.sub, claims.role, claims.permissions)
         }
         Err(_) => AuthInfo::guest(),
     }

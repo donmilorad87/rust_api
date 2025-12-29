@@ -1,0 +1,12 @@
+// ============================================
+// PROFILE PAGE - Main SCSS Entry Point
+// ============================================
+
+// Import variables first
+@use 'variables' as *;
+
+// Import utilities
+@use 'utilities';
+
+// Import profile-specific styles
+@use 'profile';

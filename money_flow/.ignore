@@ -1,0 +1,5 @@
+# Ignore storage directory for cargo-watch
+src/storage/
+src/storage/**
+storage/
+storage/**

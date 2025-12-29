@@ -82,6 +82,8 @@ pub struct UserDto {
     pub first_name: String,
     pub last_name: String,
     pub balance: i64,
+    pub permissions: i16,
+    pub avatar_uuid: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }

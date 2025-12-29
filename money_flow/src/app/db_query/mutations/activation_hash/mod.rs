@@ -2,11 +2,11 @@ use chrono::{DateTime, Duration, Utc};
 use rand::Rng;
 use sqlx::{Pool, Postgres};
 
-/// Generate a random 40-character hash
+/// Generate a random 20-character hash
 pub fn generate_hash() -> String {
     const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let mut rng = rand::thread_rng();
-    (0..40)
+    (0..20)
         .map(|_| {
             let idx = rng.gen_range(0..CHARSET.len());
             CHARSET[idx] as char

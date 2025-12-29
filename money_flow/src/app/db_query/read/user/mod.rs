@@ -1,6 +1,7 @@
 use crate::app::http::api::validators::auth::SigninRequest;
 use chrono::{DateTime, Utc};
 use sqlx::{Pool, Postgres};
+use uuid::Uuid;
 
 pub struct User {
     pub id: i64,
@@ -13,6 +14,8 @@ pub struct User {
     pub verified: i16,
     pub two_factor: i16,
     pub user_must_set_password: i16,
+    pub permissions: i16,
+    pub avatar_uuid: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -63,4 +66,17 @@ pub async fn get_all_emails(db: &Pool<Postgres>) -> Vec<String> {
         .into_iter()
         .map(|row| row.email)
         .collect()
+}
+
+/// Get all users with pagination (admin use)
+pub async fn get_all(db: &Pool<Postgres>, limit: i64, offset: i64) -> Vec<User> {
+    sqlx::query_as!(
+        User,
+        "SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+        limit,
+        offset
+    )
+    .fetch_all(db)
+    .await
+    .unwrap_or_default()
 }

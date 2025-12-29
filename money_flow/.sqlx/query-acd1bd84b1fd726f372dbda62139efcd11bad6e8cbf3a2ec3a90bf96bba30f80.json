@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE assets SET user_id = $1, updated_at = NOW() WHERE uuid = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "acd1bd84b1fd726f372dbda62139efcd11bad6e8cbf3a2ec3a90bf96bba30f80"
+}

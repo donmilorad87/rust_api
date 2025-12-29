@@ -14,7 +14,8 @@ use crate::app::http::api::controllers::responses::{
     BaseResponse, MissingFieldsResponse, UserDto, ValidationErrorResponse,
 };
 use crate::app::http::api::validators::auth::{
-    validate_password, SigninRequest, SigninRequestRaw, SignupRequest, SignupRequestRaw,
+    validate_password, validate_passwords_match, SigninRequest, SigninRequestRaw, SignupRequest,
+    SignupRequestRaw,
 };
 use crate::config::{ActivationConfig, JwtConfig};
 use crate::database::mutations::activation_hash as db_activation_hash;
@@ -30,6 +31,7 @@ use crate::mq::{self, JobOptions, JobStatus};
 pub struct Claims {
     pub sub: i64,
     pub role: String,
+    pub permissions: i16,
     pub exp: i64,
 }
 
@@ -82,6 +84,9 @@ impl AuthController {
         if raw.password.is_none() {
             missing_fields.push("password is required".to_string());
         }
+        if raw.confirm_password.is_none() {
+            missing_fields.push("confirm_password is required".to_string());
+        }
         if raw.first_name.is_none() {
             missing_fields.push("first_name is required".to_string());
         }
@@ -98,6 +103,7 @@ impl AuthController {
         let user = SignupRequest {
             email: raw.email.clone().unwrap(),
             password: raw.password.clone().unwrap(),
+            confirm_password: raw.confirm_password.clone().unwrap(),
             first_name: raw.first_name.clone().unwrap(),
             last_name: raw.last_name.clone().unwrap(),
         };
@@ -127,6 +133,16 @@ impl AuthController {
                 .entry("password".to_string())
                 .or_default()
                 .extend(password_errors);
+        }
+
+        // Validate that password and confirm_password match
+        if let Some(mismatch_error) =
+            validate_passwords_match(&user.password, &user.confirm_password)
+        {
+            errors
+                .entry("confirm_password".to_string())
+                .or_default()
+                .push(mismatch_error);
         }
 
         // If validation errors, return with object format
@@ -367,6 +383,7 @@ impl AuthController {
         let claims = Claims {
             sub: user.id,
             role: "user".to_string(),
+            permissions: user.permissions,
             exp: (Utc::now() + Duration::minutes(JwtConfig::expiration_minutes())).timestamp(),
         };
 
@@ -401,6 +418,8 @@ impl AuthController {
                 first_name: user.first_name.clone(),
                 last_name: user.last_name.clone(),
                 balance: user.balance,
+                permissions: user.permissions,
+                avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
                 created_at: user.created_at,
                 updated_at: user.updated_at,
             },

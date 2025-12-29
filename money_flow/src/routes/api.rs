@@ -7,10 +7,12 @@
 use actix_web::{middleware::from_fn, web};
 
 use crate::app::http::api::controllers::activation::ActivationController;
+use crate::app::http::api::controllers::admin::AdminController;
 use crate::app::http::api::controllers::auth::AuthController;
 use crate::app::http::api::controllers::upload::UploadController;
 use crate::app::http::api::controllers::user::UserController;
 use crate::middleware;
+use crate::middleware::permission::{levels, require_permission};
 use crate::route;
 
 /// Register all API routes
@@ -85,6 +87,7 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route("", web::patch().to(UserController::update_partial))
             .route("", web::put().to(UserController::update_full))
             .route("", web::post().to(UserController::admin_create))
+            .route("/avatar", web::patch().to(UserController::update_avatar))
             .route("/{id}", web::delete().to(UserController::delete)),
     );
 
@@ -124,6 +127,9 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route("/{uuid}", web::delete().to(UploadController::delete))
             // Get user's uploads (requires auth)
             .route("/user", web::get().to(UploadController::get_user_uploads))
+            // Avatar/profile picture routes (requires auth)
+            .route("/avatar", web::post().to(UploadController::upload_avatar))
+            .route("/avatar", web::delete().to(UploadController::delete_avatar))
             // Chunked upload routes
             .route(
                 "/chunked/start",
@@ -140,6 +146,50 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route(
                 "/chunked/{uuid}",
                 web::delete().to(UploadController::cancel_chunked_upload),
+            ),
+    );
+
+    // ============================================
+    // Avatar Download (Protected - requires JWT)
+    // User can only access their own avatar
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/avatar")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("/{uuid}", web::get().to(UploadController::get_avatar)),
+    );
+
+    // ============================================
+    // Admin Routes (Protected - requires JWT + permissions)
+    // Note: Using separate scopes with specific paths to avoid routing conflicts
+    // ============================================
+
+    // Super Admin routes (permission = 100) - must be registered before Admin routes
+    // to ensure /users is matched before /users/{id}/avatar
+    // NOTE: Actix middleware order is REVERSED - last .wrap() runs first!
+    // So we need: verify_jwt THEN require_permission
+    cfg.service(
+        web::scope("/api/v1/admin/users")
+            .wrap(from_fn(require_permission(levels::SUPER_ADMIN))) // Runs second (checks permissions)
+            .wrap(from_fn(middleware::auth::verify_jwt))            // Runs first (extracts permissions)
+            .route("", web::get().to(AdminController::list_users))
+            .route(
+                "/{id}/permissions",
+                web::patch().to(AdminController::update_user_permissions),
+            ),
+    );
+
+    // Admin routes (permission = 10 or 100)
+    // NOTE: Actix middleware order is REVERSED - last .wrap() runs first!
+    cfg.service(
+        web::scope("/api/v1/admin")
+            .wrap(from_fn(require_permission(levels::ADMIN))) // Runs second (checks permissions)
+            .wrap(from_fn(middleware::auth::verify_jwt))      // Runs first (extracts permissions)
+            .route("/uploads", web::get().to(AdminController::list_uploads))
+            .route("/assets", web::get().to(AdminController::list_assets))
+            .route(
+                "/users/{id}/avatar",
+                web::delete().to(AdminController::delete_user_avatar),
             ),
     );
 }
@@ -173,6 +223,7 @@ fn register_route_names() {
     route!("user.update_full", "/api/v1/user");
     route!("user.update_partial", "/api/v1/user");
     route!("user.admin_create", "/api/v1/user");
+    route!("user.avatar", "/api/v1/user/avatar");
     route!("user.delete", "/api/v1/user/{id}");
 
     // Upload routes (all require auth except public download)
@@ -187,6 +238,11 @@ fn register_route_names() {
     route!("upload.delete", "/api/v1/upload/{uuid}");
     route!("upload.user", "/api/v1/upload/user");
 
+    // Avatar routes
+    route!("upload.avatar", "/api/v1/upload/avatar");
+    route!("upload.avatar.delete", "/api/v1/upload/avatar");
+    route!("avatar.get", "/api/v1/avatar/{uuid}");
+
     // Chunked upload routes
     route!("upload.chunked.start", "/api/v1/upload/chunked/start");
     route!(
@@ -198,4 +254,14 @@ fn register_route_names() {
         "/api/v1/upload/chunked/{uuid}/complete"
     );
     route!("upload.chunked.cancel", "/api/v1/upload/chunked/{uuid}");
+
+    // Admin routes (permission protected)
+    route!("admin.uploads", "/api/v1/admin/uploads");
+    route!("admin.assets", "/api/v1/admin/assets");
+    route!("admin.users", "/api/v1/admin/users");
+    route!("admin.delete_user_avatar", "/api/v1/admin/users/{id}/avatar");
+    route!(
+        "admin.update_user_permissions",
+        "/api/v1/admin/users/{id}/permissions"
+    );
 }

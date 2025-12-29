@@ -1,0 +1,39 @@
+// ============================================
+// UTILITY CLASSES
+// ============================================
+
+// Display
+.df { display: flex; }
+.dg { display: grid; }
+.db { display: block; }
+.dn { display: none; }
+
+// Flex
+.fdc { flex-direction: column; }
+.fdr { flex-direction: row; }
+.fw { flex-wrap: wrap; }
+.fnw { flex-wrap: nowrap; }
+.jcs { justify-content: flex-start; }
+.jce { justify-content: flex-end; }
+.jcc { justify-content: center; }
+.jcsb { justify-content: space-between; }
+.ais { align-items: flex-start; }
+.aie { align-items: flex-end; }
+.aic { align-items: center; }
+.fg1 { flex-grow: 1; }
+.fs0 { flex-shrink: 0; }
+
+// Gap
+.g-xs { gap: 0.25rem; }
+.g-sm { gap: 0.5rem; }
+.g-md { gap: 1rem; }
+.g-lg { gap: 1.5rem; }
+.g-xl { gap: 2rem; }
+
+// Text
+.ta-c { text-align: center; }
+.ta-l { text-align: left; }
+.ta-r { text-align: right; }
+.text-muted { color: var(--color-text-muted); }
+.fs-xs { font-size: 0.75rem; }
+.fs-sm { font-size: 0.875rem; }

@@ -1,0 +1,60 @@
+// ============================================
+// GLOBAL VARIABLES
+// ============================================
+
+// Colors - Brand
+$color-primary: #667eea;
+$color-primary-dark: #5a6fd6;
+$color-secondary: #764ba2;
+
+// Status Colors
+$color-success: #10b981;
+$color-warning: #f59e0b;
+$color-error: #ef4444;
+
+// Gradients
+$gradient-primary: linear-gradient(135deg, $color-primary 0%, $color-secondary 100%);
+
+// Typography
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+$font-size-base: 1rem;
+$font-size-sm: 0.875rem;
+$font-size-lg: 1.125rem;
+$font-size-xl: 1.375rem;
+$font-size-2xl: 1.75rem;
+
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-2xl: 3rem;
+
+// Border Radius
+$radius-sm: 5px;
+$radius-md: 6px;
+$radius-lg: 10px;
+$radius-xl: 16px;
+$radius-full: 50%;
+
+// Transitions
+$transition-fast: 0.2s ease;
+$transition-normal: 0.3s ease;
+
+// Breakpoints
+$breakpoint-sm: 480px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1200px;
+
+// Z-index layers
+$z-navbar: 100;
+$z-dropdown: 200;
+$z-modal: 300;
+$z-toast: 400;
+
+// Avatar sizes
+$avatar-sm: 48px;
+$avatar-md: 80px;
+$avatar-lg: 120px;

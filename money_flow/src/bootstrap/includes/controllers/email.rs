@@ -1,3 +1,4 @@
+use crate::bootstrap::utility::template::register_template_functions;
 use crate::config::EmailConfig;
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
@@ -9,6 +10,9 @@ use tera::{Context, Tera};
 use tracing::{error, info};
 
 /// Initialize Tera template engine with all email templates
+///
+/// Custom functions registered:
+/// - `route(name, ...)` - Generate URLs from named routes (useful for email links)
 static TEMPLATES: Lazy<Tera> = Lazy::new(|| {
     let template_dir = EmailConfig::template_dir();
 
@@ -18,6 +22,9 @@ static TEMPLATES: Lazy<Tera> = Lazy::new(|| {
             panic!("Failed to initialize Tera templates: {}", e);
         }
     };
+
+    // Register custom template functions (route(), etc.)
+    register_template_functions(&mut tera);
 
     tera.autoescape_on(vec![".html"]);
     tera

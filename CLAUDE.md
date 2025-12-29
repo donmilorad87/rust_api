@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code when working with the infrastructure in this repository.
 
-> **Application code is in `money_flow/` folder.** See `money_flow/CLAUDE.md` for application-specific guidance.
+> **Application code is in `money_flow/` folder.** See @money_flow/CLAUDE.md for application-specific guidance.
 
 ## Project Overview
 
-**Money Flow** - Docker-based infrastructure for a Rust web application (Actix-web + PostgreSQL + Redis + RabbitMQ + Kafka).
+**Money Flow** - Docker-based infrastructure for a Rust web application (Actix-web + PostgreSQL + MongoDB + Redis + RabbitMQ + Kafka).
 
 ## High-Level Architecture
 
@@ -38,15 +38,25 @@ This file provides guidance to Claude Code when working with the infrastructure 
                                     │       │               │  └──────────────────────────────┘  │
                                     │       │               │                                     │
                                     │       │               │  ┌──────────────────────────────┐  │
-                                    │       │               └──│      Kafka :9092             │  │
-                                    │       │                  │ (Events: DB Mutations, Auth) │  │
-                                    │       │                  │     KRaft Mode (no ZK)       │  │
+                                    │       │               ├──│      Kafka :9092             │  │
+                                    │       │               │  │ (Events: DB Mutations, Auth) │  │
+                                    │       │               │  │     KRaft Mode (no ZK)       │  │
+                                    │       │               │  └──────────────────────────────┘  │
+                                    │       │               │              │                      │
+                                    │       │               │         ┌────┴────┐                │
+                                    │       │               │         │Kafka UI │                │
+                                    │       │               │         │  :8080  │                │
+                                    │       │               │         └─────────┘                │
+                                    │       │               │                                     │
+                                    │       │               │  ┌──────────────────────────────┐  │
+                                    │       │               └──│      MongoDB :27017          │  │
+                                    │       │                  │    (Document Database)        │  │
                                     │       │                  └──────────────────────────────┘  │
                                     │       │                              │                      │
-                                    │       │                         ┌────┴────┐                │
-                                    │       │                         │Kafka UI │                │
-                                    │       │                         │  :8080  │                │
-                                    │       │                         └─────────┘                │
+                                    │       │                         ┌────┴────────┐            │
+                                    │       │                         │Mongo Express│            │
+                                    │       │                         │    :8081    │            │
+                                    │       │                         └─────────────┘            │
                                     │       │                                                     │
                                     │  ┌────┴─────┐    ┌──────────┐                              │
                                     │  │Prometheus│───▶│ Grafana  │                              │

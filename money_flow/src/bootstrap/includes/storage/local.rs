@@ -105,6 +105,29 @@ impl LocalStorageDriver {
         }
         Ok(())
     }
+
+    /// Build URL with optional subfolder support
+    fn url_with_subfolder(&self, path: &str, visibility: Visibility, subfolder: &str) -> String {
+        // Extract just the filename from the path
+        let filename = Path::new(path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or(path);
+
+        match visibility {
+            // Public files served by nginx at /storage/{subfolder?}/{filename}
+            Visibility::Public => {
+                if subfolder.is_empty() {
+                    format!("{}/{}", self.public_url_base, filename)
+                } else {
+                    format!("{}/{}/{}", self.public_url_base, subfolder, filename)
+                }
+            }
+            // Private files served by API - subfolder is part of the storage path
+            // but the URL uses the UUID from the database
+            Visibility::Private => format!("{}/{}", self.private_url_base, filename),
+        }
+    }
 }
 
 #[async_trait]
@@ -119,6 +142,17 @@ impl StorageDriver for LocalStorageDriver {
         filename: &str,
         visibility: Visibility,
     ) -> Result<StoredFile, StorageError> {
+        // Delegate to put_with_subfolder with empty subfolder
+        self.put_with_subfolder(data, filename, visibility, "").await
+    }
+
+    async fn put_with_subfolder(
+        &self,
+        data: &[u8],
+        filename: &str,
+        visibility: Visibility,
+        subfolder: &str,
+    ) -> Result<StoredFile, StorageError> {
         // Validate size
         Self::validate_size(data.len() as u64)?;
 
@@ -129,12 +163,17 @@ impl StorageDriver for LocalStorageDriver {
         // Generate unique filename
         let stored_name = Self::generate_filename(&extension);
 
-        // Get storage path
-        let dir_path = self.visibility_path(visibility);
+        // Get storage path - include subfolder if provided
+        let base_dir = self.visibility_path(visibility);
+        let dir_path = if subfolder.is_empty() {
+            base_dir.to_path_buf()
+        } else {
+            base_dir.join(subfolder)
+        };
         let file_path = dir_path.join(&stored_name);
 
-        // Ensure directory exists
-        fs::create_dir_all(dir_path).await?;
+        // Ensure directory exists (including subfolder)
+        fs::create_dir_all(&dir_path).await?;
 
         // Write file
         let mut file = fs::File::create(&file_path).await?;
@@ -149,11 +188,15 @@ impl StorageDriver for LocalStorageDriver {
             .first_or_octet_stream()
             .to_string();
 
-        // Build storage path (relative)
-        let storage_path = format!("{}/{}", visibility.as_str(), stored_name);
+        // Build storage path (relative) - include subfolder in path
+        let storage_path = if subfolder.is_empty() {
+            format!("{}/{}", visibility.as_str(), stored_name)
+        } else {
+            format!("{}/{}/{}", visibility.as_str(), subfolder, stored_name)
+        };
 
-        // Build URL
-        let url = self.url(&storage_path, visibility);
+        // Build URL - for subfolder files, include subfolder in URL
+        let url = self.url_with_subfolder(&storage_path, visibility, subfolder);
 
         let uuid = Uuid::new_v4();
 

@@ -98,13 +98,28 @@ impl StorageDriver for S3StorageDriver {
         _filename: &str,
         _visibility: Visibility,
     ) -> Result<StoredFile, StorageError> {
-        // TODO: Implement S3 upload
+        // Delegate to put_with_subfolder with empty subfolder
+        self.put_with_subfolder(_data, _filename, _visibility, "").await
+    }
+
+    async fn put_with_subfolder(
+        &self,
+        _data: &[u8],
+        _filename: &str,
+        _visibility: Visibility,
+        _subfolder: &str,
+    ) -> Result<StoredFile, StorageError> {
+        // TODO: Implement S3 upload with subfolder support
         //
         // Example implementation with aws-sdk-s3:
         // ```
         // let client = aws_sdk_s3::Client::new(&aws_config);
         //
-        // let key = self.s3_key(&stored_name, visibility);
+        // let key = if subfolder.is_empty() {
+        //     self.s3_key(&stored_name, visibility)
+        // } else {
+        //     format!("{}/{}/{}", visibility.as_str(), subfolder, stored_name)
+        // };
         //
         // client.put_object()
         //     .bucket(&self.config.bucket)

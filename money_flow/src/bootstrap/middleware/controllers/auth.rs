@@ -8,7 +8,7 @@ use actix_web::{
     middleware::Next,
     web, HttpResponse,
 };
-use jsonwebtoken::{DecodingKey, Validation, decode};
+use jsonwebtoken::{decode, DecodingKey, Validation};
 
 /// Helper to create JSON error response
 fn unauthorized_response(request: ServiceRequest, message: &'static str) -> ServiceResponse<BoxBody> {
@@ -17,32 +17,38 @@ fn unauthorized_response(request: ServiceRequest, message: &'static str) -> Serv
     request.into_response(response).map_into_boxed_body()
 }
 
+/// Extract JWT token from Authorization header or auth_token cookie
+fn extract_token(request: &ServiceRequest) -> Option<String> {
+    // First, try Authorization header
+    if let Some(auth_header) = request.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if auth_str.starts_with("Bearer ") {
+                if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                    return Some(token.to_string());
+                }
+            }
+        }
+    }
+
+    // Fallback: try auth_token cookie
+    if let Some(cookie) = request.cookie("auth_token") {
+        return Some(cookie.value().to_string());
+    }
+
+    None
+}
+
 pub async fn verify_jwt(
     request: ServiceRequest,
     next: Next<BoxBody>,
 ) -> Result<ServiceResponse<BoxBody>, actix_web::Error> {
-    // Get Authorization header
-    let auth_header = match request.headers().get("Authorization") {
-        Some(header) => header,
+    // Extract token from header or cookie
+    let token = match extract_token(&request) {
+        Some(t) => t,
         None => {
-            return Ok(unauthorized_response(request, "Authorization header missing"));
+            return Ok(unauthorized_response(request, "Authentication required"));
         }
     };
-
-    // Convert to string
-    let auth_str = match auth_header.to_str() {
-        Ok(s) => s,
-        Err(_) => {
-            return Ok(unauthorized_response(request, "Invalid Authorization header"));
-        }
-    };
-
-    // Check Bearer prefix
-    if !auth_str.starts_with("Bearer ") {
-        return Ok(unauthorized_response(request, "Invalid Authorization format"));
-    }
-
-    let token = auth_str.strip_prefix("Bearer ").unwrap();
 
     // Get app state
     let state = match request.app_data::<web::Data<AppState>>() {
@@ -56,11 +62,13 @@ pub async fn verify_jwt(
 
     let decoding_key = DecodingKey::from_secret(state.jwt_secret.as_bytes());
 
-    match decode::<Claims>(token, &decoding_key, &Validation::default()) {
+    match decode::<Claims>(&token, &decoding_key, &Validation::default()) {
         Ok(token_data) => {
             let claims = token_data.claims;
             // Store user ID in request extensions
             request.extensions_mut().insert(claims.sub);
+            // Store permissions in request extensions for permission middleware
+            request.extensions_mut().insert(claims.permissions);
             // Proceed to next middleware/handler
             next.call(request).await
         }

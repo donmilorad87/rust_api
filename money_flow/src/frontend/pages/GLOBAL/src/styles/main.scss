@@ -1,0 +1,20 @@
+// ============================================
+// MONEYFLOW GLOBAL STYLES
+// ============================================
+// This stylesheet is loaded on every page and includes:
+// - CSS Reset
+// - Theme variables (light/dark)
+// - Navigation bar styles
+// - Base utility classes
+
+// Variables first
+@use 'variables' as *;
+
+// Theme CSS custom properties
+@use 'theme';
+
+// Base reset and typography
+@use 'base';
+
+// Navigation bar component
+@use 'navbar';

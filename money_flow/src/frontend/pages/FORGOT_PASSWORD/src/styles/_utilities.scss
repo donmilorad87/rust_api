@@ -1,0 +1,139 @@
+@use 'variables' as *;
+
+// ============================================
+// UTILITY CLASSES
+// ============================================
+
+// --- Display ---
+.dn { display: none; }
+.db { display: block; }
+.dib { display: inline-block; }
+.df { display: flex; }
+.dif { display: inline-flex; }
+.dg { display: grid; }
+
+// --- Flexbox Direction ---
+.fdr { flex-direction: row; }
+.fdc { flex-direction: column; }
+
+// --- Justify Content ---
+.jcs { justify-content: flex-start; }
+.jce { justify-content: flex-end; }
+.jcc { justify-content: center; }
+.jcsb { justify-content: space-between; }
+
+// --- Align Items ---
+.ais { align-items: flex-start; }
+.aie { align-items: flex-end; }
+.aic { align-items: center; }
+
+// --- Gap ---
+.g0 { gap: 0; }
+.g1 { gap: $spacing-xs; }
+.g2 { gap: $spacing-sm; }
+.g3 { gap: $spacing-md; }
+.g4 { gap: $spacing-lg; }
+
+// --- Width ---
+.w100 { width: 100%; }
+.wfc { width: fit-content; }
+
+// --- Height ---
+.h100 { height: 100%; }
+.hvh { height: 100vh; }
+.hmn100vh { min-height: 100vh; }
+
+// --- Margin ---
+.m0 { margin: 0; }
+.ma { margin: auto; }
+.mt0 { margin-top: 0; }
+.mt1 { margin-top: $spacing-xs; }
+.mt2 { margin-top: $spacing-sm; }
+.mt3 { margin-top: $spacing-md; }
+.mt4 { margin-top: $spacing-lg; }
+.mb0 { margin-bottom: 0; }
+.mb1 { margin-bottom: $spacing-xs; }
+.mb2 { margin-bottom: $spacing-sm; }
+.mb3 { margin-bottom: $spacing-md; }
+.mb4 { margin-bottom: $spacing-lg; }
+.mxa { margin-left: auto; margin-right: auto; }
+
+// --- Padding ---
+.p0 { padding: 0; }
+.p1 { padding: $spacing-xs; }
+.p2 { padding: $spacing-sm; }
+.p3 { padding: $spacing-md; }
+.p4 { padding: $spacing-lg; }
+.p5 { padding: $spacing-xl; }
+.px3 { padding-left: $spacing-md; padding-right: $spacing-md; }
+.px4 { padding-left: $spacing-lg; padding-right: $spacing-lg; }
+.py2 { padding-top: $spacing-sm; padding-bottom: $spacing-sm; }
+.py3 { padding-top: $spacing-md; padding-bottom: $spacing-md; }
+
+// --- Text Alignment ---
+.tl { text-align: left; }
+.tc { text-align: center; }
+.tr { text-align: right; }
+
+// --- Font Weight ---
+.fw4 { font-weight: 400; }
+.fw5 { font-weight: 500; }
+.fw6 { font-weight: 600; }
+.fw7 { font-weight: 700; }
+
+// --- Font Size ---
+.fs-sm { font-size: $font-size-sm; }
+.fs-base { font-size: $font-size-base; }
+.fs-lg { font-size: $font-size-lg; }
+.fs-xl { font-size: $font-size-xl; }
+
+// --- Text Colors ---
+.c-primary { color: var(--color-primary); }
+.c-text { color: var(--color-text-primary); }
+.c-secondary { color: var(--color-text-secondary); }
+.c-muted { color: var(--color-text-muted); }
+.c-error { color: var(--color-error); }
+.c-success { color: var(--color-success); }
+
+// --- Background Colors ---
+.bg-primary { background: var(--color-bg-primary); }
+.bg-surface { background: var(--color-surface); }
+.bg-transparent { background: transparent; }
+
+// --- Border ---
+.bn { border: none; }
+.b1 { border: 1px solid var(--color-border); }
+.br-sm { border-radius: $radius-sm; }
+.br-md { border-radius: $radius-md; }
+.br-lg { border-radius: $radius-lg; }
+.br-full { border-radius: $radius-full; }
+
+// --- Shadows ---
+.shadow-none { box-shadow: none; }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+// --- Cursor ---
+.cp { cursor: pointer; }
+.cna { cursor: not-allowed; }
+
+// --- Overflow ---
+.oh { overflow: hidden; }
+.oa { overflow: auto; }
+
+// --- Position ---
+.pr { position: relative; }
+.pa { position: absolute; }
+.pf { position: fixed; }
+
+// --- Visibility ---
+.hidden { display: none; }
+
+// --- Transitions ---
+.tr-fast { transition: all $transition-fast; }
+.tr-normal { transition: all $transition-normal; }
+
+// --- Text Decoration ---
+.tdn { text-decoration: none; }
+.tdu { text-decoration: underline; }

@@ -1,0 +1,60 @@
+// ============================================
+// UPLOADS ADMIN PAGE - Main Stylesheet
+// ============================================
+// This file is the entry point for the UPLOADS admin page styles.
+
+// 1. Variables (CSS custom properties + SCSS vars)
+@use 'variables' as *;
+
+// 2. Utility Classes
+@use 'utilities';
+
+// 3. BEM Component Styles
+@use 'uploads-table';
+
+// ============================================
+// CSS RESET (Minimal - assumes GLOBAL styles loaded)
+// ============================================
+// Only include page-specific resets here.
+// GLOBAL styles handle body, typography, etc.
+
+// ============================================
+// ADMIN SPECIFIC STYLES
+// ============================================
+// These are additional styles specific to admin pages
+
+.admin-content {
+  min-height: calc(100vh - 60px); // Account for navbar
+  background: var(--color-bg-secondary);
+}
+
+// Stats cards (optional, for dashboard-style header)
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-lg;
+  padding: 1.25rem;
+  box-shadow: $shadow-sm;
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+}

@@ -1,7 +1,7 @@
 use actix_web::web::{Data, JsonConfig};
 use actix_web::{App, HttpServer};
 use money_flow::config::AppConfig;
-use money_flow::database::{create_pool, state_with_mq_and_events, AppState};
+use money_flow::database::{create_mongodb, create_pool, state_full, AppState};
 use money_flow::events;
 use money_flow::init_crons;
 use money_flow::middleware::{cors, security_headers, tracing_logger};
@@ -62,15 +62,23 @@ async fn main() -> std::io::Result<()> {
         info!("Kafka event consumer started");
     }
 
+    // Initialize MongoDB connection
+    let mongodb = match create_mongodb().await {
+        Ok(db) => {
+            info!("MongoDB connected successfully");
+            Some(db)
+        }
+        Err(e) => {
+            warn!("Failed to connect to MongoDB (continuing without MongoDB): {}", e);
+            None
+        }
+    };
+
     // Cast SharedQueue to DynMq for AppState (avoids circular dependency)
     let dyn_mq: money_flow::database::DynMq = mq_queue;
 
-    // Create state with both MQ and Events
-    let state: Data<AppState> = if let Some(bus) = event_bus {
-        state_with_mq_and_events(dyn_mq, bus).await
-    } else {
-        money_flow::database::state_with_mq(dyn_mq).await
-    };
+    // Create state with all services (MQ, Events, MongoDB)
+    let state: Data<AppState> = state_full(dyn_mq, event_bus, mongodb).await;
 
     let server = HttpServer::new(move || {
         App::new()

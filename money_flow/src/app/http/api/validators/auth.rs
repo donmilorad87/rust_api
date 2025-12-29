@@ -40,6 +40,7 @@ pub fn validate_password(password: &str) -> Vec<String> {
 pub struct SignupRequestRaw {
     pub email: Option<String>,
     pub password: Option<String>,
+    pub confirm_password: Option<String>,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
 }
@@ -50,10 +51,20 @@ pub struct SignupRequest {
     #[validate(email(message = "invalid email format"))]
     pub email: String,
     pub password: String,
+    pub confirm_password: String,
     #[validate(length(min = 2, message = "minimum 2 characters"))]
     pub first_name: String,
     #[validate(length(min = 2, message = "minimum 2 characters"))]
     pub last_name: String,
+}
+
+/// Validate that password and confirm_password match
+pub fn validate_passwords_match(password: &str, confirm_password: &str) -> Option<String> {
+    if password != confirm_password {
+        Some("passwords do not match".to_string())
+    } else {
+        None
+    }
 }
 
 /// Raw sign-in request (allows optional fields for better error messages)

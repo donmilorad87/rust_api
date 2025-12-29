@@ -30,6 +30,16 @@ services:
       - REDIS_USER=${REDIS_USER}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_DB=${REDIS_DB}
+      - MONGO_HOST=${MONGO_HOST}
+      - MONGO_PORT=${MONGO_PORT}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+      # Storage configuration (files go to src/storage/app)
+      - UPLOAD_STORAGE_PATH=src/storage/app
+      - STORAGE_DRIVER=local
+      - STORAGE_PUBLIC_URL=/storage
+      - STORAGE_PRIVATE_URL=/api/v1/upload/private
     volumes:
       - ./money_flow:/home/rust/money_flow
       - cargo-cache:/usr/local/cargo/registry
@@ -45,6 +55,8 @@ services:
       kafka:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      mongo:
         condition: service_healthy
     networks:
       devnet:
@@ -62,8 +74,11 @@ services:
     environment:
       - APP_PORT=${APP_PORT}
     volumes:
-      # Mount public storage for static file serving
-      - ./money_flow/storage/app/public:/var/www/storage/public:ro
+      # Mount public storage for static file serving (src/storage/app/public)
+      - ./money_flow/src/storage/app/public:/var/www/storage/public:ro
+      # Mount assets (CSS/JS) for templates
+      - ./money_flow/src/resources/css:/var/www/assets/css:ro
+      - ./money_flow/src/resources/js:/var/www/assets/js:ro
     restart: unless-stopped
     depends_on:
       - rust
@@ -188,6 +203,7 @@ services:
         KAFKA_PORT: ${KAFKA_PORT}
         KAFKA_CONTROLLER_PORT: ${KAFKA_CONTROLLER_PORT}
     image: kafka-events
+    pull_policy: build
     hostname: kafka
     environment:
       - KAFKA_NODE_ID=${KAFKA_BROKER_ID}
@@ -253,6 +269,7 @@ services:
         PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
         PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     image: pgadmin-dashboard
+    pull_policy: build
     hostname: pgadmin
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
@@ -312,6 +329,68 @@ services:
       devnet:
         ipv4_address: 172.28.0.16
 
+  mongo:
+    build:
+      context: ./mongo
+      dockerfile: Dockerfile
+      args:
+        MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+        MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+        MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+        MONGO_USER: ${MONGO_USER}
+        MONGO_PASSWORD: ${MONGO_PASSWORD}
+        MONGO_PORT: ${MONGO_PORT}
+    image: mongo-db
+    pull_policy: build
+    hostname: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_PORT=${MONGO_PORT}
+    volumes:
+      - mongodata:/data/db
+      - ./mongo/mongod.conf.template:/etc/mongo/mongod.conf.template:ro
+    ports:
+      - "${MONGO_PORT}:${MONGO_PORT}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      devnet:
+        ipv4_address: ${MONGO_IP}
+
+  mongo-express:
+    build:
+      context: ./mongo-express
+      dockerfile: Dockerfile
+    image: mongo-express-ui
+    pull_policy: build
+    hostname: mongo-express
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - ME_CONFIG_MONGODB_SERVER=${MONGO_HOST}
+      - ME_CONFIG_MONGODB_PORT=${MONGO_PORT}
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD}
+      - ME_CONFIG_SITE_BASEURL=/mongo/
+    ports:
+      - "${MONGO_EXPRESS_PORT}:8081"
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      devnet:
+        ipv4_address: ${MONGO_EXPRESS_IP}
+
 volumes:
   pgdata:
   rabbitmqdata:
@@ -322,6 +401,7 @@ volumes:
   prometheusdata:
   grafanadata:
   pgadmindata:
+  mongodata:
 
 networks:
   devnet:

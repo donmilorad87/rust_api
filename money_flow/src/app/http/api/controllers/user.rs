@@ -14,6 +14,7 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::Deserialize;
 use std::collections::HashMap;
 use tracing::info;
+use uuid::Uuid;
 use validator::Validate;
 
 use crate::app::http::api::controllers::responses::{
@@ -83,6 +84,8 @@ impl UserController {
                     first_name: user.first_name,
                     last_name: user.last_name,
                     balance: user.balance,
+                    permissions: user.permissions,
+                    avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
                     created_at: user.created_at,
                     updated_at: user.updated_at,
                 },
@@ -112,6 +115,8 @@ impl UserController {
                     first_name: user.first_name,
                     last_name: user.last_name,
                     balance: user.balance,
+                    permissions: user.permissions,
+                    avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
                     created_at: user.created_at,
                     updated_at: user.updated_at,
                 },
@@ -234,6 +239,8 @@ impl UserController {
                             first_name: user.first_name,
                             last_name: user.last_name,
                             balance: user.balance,
+                            permissions: user.permissions,
+                            avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
                             created_at: user.created_at,
                             updated_at: user.updated_at,
                         },
@@ -315,6 +322,8 @@ impl UserController {
                             first_name: user.first_name,
                             last_name: user.last_name,
                             balance: user.balance,
+                            permissions: user.permissions,
+                            avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
                             created_at: user.created_at,
                             updated_at: user.updated_at,
                         },
@@ -520,6 +529,84 @@ impl UserController {
             }
         }
     }
+
+    /// PATCH /user/avatar - Update user's profile picture
+    ///
+    /// # Request Body
+    /// ```json
+    /// {
+    ///     "avatar_uuid": "550e8400-e29b-41d4-a716-446655440000"
+    /// }
+    /// ```
+    ///
+    /// # Responses
+    /// - 200: Avatar updated successfully
+    /// - 400: Invalid UUID format
+    /// - 401: Unauthorized
+    /// - 500: Internal server error
+    pub async fn update_avatar(
+        state: web::Data<AppState>,
+        req: HttpRequest,
+        body: web::Json<UpdateAvatarRequest>,
+    ) -> HttpResponse {
+        // Get user ID from JWT
+        let user_id = match req.extensions().get::<i64>() {
+            Some(id) => *id,
+            None => {
+                return HttpResponse::Unauthorized().json(BaseResponse::error("Unauthorized"));
+            }
+        };
+
+        let avatar_uuid = match &body.avatar_uuid {
+            Some(uuid_str) => {
+                match Uuid::parse_str(uuid_str) {
+                    Ok(uuid) => Some(uuid),
+                    Err(_) => {
+                        return HttpResponse::BadRequest()
+                            .json(BaseResponse::error("Invalid UUID format"));
+                    }
+                }
+            }
+            None => None,
+        };
+
+        let db = state.db.lock().await;
+
+        match db_mutations::update_avatar(&db, user_id, avatar_uuid).await {
+            Ok(_) => {
+                // Fetch updated user
+                match db_user::get_by_id(&db, user_id).await {
+                    Ok(user) => HttpResponse::Ok().json(UserResponse {
+                        base: BaseResponse::success("Avatar updated successfully"),
+                        user: UserDto {
+                            id: user.id,
+                            email: user.email,
+                            first_name: user.first_name,
+                            last_name: user.last_name,
+                            balance: user.balance,
+                            permissions: user.permissions,
+                            avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
+                            created_at: user.created_at,
+                            updated_at: user.updated_at,
+                        },
+                    }),
+                    Err(_) => HttpResponse::InternalServerError()
+                        .json(BaseResponse::error("Failed to retrieve updated user")),
+                }
+            }
+            Err(e) => {
+                tracing::error!("Failed to update avatar: {}", e);
+                HttpResponse::InternalServerError()
+                    .json(BaseResponse::error("Failed to update avatar"))
+            }
+        }
+    }
+}
+
+/// Request to update user avatar
+#[derive(Deserialize, Debug)]
+pub struct UpdateAvatarRequest {
+    pub avatar_uuid: Option<String>,
 }
 
 /// User response structure

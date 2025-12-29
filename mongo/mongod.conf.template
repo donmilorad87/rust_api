@@ -1,0 +1,21 @@
+# MongoDB Configuration File
+# Variables are substituted at container startup from environment variables
+
+# Storage settings
+storage:
+  dbPath: /data/db
+
+# Network settings
+net:
+  port: ${MONGO_PORT}
+  bindIp: 0.0.0.0
+
+# Security settings
+security:
+  authorization: enabled
+
+# System log settings
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongod.log

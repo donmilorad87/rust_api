@@ -152,6 +152,22 @@ pub async fn count(db: &Pool<Postgres>) -> i64 {
         .unwrap_or(0)
 }
 
+/// Get all uploads with pagination (admin use)
+pub async fn get_all(db: &Pool<Postgres>, limit: i64, offset: i64) -> Vec<Upload> {
+    sqlx::query_as!(
+        Upload,
+        r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+                  storage_type, storage_path, upload_status, chunks_received, total_chunks,
+                  user_id, description, metadata, created_at, updated_at
+           FROM uploads ORDER BY created_at DESC LIMIT $1 OFFSET $2"#,
+        limit,
+        offset
+    )
+    .fetch_all(db)
+    .await
+    .unwrap_or_default()
+}
+
 /// Count uploads by user
 pub async fn count_by_user(db: &Pool<Postgres>, user_id: i64) -> i64 {
     sqlx::query_scalar!(
@@ -162,4 +178,122 @@ pub async fn count_by_user(db: &Pool<Postgres>, user_id: i64) -> i64 {
     .await
     .unwrap_or(Some(0))
     .unwrap_or(0)
+}
+
+/// Get all uploads with pagination and optional filters (admin use)
+/// - storage_type: Optional filter for "public" or "private"
+/// - search: Optional search term for original_name
+pub async fn get_all_filtered(
+    db: &Pool<Postgres>,
+    limit: i64,
+    offset: i64,
+    storage_type: Option<&str>,
+    search: Option<&str>,
+) -> Vec<Upload> {
+    // Build dynamic query based on filters
+    match (storage_type, search) {
+        (Some(st), Some(s)) => {
+            let search_pattern = format!("%{}%", s);
+            sqlx::query_as!(
+                Upload,
+                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+                          storage_type, storage_path, upload_status, chunks_received, total_chunks,
+                          user_id, description, metadata, created_at, updated_at
+                   FROM uploads
+                   WHERE storage_type = $1 AND original_name ILIKE $2
+                   ORDER BY created_at DESC LIMIT $3 OFFSET $4"#,
+                st,
+                search_pattern,
+                limit,
+                offset
+            )
+            .fetch_all(db)
+            .await
+            .unwrap_or_default()
+        }
+        (Some(st), None) => {
+            sqlx::query_as!(
+                Upload,
+                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+                          storage_type, storage_path, upload_status, chunks_received, total_chunks,
+                          user_id, description, metadata, created_at, updated_at
+                   FROM uploads
+                   WHERE storage_type = $1
+                   ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
+                st,
+                limit,
+                offset
+            )
+            .fetch_all(db)
+            .await
+            .unwrap_or_default()
+        }
+        (None, Some(s)) => {
+            let search_pattern = format!("%{}%", s);
+            sqlx::query_as!(
+                Upload,
+                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+                          storage_type, storage_path, upload_status, chunks_received, total_chunks,
+                          user_id, description, metadata, created_at, updated_at
+                   FROM uploads
+                   WHERE original_name ILIKE $1
+                   ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
+                search_pattern,
+                limit,
+                offset
+            )
+            .fetch_all(db)
+            .await
+            .unwrap_or_default()
+        }
+        (None, None) => {
+            get_all(db, limit, offset).await
+        }
+    }
+}
+
+/// Count uploads with optional filters (admin use)
+pub async fn count_filtered(
+    db: &Pool<Postgres>,
+    storage_type: Option<&str>,
+    search: Option<&str>,
+) -> i64 {
+    match (storage_type, search) {
+        (Some(st), Some(s)) => {
+            let search_pattern = format!("%{}%", s);
+            sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM uploads WHERE storage_type = $1 AND original_name ILIKE $2",
+                st,
+                search_pattern
+            )
+            .fetch_one(db)
+            .await
+            .unwrap_or(Some(0))
+            .unwrap_or(0)
+        }
+        (Some(st), None) => {
+            sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM uploads WHERE storage_type = $1",
+                st
+            )
+            .fetch_one(db)
+            .await
+            .unwrap_or(Some(0))
+            .unwrap_or(0)
+        }
+        (None, Some(s)) => {
+            let search_pattern = format!("%{}%", s);
+            sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM uploads WHERE original_name ILIKE $1",
+                search_pattern
+            )
+            .fetch_one(db)
+            .await
+            .unwrap_or(Some(0))
+            .unwrap_or(0)
+        }
+        (None, None) => {
+            count(db).await
+        }
+    }
 }

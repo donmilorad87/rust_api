@@ -211,6 +211,17 @@ pub async fn save_file(
     storage_type: StorageType,
     custom_max_size: Option<u64>,
 ) -> Result<UploadResult, UploadError> {
+    save_file_with_subfolder(data, original_name, storage_type, custom_max_size, None).await
+}
+
+/// Save file data to storage with optional subfolder
+pub async fn save_file_with_subfolder(
+    data: &[u8],
+    original_name: &str,
+    storage_type: StorageType,
+    custom_max_size: Option<u64>,
+    subfolder: Option<&str>,
+) -> Result<UploadResult, UploadError> {
     let max_size = custom_max_size.unwrap_or_else(max_file_size);
 
     // Check file size
@@ -236,14 +247,16 @@ pub async fn save_file(
     let uuid = Uuid::new_v4();
     let stored_name = generate_stored_name(&extension);
 
-    // Get storage path
-    let storage_path = get_storage_path(storage_type);
-    let file_path = storage_path.join(&stored_name);
+    // Get storage path with optional subfolder
+    let base_storage_path = get_storage_path(storage_type);
+    let storage_dir = match subfolder {
+        Some(sub) if !sub.is_empty() => base_storage_path.join(sub),
+        _ => base_storage_path.to_path_buf(),
+    };
+    let file_path = storage_dir.join(&stored_name);
 
-    // Ensure parent directory exists
-    if let Some(parent) = file_path.parent() {
-        fs::create_dir_all(parent).await?;
-    }
+    // Ensure parent directory exists (including subfolder)
+    fs::create_dir_all(&storage_dir).await?;
 
     // Write file
     let mut file = fs::File::create(&file_path).await?;
@@ -258,8 +271,11 @@ pub async fn save_file(
         .first_or_octet_stream()
         .to_string();
 
-    // Build relative storage path
-    let relative_path = format!("{}/{}", storage_type.as_str(), stored_name);
+    // Build relative storage path (include subfolder)
+    let relative_path = match subfolder {
+        Some(sub) if !sub.is_empty() => format!("{}/{}/{}", storage_type.as_str(), sub, stored_name),
+        _ => format!("{}/{}", storage_type.as_str(), stored_name),
+    };
 
     info!(
         "File saved: {} -> {} ({} bytes, {})",

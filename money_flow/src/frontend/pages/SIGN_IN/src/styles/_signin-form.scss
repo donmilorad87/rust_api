@@ -1,0 +1,200 @@
+@use 'variables' as *;
+
+// ============================================
+// SIGNIN FORM - BEM Component Styles
+// ============================================
+
+// --- Page Layout ---
+.signin-page {
+  font-family: $font-family;
+  background: var(--gradient-primary);
+  min-height: 100vh;
+  color: var(--color-text-primary);
+  transition: background $transition-normal;
+}
+
+// --- Container ---
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+}
+
+// --- Card ---
+.card {
+  background: var(--color-surface);
+  border-radius: $radius-md;
+  padding: $spacing-xl;
+  box-shadow: var(--shadow-lg);
+  max-width: 400px;
+  width: 100%;
+  transition: background-color $transition-normal, box-shadow $transition-normal;
+
+  h1 {
+    text-align: center;
+    color: var(--color-text-primary);
+    margin-bottom: $spacing-lg;
+    font-size: $font-size-xxl;
+    font-weight: 600;
+    transition: color $transition-normal;
+  }
+}
+
+// --- Form Group ---
+.form-group {
+  margin-bottom: $spacing-md;
+
+  label {
+    display: block;
+    margin-bottom: $spacing-sm;
+    font-weight: 500;
+    color: var(--gray-700);
+    transition: color $transition-normal;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem $spacing-md;
+    border: 2px solid var(--input-border);
+    border-radius: $radius-sm;
+    font-size: $font-size-base;
+    font-family: $font-family;
+    background: var(--input-bg);
+    color: var(--color-text-primary);
+    transition: border-color $transition-normal, background-color $transition-normal, color $transition-normal;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-border-focus);
+      box-shadow: var(--focus-ring);
+    }
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+  }
+}
+
+// --- Button ---
+.btn {
+  width: 100%;
+  padding: 0.75rem $spacing-md;
+  background: var(--gradient-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: $radius-sm;
+  font-size: $font-size-base;
+  font-weight: 600;
+  font-family: $font-family;
+  cursor: pointer;
+  transition: transform $transition-fast, box-shadow $transition-fast;
+  margin-top: $spacing-sm;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary-glow);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &:disabled {
+    opacity: var(--btn-disabled-opacity);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &--loading {
+    position: relative;
+    color: transparent;
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      margin-left: -10px;
+      margin-top: -10px;
+      border: 2px solid transparent;
+      border-top-color: var(--color-text-on-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// --- Link ---
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color $transition-fast;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--color-primary-dark);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: $radius-sm;
+  }
+}
+
+// --- Helper Text ---
+.text-center {
+  text-align: center;
+}
+
+.mt-1 {
+  margin-top: $spacing-md;
+}
+
+// --- Responsive ---
+@media (max-width: $breakpoint-md) {
+  .container {
+    padding: $spacing-md;
+  }
+
+  .card {
+    padding: $spacing-lg;
+
+    h1 {
+      font-size: $font-size-xl;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .card {
+    padding: $spacing-md;
+    margin: $spacing-sm;
+
+    h1 {
+      font-size: $font-size-lg;
+    }
+  }
+
+  .btn {
+    padding: $spacing-md;
+  }
+}
