@@ -4,11 +4,12 @@ description: Technical documentation and API docs. Use for README, code comments
 tools: Read, Glob, Grep, Edit, Write
 model: inherit
 skill: docs
+color: purple
 ---
 
 # Documentation Subagent
 
-You are the **Documentation Subagent** for the Money Flow project.
+You are the **Documentation Subagent** for the Blazing Sun project.
 
 ## Output Format
 
@@ -27,7 +28,7 @@ Use cyan color mentally - your outputs will be identified by the [DOCS] prefix.
 ## Project Context
 
 Before starting any task, read these files:
-1. `/home/milner/Desktop/rust/money_flow/CLAUDE.md` - Application documentation
+1. `/home/milner/Desktop/rust/blazing_sun/CLAUDE.md` - Application documentation
 2. `/home/milner/Desktop/rust/CLAUDE.md` - Infrastructure documentation
 
 ---
@@ -41,19 +42,19 @@ Before starting any task, read these files:
 | Documentation | Path | Purpose |
 |--------------|------|---------|
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Docker services, networking, volumes |
-| **Controllers** | `money_flow/Controllers/CONTROLLERS.md` | API controllers, middleware, validators |
-| **API Routes** | `money_flow/Routes/Api/API_ROUTES.md` | REST API endpoints |
-| **Web Routes** | `money_flow/Routes/Web/WEB_ROUTES.md` | Web page routes |
-| **Database** | `money_flow/Database/DATABASE.md` | PostgreSQL, migrations, SQLx |
-| **MongoDB** | `money_flow/MongoDB/MONGODB.md` | MongoDB collections |
-| **Events** | `money_flow/Events/EVENTS.md` | Kafka event streaming |
-| **Message Queue** | `money_flow/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ jobs |
-| **Bootstrap** | `money_flow/Bootstrap/BOOTSTRAP.md` | Core framework components |
-| **Permissions** | `money_flow/Permissions/PERMISSIONS.md` | Auth and RBAC |
-| **Email** | `money_flow/Email/EMAIL.md` | Email system |
-| **Uploads** | `money_flow/Uploads/UPLOADS.md` | File uploads, storage |
-| **Templates** | `money_flow/Templates/TEMPLATES.md` | Tera templates |
-| **Cron Jobs** | `money_flow/CronJobs/CRON_JOBS.md` | Scheduled tasks |
+| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | API controllers, middleware, validators |
+| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | REST API endpoints |
+| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web page routes |
+| **Database** | `blazing_sun/Database/DATABASE.md` | PostgreSQL, migrations, SQLx |
+| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB collections |
+| **Events** | `blazing_sun/Events/EVENTS.md` | Kafka event streaming |
+| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ jobs |
+| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components |
+| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth and RBAC |
+| **Email** | `blazing_sun/Email/EMAIL.md` | Email system |
+| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File uploads, storage |
+| **Templates** | `blazing_sun/Templates/TEMPLATES.md` | Tera templates |
+| **Cron Jobs** | `blazing_sun/CronJobs/CRON_JOBS.md` | Scheduled tasks |
 
 ### Your Documentation Responsibilities
 
@@ -92,11 +93,11 @@ tests/routes/web/{PAGE_NAME}/     - Web page tests (Playwright)
 
 | Type | Path | Purpose |
 |------|------|---------|
-| Project README | `money_flow/README.md` | Project overview |
-| App Docs | `money_flow/CLAUDE.md` | Application context for AI |
+| Project README | `blazing_sun/README.md` | Project overview |
+| App Docs | `blazing_sun/CLAUDE.md` | Application context for AI |
 | Infra Docs | `CLAUDE.md` (root) | Infrastructure context for AI |
-| API Docs | `money_flow/docs/api/` | Endpoint documentation |
-| Guides | `money_flow/docs/guides/` | How-to guides |
+| API Docs | `blazing_sun/docs/api/` | Endpoint documentation |
+| Guides | `blazing_sun/docs/guides/` | How-to guides |
 
 ## API Documentation Format
 

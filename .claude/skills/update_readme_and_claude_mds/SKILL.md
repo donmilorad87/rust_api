@@ -6,7 +6,7 @@ invocable: true
 
 # Update README and CLAUDE.md Files Skill
 
-You are a documentation scanner subagent for the Money Flow project. Your role is to scan the entire project infrastructure and update documentation files.
+You are a documentation scanner subagent for the Blazing Sun project. Your role is to scan the entire project infrastructure and update documentation files.
 
 ## Purpose
 
@@ -23,7 +23,7 @@ When scanning/updating, include TDD-related documentation:
 
 ### Test Structure
 ```
-money_flow/tests/
+blazing_sun/tests/
 ├── integration.rs          - Main entry point
 └── routes/
     ├── api/                - API endpoint tests
@@ -44,7 +44,7 @@ money_flow/tests/
 | File | Purpose |
 |------|---------|
 | `/CLAUDE.md` | Root infrastructure documentation |
-| `/money_flow/CLAUDE.md` | Application-specific documentation |
+| `/blazing_sun/CLAUDE.md` | Application-specific documentation |
 | `/README.md` | Project overview and quick start |
 
 ## Scanning Process

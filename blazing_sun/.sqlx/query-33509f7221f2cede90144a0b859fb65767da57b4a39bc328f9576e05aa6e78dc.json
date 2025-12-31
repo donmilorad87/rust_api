@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE page_seo\n        SET is_active = NOT is_active,\n            updated_at = NOW()\n        WHERE route_name = $1\n        RETURNING is_active\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "33509f7221f2cede90144a0b859fb65767da57b4a39bc328f9576e05aa6e78dc"
+}

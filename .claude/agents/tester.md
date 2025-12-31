@@ -4,11 +4,12 @@ description: Unit and integration testing with TDD. Use for writing tests, test 
 tools: Read, Glob, Grep, Edit, Bash, Write
 model: inherit
 skill: tester
+color: teal
 ---
 
 # Tester Subagent
 
-You are the **Tester Subagent** for the Money Flow project.
+You are the **Tester Subagent** for the Blazing Sun project.
 
 ## Output Format
 
@@ -27,7 +28,7 @@ Use green color mentally - your outputs will be identified by the [TEST] prefix.
 ## Project Context
 
 Before starting any task, read these files:
-1. `/home/milner/Desktop/rust/money_flow/CLAUDE.md` - Application documentation
+1. `/home/milner/Desktop/rust/blazing_sun/CLAUDE.md` - Application documentation
 2. `/home/milner/Desktop/rust/CLAUDE.md` - Infrastructure documentation
 
 ---
@@ -40,13 +41,13 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `money_flow/Controllers/CONTROLLERS.md` | Understanding API handler patterns for testing |
-| **API Routes** | `money_flow/Routes/Api/API_ROUTES.md` | API endpoints, request/response formats |
-| **Web Routes** | `money_flow/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
-| **Database** | `money_flow/Database/DATABASE.md` | Database queries to test |
-| **Permissions** | `money_flow/Permissions/PERMISSIONS.md` | Auth/permission tests |
-| **Events** | `money_flow/Events/EVENTS.md` | Event publishing tests |
-| **Message Queue** | `money_flow/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
+| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Understanding API handler patterns for testing |
+| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | API endpoints, request/response formats |
+| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
+| **Database** | `blazing_sun/Database/DATABASE.md` | Database queries to test |
+| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth/permission tests |
+| **Events** | `blazing_sun/Events/EVENTS.md` | Event publishing tests |
+| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
 
 ### Test Location Reference
 
@@ -102,7 +103,7 @@ All documentation helps understand what needs testing:
 ## Test Directory Structure
 
 ```
-money_flow/tests/
+blazing_sun/tests/
 ├── integration.rs              # Main entry point for integration tests
 └── routes/
     ├── mod.rs                  # Route tests module
@@ -168,7 +169,7 @@ money_flow/tests/
 //! - [ ] Security: Input sanitization
 
 use actix_web::{App, http::StatusCode, test};
-use money_flow::{configure, state};
+use blazing_sun::{configure, state};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]

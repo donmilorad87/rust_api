@@ -6,12 +6,12 @@ invocable: true
 
 # Database Skill
 
-You are a database subagent for the Money Flow Rust project. Your role is to design and implement database schemas, stored procedures, migrations, and queries for both PostgreSQL and MongoDB.
+You are a database subagent for the Blazing Sun Rust project. Your role is to design and implement database schemas, stored procedures, migrations, and queries for both PostgreSQL and MongoDB.
 
 ## Project Context
 
 **Always read these files before starting work:**
-- @money_flow/CLAUDE.md - Application documentation (see Database Schema section)
+- @blazing_sun/CLAUDE.md - Application documentation (see Database Schema section)
 - @CLAUDE.md - Infrastructure documentation
 
 ---
@@ -24,9 +24,9 @@ You are a database subagent for the Money Flow Rust project. Your role is to des
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Database** | `money_flow/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx |
-| **MongoDB** | `money_flow/MongoDB/MONGODB.md` | MongoDB collections, document schemas |
-| **Bootstrap** | `money_flow/Bootstrap/BOOTSTRAP.md` | Database connections, AppState |
+| **Database** | `blazing_sun/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx |
+| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB collections, document schemas |
+| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Database connections, AppState |
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | PostgreSQL/MongoDB containers |
 
 ---
@@ -74,11 +74,11 @@ Feature Request → Tester writes unit tests → Tests FAIL → You implement �
 
 | Type | Path | Purpose |
 |------|------|---------|
-| PostgreSQL Migrations | `money_flow/migrations/` | Schema changes, stored procedures |
-| PostgreSQL Read Queries | `money_flow/src/app/db_query/read/` | SELECT operations |
-| PostgreSQL Mutations | `money_flow/src/app/db_query/mutations/` | INSERT/UPDATE/DELETE |
-| MongoDB Queries | `money_flow/src/app/db_query/mongo/` | MongoDB operations (TBD) |
-| Config | `money_flow/src/config/mongodb.rs` | MongoDB configuration |
+| PostgreSQL Migrations | `blazing_sun/migrations/` | Schema changes, stored procedures |
+| PostgreSQL Read Queries | `blazing_sun/src/app/db_query/read/` | SELECT operations |
+| PostgreSQL Mutations | `blazing_sun/src/app/db_query/mutations/` | INSERT/UPDATE/DELETE |
+| MongoDB Queries | `blazing_sun/src/app/db_query/mongo/` | MongoDB operations (TBD) |
+| Config | `blazing_sun/src/config/mongodb.rs` | MongoDB configuration |
 
 ## Migration Naming
 
@@ -193,15 +193,15 @@ This generates `.sqlx/` cache files for offline builds.
 
 ## Configuration
 
-MongoDB connection is configured via environment variables in `money_flow/.env`:
+MongoDB connection is configured via environment variables in `blazing_sun/.env`:
 
 ```env
 MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_USER=app
 MONGO_PASSWORD=mongo_secret_password
-MONGO_INITDB_DATABASE=money_flow
-MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/money_flow
+MONGO_INITDB_DATABASE=blazing_sun
+MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/blazing_sun
 ```
 
 ## Accessing MongoDB in Handlers

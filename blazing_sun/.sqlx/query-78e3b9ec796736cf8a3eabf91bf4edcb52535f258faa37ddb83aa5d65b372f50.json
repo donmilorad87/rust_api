@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE site_config SET theme_dark = $1 WHERE true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "78e3b9ec796736cf8a3eabf91bf4edcb52535f258faa37ddb83aa5d65b372f50"
+}

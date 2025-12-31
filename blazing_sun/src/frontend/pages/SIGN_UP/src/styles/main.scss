@@ -1,0 +1,88 @@
+// ============================================
+// SIGN UP PAGE - Main Stylesheet
+// ============================================
+// This file is the entry point for the SIGN_UP page styles.
+// Utilities and theme variables come from GLOBAL styles.
+// This file only contains page-specific BEM components.
+
+// 1. Variables (SCSS vars for BEM components)
+@use 'variables' as *;
+
+// 2. BEM Component Styles
+@use 'signup-form';
+
+// ============================================
+// CSS RESET
+// ============================================
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  // Smooth color transitions when theme changes
+  color-scheme: light dark;
+}
+
+body {
+  font-family: $font-family;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  transition: background-color $transition-normal, color $transition-normal;
+}
+
+// ============================================
+// ACCESSIBILITY
+// ============================================
+
+// Respect reduced motion preference
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  :root {
+    --color-border: currentColor;
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+  }
+}
+
+// Focus visible for keyboard navigation
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+// ============================================
+// SMOOTH THEME TRANSITIONS
+// ============================================
+// Apply transition to all themed elements
+
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color $transition-normal,
+    border-color $transition-normal,
+    color $transition-normal,
+    fill $transition-normal,
+    stroke $transition-normal,
+    box-shadow $transition-normal !important;
+}

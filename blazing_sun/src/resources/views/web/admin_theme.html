@@ -1,0 +1,1739 @@
+{% extends "base.html" %}
+
+{% block title %}Theme Configuration - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/THEME/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="theme-page">
+        {# Header with title #}
+        <header class="theme-page__header">
+            <div class="theme-page__title-row">
+                <h1 class="theme-page__title">Theme Configuration</h1>
+            </div>
+        </header>
+
+        {# Tabs navigation #}
+        <nav class="theme-tabs" role="tablist" aria-label="Theme configuration sections">
+            <button type="button" class="theme-tabs__tab theme-tabs__tab--active" data-tab="branding" role="tab" aria-selected="true" aria-controls="panel-branding">
+                Branding
+            </button>
+            <button type="button" class="theme-tabs__tab" data-tab="colors" role="tab" aria-selected="false" aria-controls="panel-colors">
+                Colors
+            </button>
+            <button type="button" class="theme-tabs__tab" data-tab="typography" role="tab" aria-selected="false" aria-controls="panel-typography">
+                Typography
+            </button>
+            <button type="button" class="theme-tabs__tab" data-tab="spacing" role="tab" aria-selected="false" aria-controls="panel-spacing">
+                Spacing
+            </button>
+            <button type="button" class="theme-tabs__tab" data-tab="seo" role="tab" aria-selected="false" aria-controls="panel-seo">
+                SEO
+            </button>
+        </nav>
+
+        {# Tab panels #}
+        <div class="theme-panels">
+            {# Branding Panel #}
+            <section class="theme-panel theme-panel--active" id="panel-branding" role="tabpanel" aria-labelledby="tab-branding">
+                <h2 class="theme-panel__title">Site Branding</h2>
+
+                <div class="form-row">
+                    <div class="form-group form-group--half">
+                        <label class="form-label">Logo</label>
+                        <div class="image-selector" id="logoSelector" data-field="logo" role="button" tabindex="0" aria-label="Click to select or upload logo">
+                            <div class="image-selector__preview">
+                                <img src="" alt="Logo preview" class="image-selector__image hidden" id="logoPreview">
+                                <div class="image-selector__placeholder" id="logoPlaceholder">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <span>Click to select logo</span>
+                                </div>
+                            </div>
+                            <input type="hidden" id="logoUuid" name="logo_uuid">
+                        </div>
+                    </div>
+
+                    <div class="form-group form-group--half">
+                        <label class="form-label">Favicon</label>
+                        <div class="image-selector" id="faviconSelector" data-field="favicon" role="button" tabindex="0" aria-label="Click to select or upload favicon">
+                            <div class="image-selector__preview">
+                                <img src="" alt="Favicon preview" class="image-selector__image hidden" id="faviconPreview">
+                                <div class="image-selector__placeholder" id="faviconPlaceholder">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <span>Click to select favicon</span>
+                                </div>
+                            </div>
+                            <input type="hidden" id="faviconUuid" name="favicon_uuid">
+                        </div>
+                    </div>
+                </div>
+
+                {# Site Identity Section #}
+                <fieldset class="identity-section">
+                    <legend>Site Identity</legend>
+
+                    <div class="form-row">
+                        <div class="form-group form-group--half">
+                            <label class="form-label" for="siteName">Site Name</label>
+                            <input type="text" id="siteName" class="form-input" maxlength="100" placeholder="Blazing Sun">
+                        </div>
+                        <div class="form-group form-group--half">
+                            <label class="form-label">Display Options</label>
+                            <div class="form-group--inline" style="margin-top: 0.75rem;">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="showSiteName" checked>
+                                    <span class="toggle-switch__slider"></span>
+                                </label>
+                                <label for="showSiteName" class="form-label" style="margin-bottom: 0;">Show Site Name</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group form-group--third">
+                            <label class="form-label">Identity Color Start</label>
+                            <div class="color-picker" data-var="identity_color_start" data-type="identity">
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color" id="identityColorStart" value="#3498db" aria-label="Identity gradient start color">
+                                    <input type="text" class="color-picker__hex" id="identityColorStartHex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" value="#3498db" aria-label="Identity start color hex value">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group form-group--third">
+                            <label class="form-label">Identity Color End</label>
+                            <div class="color-picker" data-var="identity_color_end" data-type="identity">
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color" id="identityColorEnd" value="#764ba2" aria-label="Identity gradient end color">
+                                    <input type="text" class="color-picker__hex" id="identityColorEndHex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" value="#764ba2" aria-label="Identity end color hex value">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group form-group--third">
+                            <label class="form-label" for="identitySize">Identity Size</label>
+                            <div class="size-slider">
+                                <input type="range" id="identitySizeRange" class="size-slider__range" min="0.875" max="2" step="0.0625" value="1.375">
+                                <div class="size-slider__value">
+                                    <input type="number" id="identitySizeValue" class="size-slider__input" min="0.875" max="2" step="0.0625" value="1.375">
+                                    <span class="size-slider__unit">rem</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Identity preview #}
+                    <div class="form-group">
+                        <label class="form-label">Preview</label>
+                        <div class="identity-preview" id="identityPreview">
+                            <span class="identity-preview__text" id="identityPreviewText" style="font-size: 1.375rem; background: linear-gradient(135deg, #3498db 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700;">Blazing Sun</span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                {# Save button for branding #}
+                <div class="form-actions">
+                    <button type="button" class="btn btn--primary" id="brandingSaveBtn">
+                        Save Branding
+                    </button>
+                </div>
+            </section>
+
+            {# Colors Panel #}
+            <section class="theme-panel" id="panel-colors" role="tabpanel" aria-labelledby="tab-colors" hidden>
+                <h2 class="theme-panel__title">Theme Colors</h2>
+
+                {# Theme mode toggle #}
+                <div class="theme-mode-toggle">
+                    <button type="button" class="theme-mode-toggle__btn theme-mode-toggle__btn--active" data-mode="light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1z"/>
+                        </svg>
+                        Light
+                    </button>
+                    <button type="button" class="theme-mode-toggle__btn" data-mode="dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+                        </svg>
+                        Dark
+                    </button>
+                </div>
+
+                {# SCSS Variables (shared) #}
+                <fieldset class="color-section">
+                    <legend>Brand Colors (Shared)</legend>
+                    <div class="color-grid">
+                        <div class="color-picker" data-var="color_primary" data-type="scss">
+                            <label class="color-picker__label">Primary</label>
+                            <div class="color-picker__input-group">
+                                <input type="color" class="color-picker__color" aria-label="Primary color">
+                                <input type="text" class="color-picker__hex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" aria-label="Primary color hex value">
+                            </div>
+                        </div>
+                        <div class="color-picker" data-var="color_primary_dark" data-type="scss">
+                            <label class="color-picker__label">Primary Dark</label>
+                            <div class="color-picker__input-group">
+                                <input type="color" class="color-picker__color" aria-label="Primary dark color">
+                                <input type="text" class="color-picker__hex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" aria-label="Primary dark hex value">
+                            </div>
+                        </div>
+                        <div class="color-picker" data-var="color_secondary" data-type="scss">
+                            <label class="color-picker__label">Secondary</label>
+                            <div class="color-picker__input-group">
+                                <input type="color" class="color-picker__color" aria-label="Secondary color">
+                                <input type="text" class="color-picker__hex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" aria-label="Secondary hex value">
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                {# ============================================ #}
+                {# LIGHT THEME COLORS #}
+                {# ============================================ #}
+                <div id="lightColors">
+                    {# Page Background #}
+                    <fieldset class="color-section">
+                        <legend>Page Background</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="bg_gradient_start" data-type="light">
+                                <label class="color-picker__label">Gradient Start</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bg_gradient_end" data-type="light">
+                                <label class="color-picker__label">Gradient End</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="angle-picker" data-var="bg_gradient_angle" data-type="light">
+                                <label class="angle-picker__label">Gradient Angle</label>
+                                <div class="angle-picker__input-group">
+                                    <input type="range" class="angle-picker__range" min="0" max="360" step="15" value="135">
+                                    <input type="number" class="angle-picker__number" min="0" max="360" value="135">
+                                    <span class="angle-picker__unit">deg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Navigation #}
+                    <fieldset class="color-section">
+                        <legend>Navigation</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="nav_bg" data-type="light">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="nav_text" data-type="light">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="nav_text_hover" data-type="light">
+                                <label class="color-picker__label">Text Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Headings (h1-h5) #}
+                    <fieldset class="color-section">
+                        <legend>Heading Colors</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="heading_h1_color" data-type="light">
+                                <label class="color-picker__label">H1</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h2_color" data-type="light">
+                                <label class="color-picker__label">H2</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h3_color" data-type="light">
+                                <label class="color-picker__label">H3</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h4_color" data-type="light">
+                                <label class="color-picker__label">H4</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h5_color" data-type="light">
+                                <label class="color-picker__label">H5</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Text Elements #}
+                    <fieldset class="color-section">
+                        <legend>Text & Inline Elements</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="text_primary" data-type="light">
+                                <label class="color-picker__label">Primary Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="text_secondary" data-type="light">
+                                <label class="color-picker__label">Secondary Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="paragraph_color" data-type="light">
+                                <label class="color-picker__label">Paragraph</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="link_color" data-type="light">
+                                <label class="color-picker__label">Link</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="link_hover_color" data-type="light">
+                                <label class="color-picker__label">Link Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="span_color" data-type="light">
+                                <label class="color-picker__label">Span</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="address_color" data-type="light">
+                                <label class="color-picker__label">Address</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="time_color" data-type="light">
+                                <label class="color-picker__label">Time</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Surface Colors #}
+                    <fieldset class="color-section">
+                        <legend>Surface Colors</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="card_bg" data-type="light">
+                                <label class="color-picker__label">Card Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="input_bg" data-type="light">
+                                <label class="color-picker__label">Input Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="input_border" data-type="light">
+                                <label class="color-picker__label">Input Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="border_color" data-type="light">
+                                <label class="color-picker__label">Border Color</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Primary #}
+                    <fieldset class="color-section">
+                        <legend>Button - Primary</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_primary_text" data-type="light">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_primary_hollow_text" data-type="light">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_primary_hollow_border" data-type="light">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Secondary #}
+                    <fieldset class="color-section">
+                        <legend>Button - Secondary</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_secondary_bg" data-type="light">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_text" data-type="light">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_hover_bg" data-type="light">
+                                <label class="color-picker__label">Hover BG</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_hollow_text" data-type="light">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_hollow_border" data-type="light">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Success #}
+                    <fieldset class="color-section">
+                        <legend>Button - Success</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_success_bg" data-type="light">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_text" data-type="light">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_hover_bg" data-type="light">
+                                <label class="color-picker__label">Hover BG</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_hollow_text" data-type="light">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_hollow_border" data-type="light">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Danger #}
+                    <fieldset class="color-section">
+                        <legend>Button - Danger</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_danger_bg" data-type="light">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_text" data-type="light">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_hover_bg" data-type="light">
+                                <label class="color-picker__label">Hover BG</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_hollow_text" data-type="light">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_hollow_border" data-type="light">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Footer #}
+                    <fieldset class="color-section">
+                        <legend>Footer</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="footer_bg" data-type="light">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="footer_text" data-type="light">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="footer_link" data-type="light">
+                                <label class="color-picker__label">Link</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="footer_link_hover" data-type="light">
+                                <label class="color-picker__label">Link Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Bottom Bar #}
+                    <fieldset class="color-section">
+                        <legend>Bottom Bar</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="bottom_bar_bg" data-type="light">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bottom_bar_text" data-type="light">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bottom_bar_link" data-type="light">
+                                <label class="color-picker__label">Link</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bottom_bar_link_hover" data-type="light">
+                                <label class="color-picker__label">Link Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+
+                {# ============================================ #}
+                {# DARK THEME COLORS #}
+                {# ============================================ #}
+                <div id="darkColors" hidden>
+                    {# Page Background #}
+                    <fieldset class="color-section">
+                        <legend>Page Background</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="bg_gradient_start" data-type="dark">
+                                <label class="color-picker__label">Gradient Start</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bg_gradient_end" data-type="dark">
+                                <label class="color-picker__label">Gradient End</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="angle-picker" data-var="bg_gradient_angle" data-type="dark">
+                                <label class="angle-picker__label">Gradient Angle</label>
+                                <div class="angle-picker__input-group">
+                                    <input type="range" class="angle-picker__range" min="0" max="360" step="15" value="135">
+                                    <input type="number" class="angle-picker__number" min="0" max="360" value="135">
+                                    <span class="angle-picker__unit">deg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Navigation #}
+                    <fieldset class="color-section">
+                        <legend>Navigation</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="nav_bg" data-type="dark">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="nav_text" data-type="dark">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="nav_text_hover" data-type="dark">
+                                <label class="color-picker__label">Text Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Headings (h1-h5) #}
+                    <fieldset class="color-section">
+                        <legend>Heading Colors</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="heading_h1_color" data-type="dark">
+                                <label class="color-picker__label">H1</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h2_color" data-type="dark">
+                                <label class="color-picker__label">H2</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h3_color" data-type="dark">
+                                <label class="color-picker__label">H3</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h4_color" data-type="dark">
+                                <label class="color-picker__label">H4</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="heading_h5_color" data-type="dark">
+                                <label class="color-picker__label">H5</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Text Elements #}
+                    <fieldset class="color-section">
+                        <legend>Text & Inline Elements</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="text_primary" data-type="dark">
+                                <label class="color-picker__label">Primary Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="text_secondary" data-type="dark">
+                                <label class="color-picker__label">Secondary Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="paragraph_color" data-type="dark">
+                                <label class="color-picker__label">Paragraph</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="link_color" data-type="dark">
+                                <label class="color-picker__label">Link</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="link_hover_color" data-type="dark">
+                                <label class="color-picker__label">Link Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="span_color" data-type="dark">
+                                <label class="color-picker__label">Span</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="address_color" data-type="dark">
+                                <label class="color-picker__label">Address</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="time_color" data-type="dark">
+                                <label class="color-picker__label">Time</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Surface Colors #}
+                    <fieldset class="color-section">
+                        <legend>Surface Colors</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="card_bg" data-type="dark">
+                                <label class="color-picker__label">Card Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="input_bg" data-type="dark">
+                                <label class="color-picker__label">Input Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="input_border" data-type="dark">
+                                <label class="color-picker__label">Input Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="border_color" data-type="dark">
+                                <label class="color-picker__label">Border Color</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Primary #}
+                    <fieldset class="color-section">
+                        <legend>Button - Primary</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_primary_text" data-type="dark">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_primary_hollow_text" data-type="dark">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_primary_hollow_border" data-type="dark">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Secondary #}
+                    <fieldset class="color-section">
+                        <legend>Button - Secondary</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_secondary_bg" data-type="dark">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_text" data-type="dark">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_hover_bg" data-type="dark">
+                                <label class="color-picker__label">Hover BG</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_hollow_text" data-type="dark">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_secondary_hollow_border" data-type="dark">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Success #}
+                    <fieldset class="color-section">
+                        <legend>Button - Success</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_success_bg" data-type="dark">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_text" data-type="dark">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_hover_bg" data-type="dark">
+                                <label class="color-picker__label">Hover BG</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_hollow_text" data-type="dark">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_success_hollow_border" data-type="dark">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Button: Danger #}
+                    <fieldset class="color-section">
+                        <legend>Button - Danger</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="btn_danger_bg" data-type="dark">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_text" data-type="dark">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_hover_bg" data-type="dark">
+                                <label class="color-picker__label">Hover BG</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_hollow_text" data-type="dark">
+                                <label class="color-picker__label">Hollow Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="btn_danger_hollow_border" data-type="dark">
+                                <label class="color-picker__label">Hollow Border</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Footer #}
+                    <fieldset class="color-section">
+                        <legend>Footer</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="footer_bg" data-type="dark">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="footer_text" data-type="dark">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="footer_link" data-type="dark">
+                                <label class="color-picker__label">Link</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="footer_link_hover" data-type="dark">
+                                <label class="color-picker__label">Link Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {# Bottom Bar #}
+                    <fieldset class="color-section">
+                        <legend>Bottom Bar</legend>
+                        <div class="color-grid">
+                            <div class="color-picker" data-var="bottom_bar_bg" data-type="dark">
+                                <label class="color-picker__label">Background</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bottom_bar_text" data-type="dark">
+                                <label class="color-picker__label">Text</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bottom_bar_link" data-type="dark">
+                                <label class="color-picker__label">Link</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                            <div class="color-picker" data-var="bottom_bar_link_hover" data-type="dark">
+                                <label class="color-picker__label">Link Hover</label>
+                                <div class="color-picker__input-group">
+                                    <input type="color" class="color-picker__color">
+                                    <input type="text" class="color-picker__hex" maxlength="7">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+
+                {# Save button for colors #}
+                <div class="form-actions">
+                    <button type="button" class="btn btn--primary" id="colorsSaveBtn">
+                        Save Colors & Rebuild Theme
+                    </button>
+                </div>
+            </section>
+
+            {# Typography Panel #}
+            <section class="theme-panel" id="panel-typography" role="tabpanel" aria-labelledby="tab-typography" hidden>
+                <h2 class="theme-panel__title">Typography</h2>
+
+                <div class="size-grid">
+                    <div class="size-picker" data-var="font_size_base" data-type="scss">
+                        <label class="size-picker__label">Base Font Size</label>
+                        <div class="size-picker__input-group">
+                            <input type="number" class="size-picker__number" step="0.0625" min="0.5" max="2" value="1">
+                            <select class="size-picker__unit">
+                                <option value="rem" selected>rem</option>
+                                <option value="px">px</option>
+                            </select>
+                        </div>
+                        <p class="size-picker__preview" style="font-size: 1rem;">Preview text</p>
+                    </div>
+
+                    <div class="size-picker" data-var="font_size_sm" data-type="scss">
+                        <label class="size-picker__label">Small Font Size</label>
+                        <div class="size-picker__input-group">
+                            <input type="number" class="size-picker__number" step="0.0625" min="0.5" max="2" value="0.875">
+                            <select class="size-picker__unit">
+                                <option value="rem" selected>rem</option>
+                                <option value="px">px</option>
+                            </select>
+                        </div>
+                        <p class="size-picker__preview" style="font-size: 0.875rem;">Preview text</p>
+                    </div>
+
+                    <div class="size-picker" data-var="font_size_lg" data-type="scss">
+                        <label class="size-picker__label">Large Font Size</label>
+                        <div class="size-picker__input-group">
+                            <input type="number" class="size-picker__number" step="0.0625" min="0.5" max="3" value="1.125">
+                            <select class="size-picker__unit">
+                                <option value="rem" selected>rem</option>
+                                <option value="px">px</option>
+                            </select>
+                        </div>
+                        <p class="size-picker__preview" style="font-size: 1.125rem;">Preview text</p>
+                    </div>
+
+                    <div class="size-picker" data-var="font_size_xl" data-type="scss">
+                        <label class="size-picker__label">Extra Large Font Size</label>
+                        <div class="size-picker__input-group">
+                            <input type="number" class="size-picker__number" step="0.0625" min="0.5" max="4" value="1.375">
+                            <select class="size-picker__unit">
+                                <option value="rem" selected>rem</option>
+                                <option value="px">px</option>
+                            </select>
+                        </div>
+                        <p class="size-picker__preview" style="font-size: 1.375rem;">Preview text</p>
+                    </div>
+                </div>
+
+                {# Save button for typography #}
+                <div class="form-actions">
+                    <button type="button" class="btn btn--primary" id="typographySaveBtn">
+                        Save Typography & Rebuild Theme
+                    </button>
+                </div>
+            </section>
+
+            {# Spacing Panel #}
+            <section class="theme-panel" id="panel-spacing" role="tabpanel" aria-labelledby="tab-spacing" hidden>
+                <h2 class="theme-panel__title">Spacing & Radius</h2>
+
+                <fieldset class="spacing-section">
+                    <legend>Spacing Scale</legend>
+                    <div class="size-grid">
+                        <div class="size-picker" data-var="spacing_xs" data-type="scss">
+                            <label class="size-picker__label">Extra Small (xs)</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="0.0625" min="0" max="5" value="0.25">
+                                <select class="size-picker__unit">
+                                    <option value="rem" selected>rem</option>
+                                    <option value="px">px</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="size-picker" data-var="spacing_sm" data-type="scss">
+                            <label class="size-picker__label">Small (sm)</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="0.0625" min="0" max="5" value="0.5">
+                                <select class="size-picker__unit">
+                                    <option value="rem" selected>rem</option>
+                                    <option value="px">px</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="size-picker" data-var="spacing_md" data-type="scss">
+                            <label class="size-picker__label">Medium (md)</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="0.0625" min="0" max="5" value="1">
+                                <select class="size-picker__unit">
+                                    <option value="rem" selected>rem</option>
+                                    <option value="px">px</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="size-picker" data-var="spacing_lg" data-type="scss">
+                            <label class="size-picker__label">Large (lg)</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="0.0625" min="0" max="10" value="1.5">
+                                <select class="size-picker__unit">
+                                    <option value="rem" selected>rem</option>
+                                    <option value="px">px</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="size-picker" data-var="spacing_xl" data-type="scss">
+                            <label class="size-picker__label">Extra Large (xl)</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="0.0625" min="0" max="10" value="2">
+                                <select class="size-picker__unit">
+                                    <option value="rem" selected>rem</option>
+                                    <option value="px">px</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="spacing-section">
+                    <legend>Border Radius</legend>
+                    <div class="size-grid">
+                        <div class="size-picker" data-var="radius_sm" data-type="scss">
+                            <label class="size-picker__label">Small Radius</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="1" min="0" max="50" value="5">
+                                <select class="size-picker__unit">
+                                    <option value="px" selected>px</option>
+                                    <option value="rem">rem</option>
+                                </select>
+                            </div>
+                            <div class="radius-preview" style="border-radius: 5px;"></div>
+                        </div>
+                        <div class="size-picker" data-var="radius_md" data-type="scss">
+                            <label class="size-picker__label">Medium Radius</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="1" min="0" max="50" value="6">
+                                <select class="size-picker__unit">
+                                    <option value="px" selected>px</option>
+                                    <option value="rem">rem</option>
+                                </select>
+                            </div>
+                            <div class="radius-preview" style="border-radius: 6px;"></div>
+                        </div>
+                        <div class="size-picker" data-var="radius_lg" data-type="scss">
+                            <label class="size-picker__label">Large Radius</label>
+                            <div class="size-picker__input-group">
+                                <input type="number" class="size-picker__number" step="1" min="0" max="50" value="10">
+                                <select class="size-picker__unit">
+                                    <option value="px" selected>px</option>
+                                    <option value="rem">rem</option>
+                                </select>
+                            </div>
+                            <div class="radius-preview" style="border-radius: 10px;"></div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                {# Save button for spacing #}
+                <div class="form-actions">
+                    <button type="button" class="btn btn--primary" id="spacingSaveBtn">
+                        Save Spacing & Rebuild Theme
+                    </button>
+                </div>
+            </section>
+
+            {# SEO Panel #}
+            <section class="theme-panel" id="panel-seo" role="tabpanel" aria-labelledby="tab-seo" hidden>
+                <h2 class="theme-panel__title">Page SEO Settings</h2>
+                <p class="theme-panel__desc">Configure meta tags for each page. Select a page to edit its SEO settings.</p>
+
+                {# SEO Layout: Page list on left, edit form on right #}
+                <div class="seo-layout">
+                    {# Page list #}
+                    <div class="seo-page-list" id="seoPageList">
+                        <h3 class="seo-page-list__title">Pages</h3>
+                        <ul class="seo-page-list__items" id="seoPageItems">
+                            {# Populated by JavaScript #}
+                        </ul>
+                    </div>
+
+                    {# SEO Edit Form #}
+                    <div class="seo-edit-form" id="seoEditForm">
+                        <div class="seo-edit-form__placeholder" id="seoFormPlaceholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.3-4.3"></path>
+                            </svg>
+                            <p>Select a page from the list to edit its SEO settings</p>
+                        </div>
+
+                        {# SEO Content with Sub-tabs - hidden until page selected #}
+                        <div class="seo-content hidden" id="seoContent">
+                            {# Page header info #}
+                            <div class="seo-form__header">
+                                <h3 class="seo-form__page-name" id="seoPageName">Page Name</h3>
+                                <span class="seo-form__page-path" id="seoPagePath">/path</span>
+                            </div>
+
+                            {# Sub-tabs navigation #}
+                            <div class="seo-subtabs" role="tablist" aria-label="SEO settings sections">
+                                <button type="button" class="seo-subtab active" data-subtab="metatags" role="tab" aria-selected="true" aria-controls="seo-subpanel-metatags">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 7V4h16v3"></path>
+                                        <path d="M9 20h6"></path>
+                                        <path d="M12 4v16"></path>
+                                    </svg>
+                                    Metatags
+                                </button>
+                                <button type="button" class="seo-subtab" data-subtab="schemas" role="tab" aria-selected="false" aria-controls="seo-subpanel-schemas">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="16 18 22 12 16 6"></polyline>
+                                        <polyline points="8 6 2 12 8 18"></polyline>
+                                    </svg>
+                                    Schemas
+                                </button>
+                                <button type="button" class="seo-subtab" data-subtab="hreflang" role="tab" aria-selected="false" aria-controls="seo-subpanel-hreflang">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                    Hreflang
+                                </button>
+                            </div>
+
+                            {# Metatags Sub-panel #}
+                            <div class="seo-subpanel" id="seo-subpanel-metatags" role="tabpanel" aria-labelledby="tab-metatags">
+                                <form class="seo-form" id="seoForm">
+                                    {# Basic SEO #}
+                            <fieldset class="seo-fieldset">
+                                <legend>Basic SEO</legend>
+
+                                <div class="form-group">
+                                    <label for="seoTitle" class="form-label">
+                                        Page Title
+                                        <span class="char-count" data-for="seoTitle">0/70</span>
+                                    </label>
+                                    <input type="text" id="seoTitle" class="form-input" maxlength="70" placeholder="Page title for browser tab and search results">
+                                    <p class="form-help">Optimal length: 50-60 characters</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoDescription" class="form-label">
+                                        Meta Description
+                                        <span class="char-count" data-for="seoDescription">0/160</span>
+                                    </label>
+                                    <textarea id="seoDescription" class="form-textarea" rows="3" maxlength="160" placeholder="Brief description for search engine results"></textarea>
+                                    <p class="form-help">Optimal length: 150-160 characters</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoKeywords" class="form-label">Keywords</label>
+                                    <input type="text" id="seoKeywords" class="form-input" maxlength="255" placeholder="keyword1, keyword2, keyword3">
+                                    <p class="form-help">Comma-separated keywords (less important for modern SEO)</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoRobots" class="form-label">Robots Directive</label>
+                                    <select id="seoRobots" class="form-select">
+                                        <option value="index, follow">index, follow (default)</option>
+                                        <option value="noindex, follow">noindex, follow</option>
+                                        <option value="index, nofollow">index, nofollow</option>
+                                        <option value="noindex, nofollow">noindex, nofollow</option>
+                                    </select>
+                                    <p class="form-help">Controls how search engines index this page</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoCanonical" class="form-label">Canonical URL</label>
+                                    <input type="url" id="seoCanonical" class="form-input" placeholder="https://example.com/page">
+                                    <p class="form-help">Leave empty to use default page URL</p>
+                                </div>
+                            </fieldset>
+
+                            {# Open Graph #}
+                            <fieldset class="seo-fieldset">
+                                <legend>Open Graph (Facebook, LinkedIn)</legend>
+
+                                <div class="form-group">
+                                    <label for="seoOgTitle" class="form-label">
+                                        OG Title
+                                        <span class="char-count" data-for="seoOgTitle">0/95</span>
+                                    </label>
+                                    <input type="text" id="seoOgTitle" class="form-input" maxlength="95" placeholder="Title for social sharing">
+                                    <p class="form-help">Leave empty to use page title</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoOgDescription" class="form-label">
+                                        OG Description
+                                        <span class="char-count" data-for="seoOgDescription">0/200</span>
+                                    </label>
+                                    <textarea id="seoOgDescription" class="form-textarea" rows="2" maxlength="200" placeholder="Description for social sharing"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoOgType" class="form-label">OG Type</label>
+                                    <select id="seoOgType" class="form-select">
+                                        <option value="website">website (default)</option>
+                                        <option value="article">article</option>
+                                        <option value="product">product</option>
+                                        <option value="profile">profile</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">OG Image</label>
+                                    <div class="image-selector image-selector--small" id="ogImageSelector" data-field="og_image" role="button" tabindex="0" aria-label="Click to select OG image">
+                                        <div class="image-selector__preview">
+                                            <img src="" alt="OG image preview" class="image-selector__image hidden" id="ogImagePreview">
+                                            <div class="image-selector__placeholder" id="ogImagePlaceholder">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                                </svg>
+                                                <span>Select image</span>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="seoOgImageUuid" name="og_image_uuid">
+                                    </div>
+                                    <p class="form-help">Recommended size: 1200x630 pixels</p>
+                                </div>
+                            </fieldset>
+
+                            {# Twitter Card #}
+                            <fieldset class="seo-fieldset">
+                                <legend>Twitter Card</legend>
+
+                                <div class="form-group">
+                                    <label for="seoTwitterCard" class="form-label">Card Type</label>
+                                    <select id="seoTwitterCard" class="form-select">
+                                        <option value="summary">summary (default)</option>
+                                        <option value="summary_large_image">summary_large_image</option>
+                                        <option value="app">app</option>
+                                        <option value="player">player</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoTwitterTitle" class="form-label">
+                                        Twitter Title
+                                        <span class="char-count" data-for="seoTwitterTitle">0/70</span>
+                                    </label>
+                                    <input type="text" id="seoTwitterTitle" class="form-input" maxlength="70" placeholder="Title for Twitter">
+                                    <p class="form-help">Leave empty to use OG title or page title</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seoTwitterDescription" class="form-label">
+                                        Twitter Description
+                                        <span class="char-count" data-for="seoTwitterDescription">0/200</span>
+                                    </label>
+                                    <textarea id="seoTwitterDescription" class="form-textarea" rows="2" maxlength="200" placeholder="Description for Twitter"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Twitter Image</label>
+                                    <div class="image-selector image-selector--small" id="twitterImageSelector" data-field="twitter_image" role="button" tabindex="0" aria-label="Click to select Twitter image">
+                                        <div class="image-selector__preview">
+                                            <img src="" alt="Twitter image preview" class="image-selector__image hidden" id="twitterImagePreview">
+                                            <div class="image-selector__placeholder" id="twitterImagePlaceholder">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                                </svg>
+                                                <span>Select image</span>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="seoTwitterImageUuid" name="twitter_image_uuid">
+                                    </div>
+                                    <p class="form-help">Leave empty to use OG image</p>
+                                </div>
+                            </fieldset>
+
+                            {# Page Status #}
+                            <fieldset class="seo-fieldset">
+                                <legend>Status</legend>
+                                <div class="form-group form-group--inline">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="seoIsActive" checked>
+                                        <span class="toggle-switch__slider"></span>
+                                    </label>
+                                    <label for="seoIsActive" class="form-label">SEO Active</label>
+                                    <p class="form-help">When disabled, default SEO values will be used</p>
+                                </div>
+                            </fieldset>
+
+                            {# Hidden field for route_name #}
+                            <input type="hidden" id="seoRouteName" name="route_name">
+
+                            {# Save button #}
+                                    <div class="seo-form__actions">
+                                        <button type="submit" class="btn btn--primary" id="seoSaveBtn">
+                                            Save SEO Settings
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            {# Schemas Sub-panel #}
+                            <div class="seo-subpanel hidden" id="seo-subpanel-schemas" role="tabpanel" aria-labelledby="tab-schemas">
+                                <div class="schemas-section">
+                                    <div class="schemas-header">
+                                        <div class="schemas-header__text">
+                                            <h4>Structured Data Schemas</h4>
+                                            <p class="schemas-header__desc">Add Schema.org structured data to enhance search results with rich snippets.</p>
+                                        </div>
+                                        <button type="button" class="btn btn--primary btn--sm" id="addSchemaBtn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
+                                            Add Schema
+                                        </button>
+                                    </div>
+
+                                    <div class="schemas-list" id="schemasList">
+                                        {# Populated by JavaScript - shows existing schemas as cards #}
+                                        <div class="schemas-empty" id="schemasEmpty">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <polyline points="16 18 22 12 16 6"></polyline>
+                                                <polyline points="8 6 2 12 8 18"></polyline>
+                                            </svg>
+                                            <p>No schemas configured for this page</p>
+                                            <p class="schemas-empty__hint">Click "Add Schema" to add structured data</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Hreflang Sub-panel #}
+                            <div class="seo-subpanel hidden" id="seo-subpanel-hreflang" role="tabpanel" aria-labelledby="tab-hreflang">
+                                <div class="hreflang-section">
+                                    <div class="hreflang-header">
+                                        <h4>Hreflang Tags</h4>
+                                        <p class="hreflang-header__desc">Configure language and region targeting for international SEO.</p>
+                                    </div>
+
+                                    <div class="hreflang-notice">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                        </svg>
+                                        <div class="hreflang-notice__text">
+                                            <strong>Prerequisite:</strong> Multi-language routing must be configured first.
+                                            Pages without hreflang entries will redirect to the homepage of that language.
+                                        </div>
+                                    </div>
+
+                                    <table class="hreflang-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Language</th>
+                                                <th>Region</th>
+                                                <th>URL</th>
+                                                <th>Default</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="hreflangTableBody">
+                                            {# Demo data - shows example hreflang structure #}
+                                            <tr class="hreflang-row hreflang-row--demo">
+                                                <td>English</td>
+                                                <td>US</td>
+                                                <td><code>/en-us/sign-in</code></td>
+                                                <td><span class="badge badge--primary">x-default</span></td>
+                                                <td>
+                                                    <button type="button" class="btn btn--ghost btn--xs" disabled title="Demo entry">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="hreflang-row hreflang-row--demo">
+                                                <td>Spanish</td>
+                                                <td>ES</td>
+                                                <td><code>/es-es/iniciar-sesion</code></td>
+                                                <td>-</td>
+                                                <td>
+                                                    <button type="button" class="btn btn--ghost btn--xs" disabled title="Demo entry">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="hreflang-row hreflang-row--demo">
+                                                <td>French</td>
+                                                <td>FR</td>
+                                                <td><code>/fr-fr/connexion</code></td>
+                                                <td>-</td>
+                                                <td>
+                                                    <button type="button" class="btn btn--ghost btn--xs" disabled title="Demo entry">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="hreflang-row hreflang-row--demo">
+                                                <td>German</td>
+                                                <td>DE</td>
+                                                <td><code>/de-de/anmelden</code></td>
+                                                <td>-</td>
+                                                <td>
+                                                    <button type="button" class="btn btn--ghost btn--xs" disabled title="Demo entry">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="hreflang-row hreflang-row--demo">
+                                                <td>Italian</td>
+                                                <td>IT</td>
+                                                <td><code>/it-it/accedi</code></td>
+                                                <td>-</td>
+                                                <td>
+                                                    <button type="button" class="btn btn--ghost btn--xs" disabled title="Demo entry">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <div class="hreflang-footer">
+                                        <p class="hreflang-footer__hint">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                            </svg>
+                                            Full hreflang management will be available after multi-language routing is implemented.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    {# Build overlay - hidden by default, shown only during build #}
+    <div class="build-overlay hidden" id="buildOverlay">
+        <div class="build-overlay__content">
+            <div class="build-overlay__spinner"></div>
+            <h3 class="build-overlay__title">Building Theme...</h3>
+            <p class="build-overlay__text">Please wait while the SCSS is compiled.</p>
+            <div class="build-overlay__progress" id="buildProgress"></div>
+        </div>
+    </div>
+
+    {# Image selection modal - hidden by default #}
+    <div class="modal hidden" id="imageModal">
+        <div class="modal__backdrop" data-action="close"></div>
+        <div class="modal__content">
+            <header class="modal__header">
+                <h2 class="modal__title" id="imageModalTitle">Select Image</h2>
+                <button type="button" class="modal__close" data-action="close" aria-label="Close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal__body">
+                {# Upload new section #}
+                <div class="image-upload-section">
+                    <label class="image-upload-btn" for="imageFileInput">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Upload New Image
+                    </label>
+                    <input type="file" id="imageFileInput" accept="image/*" class="hidden">
+                </div>
+
+                {# Divider #}
+                <div class="modal__divider">
+                    <span>or select from existing uploads</span>
+                </div>
+
+                {# Existing images grid #}
+                <div class="image-grid" id="imageGrid">
+                    {# Populated by JavaScript #}
+                </div>
+            </div>
+            <footer class="modal__footer">
+                <button type="button" class="btn btn--secondary" data-action="close">Cancel</button>
+                <button type="button" class="btn btn--danger" id="removeImageBtn">Remove Current</button>
+            </footer>
+        </div>
+    </div>
+
+    {# Schema editor modal - hidden by default #}
+    <div class="modal hidden" id="schemaModal">
+        <div class="modal__backdrop" data-action="close"></div>
+        <div class="modal__content modal__content--large">
+            <header class="modal__header">
+                <h2 class="modal__title" id="schemaModalTitle">Add Schema</h2>
+                <button type="button" class="modal__close" data-action="close" aria-label="Close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+            <div class="modal__body">
+                {# Schema type selector #}
+                <div class="schema-type-selector" id="schemaTypeSelector">
+                    <div class="form-group">
+                        <label for="schemaTypeSelect" class="form-label">Schema Type</label>
+                        <select id="schemaTypeSelect" class="form-select">
+                            <option value="">-- Select a schema type --</option>
+                            {# Options populated by JavaScript grouped by category #}
+                        </select>
+                        <p class="form-help" id="schemaTypeDescription">Select a schema type to configure structured data</p>
+                    </div>
+                </div>
+
+                {# Dynamic schema form fields #}
+                <div class="schema-fields hidden" id="schemaFields">
+                    {# Dynamically generated by JavaScript based on selected type #}
+                </div>
+
+                {# JSON-LD preview #}
+                <div class="schema-preview hidden" id="schemaPreview">
+                    <div class="schema-preview__header">
+                        <h4>JSON-LD Preview</h4>
+                        <button type="button" class="btn btn--ghost btn--sm" id="togglePreviewBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                    <pre class="schema-preview__code" id="schemaPreviewCode">{}</pre>
+                </div>
+            </div>
+            <footer class="modal__footer">
+                <button type="button" class="btn btn--secondary" data-action="close">Cancel</button>
+                <button type="button" class="btn btn--primary" id="saveSchemaBtn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Schema
+                </button>
+            </footer>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set base URL for API requests
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/THEME/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

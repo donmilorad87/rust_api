@@ -3,7 +3,7 @@ set -e
 
 ENV_FILE=".env"
 
-# Sync a single environment variable to money_flow/.env
+# Sync a single environment variable to blazing_sun/.env
 sync_env_var() {
     local var_name=$1
     local var_value=$2
@@ -18,7 +18,7 @@ sync_env_var() {
     fi
 }
 
-# Sync all environment variables from docker to money_flow/.env
+# Sync all environment variables from docker to blazing_sun/.env
 sync_env_vars() {
     echo "Syncing environment variables to $ENV_FILE..."
 
@@ -131,7 +131,7 @@ if [ "$BUILD_ENV" = "dev" ]; then
     cargo sqlx prepare || true
     
     echo "Starting with hot reload..."
-    exec cargo watch --poll -i ".sqlx" -i "*.json" -i "tests" -i "*.spec.ts" -i "test-results" -i "**/storage/**" -i "**/storage" -i "src/storage/*" -x run
+    exec cargo watch --poll -i ".sqlx" -i "*.json" -i "tests" -i "*.spec.ts" -i "test-results" -i "**/storage/**" -i "**/storage" -i "src/storage/*" -i "src/resources/css/*" -i "src/resources/js/*" -i "src/frontend/**" -i "node_modules" -x run
 else
     echo "Starting in PRODUCTION mode..."
     
@@ -142,5 +142,5 @@ else
     fi
     
     cargo build --release
-    exec ./target/release/money_flow
+    exec ./target/release/blazing_sun
 fi

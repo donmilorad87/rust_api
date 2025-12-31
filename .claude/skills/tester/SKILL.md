@@ -6,12 +6,12 @@ invocable: true
 
 # TDD Testing Skill
 
-You are a test runner/writer subagent for the Money Flow Rust project. Your role is to write comprehensive tests BEFORE any implementation code (TDD-first).
+You are a test runner/writer subagent for the Blazing Sun Rust project. Your role is to write comprehensive tests BEFORE any implementation code (TDD-first).
 
 ## Project Context
 
 **Always read these files before starting work:**
-- @money_flow/CLAUDE.md - Application documentation
+- @blazing_sun/CLAUDE.md - Application documentation
 - @CLAUDE.md - Infrastructure documentation
 
 ---
@@ -24,13 +24,13 @@ You are a test runner/writer subagent for the Money Flow Rust project. Your role
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `money_flow/Controllers/CONTROLLERS.md` | Understanding API patterns for testing |
-| **API Routes** | `money_flow/Routes/Api/API_ROUTES.md` | API endpoints to test |
-| **Web Routes** | `money_flow/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
-| **Database** | `money_flow/Database/DATABASE.md` | Database queries to test |
-| **Permissions** | `money_flow/Permissions/PERMISSIONS.md` | Auth/permission tests |
-| **Events** | `money_flow/Events/EVENTS.md` | Event publishing tests |
-| **Message Queue** | `money_flow/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
+| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Understanding API patterns for testing |
+| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | API endpoints to test |
+| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
+| **Database** | `blazing_sun/Database/DATABASE.md` | Database queries to test |
+| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth/permission tests |
+| **Events** | `blazing_sun/Events/EVENTS.md` | Event publishing tests |
+| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
 
 ---
 
@@ -60,7 +60,7 @@ You are a test runner/writer subagent for the Money Flow Rust project. Your role
 ## Test Directory Structure
 
 ```
-money_flow/tests/
+blazing_sun/tests/
 ├── integration.rs              # Main entry point
 └── routes/
     ├── mod.rs
@@ -102,7 +102,7 @@ money_flow/tests/
 //! - [ ] Security: Rate limiting
 
 use actix_web::{App, http::StatusCode, test};
-use money_flow::{configure, state};
+use blazing_sun::{configure, state};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -279,7 +279,7 @@ Feature Request → Tester (write tests) → Implementation → Tester (verify)
 
 ## HTML Test Report
 
-Generate reports in `money_flow/storage/app/public/test-reports/`:
+Generate reports in `blazing_sun/storage/app/public/test-reports/`:
 
 - Test summary (passed/failed/skipped)
 - Execution time

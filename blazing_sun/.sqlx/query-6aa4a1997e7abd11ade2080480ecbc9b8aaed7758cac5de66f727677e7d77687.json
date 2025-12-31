@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT last_build_status, last_build_error\n        FROM site_config\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "last_build_status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "last_build_error",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "6aa4a1997e7abd11ade2080480ecbc9b8aaed7758cac5de66f727677e7d77687"
+}

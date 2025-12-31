@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE site_config SET identity_size = $1 WHERE true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ba4bd68e8b21ed633a296425e57c4a40b687861bd7a56ab96744d6709e8fc10c"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE site_config SET assets_version = $1 WHERE true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ead51c63bd39fd33f8a3cd004eaaa36071c28fee4444c4b3003977bc3b9885b9"
+}

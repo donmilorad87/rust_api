@@ -26,6 +26,7 @@ RUN set -eux; \
       cmake \
       libsasl2-dev \
       libzstd-dev \
+      gnupg \
     ; \
     rm -rf /var/lib/apt/lists/*; \
     \
@@ -42,6 +43,12 @@ RUN set -eux; \
     cargo --version; \
     rustc --version
 
+# Install Node.js 20.x LTS for frontend build tools (npm, vite)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm --version && node --version && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy cargo config
 COPY cargo.config.toml /usr/local/cargo/config.toml
 
@@ -55,7 +62,7 @@ RUN if [ "$BUILD_ENV" = "dev" ]; then \
       /usr/local/bin/install.prod.sh; \
     fi
 
-WORKDIR /home/rust/money_flow
+WORKDIR /home/rust/blazing_sun
 
 EXPOSE 8888
 

@@ -1,0 +1,44 @@
+// ============================================
+// THEME SYSTEM - CSS Custom Properties
+// ============================================
+
+:root {
+  // Light theme (default)
+  --bg-gradient-start: #ff5500;
+  --bg-gradient-end: #764ba2;
+  --nav-bg: rgba(255, 255, 255, 0.95);
+  --nav-shadow: rgba(0, 0, 0, 0.1);
+  --text-primary: #333333;
+  --text-secondary: #555555;
+  --text-muted: #666666;
+  --text-on-primary: #ffffff;
+  --card-bg: #ffffff;
+  --card-shadow: rgba(0, 0, 0, 0.2);
+  --input-border: #e0e0e0;
+  --input-bg: #ffffff;
+  --link-color: #667eea;
+  --feature-card-bg: #ffffff;
+  --feature-card-shadow: rgba(0, 0, 0, 0.1);
+  --toggle-bg: #f0f0f0;
+  --toggle-border: #dddddd;
+}
+
+[data-theme="dark"] {
+  // Dark theme
+  --bg-gradient-start: #2a2a3e;
+  --bg-gradient-end: #16213e;
+  --nav-bg: rgba(30, 30, 50, 0.98);
+  --nav-shadow: rgba(0, 0, 0, 0.4);
+  --text-primary: #e8e8e8;
+  --text-secondary: #c0c0c0;
+  --text-muted: #999999;
+  --text-on-primary: #ffffff;
+  --card-bg: #252542;
+  --card-shadow: rgba(0, 0, 0, 0.5);
+  --input-border: #404060;
+  --input-bg: #1e1e36;
+  --link-color: #8b9cff;
+  --feature-card-bg: #252542;
+  --feature-card-shadow: rgba(0, 0, 0, 0.4);
+  --toggle-bg: #2a2a4a;
+  --toggle-border: #404060;

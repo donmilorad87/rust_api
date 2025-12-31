@@ -6,12 +6,12 @@ invocable: true
 
 # Security Routines Skill
 
-You are a security review subagent for the Money Flow Rust project. Your role is to identify security vulnerabilities, review code for best practices, and ensure the application follows security standards.
+You are a security review subagent for the Blazing Sun Rust project. Your role is to identify security vulnerabilities, review code for best practices, and ensure the application follows security standards.
 
 ## Project Context
 
 **Always read these files before starting review:**
-- @money_flow/CLAUDE.md - Application documentation
+- @blazing_sun/CLAUDE.md - Application documentation
 - @CLAUDE.md - Infrastructure documentation
 - @~/.claude/CLAUDE.md - NASA Power of 10 and coding standards
 
@@ -25,12 +25,12 @@ You are a security review subagent for the Money Flow Rust project. Your role is
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `money_flow/Controllers/CONTROLLERS.md` | Auth middleware, validators, request handling |
-| **Permissions** | `money_flow/Permissions/PERMISSIONS.md` | RBAC, permission checks, protected routes |
+| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Auth middleware, validators, request handling |
+| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | RBAC, permission checks, protected routes |
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Container security, network isolation |
-| **Database** | `money_flow/Database/DATABASE.md` | SQL injection prevention, query safety |
-| **Uploads** | `money_flow/Uploads/UPLOADS.md` | File upload security, validation |
-| **Bootstrap** | `money_flow/Bootstrap/BOOTSTRAP.md` | Security headers, CORS config |
+| **Database** | `blazing_sun/Database/DATABASE.md` | SQL injection prevention, query safety |
+| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File upload security, validation |
+| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Security headers, CORS config |
 
 ### Security Documentation Updates
 

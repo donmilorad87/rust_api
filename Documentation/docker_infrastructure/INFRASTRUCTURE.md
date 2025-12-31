@@ -1,6 +1,6 @@
 # Docker Infrastructure Documentation
 
-This document provides comprehensive documentation of the Money Flow Docker infrastructure.
+This document provides comprehensive documentation of the Blazing Sun Docker infrastructure.
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@ This document provides comprehensive documentation of the Money Flow Docker infr
 
 ## Overview
 
-Money Flow uses a Docker Compose orchestration with **12 services** running on a private bridge network (`devnet` - 172.28.0.0/16).
+Blazing Sun uses a Docker Compose orchestration with **12 services** running on a private bridge network (`devnet` - 172.28.0.0/16).
 
 ### Architecture Diagram
 
@@ -116,7 +116,7 @@ Money Flow uses a Docker Compose orchestration with **12 services** running on a
 | Service | Purpose | Healthcheck | Restart Policy |
 |---------|---------|-------------|----------------|
 | **rust** | Main Actix-web application | None | unless-stopped |
-| **postgres** | Primary relational database (SQLx) | `pg_isready -U app -d money_flow` | unless-stopped |
+| **postgres** | Primary relational database (SQLx) | `pg_isready -U app -d blazing_sun` | unless-stopped |
 | **nginx** | SSL termination, reverse proxy, static files | None | unless-stopped |
 | **redis** | Cache and session storage | `redis-cli -a password ping` | unless-stopped |
 | **rabbitmq** | Async task queue (emails, jobs) | `rabbitmq-diagnostics -q ping` | unless-stopped |
@@ -177,14 +177,14 @@ APP_PORT=9999                    # Internal application port
 POSTGRES_IP=172.28.0.11
 POSTGRES_USER=app
 POSTGRES_PASSWORD=app
-POSTGRES_DB=money_flow
+POSTGRES_DB=blazing_sun
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 
 # pgAdmin
 PGADMIN_IP=172.28.0.19
 PGADMIN_PORT=5050
-PGADMIN_DEFAULT_EMAIL=admin@moneyflow.app
+PGADMIN_DEFAULT_EMAIL=admin@blazingsun.app
 PGADMIN_DEFAULT_PASSWORD=pgadmin_secret_password
 
 # RabbitMQ (async tasks: notifications, emails)
@@ -208,7 +208,7 @@ KAFKA_LOG_RETENTION_HOURS=168
 # Kafka UI
 KAFKA_UI_IP=172.28.0.18
 KAFKA_UI_PORT=8080
-KAFKA_UI_CLUSTER_NAME=money-flow
+KAFKA_UI_CLUSTER_NAME=blazing-sun
 KAFKA_UI_USER=admin
 KAFKA_UI_PASSWORD=kafka_ui_secret_password
 
@@ -226,10 +226,10 @@ MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_INITDB_ROOT_USERNAME=root
 MONGO_INITDB_ROOT_PASSWORD=mongo_root_password
-MONGO_INITDB_DATABASE=money_flow
+MONGO_INITDB_DATABASE=blazing_sun
 MONGO_USER=app
 MONGO_PASSWORD=mongo_secret_password
-MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/money_flow
+MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/blazing_sun
 
 # Mongo Express
 MONGO_EXPRESS_IP=172.28.0.21
@@ -243,8 +243,8 @@ MAIL_HOST=sandbox.smtp.mailtrap.io
 MAIL_PORT=2525
 MAIL_USERNAME=<mailtrap_user>
 MAIL_PASSWORD=<mailtrap_pass>
-MAIL_FROM_ADDRESS=noreply@moneyflow.app
-MAIL_FROM_NAME=MoneyFlow
+MAIL_FROM_ADDRESS=noreply@blazingsun.app
+MAIL_FROM_NAME=BlazingSun
 
 # Grafana
 GRAFANA_USER=admin
@@ -253,7 +253,7 @@ GRAFANA_PASSWORD=admin
 
 ### Environment Sync
 
-The `rust/entrypoint.sh` script syncs environment variables from Docker to `money_flow/.env` on startup:
+The `rust/entrypoint.sh` script syncs environment variables from Docker to `blazing_sun/.env` on startup:
 - PORT, POSTGRES_*, REDIS_*, RABBITMQ_*, KAFKA_*, MONGO_*, MAIL_*
 
 ---
@@ -283,16 +283,16 @@ The `rust/entrypoint.sh` script syncs environment variables from Docker to `mone
 
 **Configuration**:
 - Base Image: `debian:bookworm-slim` with `rustup stable`
-- Working Directory: `/home/rust/money_flow`
+- Working Directory: `/home/rust/blazing_sun`
 - Port: 9999 (internal only)
 - Build Modes:
   - **dev**: Hot reload via `cargo-watch`, auto `sqlx prepare`
   - **prod**: Release binary with minimal runtime
 
 **Volume Mounts**:
-- `./money_flow:/home/rust/money_flow` - Application source code
+- `./blazing_sun:/home/rust/blazing_sun` - Application source code
 - `cargo-cache:/usr/local/cargo/registry` - Cargo registry
-- `target-cache:/home/rust/money_flow/target` - Build cache
+- `target-cache:/home/rust/blazing_sun/target` - Build cache
 
 **Dependencies**: postgres, redis, rabbitmq, kafka, mongo (all must be healthy)
 
@@ -305,7 +305,7 @@ The `rust/entrypoint.sh` script syncs environment variables from Docker to `mone
 **Configuration**:
 - Base Image: `postgres:latest`
 - Port: 5432
-- Database: `money_flow`
+- Database: `blazing_sun`
 - User: `app`
 
 **Healthcheck**:
@@ -331,14 +331,14 @@ pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 **Functions**:
 1. SSL termination with self-signed certificates
 2. Reverse proxy to Rust app on port 9999
-3. Static file serving at `/storage/` from `money_flow/src/storage/app/public`
-4. Asset serving at `/assets/` from `money_flow/src/resources/`
+3. Static file serving at `/storage/` from `blazing_sun/src/storage/app/public`
+4. Asset serving at `/assets/` from `blazing_sun/src/resources/`
 5. Sub-path routing for `/grafana/`
 
 **Volume Mounts**:
-- `./money_flow/src/storage/app/public:/var/www/storage/public:ro`
-- `./money_flow/src/resources/css:/var/www/assets/css:ro`
-- `./money_flow/src/resources/js:/var/www/assets/js:ro`
+- `./blazing_sun/src/storage/app/public:/var/www/storage/public:ro`
+- `./blazing_sun/src/resources/css:/var/www/assets/css:ro`
+- `./blazing_sun/src/resources/js:/var/www/assets/js:ro`
 
 ---
 
@@ -405,7 +405,7 @@ redis-cli -a ${REDIS_PASSWORD} ping
 **Configuration**:
 - Base Image: `mongo:latest`
 - Port: 27017
-- Database: `money_flow`
+- Database: `blazing_sun`
 
 **Healthcheck**:
 ```bash
@@ -439,7 +439,7 @@ mongosh --eval "db.adminCommand('ping')" --quiet
 | Application | `https://localhost/` | - |
 | RabbitMQ | `http://localhost:15672` | app / rabbitmq_secret_password |
 | Kafka UI | `http://localhost:8080/kafka` | admin / kafka_ui_secret_password |
-| pgAdmin | `http://localhost:5050/pgadmin` | admin@moneyflow.app / pgadmin_secret_password |
+| pgAdmin | `http://localhost:5050/pgadmin` | admin@blazingsun.app / pgadmin_secret_password |
 | Mongo Express | `http://localhost:8081/mongo/` | admin / mongo_express_password |
 | Grafana | `https://localhost/grafana/` | admin / admin |
 | Prometheus | `http://localhost:9090` | - |
@@ -476,13 +476,13 @@ docker compose logs
 docker compose exec rust bash
 
 # PostgreSQL CLI
-docker compose exec postgres psql -U app -d money_flow
+docker compose exec postgres psql -U app -d blazing_sun
 
 # Redis CLI
 docker compose exec redis redis-cli -a redis_secret_password
 
 # MongoDB Shell
-docker compose exec mongo mongosh -u app -p mongo_secret_password money_flow
+docker compose exec mongo mongosh -u app -p mongo_secret_password blazing_sun
 
 # Kafka shell
 docker compose exec kafka bash
@@ -538,7 +538,7 @@ docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --create \
 
 ```bash
 docker compose logs postgres
-docker compose exec postgres pg_isready -U app -d money_flow
+docker compose exec postgres pg_isready -U app -d blazing_sun
 ```
 
 ### Redis Connection Failed

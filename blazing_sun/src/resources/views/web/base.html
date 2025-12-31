@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{% if theme == "dark" %}dark{% else %}light{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% if seo_title %}{{ seo_title }}{% else %}{{ site_name | default(value='Blazing Sun') }}{% endif %}{% endblock %}</title>
+
+    {# SEO Meta Tags #}
+    {% if seo_description %}<meta name="description" content="{{ seo_description }}">{% endif %}
+    {% if seo_keywords %}<meta name="keywords" content="{{ seo_keywords }}">{% endif %}
+    {% if seo_robots %}<meta name="robots" content="{{ seo_robots }}">{% endif %}
+    {% if seo_canonical %}<link rel="canonical" href="{{ seo_canonical }}">{% endif %}
+
+    {# Open Graph Meta Tags #}
+    {% if og_title %}<meta property="og:title" content="{{ og_title }}">{% endif %}
+    {% if og_description %}<meta property="og:description" content="{{ og_description }}">{% endif %}
+    {% if og_type %}<meta property="og:type" content="{{ og_type }}">{% endif %}
+    <meta property="og:site_name" content="{{ site_name | default(value='Blazing Sun') }}">
+
+    {# Twitter Card Meta Tags #}
+    {% if twitter_card %}<meta name="twitter:card" content="{{ twitter_card }}">{% endif %}
+    {% if twitter_title %}<meta name="twitter:title" content="{{ twitter_title }}">{% endif %}
+    {% if twitter_description %}<meta name="twitter:description" content="{{ twitter_description }}">{% endif %}
+
+    {# Dynamic Favicon - uses assets() function for public storage URL #}
+    {% if favicon_stored_name %}
+    <link rel="icon" href="{{ assets(name=favicon_stored_name, visibility='public') }}">
+    {% else %}
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23667eea'/><stop offset='100%25' stop-color='%23764ba2'/></linearGradient></defs><circle cx='24' cy='24' r='23' fill='url(%23g)'/><path d='M10 34 L10 14 L17 26 L24 14 L24 34 L21 34 L21 22 L17 30 L13 22 L13 34 Z' fill='white'/><path d='M27 34 L27 14 L38 14 L38 17 L30 17 L30 22 L36 22 L36 25 L30 25 L30 34 Z' fill='white'/></svg>">
+    {% endif %}
+
+    {# Global Assets - loaded on every page #}
+    <link rel="stylesheet" href="/assets/css/GLOBAL/style.css?v={{ assets_version }}">
+    <link rel="stylesheet" href="/assets/css/toastify.min.css?v={{ assets_version }}">
+
+    {# Page-specific styles #}
+    {% block extra_styles_links %}{% endblock %}
+
+    <style>
+        /* ========================================
+           Layout Components (Base Template Only)
+           ======================================== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px var(--card-shadow);
+            max-width: 450px;
+            margin: 2rem auto;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card h1 {
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        /* ========================================
+           Form Styles
+           ======================================== */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--input-border);
+            border-radius: 5px;
+            font-size: 1rem;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* ========================================
+           Button Styles
+           ======================================== */
+        .btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ========================================
+           Link Styles
+           ======================================== */
+        .link {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        /* ========================================
+           Hero Section
+           ======================================== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #ffffff;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ========================================
+           Features Section
+           ======================================== */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--feature-card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 5px 20px var(--feature-card-shadow);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card h3 {
+            color: var(--link-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ========================================
+           Responsive
+           ======================================== */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+
+    {# JSON-LD Structured Data Schemas - placed at bottom of head #}
+    {% if json_ld_schemas %}
+    <script type="application/ld+json">
+{{ json_ld_schemas | safe }}
+    </script>
+    {% endif %}
+</head>
+<body>
+    {# Include Navigation Bar #}
+    {% include "partials/_navbar.html" %}
+
+    {% block content %}{% endblock %}
+
+    {# Global JavaScript #}
+    <script src="/assets/js/toastify.min.js?v={{ assets_version }}"></script>
+    <script src="/assets/js/GLOBAL/app.js?v={{ assets_version }}"></script>
+
+    <script>
+        var BASE_URL = '{{ base_url | safe }}';
+
+        function showToast(message, type) {
+            type = type || 'success';
+            var colors = {
+                success: 'linear-gradient(to right, #00b09b, #96c93d)',
+                error: 'linear-gradient(to right, #ff5f6d, #ffc371)',
+                info: 'linear-gradient(to right, #667eea, #764ba2)'
+            };
+
+            Toastify({
+                text: message,
+                duration: 4000,
+                gravity: 'top',
+                position: 'right',
+                style: {
+                    background: colors[type] || colors.info
+                }
+            }).showToast();
+        }
+
+        function apiRequest(endpoint, method, data) {
+            method = method || 'GET';
+            data = data || null;
+
+            var options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            return fetch(BASE_URL + endpoint, options)
+                .then(function(response) {
+                    return response.json().then(function(result) {
+                        return { ok: response.ok, data: result };
+                    });
+                })
+                .catch(function(error) {
+                    return { ok: false, data: { message: 'Network error. Please try again.' } };
+                });
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

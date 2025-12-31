@@ -6,7 +6,7 @@ invocable: true
 
 # Docker Skill
 
-Complete Docker knowledge for the Money Flow infrastructure.
+Complete Docker knowledge for the Blazing Sun infrastructure.
 
 ---
 
@@ -19,10 +19,10 @@ Complete Docker knowledge for the Money Flow infrastructure.
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Complete Docker setup, services, networking |
-| **Database** | `money_flow/Database/DATABASE.md` | PostgreSQL container, connections |
-| **MongoDB** | `money_flow/MongoDB/MONGODB.md` | MongoDB container config |
-| **Events** | `money_flow/Events/EVENTS.md` | Kafka container, topics |
-| **Message Queue** | `money_flow/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ container, queues |
+| **Database** | `blazing_sun/Database/DATABASE.md` | PostgreSQL container, connections |
+| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB container config |
+| **Events** | `blazing_sun/Events/EVENTS.md` | Kafka container, topics |
+| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ container, queues |
 
 ### When to Update Documentation
 
@@ -55,7 +55,7 @@ docker compose exec rust cargo test --test integration
 ```
 
 ### Test Location
-Tests are at: `money_flow/tests/routes/`
+Tests are at: `blazing_sun/tests/routes/`
 
 ---
 
@@ -116,7 +116,7 @@ Tests are at: `money_flow/tests/routes/`
 | Service  | Image Name       | IP           | Port(s)     | Healthcheck                          |
 |----------|------------------|--------------|-------------|--------------------------------------|
 | rust     | rust-app-${ENV}  | 172.28.0.10  | 9999        | -                                    |
-| postgres | postgres-ssl     | 172.28.0.11  | 5432        | `pg_isready -U app -d money_flow`    |
+| postgres | postgres-ssl     | 172.28.0.11  | 5432        | `pg_isready -U app -d blazing_sun`    |
 | nginx    | nginx-ssl        | 172.28.0.12  | 80/443      | -                                    |
 | redis    | redis-pubsub     | 172.28.0.13  | 6379        | `redis-cli -a password ping`         |
 | rabbitmq | rabbitmq-mq      | 172.28.0.14  | 5672/15672  | `rabbitmq-diagnostics -q ping`       |
@@ -191,7 +191,7 @@ Tests are at: `money_flow/tests/routes/`
 | rabbitmqdata   | /var/lib/rabbitmq              | RabbitMQ queues        |
 | kafkadata      | /var/lib/kafka/data            | Kafka event logs       |
 | cargo-cache    | /usr/local/cargo/registry      | Rust crate cache       |
-| target-cache   | /home/rust/money_flow/target   | Rust build cache       |
+| target-cache   | /home/rust/blazing_sun/target   | Rust build cache       |
 | prometheusdata | /prometheus                    | Metrics data           |
 | grafanadata    | /var/lib/grafana               | Dashboards/config      |
 | pgadmindata    | /var/lib/pgadmin               | pgAdmin config         |
@@ -203,9 +203,9 @@ Tests are at: `money_flow/tests/routes/`
 
 | Host Path | Container Path | Purpose |
 |-----------|----------------|---------|
-| `./money_flow/storage/app/public` | `/var/www/storage/public:ro` | Public file serving at `/storage/` |
-| `./money_flow/src/resources/css` | `/var/www/assets/css:ro` | CSS assets at `/assets/css/` |
-| `./money_flow/src/resources/js` | `/var/www/assets/js:ro` | JS assets at `/assets/js/` |
+| `./blazing_sun/storage/app/public` | `/var/www/storage/public:ro` | Public file serving at `/storage/` |
+| `./blazing_sun/src/resources/css` | `/var/www/assets/css:ro` | CSS assets at `/assets/css/` |
+| `./blazing_sun/src/resources/js` | `/var/www/assets/js:ro` | JS assets at `/assets/js/` |
 
 ---
 
@@ -224,14 +224,14 @@ APP_PORT=9999
 POSTGRES_IP=172.28.0.11
 POSTGRES_USER=app
 POSTGRES_PASSWORD=app
-POSTGRES_DB=money_flow
+POSTGRES_DB=blazing_sun
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 
 # pgAdmin
 PGADMIN_IP=172.28.0.19
 PGADMIN_PORT=5050
-PGADMIN_DEFAULT_EMAIL=admin@moneyflow.app
+PGADMIN_DEFAULT_EMAIL=admin@blazingsun.app
 PGADMIN_DEFAULT_PASSWORD=pgadmin_secret_password
 
 # RabbitMQ
@@ -255,7 +255,7 @@ KAFKA_LOG_RETENTION_HOURS=168
 # Kafka UI
 KAFKA_UI_IP=172.28.0.18
 KAFKA_UI_PORT=8080
-KAFKA_UI_CLUSTER_NAME=money-flow
+KAFKA_UI_CLUSTER_NAME=blazing-sun
 KAFKA_UI_USER=admin
 KAFKA_UI_PASSWORD=kafka_ui_secret_password
 
@@ -277,10 +277,10 @@ MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_INITDB_ROOT_USERNAME=root
 MONGO_INITDB_ROOT_PASSWORD=mongo_root_password
-MONGO_INITDB_DATABASE=money_flow
+MONGO_INITDB_DATABASE=blazing_sun
 MONGO_USER=app
 MONGO_PASSWORD=mongo_secret_password
-MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/money_flow
+MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/blazing_sun
 
 # Mongo Express (MongoDB Admin UI)
 MONGO_EXPRESS_IP=172.28.0.21
@@ -318,7 +318,7 @@ These are synced by `rust/entrypoint.sh`:
 ┌─────────────────────────────────────────────────────────────────┐
 │                 Application Level (.env)                         │
 │                                                                  │
-│  Location: /home/milner/Desktop/rust/money_flow/.env            │
+│  Location: /home/milner/Desktop/rust/blazing_sun/.env            │
 │  Purpose: Rust application configuration                         │
 │                                                                  │
 │  Contains: Connection strings for databases, queues, etc.        │
@@ -367,7 +367,7 @@ These are synced by `rust/entrypoint.sh`:
 |---------|-------------|
 | **Single Source of Truth** | All credentials in one place (root `.env`) |
 | **Docker Isolation** | Containers get variables via `docker-compose.yml` |
-| **App Configuration** | Rust app reads from `money_flow/.env` |
+| **App Configuration** | Rust app reads from `blazing_sun/.env` |
 | **Connection URLs** | Entrypoint constructs URLs from individual vars |
 | **Security** | `.env` files are gitignored |
 
@@ -419,16 +419,16 @@ docker compose build <service>        # Build one
 
 ```bash
 # PostgreSQL
-docker compose exec postgres psql -U app -d money_flow
-docker compose exec postgres pg_dump -U app money_flow > backup.sql
-docker compose exec -T postgres psql -U app -d money_flow < backup.sql
+docker compose exec postgres psql -U app -d blazing_sun
+docker compose exec postgres pg_dump -U app blazing_sun > backup.sql
+docker compose exec -T postgres psql -U app -d blazing_sun < backup.sql
 
 # Redis
 docker compose exec redis redis-cli -a redis_secret_password
 docker compose exec redis redis-cli -a redis_secret_password KEYS '*'
 
 # MongoDB
-docker compose exec mongo mongosh -u app -p mongo_secret_password --authenticationDatabase money_flow money_flow
+docker compose exec mongo mongosh -u app -p mongo_secret_password --authenticationDatabase blazing_sun blazing_sun
 docker compose exec mongo mongosh -u root -p mongo_root_password --authenticationDatabase admin
 
 # MongoDB backup/restore
@@ -453,7 +453,7 @@ docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
 
 ```bash
 # PostgreSQL
-docker compose exec postgres pg_isready -U app -d money_flow
+docker compose exec postgres pg_isready -U app -d blazing_sun
 
 # Redis
 docker compose exec redis redis-cli -a redis_secret_password ping
@@ -476,7 +476,7 @@ docker compose exec mongo mongosh --eval "db.adminCommand('ping')" --quiet
 |------|------|
 | docker-compose.yml | `/home/milner/Desktop/rust/docker-compose.yml` |
 | Root .env | `/home/milner/Desktop/rust/.env` |
-| App .env | `/home/milner/Desktop/rust/money_flow/.env` |
+| App .env | `/home/milner/Desktop/rust/blazing_sun/.env` |
 | Rust Dockerfile | `/home/milner/Desktop/rust/rust/Dockerfile` |
 | Rust entrypoint | `/home/milner/Desktop/rust/rust/entrypoint.sh` |
 | Nginx Dockerfile | `/home/milner/Desktop/rust/nginx/Dockerfile` |
@@ -506,7 +506,7 @@ docker compose exec mongo mongosh --eval "db.adminCommand('ping')" --quiet
 | Mongo Express | https://localhost/mongo/      | admin / mongo_express_password       |
 | RabbitMQ      | http://localhost:15672        | app / rabbitmq_secret_password       |
 | Kafka UI      | http://localhost:8080/kafka   | admin / kafka_ui_secret_password     |
-| pgAdmin       | http://localhost:5050/pgadmin | admin@moneyflow.app / pgadmin_secret_password |
+| pgAdmin       | http://localhost:5050/pgadmin | admin@blazingsun.app / pgadmin_secret_password |
 | Grafana       | https://localhost/grafana/    | admin / admin                        |
 | Prometheus    | http://localhost:9090         | -                                    |
 
@@ -571,9 +571,9 @@ RUN cargo build --release
 # Runtime stage
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/money_flow /usr/local/bin/
+COPY --from=builder /app/target/release/blazing_sun /usr/local/bin/
 USER 1000
-CMD ["money_flow"]
+CMD ["blazing_sun"]
 ```
 
 ### Entrypoint Pattern

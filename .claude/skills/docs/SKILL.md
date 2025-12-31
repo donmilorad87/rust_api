@@ -6,12 +6,12 @@ invocable: true
 
 # Write Documentation Skill
 
-You are a documentation writer subagent for the Money Flow Rust project. Your role is to create and maintain clear, comprehensive documentation.
+You are a documentation writer subagent for the Blazing Sun Rust project. Your role is to create and maintain clear, comprehensive documentation.
 
 ## Project Context
 
 **Reference existing documentation:**
-- @money_flow/CLAUDE.md - Application documentation
+- @blazing_sun/CLAUDE.md - Application documentation
 - @CLAUDE.md - Infrastructure documentation
 
 ---
@@ -25,19 +25,19 @@ You are a documentation writer subagent for the Money Flow Rust project. Your ro
 | Documentation | Path | Purpose |
 |--------------|------|---------|
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Docker services, networking, volumes |
-| **Controllers** | `money_flow/Controllers/CONTROLLERS.md` | API controllers, middleware, validators |
-| **API Routes** | `money_flow/Routes/Api/API_ROUTES.md` | REST API endpoints |
-| **Web Routes** | `money_flow/Routes/Web/WEB_ROUTES.md` | Web page routes |
-| **Database** | `money_flow/Database/DATABASE.md` | PostgreSQL, migrations, SQLx |
-| **MongoDB** | `money_flow/MongoDB/MONGODB.md` | MongoDB collections |
-| **Events** | `money_flow/Events/EVENTS.md` | Kafka event streaming |
-| **Message Queue** | `money_flow/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ jobs |
-| **Bootstrap** | `money_flow/Bootstrap/BOOTSTRAP.md` | Core framework components |
-| **Permissions** | `money_flow/Permissions/PERMISSIONS.md` | Auth and RBAC |
-| **Email** | `money_flow/Email/EMAIL.md` | Email system |
-| **Uploads** | `money_flow/Uploads/UPLOADS.md` | File uploads, storage |
-| **Templates** | `money_flow/Templates/TEMPLATES.md` | Tera templates |
-| **Cron Jobs** | `money_flow/CronJobs/CRON_JOBS.md` | Scheduled tasks |
+| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | API controllers, middleware, validators |
+| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | REST API endpoints |
+| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web page routes |
+| **Database** | `blazing_sun/Database/DATABASE.md` | PostgreSQL, migrations, SQLx |
+| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB collections |
+| **Events** | `blazing_sun/Events/EVENTS.md` | Kafka event streaming |
+| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ jobs |
+| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components |
+| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth and RBAC |
+| **Email** | `blazing_sun/Email/EMAIL.md` | Email system |
+| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File uploads, storage |
+| **Templates** | `blazing_sun/Templates/TEMPLATES.md` | Tera templates |
+| **Cron Jobs** | `blazing_sun/CronJobs/CRON_JOBS.md` | Scheduled tasks |
 
 ### Your Documentation Responsibilities
 
@@ -158,10 +158,10 @@ pub async fn create(db: &Pool<Postgres>, params: &CreateUserParams) -> Result<Us
 
 | Doc Type | Location |
 |----------|----------|
-| Project README | `money_flow/README.md` |
-| API Reference | `money_flow/docs/api/` |
-| Architecture | `money_flow/docs/architecture/` |
-| Guides | `money_flow/docs/guides/` |
+| Project README | `blazing_sun/README.md` |
+| API Reference | `blazing_sun/docs/api/` |
+| Architecture | `blazing_sun/docs/architecture/` |
+| Guides | `blazing_sun/docs/guides/` |
 
 ## When NOT to Document
 

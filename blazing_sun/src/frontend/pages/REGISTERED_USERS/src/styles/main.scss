@@ -1,0 +1,52 @@
+// ============================================
+// REGISTERED USERS ADMIN PAGE - Main Stylesheet
+// ============================================
+// This file is the entry point for the REGISTERED_USERS admin page styles.
+// Utilities and theme variables come from GLOBAL styles.
+// This file only contains page-specific BEM components.
+
+// 1. Variables (SCSS vars for BEM components)
+@use 'variables' as *;
+
+// 2. BEM Component Styles
+@use 'users-table';
+
+// ============================================
+// ADMIN SPECIFIC STYLES
+// ============================================
+
+.admin-content {
+  min-height: calc(100vh - 60px); // Account for navbar
+  background: var(--color-bg-secondary);
+}
+
+// Stats cards
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: $radius-lg;
+  padding: 1.25rem;
+  box-shadow: $shadow-sm;
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+}

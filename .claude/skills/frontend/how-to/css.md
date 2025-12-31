@@ -16,7 +16,7 @@ This approach ensures that each page loads only the JavaScript it actually needs
 
 ## File Location
 
-CSS files go in: `money_flow/src/frontend/pages/{PAGE_NAME}/src/styles/main.scss`
+CSS files go in: `blazing_sun/src/frontend/pages/{PAGE_NAME}/src/styles/main.scss`
 
 Served at URL: `/assets/css/{PAGE_NAME}/style.css`
 
@@ -30,13 +30,150 @@ The application uses a **CSS custom properties (CSS variables)** based theming s
 
 1. **System Default**: Automatically detects user's OS preference via `prefers-color-scheme`
 2. **Manual Override**: Users can toggle themes via a switch (sets `data-theme` on `<html>`)
-3. **Persistence**: Theme preference stored in localStorage
+3. **Persistence**: Theme preference stored in cookie + localStorage
+
+### IMPORTANT: GLOBAL-First Theme Architecture
+
+**All CSS theme variables are defined ONLY in GLOBAL CSS (`blazing_sun/src/frontend/pages/GLOBAL/src/styles/_theme.scss`).**
+
+Page-specific CSS files must **NEVER redefine theme CSS variables**. They should only:
+1. Use the theme variables (e.g., `background: var(--color-surface)`)
+2. Define SCSS constants (spacing, typography, z-index - non-themeable values)
+
+**CSS Loading Order:**
+```
+1. GLOBAL CSS (defines all theme variables)
+2. Page-specific CSS (uses theme variables, no redefinition)
+```
+
+**Why?**
+- GLOBAL CSS is loaded first via `base.html`
+- If page CSS redefines theme variables, there's a "flash of incorrect colors" as different values load
+- Single source of truth for colors ensures consistency across all pages
+
+### What Goes Where
+
+**GLOBAL `_theme.scss`:**
+- All CSS custom properties (`--color-*`, `--shadow-*`, `--nav-*`, `--input-*`, etc.)
+- Both `:root` (light) and `[data-theme="dark"]` selectors
+- These are the ONLY definitions of theme variables
+
+**GLOBAL `_utilities.scss`:**
+- All utility classes (`.df`, `.aic`, `.m1`, `.p2`, `.gap-md`, etc.)
+- This is the SINGLE SOURCE OF TRUTH for utility classes
+- Page projects inherit these from GLOBAL CSS - they do NOT create their own utilities
+
+**Page-specific `_variables.scss`:**
+- Minimal SCSS constants needed for BEM component compilation
+- Font sizes, spacing, radius, transitions, breakpoints, shadows
+- Optional: z-index, colors, gradients (only if used by BEM components)
+- Import these with `@use 'variables' as *`
+
+**Page projects do NOT have:**
+- Their own `_utilities.scss` (utility classes come from GLOBAL)
+- CSS custom property definitions (theme colors come from GLOBAL)
+- Duplicate variable definitions that match GLOBAL
+
+### Example: Correct Page-Specific `_variables.scss`
+
+```scss
+// ============================================
+// PAGE NAME - SCSS Variables
+// ============================================
+// Minimal SCSS variables for BEM component compilation.
+// Runtime theming uses CSS custom properties from GLOBAL/_theme.scss.
+// Utility classes come from GLOBAL/_utilities.scss.
+
+// --- Typography ---
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-size-xs: 0.75rem;
+$font-size-sm: 0.875rem;
+$font-size-base: 1rem;
+$font-size-lg: 1.125rem;
+$font-size-xl: 1.25rem;
+$font-size-2xl: 1.5rem;
+$font-size-xxl: 1.75rem;
+$font-size-3xl: 2rem;
+
+// --- Spacing ---
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+
+// --- Border Radius ---
+$radius-sm: 4px;
+$radius-md: 6px;
+$radius-lg: 8px;
+$radius-full: 9999px;
+
+// --- Transitions ---
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+
+// --- Breakpoints ---
+$breakpoint-sm: 480px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+
+// --- Shadows (SCSS fallbacks) ---
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+// --- OPTIONAL: Only if page BEM components use these ---
+// Z-Index (only if modals/overlays used)
+// $z-dropdown: 100;
+// $z-modal: 200;
+// $z-overlay: 300;
+
+// Colors (only if BEM uses SCSS color functions)
+// $color-primary: #667eea;
+// $gradient-primary: linear-gradient(135deg, $color-primary 0%, #764ba2 100%);
+```
+
+### Example: Correct Component Usage
+
+```scss
+@use 'variables' as *;
+
+.card {
+  // Use GLOBAL theme variables for colors
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+
+  // Use SCSS variables for non-theme values
+  padding: $spacing-xl;
+  border-radius: $radius-md;
+  transition: background-color $transition-normal;
+}
+
+.form-group__input {
+  background: var(--input-bg);
+  border: 2px solid var(--input-border);
+  color: var(--color-text-primary);
+
+  &:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: var(--focus-ring);
+  }
+}
+```
 
 ### Theme Detection Priority
 
 1. `data-theme="dark"` or `data-theme="light"` on `<html>` (highest priority)
 2. System preference via `@media (prefers-color-scheme: dark)`
 3. Light theme as default fallback
+
+**IMPORTANT:** The `data-theme` attribute must ALWAYS be set explicitly in `base.html`:
+```html
+<html lang="en" data-theme="{% if theme == 'dark' %}dark{% else %}light{% endif %}">
+```
+This prevents the CSS `@media (prefers-color-scheme: dark)` from overriding the user's chosen theme.
 
 ### JavaScript Theme Controller
 
@@ -235,28 +372,55 @@ If a component requires more complex styling than utility classes can reasonably
 
 ## Folder Structure
 
-All Vite projects will live under: `money_flow/src/frontend`
+All Vite projects will live under: `blazing_sun/src/frontend`
+
+### GLOBAL Project (Single Source of Truth)
 
 ```
-money_flow/src/frontend/
-  pages/
-    SIGN_UP/
-      src/
-        styles/
-          _variables.scss     # CSS custom properties + SCSS vars
-          _utilities.scss     # Utility classes
-          _signup-form.scss   # BEM component styles
-          main.scss           # Entry point, imports all partials
-        SignUp.js             # ES6 class for page logic
-      vite.config.js
-      package.json
+blazing_sun/src/frontend/pages/GLOBAL/
+  src/
+    styles/
+      _variables.scss     # SCSS compile-time constants (master definitions)
+      _theme.scss         # CSS custom properties (light/dark themes)
+      _utilities.scss     # ALL utility classes (single source of truth)
+      _base.scss          # Base element styles
+      _navbar.scss        # Navbar component
+      main.scss           # Entry point
+    js/
+      ThemeManager.js     # Theme switching logic
+      Navbar.js           # Navbar component
+      main.js             # Entry point
+  vite.config.js
+  package.json
 ```
 
-This pattern will repeat for every page (many Vite projects), ensuring:
+### Page Projects (Minimal Structure)
 
-- Only page-specific CSS is shipped
-- Only page-specific JavaScript is shipped
-- No large shared bundle with unused code
+```
+blazing_sun/src/frontend/pages/SIGN_UP/
+  src/
+    styles/
+      _variables.scss     # Minimal SCSS vars for BEM compilation
+      _signup-form.scss   # BEM component styles (uses var() for colors)
+      main.scss           # Entry point, imports partials
+    SignUp.js             # ES6 class for page logic
+    main.js               # Entry point
+  vite.config.js
+  package.json
+```
+
+**Note**: Page projects do NOT have:
+- `_utilities.scss` - Utility classes come from GLOBAL CSS
+- `_theme.scss` - Theme colors come from GLOBAL CSS
+- Duplicate variable definitions
+
+### Why This Architecture Works
+
+- **GLOBAL CSS loads first** via `base.html` → defines all utilities and theme colors
+- **Page CSS loads second** → only contains BEM components for that page
+- **No duplication** → smaller bundles, faster loads
+- **Theme consistency** → all pages use same colors from GLOBAL
+- **Easy maintenance** → update utilities/colors in one place
 
 Because the output files are static assets, the browser will cache them after the first load, making subsequent visits faster.
 
@@ -267,10 +431,10 @@ Because the output files are static assets, the browser will cache them after th
 ### CSS Output
 
 **Vite project location:**
-`money_flow/src/frontend/pages/SIGN_UP`
+`blazing_sun/src/frontend/pages/SIGN_UP`
 
 **Output compiled and minified CSS to:**
-`/home/milner/Desktop/rust/money_flow/src/resources/css/SIGN_UP/style.css`
+`/home/milner/Desktop/rust/blazing_sun/src/resources/css/SIGN_UP/style.css`
 
 Vite should support two configurations:
 
@@ -470,6 +634,133 @@ $breakpoint-xl: 1440px;
 8. Test both light and dark themes during development
 9. Ensure WCAG AA contrast ratios for text
 10. Support keyboard navigation with visible focus states
+
+---
+
+## SCSS/Sass Best Practices (CRITICAL)
+
+### Avoid Deprecated Features
+
+**IMPORTANT**: Dart Sass is deprecating features. Follow these rules to avoid build warnings:
+
+#### 1. Use Modern Sass API in Vite
+
+**MANDATORY** for all Vite configs:
+
+```javascript
+// vite.config.js
+export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',  // REQUIRED - avoids legacy-js-api deprecation
+        charset: false,
+      },
+    },
+  },
+});
+```
+
+#### 2. Avoid Deprecated SCSS Features
+
+| Deprecated | Use Instead |
+|------------|-------------|
+| `@import` | `@use` and `@forward` |
+| Global variables without namespace | `@use 'file' as namespace;` then `namespace.$var` |
+| `lighten()` / `darken()` | `color.adjust()` or `color.scale()` |
+| `saturate()` / `desaturate()` | `color.adjust($saturation: X)` |
+| Division with `/` | `math.div()` or `calc()` |
+| `!global` flag | Define variables at root level |
+
+#### 3. Modern @use Syntax
+
+```scss
+// OLD (deprecated)
+@import 'variables';
+@import 'mixins';
+
+// NEW (required)
+@use 'variables' as vars;
+@use 'mixins' as mix;
+
+// Usage
+.element {
+  color: vars.$color-primary;
+  @include mix.flex-center;
+}
+
+// Or with * for all members (use sparingly)
+@use 'variables' as *;
+```
+
+#### 4. Modern Color Functions
+
+```scss
+// OLD (deprecated)
+$lighter: lighten($color, 10%);
+$darker: darken($color, 10%);
+
+// NEW (required)
+@use 'sass:color';
+
+$lighter: color.adjust($color, $lightness: 10%);
+$darker: color.adjust($color, $lightness: -10%);
+
+// Or use color.scale for proportional changes
+$lighter: color.scale($color, $lightness: 20%);
+```
+
+#### 5. Modern Math Functions
+
+```scss
+// OLD (deprecated in some contexts)
+$result: $width / 2;
+
+// NEW (required)
+@use 'sass:math';
+
+$result: math.div($width, 2);
+
+// Or use CSS calc() when possible
+width: calc(100% / 3);
+```
+
+### Vite Project Checklist
+
+When creating a new Vite project, ensure:
+
+- [ ] `api: 'modern-compiler'` in scss preprocessorOptions
+- [ ] Use `@use` instead of `@import`
+- [ ] Use `sass:color` module for color manipulation
+- [ ] Use `sass:math` module for division
+- [ ] No deprecated Sass functions
+
+### Example: Modern SCSS File Structure
+
+```scss
+// _variables.scss
+$color-primary: #667eea;
+$spacing-md: 1rem;
+
+// _mixins.scss
+@use 'sass:color';
+
+@mixin hover-darken($amount: 10%) {
+  &:hover {
+    background: color.adjust($color, $lightness: -$amount);
+  }
+}
+
+// main.scss
+@use 'variables' as vars;
+@use 'mixins' as mix;
+
+.button {
+  background: vars.$color-primary;
+  padding: vars.$spacing-md;
+  @include mix.hover-darken(5%);
+}
+```
 
 ---
 

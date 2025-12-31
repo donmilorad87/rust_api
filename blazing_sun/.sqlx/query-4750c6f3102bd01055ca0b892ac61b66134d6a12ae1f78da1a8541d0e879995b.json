@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE site_config SET logo_uuid = $1 WHERE true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4750c6f3102bd01055ca0b892ac61b66134d6a12ae1f78da1a8541d0e879995b"
+}

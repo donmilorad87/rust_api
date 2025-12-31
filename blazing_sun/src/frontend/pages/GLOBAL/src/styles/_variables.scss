@@ -1,0 +1,278 @@
+// ============================================
+// GLOBAL SCSS VARIABLES
+// ============================================
+// These variables are synced with the admin/theme configuration.
+// Changes to identity colors/sizes trigger a rebuild.
+// Use CSS custom properties (var(--*)) for runtime theming.
+
+// ============================================
+// IDENTITY / BRANDING
+// ============================================
+// Configurable via admin panel - these trigger rebuild on change
+$identity-color-start: #7cbb88;
+$identity-color-end: #4d31af;
+$identity-size: 1.1875rem;
+
+// ============================================
+// BRAND COLORS (SCSS compile-time)
+// ============================================
+// Primary brand gradient uses identity colors
+$gradient-primary: linear-gradient(135deg, $identity-color-start 0%, $identity-color-end 100%);
+$gradient-angle: 135deg;
+
+// Base brand colors (used in SCSS where CSS vars aren't supported)
+$color-primary: #3498db;
+$color-primary-dark: #5a6fd6;
+$color-secondary: #764ba2;
+$color-accent: #667eea;
+
+// Semantic colors
+$color-success: #10b981;
+$color-warning: #f59e0b;
+$color-error: #ef4444;
+$color-info: #3b82f6;
+
+// ============================================
+// TYPOGRAPHY - FONT FAMILY
+// ============================================
+$font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+$font-family-serif: Georgia, Cambria, 'Times New Roman', Times, serif;
+$font-family-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+$font-family: $font-family-sans;
+
+// ============================================
+// TYPOGRAPHY - FONT SIZES (10 sizes)
+// ============================================
+// Configurable via admin panel
+$font-size-xxs: 0.625rem;   // 10px
+$font-size-xs: 0.75rem;     // 12px
+$font-size-sm: 0.875rem;    // 14px
+$font-size-base: 1rem;      // 16px (body text)
+$font-size-lg: 1.125rem;    // 18px
+$font-size-xl: 1.25rem;     // 20px
+$font-size-2xl: 1.5rem;     // 24px
+$font-size-3xl: 1.875rem;   // 30px
+$font-size-4xl: 2.25rem;    // 36px
+$font-size-5xl: 3rem;       // 48px
+
+// Legacy aliases for backward compatibility
+$font-size-xxl: $font-size-2xl;  // Alias for older component files
+
+// ============================================
+// TYPOGRAPHY - HEADING SIZES
+// ============================================
+$heading-1-size: $font-size-5xl;
+$heading-2-size: $font-size-4xl;
+$heading-3-size: $font-size-3xl;
+$heading-4-size: $font-size-2xl;
+$heading-5-size: $font-size-xl;
+$heading-6-size: $font-size-lg;
+
+// ============================================
+// TYPOGRAPHY - LINE HEIGHTS
+// ============================================
+$line-height-none: 1;
+$line-height-tight: 1.25;
+$line-height-snug: 1.375;
+$line-height-base: 1.5;
+$line-height-relaxed: 1.625;
+$line-height-loose: 2;
+
+// ============================================
+// TYPOGRAPHY - LETTER SPACING
+// ============================================
+$letter-spacing-tighter: -0.05em;
+$letter-spacing-tight: -0.025em;
+$letter-spacing-normal: 0;
+$letter-spacing-wide: 0.025em;
+$letter-spacing-wider: 0.05em;
+$letter-spacing-widest: 0.1em;
+
+// ============================================
+// SPACING SCALE
+// ============================================
+// Configurable via admin panel
+$spacing-0: 0;
+$spacing-px: 1px;
+$spacing-0-5: 0.125rem;  // 2px
+$spacing-xs: 0.25rem;    // 4px
+$spacing-sm: 0.5rem;     // 8px
+$spacing-md: 1rem;       // 16px
+$spacing-lg: 1.5rem;     // 24px
+$spacing-xl: 2rem;       // 32px
+$spacing-xxl: 3rem;      // 48px
+$spacing-3xl: 4rem;      // 64px
+$spacing-4xl: 5rem;      // 80px
+$spacing-5xl: 6rem;      // 96px
+
+// ============================================
+// BORDER RADIUS
+// ============================================
+// Configurable via admin panel
+$radius-none: 0;
+$radius-xs: 2px;
+$radius-sm: 4px;
+$radius-md: 6px;
+$radius-lg: 8px;
+$radius-xl: 12px;
+$radius-2xl: 16px;
+$radius-3xl: 24px;
+$radius-full: 9999px;
+
+// ============================================
+// BORDER WIDTH
+// ============================================
+$border-0: 0;
+$border-1: 1px;
+$border-2: 2px;
+$border-4: 4px;
+$border-8: 8px;
+
+// ============================================
+// TRANSITIONS
+// ============================================
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+$transition-slow: 0.4s ease;
+$transition-slower: 0.6s ease;
+
+// Specific transitions
+$transition-colors: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+$transition-transform: transform 0.2s ease;
+$transition-opacity: opacity 0.2s ease;
+$transition-shadow: box-shadow 0.2s ease;
+
+// ============================================
+// BREAKPOINTS
+// ============================================
+$breakpoint-xs: 375px;   // Mobile small
+$breakpoint-sm: 480px;   // Mobile large
+$breakpoint-md: 768px;   // Tablet
+$breakpoint-lg: 1024px;  // Desktop
+$breakpoint-xl: 1280px;  // Large desktop
+$breakpoint-2xl: 1536px; // Extra large
+
+// ============================================
+// Z-INDEX SCALE
+// ============================================
+$z-negative: -1;
+$z-0: 0;
+$z-10: 10;
+$z-20: 20;
+$z-30: 30;
+$z-40: 40;
+$z-50: 50;
+$z-dropdown: 100;
+$z-sticky: 200;
+$z-fixed: 250;
+$z-navbar: 300;
+$z-modal-backdrop: 400;
+$z-modal: 500;
+$z-popover: 600;
+$z-tooltip: 700;
+$z-toast: 800;
+$z-max: 9999;
+
+// ============================================
+// SHADOWS (SCSS fallbacks)
+// ============================================
+$shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+$shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+$shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+$shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+$shadow-none: none;
+
+// ============================================
+// CONTAINER WIDTHS
+// ============================================
+$container-xs: 320px;
+$container-sm: 540px;
+$container-md: 720px;
+$container-lg: 960px;
+$container-xl: 1140px;
+$container-2xl: 1320px;
+$container-full: 100%;
+
+// ============================================
+// BUTTON VARIANTS (SCSS - for component styles)
+// ============================================
+// Primary button
+$btn-primary-bg: $gradient-primary;
+$btn-primary-color: #ffffff;
+$btn-primary-border: transparent;
+
+// Secondary button
+$btn-secondary-bg: transparent;
+$btn-secondary-color: $color-primary;
+$btn-secondary-border: $color-primary;
+
+// Success button
+$btn-success-bg: $color-success;
+$btn-success-color: #ffffff;
+$btn-success-border: $color-success;
+
+// Danger button
+$btn-danger-bg: $color-error;
+$btn-danger-color: #ffffff;
+$btn-danger-border: $color-error;
+
+// ============================================
+// FORM ELEMENTS
+// ============================================
+$input-padding-y: $spacing-sm;
+$input-padding-x: $spacing-md;
+$input-font-size: $font-size-base;
+$input-border-radius: $radius-md;
+$input-border-width: $border-1;
+
+// ============================================
+// COMPONENT SIZES
+// ============================================
+// Avatar sizes
+$avatar-xs: 24px;
+$avatar-sm: 32px;
+$avatar-md: 40px;
+$avatar-lg: 48px;
+$avatar-xl: 64px;
+$avatar-2xl: 96px;
+
+// Icon sizes
+$icon-xs: 12px;
+$icon-sm: 16px;
+$icon-md: 20px;
+$icon-lg: 24px;
+$icon-xl: 32px;
+
+// ============================================
+// ANIMATION DURATIONS
+// ============================================
+$duration-75: 75ms;
+$duration-100: 100ms;
+$duration-150: 150ms;
+$duration-200: 200ms;
+$duration-300: 300ms;
+$duration-500: 500ms;
+$duration-700: 700ms;
+$duration-1000: 1000ms;
+
+// ============================================
+// OPACITY SCALE
+// ============================================
+$opacity-0: 0;
+$opacity-5: 0.05;
+$opacity-10: 0.1;
+$opacity-20: 0.2;
+$opacity-25: 0.25;
+$opacity-30: 0.3;
+$opacity-40: 0.4;
+$opacity-50: 0.5;
+$opacity-60: 0.6;
+$opacity-70: 0.7;
+$opacity-75: 0.75;
+$opacity-80: 0.8;
+$opacity-90: 0.9;
+$opacity-95: 0.95;
+$opacity-100: 1;

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE site_config SET scss_variables = $1 WHERE true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1f1e1db5c8ffa1b0e3d5896d00f2999a61606f0a14892a2fa775db0507002d4d"
+}

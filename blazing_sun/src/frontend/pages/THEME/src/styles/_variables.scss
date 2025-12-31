@@ -1,0 +1,31 @@
+// ============================================
+// THEME CONFIG PAGE - Variables
+// ============================================
+
+// These are page-specific overrides
+// Main theme variables come from GLOBAL
+
+$theme-sidebar-width: 280px;
+$theme-header-height: 60px;
+
+// Tab colors
+$tab-active-bg: var(--card-bg);
+$tab-hover-bg: rgba(102, 126, 234, 0.1);
+$tab-border: rgba(102, 126, 234, 0.3);
+
+// Color picker
+$color-picker-size: 40px;
+$color-picker-border-radius: 8px;
+
+// Size picker
+$size-picker-preview-height: 6px;
+$size-picker-preview-bg: rgba(102, 126, 234, 0.2);
+$size-picker-preview-fill: var(--color-primary, #667eea);
+
+// Image selector
+$image-preview-size: 120px;
+$image-grid-gap: 1rem;
+
+// Build overlay
+$overlay-bg: rgba(0, 0, 0, 0.8);
+$overlay-z-index: 1000;

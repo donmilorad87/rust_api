@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id,\n            page_seo_id,\n            schema_type,\n            schema_data,\n            position,\n            is_active,\n            created_at,\n            updated_at\n        FROM page_schemas\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "page_seo_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "schema_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "schema_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "position",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "5adbc2748d4257b03001a7c165a79249afa6c67a6bb32bc9527cab7596a74a58"
+}

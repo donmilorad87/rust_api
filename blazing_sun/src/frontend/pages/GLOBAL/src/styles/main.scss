@@ -1,0 +1,23 @@
+// ============================================
+// Blazing Sun GLOBAL STYLES
+// ============================================
+// This stylesheet is loaded on every page and includes:
+// - CSS Reset
+// - Theme variables (light/dark)
+// - Navigation bar styles
+// - Utility classes
+
+// Variables first (SCSS compile-time values)
+@use 'variables' as *;
+
+// Theme CSS custom properties (runtime theming)
+@use 'theme';
+
+// Base reset and typography
+@use 'base';
+
+// Navigation bar component
+@use 'navbar';
+
+// Global utility classes (single source of truth)
+@use 'utilities';

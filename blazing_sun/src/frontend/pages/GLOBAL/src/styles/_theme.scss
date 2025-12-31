@@ -1,0 +1,520 @@
+// ============================================
+// THEME SYSTEM - CSS Custom Properties
+// ============================================
+// These values are synced with the admin/theme configuration.
+// Changes here can be made at runtime without rebuild.
+// Use SCSS variables in _variables.scss for compile-time values.
+
+:root {
+  // ============================================
+  // LIGHT THEME (default)
+  // ============================================
+
+  // --- Page Background Gradient ---
+  --bg-gradient-start: #00ff4c;
+  --bg-gradient-end: #c62424;
+  --bg-gradient-angle: 135deg;
+
+  // --- Navigation ---
+  --nav-bg: #7c88de;
+  --nav-shadow: #1c7d7c;
+  --nav-text: #ffffff;
+  --nav-text-hover: #f0f0f0;
+  --nav-border: rgba(255, 255, 255, 0.1);
+
+  // --- Text Colors ---
+  --text-primary: #333333;
+  --text-secondary: #555555;
+  --text-muted: #666666;
+  --text-on-primary: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-disabled: #9ca3af;
+  --text-placeholder: #9ca3af;
+
+  // --- Heading Colors (h1-h5) ---
+  --heading-h1-color: #1a1a2e;
+  --heading-h2-color: #2d2d44;
+  --heading-h3-color: #333333;
+  --heading-h4-color: #444444;
+  --heading-h5-color: #555555;
+
+  // --- Paragraph & Inline Elements ---
+  --paragraph-color: #3a4c98;
+  --link-color: #c50d0d;
+  --link-hover-color: #188138;
+  --span-color: #555555;
+  --address-color: #666666;
+  --time-color: #777777;
+
+  // --- Surface Colors ---
+  --card-bg: #ffffff;
+  --card-shadow: rgba(0, 0, 0, 0.2);
+  --card-border: rgba(0, 0, 0, 0.08);
+  --feature-card-bg: #ffffff;
+  --feature-card-shadow: rgba(0, 0, 0, 0.1);
+
+  // --- Form Elements ---
+  --input-bg: #ffffff;
+  --input-border: #e0e0e0;
+  --input-border-focus: #667eea;
+  --input-text: #333333;
+  --input-placeholder: #9ca3af;
+  --input-disabled-bg: #f3f4f6;
+
+  // --- Toggle/Switch ---
+  --toggle-bg: #f0f0f0;
+  --toggle-border: #dddddd;
+  --toggle-active-bg: #667eea;
+
+  // --- Semantic Colors ---
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-success-dark: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-warning-dark: #d97706;
+  --color-error: #ef4444;
+  --color-error-light: #fee2e2;
+  --color-error-dark: #dc2626;
+  --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
+  --color-info-dark: #2563eb;
+
+  // --- Accent/Brand Colors ---
+  --color-accent: #667eea;
+  --color-accent-light: #818cf8;
+  --color-accent-dark: #4f46e5;
+
+  // --- Borders ---
+  --border-color: #13c94f;
+  --border-color-light: #f0f0f0;
+  --border-color-dark: #cccccc;
+
+  // --- Shadows ---
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  // --- Button: Primary (filled) ---
+  --btn-primary-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --btn-primary-text: #ffffff;
+  --btn-primary-border: transparent;
+  --btn-primary-hover-bg: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  --btn-primary-active-bg: linear-gradient(135deg, #4f5fc2 0%, #5e397e 100%);
+
+  // --- Button: Primary Hollow (outline) ---
+  --btn-primary-hollow-bg: transparent;
+  --btn-primary-hollow-text: #667eea;
+  --btn-primary-hollow-border: #667eea;
+  --btn-primary-hollow-hover-bg: rgba(102, 126, 234, 0.1);
+  --btn-primary-hollow-hover-text: #5a6fd6;
+
+  // --- Button: Secondary (filled) ---
+  --btn-secondary-bg: #6b7280;
+  --btn-secondary-text: #ffffff;
+  --btn-secondary-border: transparent;
+  --btn-secondary-hover-bg: #4b5563;
+  --btn-secondary-active-bg: #374151;
+
+  // --- Button: Secondary Hollow (outline) ---
+  --btn-secondary-hollow-bg: transparent;
+  --btn-secondary-hollow-text: #6b7280;
+  --btn-secondary-hollow-border: #6b7280;
+  --btn-secondary-hollow-hover-bg: rgba(107, 114, 128, 0.1);
+  --btn-secondary-hollow-hover-text: #4b5563;
+
+  // --- Button: Success (filled) ---
+  --btn-success-bg: #10b981;
+  --btn-success-text: #ffffff;
+  --btn-success-border: transparent;
+  --btn-success-hover-bg: #059669;
+  --btn-success-active-bg: #047857;
+
+  // --- Button: Success Hollow (outline) ---
+  --btn-success-hollow-bg: transparent;
+  --btn-success-hollow-text: #10b981;
+  --btn-success-hollow-border: #10b981;
+  --btn-success-hollow-hover-bg: rgba(16, 185, 129, 0.1);
+  --btn-success-hollow-hover-text: #059669;
+
+  // --- Button: Danger (filled) ---
+  --btn-danger-bg: #ef4444;
+  --btn-danger-text: #ffffff;
+  --btn-danger-border: transparent;
+  --btn-danger-hover-bg: #dc2626;
+  --btn-danger-active-bg: #b91c1c;
+
+  // --- Button: Danger Hollow (outline) ---
+  --btn-danger-hollow-bg: transparent;
+  --btn-danger-hollow-text: #ef4444;
+  --btn-danger-hollow-border: #ef4444;
+  --btn-danger-hollow-hover-bg: rgba(239, 68, 68, 0.1);
+  --btn-danger-hollow-hover-text: #dc2626;
+
+  // --- Button States ---
+  --btn-disabled-bg: #e5e7eb;
+  --btn-disabled-text: #9ca3af;
+  --btn-disabled-border: transparent;
+
+  // --- Footer ---
+  --footer-bg: #1f2937;
+  --footer-text: #d1d5db;
+  --footer-link: #9ca3af;
+  --footer-link-hover: #ffffff;
+  --footer-border: #374151;
+
+  // --- Bottom Bar ---
+  --bottom-bar-bg: #111827;
+  --bottom-bar-text: #9ca3af;
+  --bottom-bar-link: #9ca3af;
+  --bottom-bar-link-hover: #ffffff;
+
+  // --- Scrollbar ---
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a1a1a1;
+
+  // --- Code/Pre ---
+  --code-bg: #f3f4f6;
+  --code-text: #e11d48;
+  --pre-bg: #1f2937;
+  --pre-text: #e5e7eb;
+
+  // --- Table ---
+  --table-header-bg: #f9fafb;
+  --table-header-text: #374151;
+  --table-row-bg: #ffffff;
+  --table-row-alt-bg: #f9fafb;
+  --table-border: #e5e7eb;
+
+  // --- Dropdown/Select ---
+  --dropdown-bg: #ffffff;
+  --dropdown-border: #e0e0e0;
+  --dropdown-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --dropdown-item-hover-bg: #f3f4f6;
+
+  // --- Modal ---
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
+  --modal-bg: #ffffff;
+  --modal-border: #e0e0e0;
+  --modal-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+
+  // --- Tooltip ---
+  --tooltip-bg: #1f2937;
+  --tooltip-text: #ffffff;
+
+  // --- Badge ---
+  --badge-default-bg: #e5e7eb;
+  --badge-default-text: #374151;
+  --badge-primary-bg: #dbeafe;
+  --badge-primary-text: #1d4ed8;
+  --badge-success-bg: #d1fae5;
+  --badge-success-text: #047857;
+  --badge-warning-bg: #fef3c7;
+  --badge-warning-text: #b45309;
+  --badge-danger-bg: #fee2e2;
+  --badge-danger-text: #b91c1c;
+
+  // --- Skeleton/Loading ---
+  --skeleton-bg: #e5e7eb;
+  --skeleton-shine: #f3f4f6;
+
+  // --- Selection ---
+  --selection-bg: #667eea;
+  --selection-text: #ffffff;
+
+  // --- Focus Ring ---
+  --focus-ring: rgba(102, 126, 234, 0.5);
+  --focus-ring-offset: #ffffff;
+}
+
+[data-theme="dark"] {
+  // ============================================
+  // DARK THEME
+  // ============================================
+
+  // --- Page Background Gradient ---
+  --bg-gradient-start: #1818e7;
+  --bg-gradient-end: #e52a2a;
+  --bg-gradient-angle: 135deg;
+
+  // --- Navigation ---
+  --nav-bg: rgba(30, 30, 50, 0.98);
+  --nav-shadow: rgba(0, 0, 0, 0.4);
+  --nav-text: #e8e8e8;
+  --nav-text-hover: #ffffff;
+  --nav-border: rgba(255, 255, 255, 0.05);
+
+  // --- Text Colors ---
+  --text-primary: #e8e8e8;
+  --text-secondary: #c0c0c0;
+  --text-muted: #999999;
+  --text-on-primary: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-disabled: #6b7280;
+  --text-placeholder: #6b7280;
+
+  // --- Heading Colors (h1-h5) ---
+  --heading-h1-color: #f5f5f5;
+  --heading-h2-color: #e8e8e8;
+  --heading-h3-color: #d4d4d4;
+  --heading-h4-color: #c0c0c0;
+  --heading-h5-color: #a3a3a3;
+
+  // --- Paragraph & Inline Elements ---
+  --paragraph-color: #d1d5db;
+  --link-color: #8b9cff;
+  --link-hover-color: #a5b4ff;
+  --span-color: #c0c0c0;
+  --address-color: #a3a3a3;
+  --time-color: #9ca3af;
+
+  // --- Surface Colors ---
+  --card-bg: #252542;
+  --card-shadow: rgba(0, 0, 0, 0.5);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --feature-card-bg: #252542;
+  --feature-card-shadow: rgba(0, 0, 0, 0.4);
+
+  // --- Form Elements ---
+  --input-bg: #1e1e36;
+  --input-border: #404060;
+  --input-border-focus: #818cf8;
+  --input-text: #e8e8e8;
+  --input-placeholder: #6b7280;
+  --input-disabled-bg: #2d2d4a;
+
+  // --- Toggle/Switch ---
+  --toggle-bg: #2a2a4a;
+  --toggle-border: #404060;
+  --toggle-active-bg: #818cf8;
+
+  // --- Semantic Colors ---
+  --color-success: #34d399;
+  --color-success-light: #065f46;
+  --color-success-dark: #6ee7b7;
+  --color-warning: #fbbf24;
+  --color-warning-light: #78350f;
+  --color-warning-dark: #fcd34d;
+  --color-error: #f87171;
+  --color-error-light: #7f1d1d;
+  --color-error-dark: #fca5a5;
+  --color-info: #60a5fa;
+  --color-info-light: #1e3a5f;
+  --color-info-dark: #93c5fd;
+
+  // --- Accent/Brand Colors ---
+  --color-accent: #818cf8;
+  --color-accent-light: #a5b4fc;
+  --color-accent-dark: #6366f1;
+
+  // --- Borders ---
+  --border-color: #404060;
+  --border-color-light: #4a4a6a;
+  --border-color-dark: #303050;
+
+  // --- Shadows ---
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.3);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.5);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+
+  // --- Button: Primary (filled) ---
+  --btn-primary-bg: linear-gradient(135deg, #818cf8 0%, #a855f7 100%);
+  --btn-primary-text: #ffffff;
+  --btn-primary-border: transparent;
+  --btn-primary-hover-bg: linear-gradient(135deg, #6366f1 0%, #9333ea 100%);
+  --btn-primary-active-bg: linear-gradient(135deg, #4f46e5 0%, #7e22ce 100%);
+
+  // --- Button: Primary Hollow (outline) ---
+  --btn-primary-hollow-bg: transparent;
+  --btn-primary-hollow-text: #818cf8;
+  --btn-primary-hollow-border: #818cf8;
+  --btn-primary-hollow-hover-bg: rgba(129, 140, 248, 0.15);
+  --btn-primary-hollow-hover-text: #a5b4fc;
+
+  // --- Button: Secondary (filled) ---
+  --btn-secondary-bg: #4b5563;
+  --btn-secondary-text: #ffffff;
+  --btn-secondary-border: transparent;
+  --btn-secondary-hover-bg: #6b7280;
+  --btn-secondary-active-bg: #374151;
+
+  // --- Button: Secondary Hollow (outline) ---
+  --btn-secondary-hollow-bg: transparent;
+  --btn-secondary-hollow-text: #9ca3af;
+  --btn-secondary-hollow-border: #6b7280;
+  --btn-secondary-hollow-hover-bg: rgba(107, 114, 128, 0.15);
+  --btn-secondary-hollow-hover-text: #d1d5db;
+
+  // --- Button: Success (filled) ---
+  --btn-success-bg: #10b981;
+  --btn-success-text: #ffffff;
+  --btn-success-border: transparent;
+  --btn-success-hover-bg: #34d399;
+  --btn-success-active-bg: #059669;
+
+  // --- Button: Success Hollow (outline) ---
+  --btn-success-hollow-bg: transparent;
+  --btn-success-hollow-text: #34d399;
+  --btn-success-hollow-border: #10b981;
+  --btn-success-hollow-hover-bg: rgba(16, 185, 129, 0.15);
+  --btn-success-hollow-hover-text: #6ee7b7;
+
+  // --- Button: Danger (filled) ---
+  --btn-danger-bg: #ef4444;
+  --btn-danger-text: #ffffff;
+  --btn-danger-border: transparent;
+  --btn-danger-hover-bg: #f87171;
+  --btn-danger-active-bg: #dc2626;
+
+  // --- Button: Danger Hollow (outline) ---
+  --btn-danger-hollow-bg: transparent;
+  --btn-danger-hollow-text: #f87171;
+  --btn-danger-hollow-border: #ef4444;
+  --btn-danger-hollow-hover-bg: rgba(239, 68, 68, 0.15);
+  --btn-danger-hollow-hover-text: #fca5a5;
+
+  // --- Button States ---
+  --btn-disabled-bg: #374151;
+  --btn-disabled-text: #6b7280;
+  --btn-disabled-border: transparent;
+
+  // --- Footer ---
+  --footer-bg: #0f172a;
+  --footer-text: #94a3b8;
+  --footer-link: #64748b;
+  --footer-link-hover: #e2e8f0;
+  --footer-border: #1e293b;
+
+  // --- Bottom Bar ---
+  --bottom-bar-bg: #020617;
+  --bottom-bar-text: #64748b;
+  --bottom-bar-link: #64748b;
+  --bottom-bar-link-hover: #e2e8f0;
+
+  // --- Scrollbar ---
+  --scrollbar-track: #1e1e36;
+  --scrollbar-thumb: #404060;
+  --scrollbar-thumb-hover: #5a5a7a;
+
+  // --- Code/Pre ---
+  --code-bg: #1e1e36;
+  --code-text: #f472b6;
+  --pre-bg: #0f172a;
+  --pre-text: #e2e8f0;
+
+  // --- Table ---
+  --table-header-bg: #1e1e36;
+  --table-header-text: #e8e8e8;
+  --table-row-bg: #252542;
+  --table-row-alt-bg: #1e1e36;
+  --table-border: #404060;
+
+  // --- Dropdown/Select ---
+  --dropdown-bg: #252542;
+  --dropdown-border: #404060;
+  --dropdown-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --dropdown-item-hover-bg: #1e1e36;
+
+  // --- Modal ---
+  --modal-backdrop: rgba(0, 0, 0, 0.7);
+  --modal-bg: #252542;
+  --modal-border: #404060;
+  --modal-shadow: 0 20px 25px rgba(0, 0, 0, 0.5);
+
+  // --- Tooltip ---
+  --tooltip-bg: #f3f4f6;
+  --tooltip-text: #1f2937;
+
+  // --- Badge ---
+  --badge-default-bg: #374151;
+  --badge-default-text: #d1d5db;
+  --badge-primary-bg: #312e81;
+  --badge-primary-text: #a5b4fc;
+  --badge-success-bg: #064e3b;
+  --badge-success-text: #6ee7b7;
+  --badge-warning-bg: #78350f;
+  --badge-warning-text: #fcd34d;
+  --badge-danger-bg: #7f1d1d;
+  --badge-danger-text: #fca5a5;
+
+  // --- Skeleton/Loading ---
+  --skeleton-bg: #374151;
+  --skeleton-shine: #4b5563;
+
+  // --- Selection ---
+  --selection-bg: #818cf8;
+  --selection-text: #ffffff;
+
+  // --- Focus Ring ---
+  --focus-ring: rgba(129, 140, 248, 0.5);
+  --focus-ring-offset: #1e1e36;
+}
+
+// ============================================
+// TEXT SELECTION STYLES
+// ============================================
+::selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+::-moz-selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+// ============================================
+// SCROLLBAR STYLES
+// ============================================
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+}
+
+// Firefox scrollbar
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+// ============================================
+// FOCUS STYLES
+// ============================================
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+// ============================================
+// LINK STYLES
+// ============================================
+a {
+  color: var(--link-color);
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--link-hover-color);
+  }
+}

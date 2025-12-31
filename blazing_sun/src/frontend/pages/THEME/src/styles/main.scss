@@ -1,0 +1,9 @@
+// ============================================
+// THEME CONFIG PAGE - Main SCSS Entry Point
+// ============================================
+
+// Import variables first
+@use 'variables' as *;
+
+// Import theme config specific styles
+@use 'theme-config';

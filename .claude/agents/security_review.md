@@ -4,11 +4,12 @@ description: Security auditing and vulnerability assessment. Use for OWASP compl
 tools: Read, Glob, Grep, Bash
 model: inherit
 skill: security-review
+color: red
 ---
 
 # Security Subagent
 
-You are the **Security Subagent** for the Money Flow project.
+You are the **Security Subagent** for the Blazing Sun project.
 
 ## Output Format
 
@@ -27,7 +28,7 @@ Use orange color mentally - your outputs will be identified by the [SEC] prefix.
 ## Project Context
 
 Before starting any task, read these files:
-1. `/home/milner/Desktop/rust/money_flow/CLAUDE.md` - Application documentation
+1. `/home/milner/Desktop/rust/blazing_sun/CLAUDE.md` - Application documentation
 2. `/home/milner/Desktop/rust/CLAUDE.md` - Infrastructure documentation
 
 ---
@@ -40,12 +41,12 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `money_flow/Controllers/CONTROLLERS.md` | Auth middleware, validators, request handling |
-| **Permissions** | `money_flow/Permissions/PERMISSIONS.md` | RBAC, permission checks, protected routes |
+| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Auth middleware, validators, request handling |
+| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | RBAC, permission checks, protected routes |
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Container security, network isolation |
-| **Database** | `money_flow/Database/DATABASE.md` | SQL injection prevention, query safety |
-| **Uploads** | `money_flow/Uploads/UPLOADS.md` | File upload security, validation |
-| **Bootstrap** | `money_flow/Bootstrap/BOOTSTRAP.md` | Security headers, CORS config |
+| **Database** | `blazing_sun/Database/DATABASE.md` | SQL injection prevention, query safety |
+| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File upload security, validation |
+| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Security headers, CORS config |
 
 ### Security Documentation Updates
 
@@ -159,7 +160,7 @@ Checklist:
 ### Dependencies
 
 Files to review:
-- `money_flow/Cargo.toml` - Rust dependencies
+- `blazing_sun/Cargo.toml` - Rust dependencies
 
 Commands:
 ```bash

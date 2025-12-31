@@ -1,8 +1,8 @@
-# Money Flow - Infrastructure
+# Blazing Sun - Infrastructure
 
-Docker-based infrastructure for the Money Flow application with event-driven architecture.
+Docker-based infrastructure for the Blazing Sun application with event-driven architecture.
 
-> **Application code is located in the `money_flow/` folder.** See [money_flow/README.md](money_flow/README.md) for application documentation.
+> **Application code is located in the `blazing_sun/` folder.** See [blazing_sun/README.md](blazing_sun/README.md) for application documentation.
 
 ---
 
@@ -240,7 +240,7 @@ healthcheck:
 │   ├── dashboards/             # Pre-built dashboards
 │   └── provisioning/           # Datasources and dashboard config
 │
-└── money_flow/                 # APPLICATION SOURCE CODE
+└── blazing_sun/                 # APPLICATION SOURCE CODE
     ├── src/                    # Rust source code
     ├── migrations/             # Database migrations
     ├── storage/                # File storage (public/private)
@@ -283,7 +283,7 @@ docker compose logs -f kafka
 docker compose exec rust bash
 
 # PostgreSQL CLI
-docker compose exec postgres psql -U app -d money_flow
+docker compose exec postgres psql -U app -d blazing_sun
 
 # Redis CLI
 docker compose exec redis redis-cli -a redis_secret_password
@@ -330,14 +330,14 @@ APP_PORT=9999
 POSTGRES_IP=172.28.0.11
 POSTGRES_USER=app
 POSTGRES_PASSWORD=app
-POSTGRES_DB=money_flow
+POSTGRES_DB=blazing_sun
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 
 # pgAdmin (PostgreSQL admin panel)
 PGADMIN_IP=172.28.0.19
 PGADMIN_PORT=5050
-PGADMIN_DEFAULT_EMAIL=admin@moneyflow.app
+PGADMIN_DEFAULT_EMAIL=admin@blazingsun.app
 PGADMIN_DEFAULT_PASSWORD=pgadmin_secret_password
 
 # Redis
@@ -369,7 +369,7 @@ KAFKA_LOG_RETENTION_HOURS=168
 # Kafka UI
 KAFKA_UI_IP=172.28.0.18
 KAFKA_UI_PORT=8080
-KAFKA_UI_CLUSTER_NAME=money-flow
+KAFKA_UI_CLUSTER_NAME=blazing-sun
 KAFKA_UI_USER=admin
 KAFKA_UI_PASSWORD=kafka_ui_secret_password
 
@@ -379,8 +379,8 @@ MAIL_HOST=sandbox.smtp.mailtrap.io
 MAIL_PORT=2525
 MAIL_USERNAME=your_mailtrap_username
 MAIL_PASSWORD=your_mailtrap_password
-MAIL_FROM_ADDRESS=noreply@moneyflow.app
-MAIL_FROM_NAME=MoneyFlow
+MAIL_FROM_ADDRESS=noreply@blazingsun.app
+MAIL_FROM_NAME=BlazingSun
 
 # Grafana
 GRAFANA_USER=admin
@@ -389,7 +389,7 @@ GRAFANA_PASSWORD=admin
 
 ### Environment Sync
 
-The `rust/entrypoint.sh` automatically syncs environment variables from Docker to `money_flow/.env` on container startup:
+The `rust/entrypoint.sh` automatically syncs environment variables from Docker to `blazing_sun/.env` on container startup:
 - PORT, POSTGRES_*, REDIS_*, RABBITMQ_*, KAFKA_*, MAIL_*
 
 ---
@@ -416,18 +416,18 @@ Set `BUILD_ENV` in `.env`:
 
 ### Rust Container
 - **Base**: `debian:bookworm-slim` + rustup stable
-- **Working dir**: `/home/rust/money_flow`
+- **Working dir**: `/home/rust/blazing_sun`
 - **Volumes**:
-  - `./money_flow` → `/home/rust/money_flow` (source code)
+  - `./blazing_sun` → `/home/rust/blazing_sun` (source code)
   - `cargo-cache` → `/usr/local/cargo/registry` (dependencies)
-  - `target-cache` → `/home/rust/money_flow/target` (build cache)
+  - `target-cache` → `/home/rust/blazing_sun/target` (build cache)
 - **Dev tools**: sqlx-cli, cargo-watch
 
 ### PostgreSQL Container
 - **Base**: `postgres:latest`
 - **Data volume**: `pgdata`
 - **Config**: Custom `pg_hba.conf` and `postgresql.conf`
-- **Healthcheck**: `pg_isready -U app -d money_flow`
+- **Healthcheck**: `pg_isready -U app -d blazing_sun`
 
 ### Redis Container
 - **Base**: `redis:alpine`
@@ -460,7 +460,7 @@ Set `BUILD_ENV` in `.env`:
 - **Ports**: 80 (HTTP→HTTPS redirect), 443 (HTTPS)
 - **SSL**: Self-signed certificates (replace for production)
 - **Proxy**: Routes to rust container on port 9999
-- **Static files**: Serves `/storage/` from `money_flow/storage/app/public/`
+- **Static files**: Serves `/storage/` from `blazing_sun/storage/app/public/`
 
 ### pgAdmin Container
 - **Base**: `dpage/pgadmin4:latest`
@@ -519,7 +519,7 @@ Set `BUILD_ENV` in `.env`:
 | `send_email`  | Send email via SMTP          | 1-5      |
 | `create_user` | Create user in database      | 1-5      |
 
-See [money_flow/README.md](money_flow/README.md) for implementation details.
+See [blazing_sun/README.md](blazing_sun/README.md) for implementation details.
 
 ---
 
@@ -530,7 +530,7 @@ See [money_flow/README.md](money_flow/README.md) for implementation details.
 | Application | https://localhost/                   | -                                    |
 | RabbitMQ    | http://localhost:15672               | app / rabbitmq_secret_password       |
 | Kafka UI    | http://localhost:8080/kafka          | admin / kafka_ui_secret_password     |
-| pgAdmin     | http://localhost:5050/pgadmin        | admin@moneyflow.app / pgadmin_secret_password |
+| pgAdmin     | http://localhost:5050/pgadmin        | admin@blazingsun.app / pgadmin_secret_password |
 | Grafana     | https://localhost/grafana/           | admin / admin                        |
 | Prometheus  | http://localhost:9090                | -                                    |
 
@@ -597,7 +597,7 @@ docker compose up -d
 docker compose ps postgres
 
 # Test connection
-docker compose exec postgres pg_isready -U app -d money_flow
+docker compose exec postgres pg_isready -U app -d blazing_sun
 
 # View logs
 docker compose logs postgres

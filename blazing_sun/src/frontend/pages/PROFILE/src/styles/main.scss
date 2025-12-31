@@ -1,0 +1,11 @@
+// ============================================
+// PROFILE PAGE - Main SCSS Entry Point
+// ============================================
+// Utilities and theme variables come from GLOBAL styles.
+// This file only contains page-specific BEM components.
+
+// Import variables (SCSS vars for BEM components)
+@use 'variables' as *;
+
+// Import profile-specific BEM styles
+@use 'profile';

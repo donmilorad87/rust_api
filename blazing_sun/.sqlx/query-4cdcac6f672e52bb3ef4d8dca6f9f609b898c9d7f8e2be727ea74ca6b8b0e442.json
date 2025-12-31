@@ -1,0 +1,116 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id,\n            site_name,\n            show_site_name,\n            identity_color_start,\n            identity_color_end,\n            identity_size,\n            logo_uuid,\n            favicon_uuid,\n            scss_variables,\n            theme_light,\n            theme_dark,\n            last_build_at,\n            last_build_status,\n            last_build_error,\n            assets_version,\n            created_at,\n            updated_at\n        FROM site_config\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "site_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "show_site_name",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "identity_color_start",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "identity_color_end",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "identity_size",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "logo_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "favicon_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "scss_variables",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "theme_light",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 10,
+        "name": "theme_dark",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "last_build_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "last_build_status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "last_build_error",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "assets_version",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 15,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4cdcac6f672e52bb3ef4d8dca6f9f609b898c9d7f8e2be727ea74ca6b8b0e442"
+}

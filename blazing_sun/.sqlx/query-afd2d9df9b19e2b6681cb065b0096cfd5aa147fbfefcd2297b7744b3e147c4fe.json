@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            scss_variables,\n            theme_light,\n            theme_dark\n        FROM site_config\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "scss_variables",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 1,
+        "name": "theme_light",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 2,
+        "name": "theme_dark",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "afd2d9df9b19e2b6681cb065b0096cfd5aa147fbfefcd2297b7744b3e147c4fe"
+}

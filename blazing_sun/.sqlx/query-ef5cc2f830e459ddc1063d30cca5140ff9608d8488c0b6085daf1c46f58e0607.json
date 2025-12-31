@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO page_seo (route_name, page_path, page_label, title, description, robots)\n        VALUES ($1, $2, $3, $4, $5, $6)\n        ON CONFLICT (route_name) DO UPDATE\n        SET page_path = EXCLUDED.page_path,\n            page_label = EXCLUDED.page_label\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ef5cc2f830e459ddc1063d30cca5140ff9608d8488c0b6085daf1c46f58e0607"
+}

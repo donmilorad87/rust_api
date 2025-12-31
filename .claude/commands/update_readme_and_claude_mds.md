@@ -54,11 +54,11 @@ You will perform a comprehensive documentation update for this project. Follow t
    - Include common issues and solutions
    - Document file locations and purposes
    - Be very detailed so future AI sessions understand the infrastructure
-   - Note: For money_flow folder, just write 2-3 sentences saying it contains the application code and has its own README.md and CLAUDE.md
+   - Note: For blazing_sun folder, just write 2-3 sentences saying it contains the application code and has its own README.md and CLAUDE.md
 
-### Phase 3: Application Documentation (money_flow/)
+### Phase 3: Application Documentation (blazing_sun/)
 
-7. **Scan money_flow folder**:
+7. **Scan blazing_sun folder**:
    - Read Cargo.toml for dependencies and features
    - Scan all source files in `src/`
    - Understand the module structure
@@ -66,7 +66,7 @@ You will perform a comprehensive documentation update for this project. Follow t
    - Understand the database layer
    - Analyze event system (Kafka) and job system (RabbitMQ)
 
-8. **Update money_flow/README.md** (for humans):
+8. **Update blazing_sun/README.md** (for humans):
    - Write project overview
    - Document tech stack with crate names
    - Include complete folder/file tree structure
@@ -77,7 +77,7 @@ You will perform a comprehensive documentation update for this project. Follow t
    - Include development commands
    - Be very detailed
 
-9. **Update money_flow/CLAUDE.md** (for AI understanding):
+9. **Update blazing_sun/CLAUDE.md** (for AI understanding):
    - Write comprehensive module documentation
    - Include complete folder structure with file descriptions
    - Explain each module's purpose and contents
@@ -114,7 +114,7 @@ You will explan how we work with templates and how frontend projects are constru
 
 ## Output 2.0
 
-You will create folder called Documentation. Thgat folder will be in the root of the project, in the level with docker-compose. Iniside of that project you will add 2 foldeers, one is docker_infrastructure other is money_flow project. Now add inside of docker infrastructure INFRASTRUCTURE.md where infrastructure will be expalined into full details, realy full, dont skip anything. After docker infrastrcuture you will go to money flow where you will create folder Routes, and inside of routes there will be Web and Api. Web will have all web routes documented and api all api routes. You will also create folder called Bootstrap, inisde of bootstrap you will list src/bootstrap componentes and explain it. You will explain how uploads work, you will create separate .md file for everything. I want full details inside of documentations. I want to docs be ultra detailed so anybody could understand full logics. I want every function explained every controller, everything. 100% coverage of explanations.
+You will create folder called Documentation. Thgat folder will be in the root of the project, in the level with docker-compose. Iniside of that project you will add 2 foldeers, one is docker_infrastructure other is blazing_sun project. Now add inside of docker infrastructure INFRASTRUCTURE.md where infrastructure will be expalined into full details, realy full, dont skip anything. After docker infrastrcuture you will go to blazing sun where you will create folder Routes, and inside of routes there will be Web and Api. Web will have all web routes documented and api all api routes. You will also create folder called Bootstrap, inisde of bootstrap you will list src/bootstrap componentes and explain it. You will explain how uploads work, you will create separate .md file for everything. I want full details inside of documentations. I want to docs be ultra detailed so anybody could understand full logics. I want every function explained every controller, everything. 100% coverage of explanations.
 
 ## Update skills and agents
 

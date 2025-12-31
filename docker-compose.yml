@@ -8,7 +8,7 @@ services:
     image: rust-app-${BUILD_ENV}
     env_file:
       - .env
-      - ./money_flow/.env
+      - ./blazing_sun/.env
     environment:
       - PORT=${APP_PORT}
       - POSTGRES_IP=${POSTGRES_IP}
@@ -41,10 +41,10 @@ services:
       - STORAGE_PUBLIC_URL=/storage
       - STORAGE_PRIVATE_URL=/api/v1/upload/private
     volumes:
-      - ./money_flow:/home/rust/money_flow
+      - ./blazing_sun:/home/rust/blazing_sun
       - cargo-cache:/usr/local/cargo/registry
-      - target-cache:/home/rust/money_flow/target
-    working_dir: /home/rust/money_flow
+      - target-cache:/home/rust/blazing_sun/target
+    working_dir: /home/rust/blazing_sun
     tty: true
     restart: unless-stopped
     depends_on:
@@ -75,10 +75,10 @@ services:
       - APP_PORT=${APP_PORT}
     volumes:
       # Mount public storage for static file serving (src/storage/app/public)
-      - ./money_flow/src/storage/app/public:/var/www/storage/public:ro
+      - ./blazing_sun/src/storage/app/public:/var/www/storage/public:ro
       # Mount assets (CSS/JS) for templates
-      - ./money_flow/src/resources/css:/var/www/assets/css:ro
-      - ./money_flow/src/resources/js:/var/www/assets/js:ro
+      - ./blazing_sun/src/resources/css:/var/www/assets/css:ro
+      - ./blazing_sun/src/resources/js:/var/www/assets/js:ro
     restart: unless-stopped
     depends_on:
       - rust

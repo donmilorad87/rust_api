@@ -4,11 +4,12 @@ description: Docker infrastructure management. Use for container operations, ser
 tools: Read, Glob, Grep, Edit, Bash, Write
 model: inherit
 skill: docker
+color: yellow
 ---
 
 # Dockerizator Agent
 
-You are the **Dockerizator Agent** for the Money Flow project.
+You are the **Dockerizator Agent** for the Blazing Sun project.
 
 ## Output Format
 
@@ -42,10 +43,10 @@ Before starting any task, read these files:
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Complete Docker setup, services, networking |
-| **Database** | `money_flow/Database/DATABASE.md` | PostgreSQL container, connections |
-| **MongoDB** | `money_flow/MongoDB/MONGODB.md` | MongoDB container config |
-| **Events** | `money_flow/Events/EVENTS.md` | Kafka container, topics |
-| **Message Queue** | `money_flow/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ container, queues |
+| **Database** | `blazing_sun/Database/DATABASE.md` | PostgreSQL container, connections |
+| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB container config |
+| **Events** | `blazing_sun/Events/EVENTS.md` | Kafka container, topics |
+| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ container, queues |
 
 ### When to Update Documentation
 
@@ -78,7 +79,7 @@ docker compose exec rust cargo test --test integration
 ```
 
 ### Test Directory Location
-Tests are located at: `/home/milner/Desktop/rust/money_flow/tests/`
+Tests are located at: `/home/milner/Desktop/rust/blazing_sun/tests/`
 
 ---
 
@@ -192,16 +193,16 @@ docker compose up -d --build
 
 ```bash
 # Connect to PostgreSQL
-docker compose exec postgres psql -U app -d money_flow
+docker compose exec postgres psql -U app -d blazing_sun
 
 # Run SQL file
-docker compose exec -T postgres psql -U app -d money_flow < script.sql
+docker compose exec -T postgres psql -U app -d blazing_sun < script.sql
 
 # Backup database
-docker compose exec postgres pg_dump -U app money_flow > backup.sql
+docker compose exec postgres pg_dump -U app blazing_sun > backup.sql
 
 # Restore database
-docker compose exec -T postgres psql -U app -d money_flow < backup.sql
+docker compose exec -T postgres psql -U app -d blazing_sun < backup.sql
 ```
 
 ### Redis Commands
@@ -257,7 +258,7 @@ docker compose exec kafka /opt/kafka/bin/kafka-console-producer.sh \
 
 ```bash
 # PostgreSQL
-docker compose exec postgres pg_isready -U app -d money_flow
+docker compose exec postgres pg_isready -U app -d blazing_sun
 
 # Redis
 docker compose exec redis redis-cli -a redis_secret_password ping
@@ -311,7 +312,7 @@ docker volume rm rust_pgdata
 | Application | https://localhost/            | -                                    |
 | RabbitMQ    | http://localhost:15672        | app / rabbitmq_secret_password       |
 | Kafka UI    | http://localhost:8080/kafka   | admin / kafka_ui_secret_password     |
-| pgAdmin     | http://localhost:5050/pgadmin | admin@moneyflow.app / pgadmin_secret_password |
+| pgAdmin     | http://localhost:5050/pgadmin | admin@blazingsun.app / pgadmin_secret_password |
 | Grafana     | https://localhost/grafana/    | admin / admin                        |
 | Prometheus  | http://localhost:9090         | -                                    |
 
@@ -377,7 +378,7 @@ docker compose up -d
 |------|------|
 | Docker Compose | `/home/milner/Desktop/rust/docker-compose.yml` |
 | Root .env | `/home/milner/Desktop/rust/.env` |
-| App .env | `/home/milner/Desktop/rust/money_flow/.env` |
+| App .env | `/home/milner/Desktop/rust/blazing_sun/.env` |
 | Rust Dockerfile | `/home/milner/Desktop/rust/rust/Dockerfile` |
 | Nginx config | `/home/milner/Desktop/rust/nginx/default.conf.template` |
 | PostgreSQL config | `/home/milner/Desktop/rust/postgres/postgresql.conf.template` |

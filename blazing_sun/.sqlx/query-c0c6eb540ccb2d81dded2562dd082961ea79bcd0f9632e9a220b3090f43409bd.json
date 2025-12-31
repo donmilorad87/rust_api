@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            sc.site_name,\n            sc.show_site_name,\n            sc.identity_color_start,\n            sc.identity_color_end,\n            sc.identity_size,\n            sc.logo_uuid,\n            sc.favicon_uuid,\n            logo_upload.stored_name as logo_stored_name,\n            favicon_upload.stored_name as favicon_stored_name\n        FROM site_config sc\n        LEFT JOIN uploads logo_upload ON sc.logo_uuid = logo_upload.uuid\n        LEFT JOIN uploads favicon_upload ON sc.favicon_uuid = favicon_upload.uuid\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "site_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "show_site_name",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "identity_color_start",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "identity_color_end",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "identity_size",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "logo_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "favicon_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "logo_stored_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "favicon_stored_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "c0c6eb540ccb2d81dded2562dd082961ea79bcd0f9632e9a220b3090f43409bd"
+}

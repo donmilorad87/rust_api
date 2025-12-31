@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE page_seo\n        SET\n            title = COALESCE($2, title),\n            description = COALESCE($3, description),\n            keywords = COALESCE($4, keywords),\n            og_title = COALESCE($5, og_title),\n            og_description = COALESCE($6, og_description),\n            og_image_uuid = $7,\n            og_type = COALESCE($8, og_type),\n            twitter_card = COALESCE($9, twitter_card),\n            twitter_title = COALESCE($10, twitter_title),\n            twitter_description = COALESCE($11, twitter_description),\n            twitter_image_uuid = $12,\n            canonical_url = $13,\n            robots = COALESCE($14, robots),\n            structured_data = COALESCE($15, structured_data),\n            custom_meta = COALESCE($16, custom_meta),\n            is_active = COALESCE($17, is_active),\n            updated_at = NOW()\n        WHERE route_name = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Jsonb",
+        "Jsonb",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c1d7437497daf57977a4c326e2d359951b1cd566b2e9c35522495b694c7b32af"
+}

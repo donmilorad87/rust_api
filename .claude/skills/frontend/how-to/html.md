@@ -2,7 +2,7 @@
 
 ## Template Engine: Tera
 
-Money Flow uses Tera templating engine.
+Blazing Sun uses Tera templating engine.
 
 ## Base Template Structure
 
@@ -23,8 +23,8 @@ All web templates should extend the base template:
 
 ## Template Location
 
-- Web pages: `money_flow/src/resources/views/web/`
-- Email templates: `money_flow/src/resources/views/emails/`
+- Web pages: `blazing_sun/src/resources/views/web/`
+- Email templates: `blazing_sun/src/resources/views/emails/`
 
 ## Tera Syntax Quick Reference
 

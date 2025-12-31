@@ -1,7 +1,7 @@
 {
   "Servers": {
     "1": {
-      "Name": "Money Flow Database",
+      "Name": "Blazing Sun Database",
       "Group": "Servers",
       "Host": "postgres",
       "Port": 5432,

@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code when working with the infrastructure in this repository.
 
-> **Application code is in `money_flow/` folder.** See @money_flow/CLAUDE.md for application-specific guidance.
+> **Application code is in `blazing_sun/` folder.** See @blazing_sun/CLAUDE.md for application-specific guidance.
 
 ## Project Overview
 
-**Money Flow** - Docker-based infrastructure for a Rust web application (Actix-web + PostgreSQL + MongoDB + Redis + RabbitMQ + Kafka).
+**Blazing Sun** - Docker-based infrastructure for a Rust web application (Actix-web + PostgreSQL + MongoDB + Redis + RabbitMQ + Kafka).
 
 ## High-Level Architecture
 
@@ -160,7 +160,7 @@ This file provides guidance to Claude Code when working with the infrastructure 
 │   │       └── dashboards.yml  # Dashboard provisioning
 │   └── dashboards/             # JSON dashboard definitions
 │
-└── money_flow/                 # APPLICATION CODE (see money_flow/CLAUDE.md)
+└── blazing_sun/                 # APPLICATION CODE (see blazing_sun/CLAUDE.md)
     ├── src/                    # Rust source code
     ├── migrations/             # SQLx database migrations
     ├── storage/                # File storage
@@ -178,7 +178,7 @@ This file provides guidance to Claude Code when working with the infrastructure 
 | Service    | IP           | Port(s)       | Healthcheck                          | Purpose                              |
 |------------|--------------|---------------|--------------------------------------|--------------------------------------|
 | rust       | 172.28.0.10  | 9999          | -                                    | Actix-web application                |
-| postgres   | 172.28.0.11  | 5432          | `pg_isready -U app -d money_flow`    | PostgreSQL database                  |
+| postgres   | 172.28.0.11  | 5432          | `pg_isready -U app -d blazing_sun`    | PostgreSQL database                  |
 | nginx      | 172.28.0.12  | 80/443        | -                                    | SSL reverse proxy + static files     |
 | redis      | 172.28.0.13  | 6379          | `redis-cli -a password ping`         | Cache/session store                  |
 | rabbitmq   | 172.28.0.14  | 5672/15672    | `rabbitmq-diagnostics -q ping`       | Message queue (async tasks)          |
@@ -241,7 +241,7 @@ docker compose logs -f rabbitmq
 
 # Enter containers
 docker compose exec rust bash
-docker compose exec postgres psql -U app -d money_flow
+docker compose exec postgres psql -U app -d blazing_sun
 docker compose exec redis redis-cli -a redis_secret_password
 docker compose exec kafka bash
 
@@ -270,14 +270,14 @@ APP_PORT=9999
 POSTGRES_IP=172.28.0.11
 POSTGRES_USER=app
 POSTGRES_PASSWORD=app
-POSTGRES_DB=money_flow
+POSTGRES_DB=blazing_sun
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 
 # pgAdmin
 PGADMIN_IP=172.28.0.19
 PGADMIN_PORT=5050
-PGADMIN_DEFAULT_EMAIL=admin@moneyflow.app
+PGADMIN_DEFAULT_EMAIL=admin@blazingsun.app
 PGADMIN_DEFAULT_PASSWORD=pgadmin_secret_password
 
 # RabbitMQ (async tasks: notifications, emails)
@@ -301,7 +301,7 @@ KAFKA_LOG_RETENTION_HOURS=168
 # Kafka UI
 KAFKA_UI_IP=172.28.0.18
 KAFKA_UI_PORT=8080
-KAFKA_UI_CLUSTER_NAME=money-flow
+KAFKA_UI_CLUSTER_NAME=blazing-sun
 KAFKA_UI_USER=admin
 KAFKA_UI_PASSWORD=kafka_ui_secret_password
 
@@ -319,8 +319,8 @@ MAIL_HOST=sandbox.smtp.mailtrap.io
 MAIL_PORT=2525
 MAIL_USERNAME=<mailtrap_user>
 MAIL_PASSWORD=<mailtrap_pass>
-MAIL_FROM_ADDRESS=noreply@moneyflow.app
-MAIL_FROM_NAME=MoneyFlow
+MAIL_FROM_ADDRESS=noreply@blazingsun.app
+MAIL_FROM_NAME=BlazingSun
 
 # Grafana
 GRAFANA_USER=admin
@@ -331,7 +331,7 @@ GRAFANA_PASSWORD=admin
 
 ## Environment Sync
 
-`rust/entrypoint.sh` syncs these env vars from Docker to `money_flow/.env` on startup:
+`rust/entrypoint.sh` syncs these env vars from Docker to `blazing_sun/.env` on startup:
 - PORT, POSTGRES_*, REDIS_*, RABBITMQ_*, KAFKA_*, MAIL_*
 
 ---
@@ -379,7 +379,7 @@ GRAFANA_PASSWORD=admin
 | Application | https://localhost/            | -                                    |
 | RabbitMQ    | http://localhost:15672        | app / rabbitmq_secret_password       |
 | Kafka UI    | http://localhost:8080/kafka   | admin / kafka_ui_secret_password     |
-| pgAdmin     | http://localhost:5050/pgadmin | admin@moneyflow.app / pgadmin_secret_password |
+| pgAdmin     | http://localhost:5050/pgadmin | admin@blazingsun.app / pgadmin_secret_password |
 | Grafana     | https://localhost/grafana/    | admin / admin                        |
 | Prometheus  | http://localhost:9090         | -                                    |
 
@@ -391,7 +391,7 @@ Nginx serves multiple purposes:
 
 1. **SSL Termination**: HTTPS on port 443, redirects HTTP 80 to HTTPS
 2. **Reverse Proxy**: Routes requests to Rust app on port 9999
-3. **Static File Serving**: `/storage/` serves public files from `money_flow/storage/app/public/`
+3. **Static File Serving**: `/storage/` serves public files from `blazing_sun/storage/app/public/`
 4. **Sub-path Routing**: `/grafana/` proxies to Grafana dashboard
 
 ---
@@ -406,7 +406,7 @@ docker compose restart rust
 ### Database connection failed
 ```bash
 docker compose logs postgres
-docker compose exec postgres pg_isready -U app -d money_flow
+docker compose exec postgres pg_isready -U app -d blazing_sun
 ```
 
 ### Redis connection failed
@@ -451,7 +451,7 @@ docker compose up -d
 ## File Locations
 
 - Docker env: `.env` (root)
-- App env: `money_flow/.env`
+- App env: `blazing_sun/.env`
 - Nginx config: `nginx/default.conf.template`
 - PostgreSQL config: `postgres/postgresql.conf.template`
 - Redis config: `redis/redis.conf`

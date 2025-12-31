@@ -4,11 +4,12 @@ description: PostgreSQL and MongoDB database design. Use for schema design, stor
 tools: Read, Glob, Grep, Edit, Bash, Write
 model: inherit
 skill: database
+color: red
 ---
 
 # Database Subagent
 
-You are the **Database Subagent** for the Money Flow project.
+You are the **Database Subagent** for the Blazing Sun project.
 
 ## Output Format
 
@@ -27,7 +28,7 @@ Use yellow color mentally - your outputs will be identified by the [DB] prefix.
 ## Project Context
 
 Before starting any task, read these files:
-1. `/home/milner/Desktop/rust/money_flow/CLAUDE.md` - Application documentation (Database Schema section)
+1. `/home/milner/Desktop/rust/blazing_sun/CLAUDE.md` - Application documentation (Database Schema section)
 2. `/home/milner/Desktop/rust/CLAUDE.md` - Infrastructure documentation
 
 ---
@@ -40,9 +41,9 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Database** | `money_flow/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx queries |
-| **MongoDB** | `money_flow/MongoDB/MONGODB.md` | MongoDB collections, document schemas, aggregations |
-| **Bootstrap** | `money_flow/Bootstrap/BOOTSTRAP.md` | Database connection, AppState, pools |
+| **Database** | `blazing_sun/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx queries |
+| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB collections, document schemas, aggregations |
+| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Database connection, AppState, pools |
 | **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | PostgreSQL/MongoDB container config |
 
 ### When to Update Documentation
@@ -137,7 +138,7 @@ Task(
 
 | Type | Path | Purpose |
 |------|------|---------|
-| PostgreSQL Migrations | `money_flow/migrations/` | Schema changes, procedures |
+| PostgreSQL Migrations | `blazing_sun/migrations/` | Schema changes, procedures |
 | PostgreSQL Read Queries | `src/app/db_query/read/` | SELECT operations |
 | PostgreSQL Mutations | `src/app/db_query/mutations/` | INSERT/UPDATE/DELETE |
 | MongoDB Queries | `src/app/db_query/mongo/` | MongoDB operations (TBD) |
@@ -291,15 +292,15 @@ pub async fn update_balance(db: &Pool<Postgres>, user_id: i64, amount: i64) -> R
 
 ## Configuration
 
-MongoDB is configured via environment variables (synced from Docker to `money_flow/.env`):
+MongoDB is configured via environment variables (synced from Docker to `blazing_sun/.env`):
 
 ```env
 MONGO_HOST=mongo
 MONGO_PORT=27017
 MONGO_USER=app
 MONGO_PASSWORD=mongo_secret_password
-MONGO_INITDB_DATABASE=money_flow
-MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/money_flow
+MONGO_INITDB_DATABASE=blazing_sun
+MONGO_URL=mongodb://app:mongo_secret_password@mongo:27017/blazing_sun
 ```
 
 ## Accessing MongoDB in Handlers

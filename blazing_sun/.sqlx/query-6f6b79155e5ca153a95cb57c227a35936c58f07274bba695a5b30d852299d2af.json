@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE page_schemas\n        SET is_active = NOT is_active\n        WHERE id = $1\n        RETURNING is_active\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "6f6b79155e5ca153a95cb57c227a35936c58f07274bba695a5b30d852299d2af"
+}

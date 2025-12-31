@@ -16,7 +16,7 @@ This approach ensures that each page loads only the JavaScript it actually needs
 
 ## File Location
 
-JavaScript files go in: `money_flow/src/frontend/pages/{PAGE_NAME}/js/app.js`
+JavaScript files go in: `blazing_sun/src/frontend/pages/{PAGE_NAME}/js/app.js`
 
 Served at URL: `/assets/js/`
 
@@ -24,11 +24,11 @@ Served at URL: `/assets/js/`
 
 **Vite project location:**
 
-money_flow/src/frontend/pages/SIGN_UP
+blazing_sun/src/frontend/pages/SIGN_UP
 
 **Output compiled and minified JavaScript to:**
 
-/home/milner/Desktop/rust/money_flow/src/resources/js/SIGN_UP/app.js
+/home/milner/Desktop/rust/blazing_sun/src/resources/js/SIGN_UP/app.js
 
 
 Vite should support two configurations:

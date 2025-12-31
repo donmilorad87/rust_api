@@ -3,7 +3,7 @@
 # FIREWALL SETUP SCRIPT
 # ============================================================================
 #
-# Purpose: Configure UFW (Uncomplicated Firewall) on Ubuntu for Money Flow
+# Purpose: Configure UFW (Uncomplicated Firewall) on Ubuntu for Blazing Sun
 #          Docker infrastructure. Opens necessary ports for services while
 #          maintaining security.
 #
@@ -81,7 +81,7 @@ print_warning() {
 # CHECK ROOT PRIVILEGES
 # ----------------------------------------------------------------------------
 
-print_header "Money Flow - Firewall Setup"
+print_header "Blazing Sun - Firewall Setup"
 
 if [ "$EUID" -ne 0 ]; then
     echo -e "${RED}ERROR: This script must be run as root (sudo)${NC}"

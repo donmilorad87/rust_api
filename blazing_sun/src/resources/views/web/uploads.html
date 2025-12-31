@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Uploads Management - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/UPLOADS/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="uploads-page">
+        <header class="uploads-page__header">
+            <h1 class="uploads-page__title">Uploads Management</h1>
+            <div class="uploads-page__controls">
+                <div class="search-input">
+                    <svg class="search-input__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="searchInput" class="search-input__field" placeholder="Search uploads..." aria-label="Search uploads">
+                </div>
+                <select id="filterStorage" class="filter-select" aria-label="Filter by storage type">
+                    <option value="">All Types</option>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                </select>
+            </div>
+        </header>
+
+        {% if stats %}
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-card__label">Total Uploads</div>
+                <div class="stat-card__value">{{ stats.total }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card__label">Public Files</div>
+                <div class="stat-card__value">{{ stats.public }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card__label">Private Files</div>
+                <div class="stat-card__value">{{ stats.private }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card__label">Total Size</div>
+                <div class="stat-card__value">{{ stats.total_size }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="table-container">
+            <table class="uploads-table" role="grid" aria-label="Uploads table">
+                <thead class="uploads-table__head">
+                    <tr>
+                        <th class="uploads-table__header" scope="col">UUID</th>
+                        <th class="uploads-table__header" scope="col">File Name</th>
+                        <th class="uploads-table__header" scope="col">Type</th>
+                        <th class="uploads-table__header" scope="col">MIME Type</th>
+                        <th class="uploads-table__header" scope="col">Size</th>
+                        <th class="uploads-table__header" scope="col">Status</th>
+                        <th class="uploads-table__header" scope="col">User</th>
+                        <th class="uploads-table__header" scope="col">Created</th>
+                        <th class="uploads-table__header uploads-table__header--center" scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="uploadsTable" class="uploads-table__body">
+                    {# Populated by JavaScript #}
+                    <tr>
+                        <td colspan="9" class="uploads-table__empty">
+                            <div class="empty-state">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                <p>Loading uploads...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="pagination" class="pagination-container"></div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set base URL for API requests
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/UPLOADS/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

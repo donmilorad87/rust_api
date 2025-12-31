@@ -27,7 +27,7 @@ RUN mkdir -p /var/lib/postgresql/ssl
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /var/lib/postgresql/ssl/server.key \
     -out /var/lib/postgresql/ssl/server.crt \
-    -subj "/C=RS/ST=Serbia/L=Belgrade/O=MoneyFlow/OU=Database/CN=postgres"
+    -subj "/C=RS/ST=Serbia/L=Belgrade/O=BlazingSun/OU=Database/CN=postgres"
 
 # Set proper permissions (PostgreSQL requires strict permissions on key)
 RUN chmod 600 /var/lib/postgresql/ssl/server.key \
