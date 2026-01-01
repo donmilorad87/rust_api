@@ -1,10 +1,20 @@
 // ============================================
-// THEME CONFIG PAGE - Variables
+// THEME CONFIG PAGE - SCSS Variables
 // ============================================
+// Forward all variables from GLOBAL first, then add page-specific variables.
+// All base variables are defined in GLOBAL/_variables.scss.
 
-// These are page-specific overrides
-// Main theme variables come from GLOBAL
+@forward '../../../GLOBAL/src/styles/variables';
 
+// Re-import for local use
+@use '../../../GLOBAL/src/styles/variables' as global;
+
+// ============================================
+// PAGE-SPECIFIC VARIABLES
+// ============================================
+// Theme config page has unique layout requirements
+
+// Layout
 $theme-sidebar-width: 280px;
 $theme-header-height: 60px;
 
