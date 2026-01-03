@@ -16,6 +16,7 @@ pub struct User {
     pub user_must_set_password: i16,
     pub permissions: i16,
     pub avatar_uuid: Option<Uuid>,
+    pub avatar_id: Option<i64>,  // NEW: ID-based avatar reference (replaces avatar_uuid)
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

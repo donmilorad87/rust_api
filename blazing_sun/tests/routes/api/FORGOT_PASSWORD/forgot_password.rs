@@ -32,10 +32,10 @@
 //! - [x] Edge case: Whitespace-only email
 //! - [x] Security: Response time should be consistent (timing attack prevention)
 
-use actix_web::{App, http::StatusCode, test};
+use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::{Deserialize, Serialize};
-use tabled::{Table, Tabled, settings::Style};
+use tabled::{settings::Style, Table, Tabled};
 
 // ============================================
 // Request/Response Structures
@@ -144,7 +144,7 @@ async fn test_forgot_password_existing_user() {
     // Use an email that exists in the test database
     // NOTE: This test requires a user with this email to exist in the database
     let payload = ForgotPasswordRequestRequired {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
     };
 
     // Act
@@ -190,7 +190,10 @@ async fn test_forgot_password_existing_user() {
 
     assert!(http_pass, "HTTP status should be 200 OK");
     assert!(status_pass, "Response status should be 'success'");
-    assert!(message_pass, "Response message should indicate reset code sent");
+    assert!(
+        message_pass,
+        "Response message should indicate reset code sent"
+    );
 }
 
 // ============================================
@@ -599,7 +602,10 @@ async fn test_forgot_password_invalid_email_no_at() {
     print_test_results(&results);
 
     // The endpoint should handle this gracefully
-    assert!(http_pass, "Should return 200 or 400 for invalid email format");
+    assert!(
+        http_pass,
+        "Should return 200 or 400 for invalid email format"
+    );
 }
 
 // ============================================
@@ -656,7 +662,10 @@ async fn test_forgot_password_invalid_email_no_domain() {
 
     print_test_results(&results);
 
-    assert!(http_pass, "Should return 200 or 400 for invalid email format");
+    assert!(
+        http_pass,
+        "Should return 200 or 400 for invalid email format"
+    );
 }
 
 // ============================================
@@ -755,7 +764,9 @@ async fn test_forgot_password_very_long_email() {
     let long_domain = "b".repeat(200);
     let long_email = format!("{}@{}.com", long_local, long_domain);
 
-    let payload = ForgotPasswordRequestRequired { email: long_email.clone() };
+    let payload = ForgotPasswordRequestRequired {
+        email: long_email.clone(),
+    };
 
     // Act
     let req = test::TestRequest::post()
@@ -1012,7 +1023,7 @@ async fn test_forgot_password_timing_consistency() {
 
     // Test with existing email
     let existing_email = ForgotPasswordRequestRequired {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
     };
 
     // Test with non-existing email
@@ -1172,8 +1183,8 @@ async fn test_forgot_password_wrong_content_type() {
     let mut results = vec![];
 
     // Should reject non-JSON or return error
-    let http_pass = status_code == StatusCode::BAD_REQUEST
-        || status_code == StatusCode::UNSUPPORTED_MEDIA_TYPE;
+    let http_pass =
+        status_code == StatusCode::BAD_REQUEST || status_code == StatusCode::UNSUPPORTED_MEDIA_TYPE;
     results.push(TestResult::new(
         "HTTP Status",
         "400 or 415",
@@ -1215,7 +1226,7 @@ async fn test_forgot_password_multiple_requests() {
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
     let payload = ForgotPasswordRequestRequired {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
     };
 
     // Act - Send 5 rapid requests
@@ -1249,10 +1260,7 @@ async fn test_forgot_password_multiple_requests() {
     println!("Rate limiting should be implemented in production.");
 
     // At least one should succeed (or all if no rate limiting)
-    assert!(
-        success_count > 0,
-        "At least one request should succeed"
-    );
+    assert!(success_count > 0, "At least one request should succeed");
 }
 
 // ============================================
@@ -1276,7 +1284,7 @@ async fn test_forgot_password_email_case_sensitivity() {
 
     // Test with uppercase version of existing email
     let payload = ForgotPasswordRequestRequired {
-        email: "MILER@PILER.COM".to_string(),
+        email: "djmyle@gmail.com".to_string(),
     };
 
     // Act

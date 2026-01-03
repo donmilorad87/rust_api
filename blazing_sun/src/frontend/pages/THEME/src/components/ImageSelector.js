@@ -58,9 +58,9 @@ export class ImageSelector {
    */
   updateDisplay() {
     if (this.currentUuid) {
-      // Show preview
+      // Show preview with variant support (use small variant for selector preview)
       if (this.previewElement) {
-        this.previewElement.src = `/api/v1/upload/download/public/${this.currentUuid}`;
+        this.previewElement.src = `/api/v1/upload/public/${this.currentUuid}?variant=small`;
         this.previewElement.classList.remove('hidden');
       }
       if (this.placeholderElement) {

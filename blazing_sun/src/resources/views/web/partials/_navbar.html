@@ -3,8 +3,8 @@
 
 <nav class="navbar" role="navigation" aria-label="Main navigation">
     <a href="/" class="navbar__logo" aria-label="{{ site_name | default(value='Blazing Sun') }} - Go to homepage">
-        {% if logo_stored_name %}
-        <img src="{{ assets(name=logo_stored_name, visibility='public') }}" alt="{{ site_name | default(value='Blazing Sun') }} logo" class="navbar__logo-image">
+        {% if logo_url %}
+        <img src="{{ logo_url }}" alt="{{ site_name | default(value='Blazing Sun') }} logo" class="navbar__logo-image">
         {% else %}
         <svg class="navbar__logo-icon" width="36" height="36" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <defs>
@@ -27,6 +27,7 @@
         <div class="navbar__links">
             {% if is_logged %}
             <a href="{{ route(name='web.profile') | default(value='/profile') }}" class="navbar__link">Profile</a>
+            <a href="{{ route(name='web.galleries') | default(value='/galleries') }}" class="navbar__link">Galleries</a>
             {% if is_admin %}
             <a href="{{ route(name='admin.uploads') | default(value='/admin/uploads') }}" class="navbar__link">Uploads</a>
             <a href="{{ route(name='admin.theme') | default(value='/admin/theme') }}" class="navbar__link">Theme</a>

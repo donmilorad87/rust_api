@@ -1,1403 +1,255 @@
-# CLAUDE.md
+# CLAUDE.md - Application Guide
 
 This file provides guidance to Claude Code when working with the Blazing Sun application.
 
 > **Infrastructure docs are in root `CLAUDE.md`.** This file covers application code only.
 
-## Application Overview
+---
 
-**Blazing Sun** - Rust web API for personal finance tracking with event-driven architecture.
+## Quick Reference
 
 ### Tech Stack
+- **Framework**: Actix-web 4 (Rust)
+- **Databases**: PostgreSQL (sqlx), MongoDB
+- **Queue**: RabbitMQ (lapin)
+- **Events**: Apache Kafka (rdkafka)
+- **Cache**: Redis
+- **Email**: SMTP (lettre)
+- **Templates**: Tera
+- **Auth**: JWT
+- **Frontend**: Vanilla JS (ES6), Vite, SCSS
 
-| Category | Technology | Crate |
-|----------|------------|-------|
-| Framework | Actix-web 4 | `actix-web`, `actix-cors`, `actix-multipart` |
-| Database | PostgreSQL | `sqlx` (compile-time checked) |
-| Queue (Tasks) | RabbitMQ | `lapin` |
-| Events (Streaming) | Apache Kafka | `rdkafka` |
-| Cache | Redis | `redis` |
-| Email | SMTP | `lettre` |
-| Templates | Tera | `tera` |
-| Auth | JWT | `jsonwebtoken`, `bcrypt` |
-| Cron | Scheduler | `tokio-cron-scheduler` |
-| Async | Tokio | `tokio` |
-| Logging | Tracing | `tracing`, `tracing-subscriber` |
-| Validation | Validator | `validator` |
-| Serialization | Serde | `serde`, `serde_json` |
-| UUID | uuid v4 | `uuid` |
-| DateTime | Chrono | `chrono` |
-| File Hashing | SHA256 | `sha2` |
-
----
-
-## Complete Project Structure
-
+### Key Directories
 ```
 blazing_sun/
-├── Cargo.toml                          # Dependencies and project config
-├── Cargo.lock                          # Locked dependency versions
-├── .env                                # App environment variables (synced from Docker)
-├── .env.example                        # Example env file
-│
-├── migrations/                         # SQLx database migrations
-│   ├── 20251217202253_create_users_table.sql
-│   ├── 20251217203606_create_categories_table.sql
-│   ├── 20251217204134_create_transactions_table.sql
-│   ├── 20251222231150_add_user_fields_and_activation_hashes.sql
-│   └── 20251224120000_create_uploads_table.sql
-│
-├── .sqlx/                              # SQLx query cache (COMMIT TO GIT)
-│   └── query-*.json                    # Cached query metadata for offline builds
-│
-├── storage/                            # File storage
-│   └── app/
-│       ├── public/                     # Public files (nginx serves at /storage/)
-│       └── private/                    # Private files (API serves with auth)
-│
-├── tests/                              # Integration tests
-│   └── routes_test.rs
-│
-└── src/
-    ├── main.rs                         # Application entry point
-    ├── lib.rs                          # Module exports for library usage
-    │
-    ├── config/                         # Configuration modules (once_cell::Lazy)
-    │   ├── mod.rs                      # Re-exports all config modules
-    │   ├── app.rs                      # AppConfig: HOST, PORT, RUST_LOG
-    │   ├── database.rs                 # DatabaseConfig: DATABASE_URL, max_connections
-    │   ├── jwt.rs                      # JwtConfig: JWT_SECRET, EXPIRATION_TIME
-    │   ├── redis.rs                    # RedisConfig: REDIS_URL
-    │   ├── rabbitmq.rs                 # RabbitMQConfig: RABBITMQ_URL
-    │   ├── kafka.rs                    # KafkaConfig: bootstrap_servers, group_id
-    │   ├── email.rs                    # EmailConfig: SMTP settings
-    │   ├── activation.rs               # ActivationConfig: token expiry times
-    │   ├── cron.rs                     # CronConfig: job schedules
-    │   └── upload.rs                   # UploadConfig: max_file_size, allowed_types, storage
-    │
-    ├── bootstrap/                      # Core Framework Layer
-    │   ├── mod.rs                      # Re-exports: database, events, includes, middleware, mq, routes, utility
-    │   │
-    │   ├── database/                   # Database connection and state
-    │   │   ├── mod.rs                  # Re-exports database module
-    │   │   └── database.rs             # AppState, DynMq, SharedEventBus, create_pool()
-    │   │
-    │   ├── events/                     # Kafka Event System
-    │   │   ├── mod.rs                  # EventBus, SharedEventBus, init(), start_consumer(), publish module
-    │   │   ├── types.rs                # DomainEvent, EventType, EventMetadata, EventBuilder
-    │   │   ├── topics.rs               # Topic constants: USER_EVENTS, AUTH_EVENTS, etc.
-    │   │   ├── producer.rs             # EventProducer: publish(), publish_batch(), publish_with_retry()
-    │   │   ├── consumer.rs             # EventConsumer, EventHandler trait, EventHandlerError
-    │   │   └── handlers/               # Event subscribers
-    │   │       ├── mod.rs              # Handler registration: create_handlers()
-    │   │       ├── user.rs             # UserEventHandler, UserAuditHandler
-    │   │       └── auth.rs             # AuthEventHandler
-    │   │
-    │   ├── includes/                   # Shared Controllers and Services
-    │   │   ├── mod.rs                  # Re-exports controllers and storage
-    │   │   ├── controllers/
-    │   │   │   ├── mod.rs              # Re-exports all shared controllers
-    │   │   │   ├── email.rs            # EmailController: send_email() via SMTP
-    │   │   │   └── uploads.rs          # UploadsController: handle file uploads
-    │   │   └── storage/                # Storage Driver Abstraction (S3-ready)
-    │   │       ├── mod.rs              # StorageDriver trait, Storage manager, StorageError
-    │   │       ├── local.rs            # LocalStorageDriver: filesystem storage
-    │   │       └── s3.rs               # S3StorageDriver: AWS S3 (placeholder)
-    │   │
-    │   ├── middleware/                 # HTTP Middleware
-    │   │   ├── mod.rs                  # Re-exports middleware controllers
-    │   │   └── controllers/
-    │   │       ├── mod.rs              # Re-exports all middleware, json_error_handler
-    │   │       ├── auth.rs             # JwtMiddleware: validate JWT, extract claims
-    │   │       ├── cors.rs             # CORS configuration: configure()
-    │   │       ├── json_error.rs       # JSON error handler for invalid JSON
-    │   │       ├── security_headers.rs # Security headers: X-Content-Type-Options, etc.
-    │   │       └── tracing_logger.rs   # Request logging: init(), configure()
-    │   │
-    │   ├── mq/                         # RabbitMQ Message Queue Core
-    │   │   ├── mod.rs                  # Re-exports mq controller
-    │   │   └── controller/
-    │   │       ├── mod.rs              # Re-exports mq functions
-    │   │       └── mq.rs               # MessageQueue, SharedQueue, JobOptions, JobStatus, enqueue functions
-    │   │
-    │   ├── routes/                     # Route Registration
-    │   │   ├── mod.rs                  # Re-exports route controllers
-    │   │   └── controller/
-    │   │       ├── mod.rs              # Re-exports api and crons
-    │   │       ├── api.rs              # register(): all API route definitions
-    │   │       └── crons.rs            # register(): all cron job schedules
-    │   │
-    │   └── utility/                    # Utility Functions
-    │       ├── mod.rs                  # Re-exports auth and template
-    │       ├── auth.rs                 # Auth utilities: JWT generation, password hashing
-    │       └── template.rs             # Template helpers: assets(), asset(), private_asset()
-    │
-    ├── app/                            # Application Layer
-    │   ├── mod.rs                      # Re-exports: cron, db_query, http, mq
-    │   │
-    │   ├── cron/                       # Cron Job Implementations
-    │   │   ├── mod.rs                  # Re-exports all cron jobs
-    │   │   ├── user_counter.rs         # UserCounterJob: counts users periodically
-    │   │   └── list_user_emails.rs     # ListUserEmailsJob: lists all user emails
-    │   │
-    │   ├── db_query/                   # Database Queries
-    │   │   ├── mod.rs                  # Re-exports read and mutations
-    │   │   ├── read/                   # SELECT queries (read-only)
-    │   │   │   ├── mod.rs              # Re-exports read modules
-    │   │   │   ├── user/
-    │   │   │   │   └── mod.rs          # get_by_id, get_by_email, has_with_email, sign_in, count
-    │   │   │   └── upload/
-    │   │   │       └── mod.rs          # get_by_uuid, get_by_user_id, get_public_by_uuid
-    │   │   └── mutations/              # INSERT/UPDATE/DELETE queries
-    │   │       ├── mod.rs              # Re-exports mutation modules
-    │   │       ├── user/
-    │   │       │   └── mod.rs          # create, update_partial, update_full, delete
-    │   │       ├── upload/
-    │   │       │   └── mod.rs          # create, delete
-    │   │       └── activation_hash/
-    │   │           └── mod.rs          # create, verify, delete, generate_hash
-    │   │
-    │   ├── http/                       # HTTP Layer
-    │   │   ├── mod.rs                  # Re-exports api and web modules
-    │   │   ├── api/                    # REST API
-    │   │   │   ├── mod.rs              # Re-exports controllers, validators, middlewares
-    │   │   │   ├── controllers/
-    │   │   │   │   ├── mod.rs          # Re-exports all controllers
-    │   │   │   │   ├── auth.rs         # AuthController: sign_up(), sign_in()
-    │   │   │   │   ├── user.rs         # UserController: get_current(), update_*, delete()
-    │   │   │   │   ├── activation.rs   # ActivationController: activate, forgot_password, reset
-    │   │   │   │   ├── upload.rs       # UploadController: single, multiple, chunked, download
-    │   │   │   │   └── responses.rs    # BaseResponse, UserDto, ValidationErrorResponse
-    │   │   │   ├── validators/
-    │   │   │   │   ├── mod.rs          # Re-exports validators
-    │   │   │   │   ├── auth.rs         # SignupRequest, SigninRequest, validate_password()
-    │   │   │   │   └── user.rs         # UpdateUserRequest, user field validators
-    │   │   │   └── middlewares/
-    │   │   │       └── mod.rs          # API-specific middlewares
-    │   │   └── web/                    # Web Pages (Tera templates)
-    │   │       ├── mod.rs              # Re-exports web modules
-    │   │       ├── controllers/
-    │   │       │   ├── mod.rs
-    │   │       │   └── pages.rs        # Page handlers: index, dashboard, etc.
-    │   │       ├── validators/
-    │   │       │   └── mod.rs
-    │   │       └── middlewares/
-    │   │           └── mod.rs
-    │   │
-    │   └── mq/                         # Message Queue Jobs
-    │       ├── mod.rs                  # Re-exports jobs and workers
-    │       ├── jobs/                   # Job Definitions (parameters)
-    │       │   ├── mod.rs              # Re-exports job modules
-    │       │   ├── create_user/
-    │       │   │   └── mod.rs          # CreateUserParams, execute()
-    │       │   └── email/
-    │       │       └── mod.rs          # SendEmailParams, EmailTemplate enum
-    │       └── workers/                # Job Processors (executors)
-    │           ├── mod.rs              # Worker router: process_job()
-    │           ├── create_user/
-    │           │   └── mod.rs          # CreateUserWorker: process()
-    │           └── email/
-    │               └── mod.rs          # EmailWorker: process(), render templates
-    │
-    ├── routes/                         # Route Definitions
-    │   ├── mod.rs                      # Named routes registry
-    │   ├── api.rs                      # API routes: /api/v1/*
-    │   ├── web.rs                      # Web routes: /, /dashboard, etc.
-    │   └── crons.rs                    # Cron job schedules
-    │
-    └── resources/                      # Static Resources
-        ├── css/
-        │   └── toastify.min.css
-        ├── js/
-        │   └── toastify.min.js
-        └── views/
-            ├── emails/                 # Tera email templates
-            │   ├── base.html           # Base layout (header, footer, styles)
-            │   ├── welcome.html
-            │   ├── account_activation.html
-            │   ├── forgot_password.html
-            │   ├── user_must_set_password.html
-            │   ├── password_change.html
-            │   ├── activation_success.html
-            │   └── password_reset_success.html
-            └── web/                    # Tera web page templates
+├── src/
+│   ├── bootstrap/        # Core framework layer
+│   ├── app/              # Application layer
+│   │   ├── http/         # Controllers (web + API)
+│   │   ├── db_query/     # Database queries (read + mutations)
+│   │   ├── mq/           # RabbitMQ jobs and workers
+│   │   └── events/       # Kafka event publishers
+│   ├── config/           # Configuration modules
+│   └── routes/           # Route definitions (api.rs, web.rs)
+├── migrations/           # Database migrations
+├── storage/              # File storage (uploads, backups)
+├── src/frontend/pages/   # Frontend components (Vite)
+└── src/resources/        # Compiled assets (CSS, JS)
 ```
 
 ---
 
-## Module Details
+## 📚 Complete Documentation
 
-### `main.rs` - Entry Point
+### Routes & Endpoints
+- **[Web Routes Overview](../Documentation/blazing_sun/Routes/Web/README.md)** - All web pages (11 routes)
+- **[Web Routes Quick Reference](../Documentation/blazing_sun/Routes/Web/quick-reference.md)** - Permission matrix, bundle sizes
+- **[API Routes Overview](../Documentation/blazing_sun/Routes/API/README.md)** - All API endpoints (65+)
 
-```rust
-// Initialization sequence:
-1. tracing_logger::init()           // Initialize logging
-2. crons::register(pool)            // Start cron scheduler
-3. mq::init(pool)                   // Connect to RabbitMQ
-4. mq::start_processor(queue, 4)    // Start 4 worker threads
-5. events::init(pool)               // Connect to Kafka
-6. events::start_consumer(consumer) // Start event consumer
-7. HttpServer::new()                // Start HTTP server
-```
+#### Individual Web Pages
+- [Sign In Page](../Documentation/blazing_sun/Routes/Web/sign-in.md) - `/sign-in`
+- [Sign Up Page](../Documentation/blazing_sun/Routes/Web/sign-up.md) - `/sign-up`
+- [Forgot Password Page](../Documentation/blazing_sun/Routes/Web/forgot-password.md) - `/forgot-password`
+- [Profile Page](../Documentation/blazing_sun/Routes/Web/profile.md) - `/profile` (avatar, password, email)
+- [Galleries Page](../Documentation/blazing_sun/Routes/Web/galleries.md) - `/galleries` (CRUD, pictures, lightbox)
+- [Admin Theme Page](../Documentation/blazing_sun/Routes/Web/theme.md) - `/admin/theme` (colors, typography, SEO, schema)
+- [Admin Uploads Page](../Documentation/blazing_sun/Routes/Web/uploads.md) - `/admin/uploads` (asset management, variants)
+- [Super Admin Users Page](../Documentation/blazing_sun/Routes/Web/registered-users.md) - `/superadmin/users`
 
-### `lib.rs` - Module Exports
+### Frontend Architecture
+- **[Frontend Overview](../Documentation/blazing_sun/Frontend/README.md)** - ES6 classes, Vite, SCSS structure
+- **[Profile Page Components](../Documentation/blazing_sun/ProfilePage/README.md)** - Avatar, password, email change
+- **[Admin Uploads System](../Documentation/blazing_sun/AdminUploads/README.md)** - Image variants, RabbitMQ integration
 
-```rust
-pub mod app;        // Application layer (http, db_query, cron, mq)
-pub mod bootstrap;  // Core framework (database, events, middleware, routes, utility)
-pub mod config;     // Configuration
-pub mod routes;     // Route definitions
+### Backend Systems
 
-// Re-exports for convenience
-pub use bootstrap::database;
-pub use bootstrap::middleware::controllers::json_error_handler;
-```
+#### Core Framework
+- **[Bootstrap Layer](../Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md)** - Initialization sequence, middleware, utilities
+- **[Controllers](../Documentation/blazing_sun/Controllers/CONTROLLERS.md)** - API + web controllers
+- **[Database Layer](../Documentation/blazing_sun/Database/DATABASE.md)** - Query organization, stored procedures
+- **[Permissions System](../Documentation/blazing_sun/Permissions/PERMISSIONS.md)** - User levels (1, 10, 50, 100)
 
----
+#### Event-Driven Architecture
+- **[Events (Kafka)](../Documentation/blazing_sun/Events/EVENTS.md)** - Event publishers, topics, patterns
+- **[Message Queue (RabbitMQ)](../Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md)** - Job enqueuing, workers, priorities
+- **[Cron Jobs](../Documentation/blazing_sun/CronJobs/CRON_JOBS.md)** - Scheduled tasks
 
-## Configuration Pattern
+#### Data & Storage
+- **[MongoDB Integration](../Documentation/blazing_sun/MongoDB/MONGODB.md)** - Document store usage
+- **[Uploads System](../Documentation/blazing_sun/Uploads/UPLOADS.md)** - File storage, S3-ready architecture
+- **[Email System](../Documentation/blazing_sun/Email/EMAIL.md)** - Templates, SMTP configuration
 
-All configs use `once_cell::Lazy` for static initialization from environment variables:
+#### Theme Configuration
+- **[Theme System Overview](../Documentation/blazing_sun/theme_configurations/OVERVIEW.md)**
+- **[Colors Configuration](../Documentation/blazing_sun/theme_configurations/COLORS.md)** - Light/dark themes
+- **[Typography Configuration](../Documentation/blazing_sun/theme_configurations/TYPOGRAPHY.md)** - Fonts, sizes, weights
+- **[Spacing Configuration](../Documentation/blazing_sun/theme_configurations/SPACING.md)** - Scale system
+- **[Branding Configuration](../Documentation/blazing_sun/theme_configurations/BRANDING.md)** - Logo, favicon
+- **[SEO Configuration](../Documentation/blazing_sun/theme_configurations/SEO.md)** - Meta tags, Schema.org
 
-```rust
-// config/upload.rs example
-use once_cell::sync::Lazy;
-
-pub struct UploadConfig {
-    pub max_file_size: u64,
-    pub max_files_per_upload: usize,
-    pub allowed_types: Vec<String>,
-    pub storage_path: String,
-    pub storage_driver: String,
-    pub public_url_base: String,
-    pub private_url_base: String,
-}
-
-pub static UPLOAD: Lazy<UploadConfig> = Lazy::new(|| {
-    dotenv::dotenv().ok();
-    UploadConfig {
-        max_file_size: std::env::var("UPLOAD_MAX_FILE_SIZE")
-            .unwrap_or_else(|_| "104857600".to_string())
-            .parse()
-            .unwrap(),
-        // ... more fields
-    }
-});
-
-impl UploadConfig {
-    pub fn max_file_size() -> u64 { UPLOAD.max_file_size }
-    pub fn storage_driver() -> &'static str { &UPLOAD.storage_driver }
-    // ... more accessors
-}
-```
-
-**Available configs:**
-- `AppConfig::host()`, `AppConfig::port()`
-- `DatabaseConfig::url()`, `DatabaseConfig::max_connections()`
-- `JwtConfig::secret()`, `JwtConfig::expiration_minutes()`
-- `RedisConfig::url()`
-- `RabbitMQConfig::url()`
-- `KafkaConfig::bootstrap_servers()`, `KafkaConfig::group_id()`
-- `EmailConfig::host()`, `EmailConfig::port()`, `EmailConfig::username()`, etc.
-- `ActivationConfig::expiry_account_activation()`, `expiry_password_reset()`
-- `CronConfig::user_counter()`
-- `UploadConfig::max_file_size()`, `UploadConfig::allowed_types()`, `UploadConfig::storage_driver()`
+#### Templates
+- **[Template System](../Documentation/blazing_sun/Templates/TEMPLATES.md)** - Tera templates, partials, helpers
 
 ---
 
-## AppState
+## Common Code Patterns
 
-```rust
-pub struct AppState {
-    pub db: Mutex<Pool<Postgres>>,      // Database connection pool
-    pub jwt_secret: &'static str,        // JWT signing secret
-    pub mq: Option<DynMq>,               // RabbitMQ (optional)
-    pub events: Option<SharedEventBus>,  // Kafka (optional)
-}
-
-impl AppState {
-    pub fn event_bus(&self) -> Option<&SharedEventBus> {
-        self.events.as_ref()
-    }
-}
-
-// DynMq avoids circular dependency with mq module
-pub type DynMq = Arc<Mutex<dyn Any + Send + Sync>>;
-pub type SharedEventBus = Arc<EventBus>;
-
-// Factory functions
-pub async fn create_pool() -> Pool<Postgres>;
-pub async fn state() -> web::Data<AppState>;
-pub async fn state_with_mq(mq: DynMq) -> web::Data<AppState>;
-pub async fn state_with_mq_and_events(mq: DynMq, events: SharedEventBus) -> web::Data<AppState>;
-```
-
----
-
-## Database Queries
-
-### Read Operations (`app/db_query/read/`)
-
+### Database Queries
 ```rust
 use crate::app::db_query::read::user;
-
-// Check if user exists
-let exists: bool = user::has_with_email(&db, "test@example.com").await;
-
-// Get user by ID
-let user: Option<User> = user::get_by_id(&db, 123).await?;
-
-// Get user by email
-let user: User = user::get_by_email(&db, "test@example.com").await?;
-
-// Sign in (returns user if credentials valid)
-let user: User = user::sign_in(&db, &signin_request).await?;
-
-// Count all users
-let count: i64 = user::count(&db).await;
-
-// Upload reads
-use crate::app::db_query::read::upload;
-let upload = upload::get_by_uuid(&db, &uuid).await?;
-let uploads = upload::get_by_user_id(&db, user_id).await?;
-```
-
-### Mutation Operations (`app/db_query/mutations/`)
-
-```rust
 use crate::app::db_query::mutations::user;
-use crate::app::db_query::mutations::activation_hash;
-use crate::app::db_query::mutations::upload;
 
-// Create user
-user::create(&db, &CreateUserParams { email, password, first_name, last_name }).await;
+// Read
+let user = user::get_by_email(&db, "test@example.com").await?;
 
-// Update user (partial - only provided fields)
-user::update_partial(&db, user_id, &UpdateParams { first_name: Some("New"), .. }).await?;
-
-// Delete user
-user::delete(&db, user_id).await?;
-
-// Activation hashes
-let hash: String = activation_hash::generate_hash(); // Random 6-char code
-activation_hash::create(&db, user_id, &hash, "activation", expiry_minutes).await?;
-let valid: bool = activation_hash::verify(&db, user_id, &hash, "activation").await?;
-
-// Upload mutations
-upload::create(&db, &CreateUploadParams { ... }).await?;
-upload::delete(&db, &uuid).await?;
+// Mutation
+user::create(&db, &CreateUserParams { ... }).await?;
 ```
+See [Database Layer](../Documentation/blazing_sun/Database/DATABASE.md) for all query patterns.
 
----
-
-## Event-Driven Architecture
-
-### Dual Messaging Strategy
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     HTTP Request Handler                         │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-            ┌───────────────┴───────────────┐
-            │                               │
-            ▼                               ▼
-┌───────────────────────┐       ┌───────────────────────┐
-│      RabbitMQ         │       │        Kafka          │
-│   (Task Queue)        │       │    (Event Stream)     │
-│                       │       │                       │
-│ Pattern: Work Queue   │       │ Pattern: Pub/Sub      │
-│ Delivery: At-least-1  │       │ Delivery: At-least-1  │
-│ Consumers: 1 per msg  │       │ Consumers: Many       │
-└───────────┬───────────┘       └───────────┬───────────┘
-            │                               │
-            ▼                               ▼
-┌───────────────────────┐       ┌───────────────────────┐
-│   MQ Workers (4)      │       │   Event Handlers      │
-│   - create_user       │       │   - UserEventHandler  │
-│   - send_email        │       │   - AuthEventHandler  │
-└───────────────────────┘       └───────────────────────┘
-```
-
-| System   | Purpose | When to Use |
-|----------|---------|-------------|
-| RabbitMQ | Commands/Tasks | Side effects, external calls (email, SMS, payments) |
-| Kafka    | Events/Facts | Audit, analytics, notifications, cross-service |
-
-### Kafka Topics
-
-| Topic | Events | Entity |
-|-------|--------|--------|
-| `user.events` | created, updated, deleted, activated, password_changed | User |
-| `auth.events` | sign_in, sign_in_failed, sign_out, password_reset_requested | Auth |
-| `transaction.events` | created, updated, deleted | Transaction |
-| `category.events` | created, updated, deleted | Category |
-| `system.events` | health_check, error, warning | System |
-
-### Event Types (`bootstrap/events/types.rs`)
-
+### Publishing Events (Kafka)
 ```rust
-pub enum EventType {
-    User(UserEventType),
-    Auth(AuthEventType),
-    Transaction(TransactionEventType),
-    Category(CategoryEventType),
-    System(SystemEventType),
-}
-
-pub enum UserEventType {
-    Created, Updated, Deleted, Activated, PasswordChanged, BalanceUpdated,
-}
-
-pub enum AuthEventType {
-    SignIn, SignInFailed, SignOut, PasswordResetRequested, PasswordReset,
-}
-
-pub struct DomainEvent {
-    pub id: String,              // UUID v4
-    pub event_type: EventType,
-    pub entity_type: String,     // "user", "auth", etc.
-    pub entity_id: String,       // Affected entity ID
-    pub payload: Value,          // JSON payload
-    pub metadata: EventMetadata,
-    pub timestamp: i64,          // Unix milliseconds
-    pub version: i64,            // For ordering
-}
-```
-
-### Publishing Events
-
-```rust
-use crate::bootstrap::events;
-
-// Using helper functions (recommended)
 if let Some(event_bus) = state.event_bus() {
-    events::publish::user_created(event_bus, user_id, &email, &first_name, &last_name, None).await?;
-    events::publish::auth_sign_in(event_bus, user_id, &email, ip, user_agent).await?;
-}
-
-// Using EventBuilder (for custom events)
-use crate::bootstrap::events::{EventBuilder, EventType, UserEventType};
-
-let event = EventBuilder::new(EventType::User(UserEventType::BalanceUpdated), &user_id.to_string())
-    .payload(serde_json::json!({ "old_balance": 1000, "new_balance": 1500 }))
-    .actor(actor_id)
-    .correlation_id("req-123")
-    .build();
-
-event_bus.publish(&event).await?;
-```
-
-### Creating Event Handlers
-
-```rust
-// bootstrap/events/handlers/my_handler.rs
-use crate::bootstrap::events::consumer::{EventHandler, EventHandlerError};
-use crate::bootstrap::events::types::DomainEvent;
-use async_trait::async_trait;
-
-pub struct MyHandler;
-
-#[async_trait]
-impl EventHandler for MyHandler {
-    fn name(&self) -> &'static str { "my_handler" }
-
-    fn topics(&self) -> Vec<&'static str> {
-        vec!["user.events", "auth.events"]
-    }
-
-    async fn handle(&self, event: &DomainEvent) -> Result<(), EventHandlerError> {
-        match &event.event_type {
-            EventType::User(UserEventType::Created) => { /* handle */ }
-            _ => {}
-        }
-        Ok(())
-    }
-}
-
-// Register in bootstrap/events/handlers/mod.rs
-pub fn create_handlers(db: SharedDb) -> Vec<Arc<dyn EventHandler>> {
-    vec![
-        Arc::new(UserEventHandler::new(db.clone())),
-        Arc::new(AuthEventHandler::new(db.clone())),
-        Arc::new(MyHandler),
-    ]
+    events::publish::user_created(
+        event_bus,
+        user_id,
+        &email,
+        &first_name,
+        &last_name,
+        None
+    ).await?;
 }
 ```
+See [Events](../Documentation/blazing_sun/Events/EVENTS.md) for all event types.
 
----
-
-## RabbitMQ Jobs
-
-### Job Priority Levels
-
-| Priority | Name | Use Case |
-|----------|------|----------|
-| 0 | FIFO | Default, processed in order |
-| 1 | Low | Non-urgent (welcome emails) |
-| 2 | Normal | Standard priority |
-| 3 | Medium | Important tasks |
-| 4 | High | Time-sensitive |
-| 5 | Critical | Must process immediately |
-
-### Existing Jobs
-
-| Job | Description | Parameters |
-|-----|-------------|------------|
-| `create_user` | Create user in database | `CreateUserParams { email, password, first_name, last_name }` |
-| `send_email` | Send email via SMTP | `SendEmailParams { to, name, template, variables }` |
-
-### Enqueueing Jobs
-
+### Enqueueing Jobs (RabbitMQ)
 ```rust
-use crate::bootstrap::mq::{self, JobOptions, JobStatus};
+use crate::bootstrap::mq::{self, JobOptions};
 
-// Fire and forget
-let options = JobOptions::new()
-    .priority(1)
-    .fault_tolerance(3);  // Retry 3 times
-
+let options = JobOptions::new().priority(1).fault_tolerance(3);
 mq::enqueue_job_dyn(&mq, "send_email", &params, options).await?;
-
-// Wait for completion (with timeout)
-let status = mq::enqueue_and_wait_dyn(&mq, "create_user", &params, options, 30000).await?;
-match status {
-    JobStatus::Completed => { /* success */ }
-    JobStatus::Failed => { /* failed after retries */ }
-    JobStatus::Pending => { /* still processing */ }
-    JobStatus::Timeout => { /* timed out */ }
-}
 ```
+See [Message Queue](../Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md) for all job types.
 
-### Email Templates
-
-| Template | Variables | Purpose |
-|----------|-----------|---------|
-| `welcome` | `first_name`, `email` | Welcome new user |
-| `account_activation` | `first_name`, `email`, `activation_code` | Activation code |
-| `forgot_password` | `first_name`, `reset_code` | Password reset |
-| `user_must_set_password` | `first_name`, `set_password_code` | Force password set |
-| `password_change` | `first_name` | Password changed notification |
-| `activation_success` | `first_name` | Account activated |
-| `password_reset_success` | `first_name` | Password reset success |
-
----
-
-## Storage System
-
-### Storage Driver Architecture
-
-```rust
-// bootstrap/includes/storage/mod.rs
-#[async_trait]
-pub trait StorageDriver: Send + Sync {
-    fn driver_type(&self) -> StorageDriverType;
-    async fn put(&self, data: &[u8], filename: &str, visibility: Visibility) -> Result<StoredFile, StorageError>;
-    async fn get(&self, path: &str) -> Result<Vec<u8>, StorageError>;
-    async fn delete(&self, path: &str) -> Result<bool, StorageError>;
-    async fn exists(&self, path: &str) -> Result<bool, StorageError>;
-    async fn size(&self, path: &str) -> Result<u64, StorageError>;
-    fn url(&self, path: &str, visibility: Visibility) -> String;
-    fn path(&self, path: &str) -> PathBuf;
-    async fn init(&self) -> Result<(), StorageError>;
-}
-
-pub enum Visibility {
-    Public,   // Served by nginx at /storage/
-    Private,  // Served by API with auth
-}
-
-pub enum StorageDriverType {
-    Local,
-    S3,
-}
-```
-
-### Using Storage
-
-```rust
-use crate::bootstrap::includes::storage::{get_storage, Visibility};
-
-// Get global storage instance
-let storage = get_storage()?;
-
-// Store a file
-let stored = storage.put(data, "filename.jpg", Visibility::Public).await?;
-
-// Get file contents
-let contents = storage.get(&stored.storage_path).await?;
-
-// Check existence
-let exists = storage.exists(&stored.storage_path).await?;
-
-// Delete file
-storage.delete(&stored.storage_path).await?;
-```
-
-### Template Helper Functions
-
-```rust
-use crate::bootstrap::utility::template::{assets, asset, private_asset};
-
-// Public file URL: /storage/filename.jpg
-let url = assets("filename.jpg", "public");
-let url = asset("filename.jpg");  // shorthand
-
-// Private file URL: /api/v1/upload/private/uuid
-let url = assets("uuid", "private");
-let url = private_asset("uuid");  // shorthand
-```
-
----
-
-## API Endpoints
-
-### Authentication (No Auth Required)
-
-| Method | Endpoint | Handler | Description |
-|--------|----------|---------|-------------|
-| POST | `/api/v1/auth/sign-up` | `AuthController::sign_up` | Register new user |
-| POST | `/api/v1/auth/sign-in` | `AuthController::sign_in` | Login, get JWT |
-
-### Account (No Auth Required)
-
-| Method | Endpoint | Handler | Description |
-|--------|----------|---------|-------------|
-| POST | `/api/v1/account/activate-account` | `ActivationController::activate_account` | Activate with code |
-| POST | `/api/v1/account/forgot-password` | `ActivationController::forgot_password` | Request reset code |
-| POST | `/api/v1/account/reset-password` | `ActivationController::reset_password` | Reset with code |
-
-### User (Auth Required)
-
-| Method | Endpoint | Handler | Description |
-|--------|----------|---------|-------------|
-| GET | `/api/v1/user` | `UserController::get_current` | Get current user |
-| PATCH | `/api/v1/user` | `UserController::update_partial` | Update some fields |
-| PUT | `/api/v1/user` | `UserController::update_full` | Update all fields |
-| DELETE | `/api/v1/user/{id}` | `UserController::delete` | Delete user |
-
-### File Upload (Auth Required)
-
-| Method | Endpoint | Handler | Description |
-|--------|----------|---------|-------------|
-| POST | `/api/v1/upload/single` | `UploadController::single` | Single file |
-| POST | `/api/v1/upload/multiple` | `UploadController::multiple` | Multiple files |
-| POST | `/api/v1/upload/chunk/init` | `UploadController::chunk_init` | Init chunked |
-| POST | `/api/v1/upload/chunk/upload` | `UploadController::chunk_upload` | Upload chunk |
-| POST | `/api/v1/upload/chunk/complete` | `UploadController::chunk_complete` | Complete chunked |
-| GET | `/api/v1/upload/chunk/status/{id}` | `UploadController::chunk_status` | Get status |
-| GET | `/api/v1/upload/private/{uuid}` | `UploadController::download_private` | Download private |
-| DELETE | `/api/v1/upload/{uuid}` | `UploadController::delete` | Delete upload |
-
-### File Download (No Auth)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/upload/download/public/{uuid}` | Download public file |
-| GET | `/storage/{filename}` | Static file (nginx) |
-
-### Admin Theme & SEO (Admin Required - permission >= 10)
-
-| Method | Endpoint | Handler | Description |
-|--------|----------|---------|-------------|
-| GET | `/api/v1/admin/theme` | `ThemeController::get` | Get theme config |
-| PUT | `/api/v1/admin/theme` | `ThemeController::update` | Update theme + rebuild |
-| PUT | `/api/v1/admin/theme/branding` | `ThemeController::update_branding` | Update branding |
-| POST | `/api/v1/admin/theme/build` | `ThemeController::trigger_build` | Manual rebuild |
-| GET | `/api/v1/admin/theme/build/status` | `ThemeController::build_status` | Build status |
-| GET | `/api/v1/admin/seo` | `ThemeController::seo_list` | List all page SEO |
-| GET | `/api/v1/admin/seo/{route_name}` | `ThemeController::seo_get` | Get page SEO |
-| PUT | `/api/v1/admin/seo/{route_name}` | `ThemeController::seo_update` | Update page SEO |
-| PATCH | `/api/v1/admin/seo/{route_name}/toggle` | `ThemeController::seo_toggle_active` | Toggle active |
-| GET | `/api/v1/admin/seo/page/{id}/schemas` | `ThemeController::schema_list` | List schemas |
-| POST | `/api/v1/admin/seo/page/{id}/schemas` | `ThemeController::schema_create` | Create schema |
-| GET | `/api/v1/admin/seo/schema/{id}` | `ThemeController::schema_get` | Get schema |
-| PUT | `/api/v1/admin/seo/schema/{id}` | `ThemeController::schema_update` | Update schema |
-| DELETE | `/api/v1/admin/seo/schema/{id}` | `ThemeController::schema_delete` | Delete schema |
-
----
-
-## Admin Theme Configuration System
-
-The admin theme system (`/admin/theme`) provides a comprehensive interface for managing site branding, theme colors, typography, spacing, SEO meta tags, and Schema.org structured data.
-
-### Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Admin Theme Page (/admin/theme)                 │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────┐  ┌──────────┐  ┌────────────┐  ┌─────────┐  ┌───────┐ │
-│  │Branding │  │  Colors  │  │ Typography │  │ Spacing │  │  SEO  │ │
-│  │   Tab   │  │   Tab    │  │    Tab     │  │   Tab   │  │  Tab  │ │
-│  └────┬────┘  └────┬─────┘  └─────┬──────┘  └────┬────┘  └───┬───┘ │
-│       │            │              │              │            │     │
-│       ▼            ▼              ▼              ▼            ▼     │
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │                    ThemeController (API)                        ││
-│  │  PUT /theme - Update colors/typography → triggers SCSS build    ││
-│  │  PUT /theme/branding - Update logo/favicon/site name            ││
-│  │  PUT /seo/{route} - Update SEO meta tags                        ││
-│  │  POST /seo/page/{id}/schemas - Add Schema.org structured data   ││
-│  └─────────────────────────────────────────────────────────────────┘│
-│                              │                                       │
-│                              ▼                                       │
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │                      ThemeService                               ││
-│  │  1. Update _variables.scss with new values                      ││
-│  │  2. Run Vite build for all 8 frontend projects                  ││
-│  │  3. Increment assets_version for cache busting                  ││
-│  └─────────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                     Database Tables                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│  site_config (1 row)  │  page_seo (per page)  │  page_schemas       │
-│  - scss_variables     │  - route_name         │  - page_seo_id (FK) │
-│  - theme_light/dark   │  - title, description │  - schema_type      │
-│  - logo/favicon_uuid  │  - og_*, twitter_*    │  - schema_data JSON │
-│  - assets_version     │  - robots, canonical  │  - position         │
-│  - build status       │  - is_active          │  - is_active        │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Database Tables
-
-#### site_config Table
-
-Single-row table storing global theme configuration:
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | BIGINT | Primary key |
-| site_name | VARCHAR | Site display name |
-| show_site_name | BOOLEAN | Show name in navbar |
-| identity_color_start | VARCHAR | Gradient start color |
-| identity_color_end | VARCHAR | Gradient end color |
-| identity_size | VARCHAR | Logo/text size (rem) |
-| logo_uuid | UUID | FK to uploads (logo image) |
-| favicon_uuid | UUID | FK to uploads (favicon) |
-| scss_variables | JSONB | All SCSS variable overrides |
-| theme_light | JSONB | Light theme color overrides |
-| theme_dark | JSONB | Dark theme color overrides |
-| assets_version | VARCHAR | Cache-busting version (e.g., "1.0.027") |
-| last_build_status | VARCHAR | "success", "failed", "building" |
-| last_build_at | TIMESTAMPTZ | Last build timestamp |
-| last_build_error | TEXT | Error message if build failed |
-
-#### page_seo Table
-
-Per-page SEO configuration:
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | BIGINT | Primary key |
-| route_name | VARCHAR | Named route (e.g., "web.sign_in") |
-| page_path | VARCHAR | URL path (e.g., "/sign-in") |
-| page_label | VARCHAR | Human-readable name |
-| title | VARCHAR | Page title (`<title>`) |
-| description | VARCHAR | Meta description |
-| keywords | VARCHAR | Meta keywords |
-| og_title | VARCHAR | Open Graph title |
-| og_description | VARCHAR | Open Graph description |
-| og_image_uuid | UUID | Open Graph image |
-| og_type | VARCHAR | Open Graph type (website, article) |
-| twitter_card | VARCHAR | Twitter card type (summary, large) |
-| twitter_title | VARCHAR | Twitter title |
-| twitter_description | VARCHAR | Twitter description |
-| twitter_image_uuid | UUID | Twitter image |
-| canonical_url | VARCHAR | Canonical URL |
-| robots | VARCHAR | Robots directive (index, noindex) |
-| structured_data | JSONB | Legacy JSON-LD (deprecated) |
-| custom_meta | JSONB | Custom meta tags |
-| is_active | BOOLEAN | Enable/disable SEO |
-
-#### page_schemas Table
-
-Schema.org structured data (JSON-LD) per page:
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | BIGINT | Primary key |
-| page_seo_id | BIGINT | FK to page_seo |
-| schema_type | VARCHAR | Schema.org type (Organization, WebSite, etc.) |
-| schema_data | JSONB | Full JSON-LD schema object |
-| position | INT | Order for multiple schemas |
-| is_active | BOOLEAN | Enable/disable this schema |
-
-### Theme Configuration Tabs
-
-#### 1. Branding Tab
-- **Site Name**: Text displayed in navbar (if show_site_name enabled)
-- **Show Site Name**: Toggle visibility in navbar
-- **Logo Upload**: Upload PNG/JPG/SVG logo
-- **Favicon Upload**: Upload favicon (auto-detected format)
-- **Identity Colors**: Gradient colors for site branding
-- **Identity Size**: Size of logo/text in navbar
-
-#### 2. Colors Tab
-- **Light Theme Colors**: Background, text, card, link colors
-- **Dark Theme Colors**: Same set for dark mode
-- Changes trigger SCSS rebuild
-
-#### 3. Typography Tab
-- **Font Families**: Base, heading, monospace fonts
-- **Font Sizes**: Scale from xs to 2xl, headings h1-h6
-- **Font Weights**: Light, normal, medium, semibold, bold
-- **Line Heights**: Tight, base, loose
-- Changes trigger SCSS rebuild
-
-#### 4. Spacing Tab
-- **Spacing Scale**: xs, sm, base, md, lg, xl, 2xl, 3xl
-- **Border Radii**: sm, md, lg, xl, full
-- Changes trigger SCSS rebuild
-
-#### 5. SEO Tab
-
-The SEO tab has three sub-tabs:
-
-##### 5.1 Metatags Sub-tab
-Per-page SEO configuration:
-- Title, description, keywords
-- Open Graph tags (title, description, type, image)
-- Twitter Card tags (card type, title, description, image)
-- Robots directive (index/noindex, follow/nofollow)
-- Canonical URL
-
-##### 5.2 Schemas Sub-tab
-Schema.org structured data management:
-- List of schemas for selected page
-- Add/Edit/Delete schemas
-- Support for 50+ Schema.org types:
-  - **Organizations**: Organization, LocalBusiness, Corporation
-  - **Web**: WebSite, WebPage, AboutPage, ContactPage, FAQPage
-  - **Content**: Article, NewsArticle, BlogPosting
-  - **Commerce**: Product, Offer, Review, AggregateRating
-  - **Events**: Event, BusinessEvent, MusicEvent
-  - **People**: Person, ProfilePage
-  - **Navigation**: BreadcrumbList, SiteNavigationElement
-  - And many more...
-
-##### 5.3 Hreflang Sub-tab (Placeholder)
-Language/region targeting for multi-language sites.
-Currently a demo table - full implementation requires i18n routing.
-
-### JSON-LD Schema Rendering
-
-Schemas are automatically rendered in the `<head>` of each page:
-
+### Named Routes (Laravel-like)
 ```html
-<!-- At bottom of <head> -->
-<script type="application/ld+json">
-[{"@context":"https://schema.org","@type":"Organization","name":"Blazing Sun",...}]
-</script>
-```
-
-**How it works:**
-
-1. `PagesController::add_seo_to_context()` fetches SEO data for the page's route_name
-2. Queries `page_schemas` for active schemas linked to that page_seo entry
-3. Adds `@context: "https://schema.org"` to each schema
-4. Serializes to JSON and inserts into template context as `json_ld_schemas`
-5. `base.html` template renders the JSON-LD block at bottom of `<head>`
-
-**Template rendering (base.html):**
-```html
-{# JSON-LD Structured Data Schemas - placed at bottom of head #}
-{% if json_ld_schemas %}
-<script type="application/ld+json">
-{{ json_ld_schemas | safe }}
-</script>
-{% endif %}
-```
-
-### SCSS Build System
-
-When theme colors, typography, or spacing are changed:
-
-1. **Update SCSS Variables**: `_variables.scss` in GLOBAL project is updated
-2. **Run Vite Build**: All 8 frontend projects are rebuilt:
-   - GLOBAL, SIGN_IN, SIGN_UP, FORGOT_PASSWORD
-   - PROFILE, REGISTERED_USERS, UPLOADS, THEME
-3. **Copy Output**: Built CSS/JS copied to `resources/css/` and `resources/js/`
-4. **Increment Version**: `assets_version` bumped for cache invalidation
-5. **Update Database**: Build status and timestamp recorded
-
-**Frontend Projects Structure:**
-```
-src/frontend/pages/
-├── GLOBAL/           # Base styles, navbar, theme variables
-├── SIGN_IN/          # Sign in page styles
-├── SIGN_UP/          # Sign up page styles
-├── FORGOT_PASSWORD/  # Forgot password styles
-├── PROFILE/          # Profile page styles
-├── REGISTERED_USERS/ # Admin users page styles
-├── UPLOADS/          # Admin uploads page styles
-└── THEME/            # Admin theme page styles (ThemeConfig.js)
-```
-
-### Using Theme Data in Templates
-
-**Available context variables:**
-
-```html
-{# Branding #}
-{{ site_name }}              {# Site name from DB #}
-{{ show_site_name }}         {# Boolean #}
-{{ logo_stored_name }}       {# For assets() function #}
-{{ favicon_stored_name }}    {# For assets() function #}
-{{ identity_color_start }}   {# Gradient start #}
-{{ identity_color_end }}     {# Gradient end #}
-{{ identity_size }}          {# Size in rem #}
-
-{# SEO Meta #}
-{{ seo_title }}              {# Page title #}
-{{ seo_description }}        {# Meta description #}
-{{ seo_keywords }}           {# Meta keywords #}
-{{ seo_robots }}             {# Robots directive #}
-{{ seo_canonical }}          {# Canonical URL #}
-
-{# Open Graph #}
-{{ og_title }}
-{{ og_description }}
-{{ og_type }}
-
-{# Twitter Card #}
-{{ twitter_card }}
-{{ twitter_title }}
-{{ twitter_description }}
-
-{# JSON-LD Schemas #}
-{{ json_ld_schemas | safe }} {# Pre-serialized JSON array #}
-
-{# Versioning #}
-{{ assets_version }}         {# For cache busting #}
-```
-
-### Adding SEO to a New Page
-
-1. **Register the page in page_seo table:**
-```sql
-INSERT INTO page_seo (route_name, page_path, page_label, title, is_active)
-VALUES ('web.my_page', '/my-page', 'My Page', 'My Page - Blazing Sun', true);
-```
-
-2. **Call add_seo_to_context in the controller:**
-```rust
-pub async fn my_page(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
-    let mut context = Self::base_context(&req);
-    let db = state.db.lock().await;
-    Self::add_branding_to_context(&mut context, &db).await;
-    Self::add_seo_to_context(&mut context, &db, "web.my_page").await;
-    drop(db);
-    Ok(Self::render("my_page.html", &context))
-}
-```
-
-3. **Add schemas via admin panel** (optional):
-   - Go to Admin > Theme > SEO tab
-   - Select the page from dropdown
-   - Click "Schemas" sub-tab
-   - Click "Add Schema"
-   - Select schema type and fill in fields
-   - Save
-
-### Database Queries for Theme/SEO
-
-**Read operations:**
-```rust
-use crate::app::db_query::read::site_config;
-use crate::app::db_query::read::page_seo;
-use crate::app::db_query::read::page_schema;
-
-// Get site config
-let config = site_config::get(&db).await?;
-
-// Get branding info
-let branding = site_config::get_branding(&db).await?;
-
-// Get page SEO by route
-let seo = page_seo::get_by_route(&db, "web.sign_in").await?;
-
-// Get active schemas for a page
-let schemas = page_schema::get_active_by_page_seo_id(&db, page_seo_id).await?;
-```
-
-**Mutation operations:**
-```rust
-use crate::app::db_query::mutations::site_config;
-use crate::app::db_query::mutations::page_seo;
-use crate::app::db_query::mutations::page_schema;
-
-// Update theme colors
-site_config::update_themes(&db, Some(scss_vars), Some(light), Some(dark)).await?;
-
-// Update page SEO
-page_seo::update_by_route(&db, "web.sign_in", &params).await?;
-
-// Create schema
-let id = page_schema::create(&db, &CreatePageSchemaParams {
-    page_seo_id,
-    schema_type: "Organization".to_string(),
-    schema_data: json!({ "name": "Acme Corp", ... }),
-    position: Some(0),
-    is_active: Some(true),
-}).await?;
-
-// Delete schema
-page_schema::delete(&db, schema_id).await?;
-```
-
----
-
-## Named Routes (Laravel-like) with i18n Support
-
-The application uses Laravel-style named routes for URL generation with full language/localization support. Routes are registered with names and language variants, and can be used in both Rust code and Tera templates.
-
-### Registering Routes
-
-Routes are registered in `routes/api.rs` and `routes/web.rs` using the `route!` macro:
-
-```rust
-// In routes/api.rs or routes/web.rs
-
-// Default language (English) - most common usage
-route!("auth.sign_up", "/api/v1/auth/sign-up");
-route!("user.show", "/api/v1/user/{id}");
-
-// Web routes with language variants
-route!("web.sign_up", "/sign-up");              // English (default)
-route!("web.sign_up", "/registrazione", "it");  // Italian
-route!("web.sign_up", "/inscription", "fr");    // French
-route!("web.sign_up", "/anmeldung", "de");      // German
-
-// Routes with parameters and language variants
-route!("user.profile", "/user/{id}/profile");           // English
-route!("user.profile", "/utente/{id}/profilo", "it");   // Italian
-```
-
-### Using Routes in Tera Templates
-
-Use the `route()` function in templates to generate URLs:
-
-```html
-<!-- Simple route (no parameters, default language) -->
+<!-- In Tera templates -->
 <a href="{{ route(name='web.sign_up') }}">Sign Up</a>
-<a href="{{ route(name='web.sign_in') }}">Sign In</a>
-
-<!-- Route with language parameter -->
-<a href="{{ route(name='web.sign_up', lang='it') }}">Registrati</a>
-<a href="{{ route(name='web.sign_up', lang='fr') }}">S'inscrire</a>
-
-<!-- Route with language from context variable -->
-<a href="{{ route(name='web.sign_up', lang=current_lang) }}">Sign Up</a>
-
-<!-- Route with a single parameter -->
-<a href="{{ route(name='user.show', id='123') }}">View User 123</a>
-<a href="{{ route(name='user.show', id=user.id) }}">View Profile</a>
-
-<!-- Route with parameters and language -->
-<a href="{{ route(name='user.profile', id=user.id, lang='it') }}">Vedi Profilo</a>
-
-<!-- Route with multiple parameters -->
-<a href="{{ route(name='upload.chunked.chunk', uuid='abc-def', index='0') }}">
-    Upload First Chunk
-</a>
+<a href="{{ route(name='web.profile') }}">Profile</a>
+<a href="{{ route(name='admin.uploads') }}">Uploads</a>
 ```
+See [Bootstrap Layer](../Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md) for named routes.
 
-### Language Fallback
-
-If a route is not registered for the requested language, it automatically falls back to the default language (English). This allows you to:
-1. Register only English routes initially
-2. Add localized routes gradually as needed
-3. Not worry about missing translations - English will be used as fallback
-
-### Available Web Routes
-
-| Route Name | URL | Description |
-|------------|-----|-------------|
-| `web.home` | `/` | Homepage |
-| `web.sign_up` | `/sign-up` | Sign up page |
-| `web.sign_in` | `/sign-in` | Sign in page |
-| `web.forgot_password` | `/forgot-password` | Forgot password page |
-| `web.profile` | `/profile` | User profile page |
-| `web.logout` | `/logout` | Logout |
-
-### Available API Routes
-
-| Route Name | URL | Description |
-|------------|-----|-------------|
-| `auth.sign_up` | `/api/v1/auth/sign-up` | Register new user |
-| `auth.sign_in` | `/api/v1/auth/sign-in` | Login |
-| `account.activate` | `/api/v1/account/activate-account` | Activate account |
-| `account.forgot_password` | `/api/v1/account/forgot-password` | Request reset |
-| `account.verify_hash` | `/api/v1/account/verify-hash` | Verify hash |
-| `account.reset_password` | `/api/v1/account/reset-password` | Reset password |
-| `account.set_password_when_needed` | `/api/v1/account/set-password-when-needed` | Set password |
-| `password.change` | `/api/v1/password/change-password` | Request password change |
-| `password.verify_change` | `/api/v1/password/verify-password-change` | Verify & change password |
-| `user.current` | `/api/v1/user` | Get current user |
-| `user.show` | `/api/v1/user/{id}` | Get user by ID |
-| `user.update_full` | `/api/v1/user` | Update all fields (PUT) |
-| `user.update_partial` | `/api/v1/user` | Update some fields (PATCH) |
-| `user.admin_create` | `/api/v1/user` | Admin create user (POST) |
-| `user.delete` | `/api/v1/user/{id}` | Delete user |
-| `upload.public` | `/api/v1/upload/public` | Upload public file |
-| `upload.private` | `/api/v1/upload/private` | Upload private file |
-| `upload.multiple` | `/api/v1/upload/multiple` | Upload multiple files |
-| `upload.download.public` | `/api/v1/upload/download/public/{uuid}` | Download public file |
-| `upload.private.download` | `/api/v1/upload/private/{uuid}` | Download private file |
-| `upload.delete` | `/api/v1/upload/{uuid}` | Delete upload |
-| `upload.user` | `/api/v1/upload/user` | Get user's uploads |
-| `upload.chunked.start` | `/api/v1/upload/chunked/start` | Start chunked upload |
-| `upload.chunked.chunk` | `/api/v1/upload/chunked/{uuid}/chunk/{index}` | Upload chunk |
-| `upload.chunked.complete` | `/api/v1/upload/chunked/{uuid}/complete` | Complete upload |
-| `upload.chunked.cancel` | `/api/v1/upload/chunked/{uuid}` | Cancel upload |
-
-### Using Routes in Rust Code
-
+### File Uploads
 ```rust
-use crate::bootstrap::utility::template::{
-    route_by_name, route_by_name_lang,
-    route_with_params, route_with_params_lang
-};
-use std::collections::HashMap;
+use crate::bootstrap::utility::upload;
 
-// Simple route (no parameters, default language)
-let url = route_by_name("web.sign_up");
-// Returns: Some("/sign-up")
-
-// Simple route with language
-let url = route_by_name_lang("web.sign_up", "it");
-// Returns: Some("/registrazione")
-
-// Route with parameters (default language)
-let mut params = HashMap::new();
-params.insert("id".to_string(), "123".to_string());
-let url = route_with_params("user.show", &params);
-// Returns: Some("/api/v1/user/123")
-
-// Route with parameters and language
-let url = route_with_params_lang("user.profile", "it", &params);
-// Returns: Some("/utente/123/profilo")
+let result = upload::save_uploaded_file(
+    &state.storage,
+    &state.db,
+    file,
+    user_id,
+    StorageType::Public,
+    UploadContext::PublicFile,
+).await?;
 ```
-
-### Adding New Named Routes
-
-1. Add the route to `routes/api.rs` or `routes/web.rs`:
-```rust
-// In register_route_names() function
-
-// Default language route
-route!("my_feature.action", "/api/v1/my-feature/{id}");
-
-// With language variants
-route!("my_feature.action", "/api/v1/my-feature/{id}");           // English (default)
-route!("my_feature.action", "/api/v1/mia-funzione/{id}", "it");   // Italian
-route!("my_feature.action", "/api/v1/ma-fonction/{id}", "fr");    // French
-```
-
-2. Use in templates:
-```html
-<!-- Default language -->
-<a href="{{ route(name='my_feature.action', id=item.id) }}">Action</a>
-
-<!-- With language -->
-<a href="{{ route(name='my_feature.action', id=item.id, lang='it') }}">Azione</a>
-```
-
-### Checking Route Existence
-
-```rust
-use crate::routes::{route_exists, get_route_languages};
-
-// Check if a route exists for a specific language
-if route_exists("web.sign_up", "it") {
-    // Italian route is registered
-}
-
-// Get all registered languages for a route
-let languages = get_route_languages("web.sign_up");
-// Returns: Some({"en": "/sign-up", "it": "/registrazione", ...})
-```
+See [Uploads System](../Documentation/blazing_sun/Uploads/UPLOADS.md) for file handling.
 
 ---
 
-## Database Schema
+## Development Workflow
 
-### Tables
+### Build & Run
+```bash
+# Build
+cargo build
 
-| Table | Description |
-|-------|-------------|
-| `users` | User accounts |
-| `categories` | Budget categories per user |
-| `transactions` | Income/expense records |
-| `activation_hashes` | Activation/reset tokens |
-| `uploads` | File upload records |
-| `assets` | Asset records (legacy) |
-| `site_config` | Global theme configuration (single row) |
-| `page_seo` | Per-page SEO configuration |
-| `page_schemas` | Schema.org structured data per page |
-| `page_hreflangs` | Language/region targeting (placeholder) |
+# Run
+cargo run
 
-### Users Table
+# Test
+cargo test
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | BIGSERIAL | Primary key |
-| email | VARCHAR | Unique email |
-| password | VARCHAR | Bcrypt hash |
-| first_name | VARCHAR | First name |
-| last_name | VARCHAR | Last name |
-| balance | BIGINT | Balance in cents |
-| activated | SMALLINT | 0=inactive, 1=active |
-| user_must_set_password | SMALLINT | 0=no, 1=yes |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
+# Watch (hot reload)
+cargo watch -x run
+```
 
-### Uploads Table
+### Database Migrations
+```bash
+# Run migrations
+sqlx migrate run
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | BIGSERIAL | Primary key |
-| uuid | UUID | Public identifier |
-| user_id | BIGINT | FK to users |
-| original_name | VARCHAR | Original filename |
-| stored_name | VARCHAR | Stored filename |
-| storage_path | VARCHAR | Full path |
-| mime_type | VARCHAR | MIME type |
-| size_bytes | BIGINT | File size |
-| extension | VARCHAR | File extension |
-| visibility | VARCHAR | public/private |
-| checksum | VARCHAR | SHA256 hash |
-| created_at | TIMESTAMP | Upload time |
+# Create new migration
+sqlx migrate add <name>
 
-**Note:** Money is stored as `BIGINT` (cents) for precision.
+# After changing queries (offline mode)
+cargo sqlx prepare
+```
+
+### Frontend Development
+```bash
+# Enter PROFILE page directory
+cd src/frontend/pages/PROFILE
+
+# Install dependencies
+npm install
+
+# Build for development
+npm run build
+
+# Build for production
+npm run build:prod
+
+# Watch mode (hot reload)
+npm run watch
+```
+
+See [Frontend Overview](../Documentation/blazing_sun/Frontend/README.md) for all frontend build commands.
+
+---
+
+## Important Reminders
+
+1. **SQLx Offline Mode**: Always run `cargo sqlx prepare` after changing queries
+2. **Event Publishing**: Check if event bus exists before publishing (it's optional)
+3. **Error Handling**: Log Kafka/MQ failures as warnings, don't fail the request
+4. **Money Storage**: Store as `BIGINT` (cents) for precision
+5. **File Storage**: Use StorageDriver abstraction for S3-ready architecture
+6. **Image Variants**: Uploaded images automatically generate 5 variants via RabbitMQ
+7. **Named Routes**: Always use `route(name='...')` in templates, never hardcode URLs
+8. **Permissions**: Check user permissions in controllers (1=basic, 10=admin, 50=affiliate, 100=super admin)
+9. **Theme Build**: After theme config changes, trigger SCSS build via API
+10. **Frontend Bundles**: Each page has its own JS/CSS bundle, compiled by Vite
+
+---
+
+## Project Statistics
+
+- **Web Routes**: 11 (includes 404 fallback)
+- **API Endpoints**: 65+ (9 scopes)
+- **Frontend Pages**: 8 (GLOBAL + 7 feature pages)
+- **Database Tables**: 15+ (PostgreSQL)
+- **Kafka Topics**: 3 (user_events, transaction_events, system_events)
+- **RabbitMQ Jobs**: 5 types (email, SMS, image resize, user creation, notifications)
+- **Image Variants**: 5 per upload (thumb, small, medium, large, full)
+- **Permission Levels**: 4 (1=basic, 10=admin, 50=affiliate, 100=super admin)
 
 ---
 
 ## Adding New Features
 
-### New API Endpoint
+When adding new features, follow this order:
 
-1. Create handler in `app/http/api/controllers/<name>.rs`
-2. Add request validator in `app/http/api/validators/<name>.rs` (if needed)
-3. Register route in `routes/api.rs`
-4. Add database queries in `app/db_query/read/` or `mutations/`
-5. Publish Kafka event on success
-6. Run `cargo sqlx prepare` if queries changed
+1. **Database Schema** - Create migration in `migrations/`
+2. **Database Queries** - Add to `src/app/db_query/read/` or `mutations/`
+3. **API Endpoint** - Add controller in `src/app/http/api/controllers/`
+4. **Route Definition** - Add to `src/routes/api.rs` or `web.rs`
+5. **Frontend Component** - Add page in `src/frontend/pages/`
+6. **Build Frontend** - Run `npm run build` in page directory
+7. **Tests** - Add integration tests in `tests/`
 
-### New Kafka Event Type
-
-1. Add variant to `EventType` enum in `bootstrap/events/types.rs`
-2. Add payload struct if needed
-3. Add helper function in `bootstrap/events/mod.rs::publish`
-4. Create handler in `bootstrap/events/handlers/` if needed
-5. Register handler in `bootstrap/events/handlers/mod.rs::create_handlers()`
-
-### New RabbitMQ Job
-
-1. Create params struct in `app/mq/jobs/<job_name>/mod.rs`
-2. Create worker in `app/mq/workers/<job_name>/mod.rs`
-3. Add to match statement in `app/mq/workers/mod.rs::process_job()`
-
-### New Email Template
-
-1. Create template in `resources/views/emails/<name>.html`
-2. Add variant to `EmailTemplate` enum in `app/mq/jobs/email/mod.rs`
-3. Implement `template_path()` and `subject()` for the variant
-
-### New Database Table
-
-1. Create migration: `sqlx migrate add <name>`
-2. Add read queries in `app/db_query/read/<entity>/mod.rs`
-3. Add mutations in `app/db_query/mutations/<entity>/mod.rs`
-4. Run `cargo sqlx prepare`
-
-### New Cron Job
-
-1. Create job in `app/cron/<job_name>.rs`
-2. Register in `routes/crons.rs`
+See individual documentation files for detailed step-by-step guides.
 
 ---
 
-## Development Commands
-
-```bash
-# Inside container (docker compose exec rust bash)
-
-# Build
-cargo build                    # Debug build
-cargo build --release          # Release build
-cargo check                    # Type check only (faster)
-
-# Run
-cargo run                      # Run debug
-cargo run --release            # Run release
-
-# Test
-cargo test                     # Run all tests
-cargo test -- --nocapture      # Show println output
-cargo test <test_name>         # Run specific test
-
-# Lint
-cargo clippy                   # Linter
-cargo fmt                      # Format code
-cargo fmt -- --check           # Check formatting
-
-# Migrations
-sqlx migrate run               # Run pending migrations
-sqlx migrate add <name>        # Create new migration
-sqlx migrate revert            # Revert last migration
-
-# SQLx cache (REQUIRED after changing queries)
-cargo sqlx prepare             # Generate .sqlx/ cache
-```
-
----
-
-## Important Notes
-
-### SQLx Offline Mode
-
-- Queries are compile-time checked against database schema
-- `.sqlx/` directory contains query cache - **COMMIT TO GIT**
-- Run `cargo sqlx prepare` after changing any `sqlx::query!` macro
-- Set `SQLX_OFFLINE=true` for builds without database connection
-
-### Password Requirements
-
-- Minimum 8 characters
-- At least one uppercase letter
-- At least one lowercase letter
-- At least one digit
-- At least one special character
-
-### JWT Claims
-
-```rust
-pub struct Claims {
-    pub sub: i64,       // User ID
-    pub role: String,   // "user"
-    pub exp: i64,       // Expiration timestamp
-}
-```
-
-### Error Handling Pattern
-
-```rust
-// In handlers, use ? operator with proper error conversion
-let user = db_user::get_by_id(&db, id)
-    .await
-    .map_err(|_| HttpResponse::NotFound().json(BaseResponse::error("User not found")))?;
-
-// For Kafka/MQ failures, log warning and continue (non-critical)
-if let Some(event_bus) = state.event_bus() {
-    if let Err(e) = events::publish::user_created(event_bus, ...).await {
-        tracing::warn!("Failed to publish event: {}", e);
-        // Don't fail the request
-    }
-}
-```
+For complete documentation on any specific feature, system, or component, refer to the files in the [Documentation/blazing_sun/](../Documentation/blazing_sun/) directory.

@@ -7,11 +7,26 @@ use serde_json::Value;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
-/// Update logo UUID
+/// Update logo UUID and logo ID
+/// When a UUID is provided, automatically populates logo_id from the uploads table
+/// This maintains consistency between UUID-based and ID-based references
 pub async fn update_logo(db: &Pool<Postgres>, logo_uuid: Option<Uuid>) -> Result<(), sqlx::Error> {
+    // Update both UUID and ID columns in a single query
+    // If UUID is NULL, set ID to NULL as well
+    // If UUID is provided, look up the corresponding ID from uploads table
     sqlx::query!(
-        r#"UPDATE site_config SET logo_uuid = $1 WHERE true"#,
-        logo_uuid
+        r#"
+        UPDATE site_config
+        SET logo_uuid = $1,
+            logo_id = (
+                CASE
+                    WHEN $1::UUID IS NULL THEN NULL
+                    ELSE (SELECT id FROM uploads WHERE uuid = $1::UUID LIMIT 1)
+                END
+            )
+        WHERE true
+        "#,
+        logo_uuid as Option<Uuid>
     )
     .execute(db)
     .await?;
@@ -19,11 +34,26 @@ pub async fn update_logo(db: &Pool<Postgres>, logo_uuid: Option<Uuid>) -> Result
     Ok(())
 }
 
-/// Update favicon UUID
+/// Update favicon UUID and favicon ID
+/// When a UUID is provided, automatically populates favicon_id from the uploads table
+/// This maintains consistency between UUID-based and ID-based references
 pub async fn update_favicon(db: &Pool<Postgres>, favicon_uuid: Option<Uuid>) -> Result<(), sqlx::Error> {
+    // Update both UUID and ID columns in a single query
+    // If UUID is NULL, set ID to NULL as well
+    // If UUID is provided, look up the corresponding ID from uploads table
     sqlx::query!(
-        r#"UPDATE site_config SET favicon_uuid = $1 WHERE true"#,
-        favicon_uuid
+        r#"
+        UPDATE site_config
+        SET favicon_uuid = $1,
+            favicon_id = (
+                CASE
+                    WHEN $1::UUID IS NULL THEN NULL
+                    ELSE (SELECT id FROM uploads WHERE uuid = $1::UUID LIMIT 1)
+                END
+            )
+        WHERE true
+        "#,
+        favicon_uuid as Option<Uuid>
     )
     .execute(db)
     .await?;

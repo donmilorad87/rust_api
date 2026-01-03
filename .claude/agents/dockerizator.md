@@ -3,8 +3,7 @@ name: dockerizator
 description: Docker infrastructure management. Use for container operations, service management, debugging, and infrastructure tasks.
 tools: Read, Glob, Grep, Edit, Bash, Write
 model: inherit
-skill: docker
-color: yellow
+color: purple
 ---
 
 # Dockerizator Agent
@@ -42,11 +41,11 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Complete Docker setup, services, networking |
-| **Database** | `blazing_sun/Database/DATABASE.md` | PostgreSQL container, connections |
-| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB container config |
-| **Events** | `blazing_sun/Events/EVENTS.md` | Kafka container, topics |
-| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ container, queues |
+| **Infrastructure** | `Documentation/docker_infrastructure/INFRASTRUCTURE.md` | Complete Docker setup, services, networking |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | PostgreSQL container, connections |
+| **MongoDB** | `Documentation/blazing_sun/MongoDB/MONGODB.md` | MongoDB container config |
+| **Events** | `Documentation/blazing_sun/Events/EVENTS.md` | Kafka container, topics |
+| **Message Queue** | `Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ container, queues |
 
 ### When to Update Documentation
 

@@ -105,6 +105,9 @@ sync_env_vars() {
         sync_env_var "MONGO_URL" "$mongo_url"
     fi
 
+    # Sync Upload Configuration variables
+    sync_env_var "UPLOAD_STORAGE_PATH" "$UPLOAD_STORAGE_PATH"
+
     echo ""
 }
 

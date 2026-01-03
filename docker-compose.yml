@@ -35,8 +35,8 @@ services:
       - MONGO_USER=${MONGO_USER}
       - MONGO_PASSWORD=${MONGO_PASSWORD}
       - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
-      # Storage configuration (files go to src/storage/app)
-      - UPLOAD_STORAGE_PATH=src/storage/app
+      # Storage configuration (files go to storage/app inside container)
+      - UPLOAD_STORAGE_PATH=${UPLOAD_STORAGE_PATH}
       - STORAGE_DRIVER=local
       - STORAGE_PUBLIC_URL=/storage
       - STORAGE_PRIVATE_URL=/api/v1/upload/private

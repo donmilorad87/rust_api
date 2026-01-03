@@ -110,8 +110,7 @@ impl PagesController {
     }
 
     /// Add branding info (logo, favicon, site identity) to template context
-    /// Passes stored_name to template; template uses assets() function for URL generation
-    /// Logo/favicon are served directly from /storage/ by nginx
+    /// Uses ID-based asset rendering - automatically determines public/private from database
     async fn add_branding_to_context(context: &mut Context, db: &Pool<Postgres>) {
         if let Ok(branding) = db_site_config::get_branding(db).await {
             // Site identity (name, visibility, colors, size)
@@ -123,12 +122,24 @@ impl PagesController {
             // Override app_name with site_name from database
             context.insert("app_name", &branding.site_name);
 
-            // Logo and favicon
-            if let Some(stored_name) = branding.logo_stored_name {
-                context.insert("logo_stored_name", &stored_name);
+            // Logo - use ID-based asset rendering (unified approach)
+            // Automatically determines public/private from database storage_type
+            if let Some(logo_id) = branding.logo_id {
+                use crate::bootstrap::utility::template::asset_by_id;
+                // Use medium variant for logo (768px) for good quality on most screens
+                if let Some(logo_url) = asset_by_id(db, logo_id, Some("medium")).await {
+                    context.insert("logo_url", &logo_url);
+                }
             }
-            if let Some(stored_name) = branding.favicon_stored_name {
-                context.insert("favicon_stored_name", &stored_name);
+
+            // Favicon - use ID-based asset rendering (unified approach)
+            // Automatically determines public/private from database storage_type
+            if let Some(favicon_id) = branding.favicon_id {
+                use crate::bootstrap::utility::template::asset_by_id;
+                // Use small variant for favicon (320px) suitable for browser tabs
+                if let Some(favicon_url) = asset_by_id(db, favicon_id, Some("small")).await {
+                    context.insert("favicon_url", &favicon_url);
+                }
             }
         }
     }
@@ -325,10 +336,12 @@ impl PagesController {
         // Fetch user data if we have a user_id
         if let Some(user_id) = auth.user_id {
             if let Ok(user) = db_user::get_by_id(&db, user_id).await {
-                // Get avatar URL from asset record if user has an avatar
-                let avatar_url = if let Some(avatar_uuid) = user.avatar_uuid {
-                    // Avatar assets are served via API endpoint (private storage)
-                    Some(format!("/api/v1/avatar/{}", avatar_uuid))
+                // Get avatar URL using dedicated avatar endpoint
+                // This works regardless of storage_type (public/private)
+                let avatar_url = if let Some(avatar_id) = user.avatar_id {
+                    use crate::bootstrap::utility::template::avatar_by_id;
+                    // Use small variant (320px) for profile picture display
+                    avatar_by_id(&db, avatar_id, Some("small")).await
                 } else {
                     None
                 };
@@ -438,6 +451,25 @@ impl PagesController {
         // This avoids code duplication and keeps data fresh
 
         Ok(Self::render("registered_users.html", &context))
+    }
+
+    /// Galleries page - requires authentication
+    pub async fn galleries(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        // Must be logged in
+        if !auth.is_logged {
+            return Ok(Self::redirect("/sign-in"));
+        }
+
+        let mut context = Self::base_context(&req);
+        let db = state.db.lock().await;
+        Self::add_branding_to_context(&mut context, &db).await;
+        Self::add_seo_to_context(&mut context, &db, "web.galleries").await;
+        drop(db);
+
+        // JavaScript will fetch galleries via API
+        Ok(Self::render("galleries.html", &context))
     }
 
     /// 404 Not Found page

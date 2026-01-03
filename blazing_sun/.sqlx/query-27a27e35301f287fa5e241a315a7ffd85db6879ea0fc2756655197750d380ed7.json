@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM pictures WHERE gallery_id = $1 AND upload_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "27a27e35301f287fa5e241a315a7ffd85db6879ea0fc2756655197750d380ed7"
+}

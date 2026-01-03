@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, upload_id, variant_name, stored_name, width, height, size_bytes,\n                  storage_path, created_at, updated_at\n           FROM image_variants WHERE upload_id = $1\n           ORDER BY\n               CASE variant_name\n                   WHEN 'thumb' THEN 1\n                   WHEN 'small' THEN 2\n                   WHEN 'medium' THEN 3\n                   WHEN 'large' THEN 4\n                   WHEN 'full' THEN 5\n                   ELSE 6\n               END",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "upload_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "variant_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "stored_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "width",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "height",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "size_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "storage_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "60b1e55de25fcbc11034e2a593834ab2a03b76d8ff73557662159e46738fbab6"
+}

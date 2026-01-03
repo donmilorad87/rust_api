@@ -1,0 +1,77 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, upload_id, variant_name, stored_name, width, height, size_bytes,\n                  storage_path, created_at, updated_at\n           FROM image_variants\n           WHERE upload_id = $1 AND variant_name = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "upload_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "variant_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "stored_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "width",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "height",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "size_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "storage_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b3c1d3f82a0fe03fbed65e63e57f2e087f48e3d914e541efd1f7574733c3186e"
+}

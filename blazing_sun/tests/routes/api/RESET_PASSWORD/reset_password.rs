@@ -201,7 +201,7 @@ async fn test_reset_password_valid() {
 
     // Step 1: Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -623,7 +623,7 @@ async fn test_reset_password_code_already_used() {
 
     // Step 1: Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -731,7 +731,7 @@ async fn test_reset_password_too_short() {
 
     // Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -814,7 +814,7 @@ async fn test_reset_password_missing_uppercase() {
 
     // Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -897,7 +897,7 @@ async fn test_reset_password_missing_lowercase() {
 
     // Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -980,7 +980,7 @@ async fn test_reset_password_missing_number() {
 
     // Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -1060,7 +1060,7 @@ async fn test_reset_password_missing_special() {
 
     // Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -1143,7 +1143,7 @@ async fn test_reset_password_mismatch() {
 
     // Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -1358,7 +1358,7 @@ async fn test_reset_password_xss_attempt() {
 
     // Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -1479,7 +1479,7 @@ async fn test_reset_password_full_integration() {
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
     let mut results = vec![];
-    let test_email = "miler@piler.com";
+    let test_email = "djmyle@gmail.com";
     let new_password = "IntegrationTest123!";
 
     // Step 1: Get reset code from forgot-password

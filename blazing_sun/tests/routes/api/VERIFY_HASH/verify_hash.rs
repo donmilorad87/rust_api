@@ -30,10 +30,10 @@
 //! - [x] Security: XSS attempt handled safely
 //! - [x] Edge case: Code with special characters
 
-use actix_web::{App, http::StatusCode, test};
+use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::{Deserialize, Serialize};
-use tabled::{Table, Tabled, settings::Style};
+use tabled::{settings::Style, Table, Tabled};
 
 // ============================================
 // Request/Response Structures
@@ -167,7 +167,7 @@ async fn test_verify_hash_valid_code() {
 
     // Step 1: Get valid code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -220,9 +220,7 @@ async fn test_verify_hash_valid_code() {
     ));
 
     // Step 2: Call verify-hash with the code
-    let verify_payload = VerifyHashRequestRequired {
-        code: code.clone(),
-    };
+    let verify_payload = VerifyHashRequestRequired { code: code.clone() };
 
     let req = test::TestRequest::post()
         .uri("/api/v1/account/verify-hash")
@@ -280,7 +278,10 @@ async fn test_verify_hash_valid_code() {
 
     assert!(http_pass, "HTTP status should be 200 OK");
     assert!(status_pass, "Response status should be 'success'");
-    assert!(message_pass, "Response message should be 'Code verified successfully'");
+    assert!(
+        message_pass,
+        "Response message should be 'Code verified successfully'"
+    );
     assert!(code_returned, "Response should contain code");
     assert!(code_matches, "Returned code should match input code");
 }
@@ -498,7 +499,10 @@ async fn test_verify_hash_empty_code() {
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
     assert!(status_pass, "Response status should be 'error'");
-    assert!(message_pass, "Response message should indicate invalid format");
+    assert!(
+        message_pass,
+        "Response message should indicate invalid format"
+    );
 }
 
 // ============================================
@@ -568,7 +572,10 @@ async fn test_verify_hash_short_code() {
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
     assert!(status_pass, "Response status should be 'error'");
-    assert!(message_pass, "Response message should indicate invalid format");
+    assert!(
+        message_pass,
+        "Response message should indicate invalid format"
+    );
 }
 
 // ============================================
@@ -638,7 +645,10 @@ async fn test_verify_hash_long_code() {
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
     assert!(status_pass, "Response status should be 'error'");
-    assert!(message_pass, "Response message should indicate invalid format");
+    assert!(
+        message_pass,
+        "Response message should indicate invalid format"
+    );
 }
 
 // ============================================
@@ -708,7 +718,10 @@ async fn test_verify_hash_nonexistent_code() {
 
     assert!(http_pass, "HTTP status should be 404 Not Found");
     assert!(status_pass, "Response status should be 'error'");
-    assert!(message_pass, "Response message should indicate invalid or expired");
+    assert!(
+        message_pass,
+        "Response message should indicate invalid or expired"
+    );
 }
 
 // ============================================
@@ -750,8 +763,7 @@ async fn test_verify_hash_sql_injection() {
     let mut results = vec![];
 
     // Should not cause 500 error - SQLx uses parameterized queries
-    let http_pass = status_code == StatusCode::BAD_REQUEST
-        || status_code == StatusCode::NOT_FOUND;
+    let http_pass = status_code == StatusCode::BAD_REQUEST || status_code == StatusCode::NOT_FOUND;
     results.push(TestResult::new(
         "HTTP Status",
         "400 or 404 (NOT 500)",
@@ -820,8 +832,7 @@ async fn test_verify_hash_xss_attempt() {
     // Assert
     let mut results = vec![];
 
-    let http_pass = status_code == StatusCode::BAD_REQUEST
-        || status_code == StatusCode::NOT_FOUND;
+    let http_pass = status_code == StatusCode::BAD_REQUEST || status_code == StatusCode::NOT_FOUND;
     results.push(TestResult::new(
         "HTTP Status",
         "400 or 404",
@@ -985,7 +996,7 @@ async fn test_verify_hash_full_integration_flow() {
 
     // Step 1: Get code from forgot-password
     let forgot_payload = ForgotPasswordTestRequest {
-        email: "miler@piler.com".to_string(),
+        email: "djmyle@gmail.com".to_string(),
         return_code_for_testing: true,
     };
 
@@ -1009,7 +1020,9 @@ async fn test_verify_hash_full_integration_flow() {
     let forgot_response: ForgotPasswordTestResponse =
         serde_json::from_slice(&body).expect("Failed to parse forgot-password response");
 
-    let code = forgot_response.code.expect("Code should be present in test mode");
+    let code = forgot_response
+        .code
+        .expect("Code should be present in test mode");
 
     results.push(TestResult::new(
         "Code Received",
@@ -1019,9 +1032,7 @@ async fn test_verify_hash_full_integration_flow() {
     ));
 
     // Step 2: First verify-hash call
-    let verify_payload = VerifyHashRequestRequired {
-        code: code.clone(),
-    };
+    let verify_payload = VerifyHashRequestRequired { code: code.clone() };
 
     let req = test::TestRequest::post()
         .uri("/api/v1/account/verify-hash")
@@ -1073,7 +1084,10 @@ async fn test_verify_hash_full_integration_flow() {
     assert!(forgot_pass, "Forgot password should succeed");
     assert!(first_verify_pass, "First verify should succeed");
     assert!(code_matches, "Code should match");
-    assert!(second_verify_pass, "Second verify should succeed (code not yet consumed)");
+    assert!(
+        second_verify_pass,
+        "Second verify should succeed (code not yet consumed)"
+    );
 }
 
 // ============================================
@@ -1110,8 +1124,8 @@ async fn test_verify_hash_wrong_content_type() {
     let mut results = vec![];
 
     // Should reject non-JSON or return error
-    let http_pass = status_code == StatusCode::BAD_REQUEST
-        || status_code == StatusCode::UNSUPPORTED_MEDIA_TYPE;
+    let http_pass =
+        status_code == StatusCode::BAD_REQUEST || status_code == StatusCode::UNSUPPORTED_MEDIA_TYPE;
     results.push(TestResult::new(
         "HTTP Status",
         "400 or 415",

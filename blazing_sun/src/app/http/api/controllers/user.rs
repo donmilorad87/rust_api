@@ -557,22 +557,31 @@ impl UserController {
             }
         };
 
-        let avatar_uuid = match &body.avatar_uuid {
+        let db = state.db.lock().await;
+
+        let (avatar_uuid, avatar_id) = match &body.avatar_uuid {
             Some(uuid_str) => {
                 match Uuid::parse_str(uuid_str) {
-                    Ok(uuid) => Some(uuid),
+                    Ok(uuid) => {
+                        // Look up the upload ID from the UUID
+                        match crate::database::read::upload::get_by_uuid(&db, &uuid).await {
+                            Ok(upload) => (Some(uuid), Some(upload.id)),
+                            Err(_) => {
+                                return HttpResponse::BadRequest()
+                                    .json(BaseResponse::error("Upload not found for provided UUID"));
+                            }
+                        }
+                    }
                     Err(_) => {
                         return HttpResponse::BadRequest()
                             .json(BaseResponse::error("Invalid UUID format"));
                     }
                 }
             }
-            None => None,
+            None => (None, None),
         };
 
-        let db = state.db.lock().await;
-
-        match db_mutations::update_avatar(&db, user_id, avatar_uuid).await {
+        match db_mutations::update_avatar(&db, user_id, avatar_uuid, avatar_id).await {
             Ok(_) => {
                 // Fetch updated user
                 match db_user::get_by_id(&db, user_id).await {

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Email Changed Successfully - {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Email Changed Successfully</h1>
+
+<div class="content">
+    <p>Hello {{ first_name }},</p>
+
+    <p>Your email address has been successfully changed.</p>
+
+    <div style="margin: 30px 0; padding: 20px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
+        <p style="margin: 0; color: #065f46;"><strong>Old email:</strong> {{ old_email }}</p>
+        <p style="margin: 10px 0 0 0; color: #065f46;"><strong>New email:</strong> This address</p>
+    </div>
+
+    <p>For your security, you've been automatically signed out of all devices. Please use your new email address to sign in.</p>
+
+    <p style="margin-top: 20px; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+        <strong>Security Reminder:</strong> If you didn't make this change, please contact our support team immediately. Someone may have unauthorized access to your account.
+    </p>
+</div>
+{% endblock %}

@@ -863,7 +863,19 @@ impl ActivationController {
             }
         }
 
-        HttpResponse::Ok().json(BaseResponse::success("Password changed successfully"))
+        // Clear the auth_token cookie to log the user out
+        // Password change is a security-sensitive operation, so we force re-authentication
+        use actix_web::cookie::{Cookie, SameSite};
+        let clear_cookie = Cookie::build("auth_token", "")
+            .path("/")
+            .max_age(actix_web::cookie::time::Duration::seconds(-1)) // Expire immediately
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .finish();
+
+        HttpResponse::Ok()
+            .cookie(clear_cookie)
+            .json(BaseResponse::success("Password changed successfully"))
     }
 
     /// POST /verify-password-change - Verify code and change password for logged-in user

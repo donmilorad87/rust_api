@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Your New Email Address - {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Confirm Your New Email Address</h1>
+
+<div class="content">
+    <p>Hello {{ first_name }},</p>
+
+    <p>You've successfully verified your previous email address (<strong>{{ old_email }}</strong>).</p>
+
+    <p>To complete the email change process, please confirm that you control this new email address by using the code below:</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; display: inline-block;">
+            <span style="font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #1f2937;">{{ code }}</span>
+        </div>
+    </div>
+
+    <p>Copy this code and paste it into the verification form on our website.</p>
+
+    <p style="color: #6b7280; font-size: 14px;">This code will expire in {{ expiry_minutes }} minutes. If you didn't request this email change, please contact support immediately.</p>
+
+    <p style="margin-top: 20px; padding: 15px; background-color: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 4px;">
+        <strong>Important:</strong> Once you verify this code, your account email will be changed from <strong>{{ old_email }}</strong> to this email address. You'll need to use this new email to sign in.
+    </p>
+</div>
+{% endblock %}

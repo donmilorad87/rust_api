@@ -1,0 +1,419 @@
+// ============================================
+// ASSET GRID - Asset Preview Cards
+// ============================================
+// Styles for grid view of uploads with preview cards
+// Uses CSS custom properties from GLOBAL (loaded on all pages)
+
+@use 'variables' as *;
+
+// Grid container
+.uploads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+
+  // Responsive grid columns
+  @media (max-width: $breakpoint-md) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: $breakpoint-sm) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0.5rem;
+  }
+}
+
+// Asset card component
+.asset-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  // Preview section (image, video, or icon)
+  &__preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--input-bg);
+    overflow: hidden;
+  }
+
+  &__image,
+  &__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__icon {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+
+    &--pdf {
+      color: #e74c3c;
+    }
+
+    &--file {
+      color: var(--text-secondary);
+    }
+  }
+
+  &__icon-text {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  // Overlay with action buttons
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__preview:hover &__overlay {
+    opacity: 1;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+
+    // Touch-friendly buttons on mobile
+    @media (max-width: $breakpoint-md) {
+      gap: 0.75rem;
+    }
+  }
+
+  // Info section (title, description, meta)
+  &__info {
+    padding: 1rem;
+  }
+
+  &__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__description {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.5rem 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+  }
+
+  &__size,
+  &__extension {
+    color: var(--text-muted);
+  }
+}
+
+// ============================================
+// MODAL - Asset Info Dialog
+// ============================================
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  &__content {
+    position: relative;
+    background: var(--modal-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--modal-shadow);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: var(--text-muted);
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+
+  &__body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  &__footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+// Asset info form
+.asset-info-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  &__preview {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: 0.5rem 0;
+
+    strong {
+      color: var(--text-primary);
+      margin-right: 0.5rem;
+    }
+
+    span {
+      font-family: monospace;
+    }
+  }
+}
+
+// Form elements
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+}
+
+.form-input,
+.form-textarea {
+  padding: 0.75rem;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--input-border-focus);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+
+  &::placeholder {
+    color: var(--input-placeholder);
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-help {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+// Button styles (if not already in GLOBAL)
+.btn {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &--primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+
+    &:hover {
+      background: var(--btn-primary-hover-bg);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--btn-primary-bg);
+      outline-offset: 2px;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  &--secondary {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--border-color);
+
+    &:hover {
+      background: var(--btn-secondary-hover-bg);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--btn-secondary-text);
+      outline-offset: 2px;
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  &--icon {
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+    min-width: 36px; // Minimum touch target
+    min-height: 36px;
+
+    &:hover {
+      background: white;
+      transform: scale(1.05);
+    }
+
+    // Touch device active state
+    &:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 1);
+    }
+
+    &.btn--edit {
+      color: #3498db;
+    }
+
+    &.btn--delete {
+      color: #e74c3c;
+    }
+
+    // Larger touch targets on mobile
+    @media (max-width: $breakpoint-md) {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0.625rem;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+}
+
+// Badge styles (if not already in GLOBAL)
+.badge {
+  display: inline-flex;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+
+  &--public {
+    background: var(--badge-success-bg);
+    color: var(--badge-success-text);
+  }
+
+  &--private {
+    background: var(--badge-danger-bg);
+    color: var(--badge-danger-text);
+  }
+}

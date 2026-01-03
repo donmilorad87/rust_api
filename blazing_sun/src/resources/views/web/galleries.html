@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}My Galleries - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/GALLERIES/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="galleries-content">
+    <div class="galleries-page">
+        <header class="galleries-page__header">
+            <h1 class="galleries-page__title">My Galleries</h1>
+            <div class="galleries-page__controls">
+                <button id="createGalleryBtn" class="btn btn--primary" aria-label="Create new gallery">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span class="btn__text">New Gallery</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading galleries...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state" style="display: none;">
+            <div class="error-state__icon">⚠️</div>
+            <h2 class="error-state__title">Failed to Load Galleries</h2>
+            <p class="error-state__message"></p>
+            <button id="retryBtn" class="btn btn--secondary">Retry</button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="empty-state__icon">📸</div>
+            <h2 class="empty-state__title">No Galleries Yet</h2>
+            <p class="empty-state__message">Create your first gallery to organize your photos</p>
+            <button class="btn btn--primary create-gallery-trigger">
+                Create Gallery
+            </button>
+        </div>
+
+        <!-- Galleries Grid -->
+        <div id="galleriesGrid" class="galleries-grid" style="display: none;"></div>
+    </div>
+</main>
+
+<!-- Create/Edit Gallery Modal -->
+<div id="galleryModal" class="modal" role="dialog" aria-labelledby="galleryModalTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container" role="document">
+        <header class="modal__header">
+            <h2 id="galleryModalTitle" class="modal__title">Create Gallery</h2>
+            <button class="modal__close" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <form id="galleryForm" class="form">
+                <div class="form__group">
+                    <label for="galleryName" class="form__label">Gallery Name *</label>
+                    <input type="text" id="galleryName" name="name" class="form__input" required maxlength="255" placeholder="e.g., Summer Vacation 2024">
+                    <span class="form__error" id="nameError"></span>
+                </div>
+
+                <div class="form__group">
+                    <label for="galleryDescription" class="form__label">Description</label>
+                    <textarea id="galleryDescription" name="description" class="form__textarea" rows="4" placeholder="Optional description for this gallery"></textarea>
+                    <span class="form__error" id="descriptionError"></span>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__checkbox">
+                        <input type="checkbox" id="galleryIsPublic" name="is_public" class="form__checkbox-input">
+                        <span class="form__checkbox-label">Make this gallery public</span>
+                    </label>
+                    <p class="form__help">Public galleries can be viewed by anyone with the link</p>
+                </div>
+
+                <input type="hidden" id="galleryId" name="gallery_id">
+            </form>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary modal__close">Cancel</button>
+            <button type="submit" form="galleryForm" class="btn btn--primary" id="saveGalleryBtn">
+                <span class="btn__text">Create Gallery</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Gallery Pictures Modal -->
+<div id="picturesModal" class="modal modal--large" role="dialog" aria-labelledby="picturesModalTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container" role="document">
+        <header class="modal__header">
+            <h2 id="picturesModalTitle" class="modal__title">Gallery Pictures</h2>
+            <button class="modal__close" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <div class="pictures-modal__controls">
+                <button id="addPictureBtn" class="btn btn--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span class="btn__text">Add Pictures</span>
+                </button>
+            </div>
+
+            <!-- Upload Section (hidden by default) -->
+            <div id="uploadSection" class="upload-section" style="display: none;">
+                <div class="upload-area">
+                    <input type="file" id="pictureFileInput" accept="image/*" multiple style="display: none;">
+                    <div id="uploadDropZone" class="upload-drop-zone">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="upload-icon">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p class="upload-drop-zone__text">Drag and drop images here or <button type="button" id="browseFilesBtn" class="btn-link">browse files</button></p>
+                        <p class="upload-drop-zone__hint">Supports: JPG, PNG, GIF, WebP (max 10MB each)</p>
+                    </div>
+                    <div id="uploadPreview" class="upload-preview" style="display: none;"></div>
+                    <div class="upload-actions" style="display: none;">
+                        <button id="cancelUploadBtn" class="btn btn--secondary">Cancel</button>
+                        <button id="uploadFilesBtn" class="btn btn--primary" disabled>
+                            <span class="btn__text">Upload & Add to Gallery</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pictures will be loaded here dynamically -->
+            <div id="picturesGrid" class="pictures-grid"></div>
+            <div id="picturesEmpty" class="empty-state" style="display: none;">
+                <div class="empty-state__icon">🖼️</div>
+                <h3 class="empty-state__title">No Pictures Yet</h3>
+                <p class="empty-state__message">Add some pictures to this gallery</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container modal--small" role="document">
+        <header class="modal__header">
+            <h2 id="deleteModalTitle" class="modal__title">Confirm Delete</h2>
+            <button class="modal__close" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <p id="deleteMessage" class="delete-modal__message"></p>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary modal__close">Cancel</button>
+            <button type="button" class="btn btn--danger" id="confirmDeleteBtn">
+                <span class="btn__text">Delete</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Image Lightbox Modal for Editing Metadata -->
+<div id="imageLightbox" class="image-lightbox" role="dialog" aria-labelledby="imageLightboxTitle" aria-hidden="true">
+    <div class="image-lightbox__container">
+        <!-- Image Section -->
+        <div class="image-lightbox__image-section">
+            <img id="lightboxImage" src="" alt="" class="image-lightbox__image">
+
+            <!-- Navigation Buttons -->
+            <button type="button" id="lightboxPrevBtn" class="image-lightbox__nav image-lightbox__nav--prev" aria-label="Previous image">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button type="button" id="lightboxNextBtn" class="image-lightbox__nav image-lightbox__nav--next" aria-label="Next image">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Metadata Section -->
+        <div class="image-lightbox__meta-section">
+            <header class="image-lightbox__header">
+                <h3 id="imageLightboxTitle" class="image-lightbox__title">Edit Image Details</h3>
+                <button class="image-lightbox__close" aria-label="Close lightbox">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="image-lightbox__body">
+                <form id="lightboxForm" class="lightbox-form">
+                    <div class="form__group">
+                        <label for="lightboxTitle" class="form__label">Title *</label>
+                        <input type="text" id="lightboxTitle" name="title" class="form__input" required maxlength="255" placeholder="Enter image title">
+                        <span class="form__error" id="lightboxTitleError"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="lightboxDescription" class="form__label">Description</label>
+                        <textarea id="lightboxDescription" name="description" class="form__textarea" rows="6" placeholder="Enter image description (optional)"></textarea>
+                        <span class="form__error" id="lightboxDescriptionError"></span>
+                    </div>
+
+                    <input type="hidden" id="lightboxFileIndex" value="">
+                </form>
+            </div>
+
+            <footer class="image-lightbox__footer">
+                <button type="submit" form="lightboxForm" class="btn btn--primary" id="saveLightboxBtn">
+                    <span class="btn__text">Save Changes</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/GALLERIES/app.js?v={{ assets_version }}"></script>
+{% endblock %}

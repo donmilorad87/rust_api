@@ -86,6 +86,8 @@ export class ThemeConfig {
     this.currentImageTarget = null; // 'logo', 'favicon', 'og_image', or 'twitter_image'
     this.logoUuid = null;
     this.faviconUuid = null;
+    this.logoStorageType = 'public';
+    this.faviconStorageType = 'public';
 
     // SEO State
     this.seoPages = [];
@@ -1363,11 +1365,13 @@ export class ThemeConfig {
   populateForm() {
     if (!this.currentConfig) return;
 
-    // Logo and Favicon UUIDs
+    // Logo and Favicon UUIDs with storage types
     this.logoUuid = this.currentConfig.logo_uuid;
+    this.logoStorageType = this.currentConfig.logo_storage_type || 'public';
     this.faviconUuid = this.currentConfig.favicon_uuid;
-    this.updateImagePreview('logo', this.logoUuid);
-    this.updateImagePreview('favicon', this.faviconUuid);
+    this.faviconStorageType = this.currentConfig.favicon_storage_type || 'public';
+    this.updateImagePreview('logo', this.logoUuid, this.logoStorageType);
+    this.updateImagePreview('favicon', this.faviconUuid, this.faviconStorageType);
 
     // Identity fields
     this.siteName = this.currentConfig.site_name || 'Blazing Sun';
@@ -1603,13 +1607,13 @@ export class ThemeConfig {
         const item = document.createElement('div');
         item.className = 'image-grid__item';
 
-        // Use appropriate URL based on visibility
-        const imgUrl = upload.visibility === 'public'
-          ? `/api/v1/upload/download/public/${upload.uuid}`
-          : `/api/v1/upload/private/${upload.uuid}`;
+        // Use appropriate URL based on storage_type with thumb variant for fast grid loading
+        const imgUrl = upload.storage_type === 'public'
+          ? `/api/v1/upload/download/public/${upload.uuid}?variant=thumb`
+          : `/api/v1/upload/private/${upload.uuid}?variant=thumb`;
 
         // Show indicator for private images
-        const privateIndicator = upload.visibility === 'private'
+        const privateIndicator = upload.storage_type === 'private'
           ? '<span class="image-grid__private-badge" title="Private - will be copied to public">Private</span>'
           : '';
 
@@ -1618,7 +1622,7 @@ export class ThemeConfig {
           ${privateIndicator}
           <span class="image-grid__name">${upload.original_name}</span>
         `;
-        item.addEventListener('click', () => this.selectImage(upload.uuid, upload.visibility));
+        item.addEventListener('click', () => this.selectImage(upload.uuid, upload.storage_type));
         this.imageGrid.appendChild(item);
       });
     } catch (error) {
@@ -1630,36 +1634,33 @@ export class ThemeConfig {
   /**
    * Select an image from the modal
    * @param {string} uuid
-   * @param {string} visibility - 'public' or 'private'
+   * @param {string} storage_type - 'public' or 'private'
    */
-  async selectImage(uuid, visibility = 'public') {
-    // If private, duplicate to public first
-    if (visibility === 'private') {
-      const publicUuid = await this.duplicateToPublic(uuid);
-      if (!publicUuid) {
-        this.showToast('Failed to make image public', 'error');
-        return;
-      }
-      uuid = publicUuid;
-    }
+  async selectImage(uuid, storage_type = 'public') {
+    // Store both UUID and storage_type for preview and saving
+    // No need to duplicate private images - backend handles both types
 
     if (this.currentImageTarget === 'logo') {
       this.logoUuid = uuid;
-      this.updateImagePreview('logo', uuid);
+      this.logoStorageType = storage_type;
+      this.updateImagePreview('logo', uuid, storage_type);
       this.markUnsaved();
     } else if (this.currentImageTarget === 'favicon') {
       this.faviconUuid = uuid;
-      this.updateImagePreview('favicon', uuid);
+      this.faviconStorageType = storage_type;
+      this.updateImagePreview('favicon', uuid, storage_type);
       this.markUnsaved();
     } else if (this.currentImageTarget === 'og_image') {
       if (this.currentSeoPage) {
         this.currentSeoPage.og_image_uuid = uuid;
-        this.updateSeoImagePreview('og_image', uuid);
+        this.currentSeoPage.og_image_storage_type = storage_type;
+        this.updateSeoImagePreview('og_image', uuid, storage_type);
       }
     } else if (this.currentImageTarget === 'twitter_image') {
       if (this.currentSeoPage) {
         this.currentSeoPage.twitter_image_uuid = uuid;
-        this.updateSeoImagePreview('twitter_image', uuid);
+        this.currentSeoPage.twitter_image_storage_type = storage_type;
+        this.updateSeoImagePreview('twitter_image', uuid, storage_type);
       }
     }
 
@@ -1741,8 +1742,9 @@ export class ThemeConfig {
    * Update image preview display
    * @param {string} target - 'logo' or 'favicon'
    * @param {string|null} uuid
+   * @param {string} storage_type - 'public' or 'private'
    */
-  updateImagePreview(target, uuid) {
+  updateImagePreview(target, uuid, storage_type = 'public') {
     let preview, placeholder;
 
     if (target === 'logo') {
@@ -1754,7 +1756,13 @@ export class ThemeConfig {
     }
 
     if (uuid && preview) {
-      preview.src = `/api/v1/upload/download/public/${uuid}`;
+      // Generate correct URL based on storage_type (matches backend asset_by_id() format)
+      // Always request 'medium' variant for preview to ensure file exists
+      const imgUrl = storage_type === 'public'
+        ? `/api/v1/upload/download/public/${uuid}?variant=medium`
+        : `/api/v1/upload/private/${uuid}?variant=medium`;
+
+      preview.src = imgUrl;
       preview.classList.remove('hidden');
       if (placeholder) placeholder.classList.add('hidden');
     } else {
@@ -2828,8 +2836,9 @@ export class ThemeConfig {
    * Update SEO image preview
    * @param {string} target - 'og_image' or 'twitter_image'
    * @param {string|null} uuid
+   * @param {string} storage_type - 'public' or 'private'
    */
-  updateSeoImagePreview(target, uuid) {
+  updateSeoImagePreview(target, uuid, storage_type = 'public') {
     let preview, placeholder, hiddenInput;
 
     if (target === 'og_image') {
@@ -2843,7 +2852,13 @@ export class ThemeConfig {
     }
 
     if (uuid && preview) {
-      preview.src = `/api/v1/upload/download/public/${uuid}`;
+      // Generate correct URL based on storage_type (matches backend asset_by_id() format)
+      // Always request 'medium' variant for preview to ensure file exists
+      const imgUrl = storage_type === 'public'
+        ? `/api/v1/upload/download/public/${uuid}?variant=medium`
+        : `/api/v1/upload/private/${uuid}?variant=medium`;
+
+      preview.src = imgUrl;
       preview.classList.remove('hidden');
       if (placeholder) placeholder.classList.add('hidden');
     } else {

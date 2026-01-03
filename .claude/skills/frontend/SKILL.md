@@ -24,11 +24,11 @@ You are a frontend development subagent for the Blazing Sun Rust project. Your r
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Templates** | `blazing_sun/Templates/TEMPLATES.md` | Tera templates, base layouts, partials |
-| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web page routes, named routes |
-| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File upload UI, displaying images |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Template utilities, asset versioning |
-| **Email** | `blazing_sun/Email/EMAIL.md` | Email template design |
+| **Templates** | `Documentation/blazing_sun/Templates/TEMPLATES.md` | Tera templates, base layouts, partials |
+| **Web Routes** | `Documentation/blazing_sun/Routes/Web/WEB_ROUTES.md` | Web page routes, named routes |
+| **Uploads** | `Documentation/blazing_sun/Uploads/UPLOADS.md` | File upload UI, displaying images |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Template utilities, asset versioning |
+| **Email** | `Documentation/blazing_sun/Email/EMAIL.md` | Email template design |
 
 ---
 
@@ -92,6 +92,51 @@ Detailed guides for each technology (in this skill folder):
 2. **Check existing patterns** - Review existing templates/styles for consistency
 3. **Create/modify files** - Follow the conventions in how-to guides
 4. **Test in browser** - Verify changes work correctly
+
+## Authentication for Page Inspection (CRITICAL)
+
+**Development Testing Credentials:**
+- **Email**: `djmyle@gmail.com`
+- **Password**: `asdqwE123~~`
+
+**IMPORTANT RULES:**
+- ✅ USE these credentials to login via Playwright MCP for inspecting protected pages
+- ✅ Take screenshots at desktop and mobile sizes to verify responsive design
+- ❌ DO NOT modify these credentials
+- ❌ DO NOT change the password
+- ℹ️ These are development-only credentials, NOT for production
+
+### Using Playwright MCP to Inspect Pages
+
+When building/debugging pages that require authentication:
+
+1. **Login first** using browser_navigate + browser_click/browser_type:
+   ```
+   mcp__playwright__browser_navigate(url="https://localhost/sign-in")
+   mcp__playwright__browser_type(element="email field", ref="...", text="djmyle@gmail.com")
+   mcp__playwright__browser_type(element="password field", ref="...", text="asdqwE123~~")
+   mcp__playwright__browser_click(element="submit button", ref="...")
+   ```
+
+2. **Navigate to protected page**:
+   ```
+   mcp__playwright__browser_navigate(url="https://localhost/admin/uploads")
+   ```
+
+3. **Take screenshots** at different sizes:
+   ```
+   # Desktop view (1920x1080)
+   mcp__playwright__browser_resize(width=1920, height=1080)
+   mcp__playwright__browser_take_screenshot(filename="page_desktop.png")
+
+   # Mobile view (375x667)
+   mcp__playwright__browser_resize(width=375, height=667)
+   mcp__playwright__browser_take_screenshot(filename="page_mobile.png")
+   ```
+
+4. **Inspect elements** to verify layout, styling, and responsiveness
+
+---
 
 ## Key Principles
 
@@ -568,6 +613,33 @@ Templates are in: `blazing_sun/src/resources/views/web/{page_name}.html`
 10. **Update Tera template** to include new CSS/JS assets
 
 **WARNING**: Skipping step 10 means the page will not load the new assets!
+
+---
+
+## Build Helper Script
+
+A build helper script is available at: `blazing_sun/src/frontend/build-frontend.sh`
+
+**Usage:**
+```bash
+# Build all pages (production mode)
+./blazing_sun/src/frontend/build-frontend.sh all prod
+
+# Build all pages (development mode)
+./blazing_sun/src/frontend/build-frontend.sh all dev
+
+# Build specific page (production)
+./blazing_sun/src/frontend/build-frontend.sh GALLERIES prod
+
+# Build specific page (development)
+./blazing_sun/src/frontend/build-frontend.sh PROFILE dev
+```
+
+**What it does:**
+- Runs npm builds inside Docker container (avoids sandbox issues)
+- Supports building all pages or specific page
+- Supports dev and prod build modes
+- Runs from project root directory
 
 ---
 

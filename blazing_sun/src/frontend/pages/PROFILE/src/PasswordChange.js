@@ -73,22 +73,30 @@ export class PasswordChange {
       return;
     }
 
-    const token = this.getAuthToken();
-    if (!token) {
-      this.showToast('Please sign in to change password', 'error');
-      return;
-    }
+    // NOTE: We don't check for a readable auth token here because the auth cookie
+    // is HttpOnly for security. The server already validated authentication before
+    // rendering this page, and the HttpOnly cookie will be sent automatically with
+    // this request. If the user is not authenticated, the server will reject the request.
 
     this.isSubmitting = true;
     this.setButtonLoading(true);
 
     try {
+      // Build headers - include Authorization only if we have a readable token
+      // Otherwise, rely on HttpOnly cookie being sent automatically
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const token = this.getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${this.baseUrl}/api/v1/password/change-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: headers,
+        credentials: 'same-origin', // Ensure HttpOnly auth cookie is sent
         body: JSON.stringify({
           current_password: currentPassword,
           new_password: newPassword,
@@ -103,8 +111,8 @@ export class PasswordChange {
         this.form.reset();
         this.updatePasswordStrength('');
 
-        // Clear auth cookie and redirect to sign-in
-        this.clearAuthCookie();
+        // Backend clears the HttpOnly auth cookie in the response
+        // Redirect to sign-in page for re-authentication
         setTimeout(() => {
           window.location.href = '/sign-in';
         }, 1500);
@@ -264,13 +272,6 @@ export class PasswordChange {
         }
       }
     }
-  }
-
-  /**
-   * Clear the auth cookie to log user out
-   */
-  clearAuthCookie() {
-    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   }
 
   /**

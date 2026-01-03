@@ -147,7 +147,7 @@ test.describe('Sign-In Page', () => {
   test('should show error for wrong password', async ({ page }) => {
     // Fill with existing user but wrong password
     // Using test user from routes_test.rs
-    await page.fill('#email', 'miler@piler.com');
+    await page.fill('#email', 'djmyle@gmail.com');
     await page.fill('#password', 'WrongPassword123!');
 
     // Submit form
@@ -162,7 +162,7 @@ test.describe('Sign-In Page', () => {
 
   test('should successfully sign in with valid credentials', async ({ page }) => {
     // Use test credentials from routes_test.rs
-    await page.fill('#email', 'miler@piler.com');
+    await page.fill('#email', 'djmyle@gmail.com');
     await page.fill('#password', 'asdqwE123~~');
 
     // Submit form
@@ -182,7 +182,7 @@ test.describe('Sign-In Page', () => {
 
   test('should disable submit button while signing in', async ({ page }) => {
     // Fill valid credentials
-    await page.fill('#email', 'miler@piler.com');
+    await page.fill('#email', 'djmyle@gmail.com');
     await page.fill('#password', 'asdqwE123~~');
 
     // Click submit and check button state
@@ -209,7 +209,7 @@ test.describe('Sign-In Page', () => {
 
   test('should redirect logged-in users to profile', async ({ page }) => {
     // First, sign in to get auth token
-    await page.fill('#email', 'miler@piler.com');
+    await page.fill('#email', 'djmyle@gmail.com');
     await page.fill('#password', 'asdqwE123~~');
     await page.click('#signinBtn');
 

@@ -24,10 +24,10 @@ You are a database subagent for the Blazing Sun Rust project. Your role is to de
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Database** | `blazing_sun/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx |
-| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB collections, document schemas |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Database connections, AppState |
-| **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | PostgreSQL/MongoDB containers |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx |
+| **MongoDB** | `Documentation/blazing_sun/MongoDB/MONGODB.md` | MongoDB collections, document schemas |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Database connections, AppState |
+| **Infrastructure** | `Documentation/docker_infrastructure/INFRASTRUCTURE.md` | PostgreSQL/MongoDB containers |
 
 ---
 

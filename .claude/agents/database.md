@@ -41,10 +41,10 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Database** | `blazing_sun/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx queries |
-| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB collections, document schemas, aggregations |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Database connection, AppState, pools |
-| **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | PostgreSQL/MongoDB container config |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | Schema design, migrations, stored procedures, SQLx queries |
+| **MongoDB** | `Documentation/blazing_sun/MongoDB/MONGODB.md` | MongoDB collections, document schemas, aggregations |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Database connection, AppState, pools |
+| **Infrastructure** | `Documentation/docker_infrastructure/INFRASTRUCTURE.md` | PostgreSQL/MongoDB container config |
 
 ### When to Update Documentation
 

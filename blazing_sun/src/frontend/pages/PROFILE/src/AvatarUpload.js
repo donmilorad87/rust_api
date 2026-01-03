@@ -138,11 +138,10 @@ export class AvatarUpload {
   async uploadAvatar() {
     if (!this.selectedFile || this.isUploading) return;
 
-    const token = this.getAuthToken();
-    if (!token) {
-      this.showToast('Please sign in to upload avatar', 'error');
-      return;
-    }
+    // NOTE: We don't check for a readable auth token here because the auth cookie
+    // is HttpOnly for security. The server already validated authentication before
+    // rendering this page, and the HttpOnly cookie will be sent automatically with
+    // this request. If the user is not authenticated, the server will reject the request.
 
     this.isUploading = true;
     this.setButtonLoading(true);
@@ -155,6 +154,7 @@ export class AvatarUpload {
       // This creates an asset record and updates user's avatar_uuid in one step
       const response = await fetch(`${this.baseUrl}/api/v1/upload/avatar`, {
         method: 'POST',
+        credentials: 'same-origin', // Ensure HttpOnly auth cookie is sent
         body: formData
       });
 
@@ -163,7 +163,8 @@ export class AvatarUpload {
       if (response.ok && result.status === 'success') {
         // Avatar endpoint returns upload with URL
         const upload = result.upload;
-        const imageUrl = upload.url;
+        // Use 'small' variant (320px) for avatar display for better performance
+        const imageUrl = `${upload.url}?variant=small`;
 
         this.updateAvatarDisplay(imageUrl);
         this.showToast('Profile picture updated!', 'success');
@@ -202,8 +203,11 @@ export class AvatarUpload {
    */
   setAvatar(avatarUrl) {
     if (avatarUrl) {
-      // Use the URL as-is (should be /api/v1/avatar/{uuid} format)
-      this.updateAvatarDisplay(avatarUrl);
+      // Use 'small' variant (320px) for avatar display for better performance
+      const variantUrl = avatarUrl.includes('?')
+        ? `${avatarUrl}&variant=small`
+        : `${avatarUrl}?variant=small`;
+      this.updateAvatarDisplay(variantUrl);
     } else {
       // Show SVG placeholder
       if (this.avatarImage) {

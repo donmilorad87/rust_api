@@ -409,20 +409,31 @@ impl AuthController {
             }
         }
 
-        HttpResponse::Ok().json(SignInResponse {
-            base: BaseResponse::success("Signed in successfully"),
-            token,
-            user: UserDto {
-                id: user.id,
-                email: user.email.clone(),
-                first_name: user.first_name.clone(),
-                last_name: user.last_name.clone(),
-                balance: user.balance,
-                permissions: user.permissions,
-                avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
-                created_at: user.created_at,
-                updated_at: user.updated_at,
-            },
-        })
+        // Set auth_token cookie for browser requests (e.g., <img> tags loading avatar)
+        use actix_web::cookie::{Cookie, SameSite};
+        let cookie = Cookie::build("auth_token", token.clone())
+            .path("/")
+            .max_age(actix_web::cookie::time::Duration::minutes(JwtConfig::expiration_minutes()))
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .finish();
+
+        HttpResponse::Ok()
+            .cookie(cookie)
+            .json(SignInResponse {
+                base: BaseResponse::success("Signed in successfully"),
+                token,
+                user: UserDto {
+                    id: user.id,
+                    email: user.email.clone(),
+                    first_name: user.first_name.clone(),
+                    last_name: user.last_name.clone(),
+                    balance: user.balance,
+                    permissions: user.permissions,
+                    avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
+                    created_at: user.created_at,
+                    updated_at: user.updated_at,
+                },
+            })
     }
 }

@@ -1,0 +1,422 @@
+// ============================================
+// MODALS - Lightbox & Upload Modal Styles
+// ============================================
+@use 'variables' as *;
+
+// ============================================
+// IMAGE LIGHTBOX
+// ============================================
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+  }
+
+  &__content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    z-index: 10001;
+  }
+
+  &__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: var(--radius-full);
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+    z-index: 10002;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  &__image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    max-height: calc(90vh - 100px);
+  }
+
+  &__image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  &__title {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    max-width: 80%;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+
+  &__download {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-full);
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+    z-index: 10002;
+
+    &:hover {
+      background: var(--color-primary-hover);
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+// ============================================
+// UPLOAD MODAL
+// ============================================
+.file-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  cursor: pointer;
+  transition: all $transition-fast;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-primary);
+  }
+
+  &--dragover {
+    border-color: var(--color-primary);
+    background: rgba(13, 110, 253, 0.05);
+  }
+
+  svg {
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  &__text {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+
+    strong {
+      color: var(--color-primary);
+    }
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  &__input {
+    display: none;
+  }
+}
+
+.upload-progress {
+  padding: 2rem;
+
+  &__bar {
+    width: 100%;
+    height: 8px;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  &__fill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.3s ease-out;
+    width: 0%;
+  }
+
+  &__text {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+  }
+}
+
+.upload-metadata-form {
+  width: 100%;
+
+  &__preview {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--color-bg-secondary);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+  }
+}
+
+.upload-preview-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 200px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+
+  img {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+  }
+}
+
+.upload-preview-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--color-text-muted);
+
+  svg {
+    opacity: 0.5;
+  }
+}
+
+.upload-preview-info {
+  font-size: 0.875rem;
+  text-align: center;
+
+  strong {
+    color: var(--color-text-primary);
+    margin-right: 0.5rem;
+  }
+}
+
+// ============================================
+// TOGGLE GROUP (Radio Buttons)
+// ============================================
+.toggle-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.toggle-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all $transition-fast;
+  background: var(--color-bg-primary);
+
+  &:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-secondary);
+  }
+
+  input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+
+    &:checked + .toggle-option__label {
+      color: var(--color-primary);
+    }
+
+    &:checked ~ .toggle-option__hint {
+      color: var(--color-text-secondary);
+    }
+  }
+
+  input[type="radio"]:checked ~ & {
+    border-color: var(--color-primary);
+    background: rgba(13, 110, 253, 0.05);
+  }
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.25rem;
+    transition: color $transition-fast;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-left: 1.5rem;
+    transition: color $transition-fast;
+  }
+}
+
+// Checked state (adjacent sibling selector doesn't work with hidden input, so we use JS)
+.toggle-option:has(input[type="radio"]:checked) {
+  border-color: var(--color-primary);
+  background: rgba(13, 110, 253, 0.05);
+}
+
+// ============================================
+// ANIMATIONS
+// ============================================
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: $breakpoint-md) {
+  .lightbox {
+    &__content {
+      max-width: 95vw;
+      max-height: 95vh;
+    }
+
+    &__image-container {
+      max-height: calc(95vh - 80px);
+    }
+
+    &__close,
+    &__download {
+      width: 48px;
+      height: 48px; // Larger touch targets
+
+      svg {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    &__close {
+      top: 0.5rem;
+      right: 0.5rem;
+    }
+
+    &__download {
+      bottom: 0.5rem;
+      right: 0.5rem;
+    }
+  }
+
+  .modal {
+    &__content {
+      width: 95%;
+      max-height: 95vh;
+    }
+
+    &__close {
+      padding: 0.75rem;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    &__header,
+    &__body,
+    &__footer {
+      padding: 1rem;
+    }
+  }
+
+  .toggle-group {
+    grid-template-columns: 1fr;
+  }
+
+  .file-dropzone {
+    padding: 2rem 1rem;
+
+    &__text {
+      font-size: 1rem;
+    }
+
+    &__hint {
+      font-size: 0.875rem;
+    }
+  }
+
+  // Form inputs larger on mobile
+  .form-input,
+  .form-textarea {
+    font-size: 1rem; // Prevent zoom on iOS
+    padding: 0.875rem;
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+  }
+}

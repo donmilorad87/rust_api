@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Your Email Change - {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1>Verify Your Email Change</h1>
+
+<div class="content">
+    <p>Hello {{ first_name }},</p>
+
+    <p>We received a request to change your email address to <strong>{{ new_email }}</strong>.</p>
+
+    <p>To proceed with this change, please verify that you still control this email address by using the code below:</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; display: inline-block;">
+            <span style="font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #1f2937;">{{ code }}</span>
+        </div>
+    </div>
+
+    <p>Copy this code and paste it into the verification form on our website.</p>
+
+    <p style="color: #6b7280; font-size: 14px;">This code will expire in {{ expiry_minutes }} minutes. If you didn't request this email change, please ignore this message or contact support immediately. Your email address will remain unchanged.</p>
+
+    <p style="margin-top: 20px; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+        <strong>Security Note:</strong> After verifying this email, you'll receive another verification code at your new email address. Both verifications are required to complete the email change.
+    </p>
+</div>
+{% endblock %}

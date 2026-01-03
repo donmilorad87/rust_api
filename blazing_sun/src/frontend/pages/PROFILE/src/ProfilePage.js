@@ -40,10 +40,17 @@ export class ProfilePage {
    * Initialize the profile page
    */
   init() {
-    // Get auth token from cookie
+    // Get auth token from cookie for API requests
+    // NOTE: Cookie is HttpOnly for security, so if we can't read it,
+    // that's OK - it means we're in a browser context where the cookie
+    // will be sent automatically with requests. The server already
+    // validated authentication before rendering this page.
     this.authToken = this.getTokenFromCookie();
 
-    if (!this.authToken) {
+    // If no token is readable (HttpOnly cookie), check if we have SSR user data
+    // This indicates the server successfully authenticated the user
+    if (!this.authToken && !this.userData) {
+      // No token AND no user data means something is wrong
       this.showToast('Please sign in to view your profile', 'error');
       setTimeout(() => {
         window.location.href = '/sign-in';
@@ -139,12 +146,20 @@ export class ProfilePage {
     this.setButtonLoading(true);
 
     try {
+      // Build headers - include Authorization only if we have a readable token
+      // Otherwise, rely on HttpOnly cookie being sent automatically
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      if (this.authToken) {
+        headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
+
       const response = await fetch(`${this.baseUrl}/api/v1/user`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.authToken}`
-        },
+        headers: headers,
+        credentials: 'same-origin', // Ensure cookies are sent
         body: JSON.stringify({
           first_name: firstName,
           last_name: lastName

@@ -1,9 +1,10 @@
 /**
- * EmailChange - Handles email change functionality with 3-step flow
+ * EmailChange - Handles email change functionality with 4-step verification flow
  * Steps:
- * 1. Enter new email (check if available)
- * 2. Verify code sent to new email
- * 3. Email changed successfully
+ * 1. Enter new email address
+ * 2. Verify code sent to OLD email
+ * 3. Verify code sent to NEW email
+ * 4. Email changed successfully (auto-redirect to sign-in)
  */
 export class EmailChange {
   /**
@@ -11,38 +12,49 @@ export class EmailChange {
    * @param {string} config.baseUrl - API base URL
    * @param {HTMLElement} config.step1Card - Step 1 card element
    * @param {HTMLElement} config.step2Card - Step 2 card element
-   * @param {HTMLElement} config.step3Card - Step 3 card element (success)
-   * @param {HTMLFormElement} config.emailForm - New email form
-   * @param {HTMLFormElement} config.verifyForm - Verification form
+   * @param {HTMLElement} config.step3Card - Step 3 card element
+   * @param {HTMLElement} config.step4Card - Step 4 card element (success)
+   * @param {HTMLFormElement} config.newEmailForm - New email form
+   * @param {HTMLFormElement} config.verifyOldEmailForm - Old email verification form
+   * @param {HTMLFormElement} config.verifyNewEmailForm - New email verification form
    * @param {HTMLInputElement} config.newEmailInput - New email input
-   * @param {HTMLInputElement} config.codeInput - Verification code input
-   * @param {HTMLButtonElement} config.emailBtn - Send code button
-   * @param {HTMLButtonElement} config.verifyBtn - Verify code button
+   * @param {HTMLInputElement} config.oldEmailCodeInput - Old email code input
+   * @param {HTMLInputElement} config.newEmailCodeInput - New email code input
+   * @param {HTMLButtonElement} config.sendEmailCodeBtn - Send code button
+   * @param {HTMLButtonElement} config.verifyOldEmailBtn - Verify old email button
+   * @param {HTMLButtonElement} config.verifyNewEmailBtn - Verify new email button
    * @param {HTMLElement} config.stepIndicators - Step indicator elements
+   * @param {HTMLElement} config.currentEmailDisplay - Display element for current email
+   * @param {HTMLElement} config.newEmailDisplay - Display element for new email
    * @param {Function} config.showToast - Toast notification function
    * @param {Function} config.getAuthToken - Function to get JWT token
-   * @param {Function} config.onEmailChanged - Callback when email is changed
+   * @param {string} config.currentEmail - Current user email
    */
   constructor(config) {
     this.baseUrl = config.baseUrl || '';
     this.step1Card = config.step1Card;
     this.step2Card = config.step2Card;
     this.step3Card = config.step3Card;
-    this.emailForm = config.emailForm;
-    this.verifyForm = config.verifyForm;
+    this.step4Card = config.step4Card;
+    this.newEmailForm = config.newEmailForm;
+    this.verifyOldEmailForm = config.verifyOldEmailForm;
+    this.verifyNewEmailForm = config.verifyNewEmailForm;
     this.newEmailInput = config.newEmailInput;
-    this.codeInput = config.codeInput;
-    this.emailBtn = config.emailBtn;
-    this.verifyBtn = config.verifyBtn;
+    this.oldEmailCodeInput = config.oldEmailCodeInput;
+    this.newEmailCodeInput = config.newEmailCodeInput;
+    this.sendEmailCodeBtn = config.sendEmailCodeBtn;
+    this.verifyOldEmailBtn = config.verifyOldEmailBtn;
+    this.verifyNewEmailBtn = config.verifyNewEmailBtn;
     this.stepIndicators = config.stepIndicators || [];
+    this.currentEmailDisplay = config.currentEmailDisplay;
+    this.newEmailDisplay = config.newEmailDisplay;
     this.showToast = config.showToast || this.defaultToast.bind(this);
     this.getAuthToken = config.getAuthToken || (() => null);
-    this.onEmailChanged = config.onEmailChanged || (() => {});
+    this.currentEmail = config.currentEmail || '';
 
     this.currentStep = 1;
     this.isSubmitting = false;
     this.newEmail = '';
-    this.verificationCode = '';
 
     this.init();
   }
@@ -51,31 +63,40 @@ export class EmailChange {
    * Initialize event listeners
    */
   init() {
-    if (this.emailForm) {
-      this.emailForm.addEventListener('submit', (e) => this.handleEmailSubmit(e));
+    // Step 1: New email form
+    if (this.newEmailForm) {
+      this.newEmailForm.addEventListener('submit', (e) => this.handleNewEmailSubmit(e));
     }
 
-    if (this.verifyForm) {
-      this.verifyForm.addEventListener('submit', (e) => this.handleVerifySubmit(e));
+    // Step 2: Verify old email form
+    if (this.verifyOldEmailForm) {
+      this.verifyOldEmailForm.addEventListener('submit', (e) => this.handleVerifyOldEmailSubmit(e));
     }
 
-    // Format code input
-    if (this.codeInput) {
-      this.codeInput.addEventListener('input', (e) => this.formatCodeInput(e));
+    // Step 3: Verify new email form
+    if (this.verifyNewEmailForm) {
+      this.verifyNewEmailForm.addEventListener('submit', (e) => this.handleVerifyNewEmailSubmit(e));
     }
 
-    // Start over button in step 3
-    const startOverBtn = this.step3Card?.querySelector('[data-action="start-over"]');
-    if (startOverBtn) {
-      startOverBtn.addEventListener('click', () => this.goToStep(1));
+    // Format code inputs
+    if (this.oldEmailCodeInput) {
+      this.oldEmailCodeInput.addEventListener('input', (e) => this.formatCodeInput(e));
     }
+    if (this.newEmailCodeInput) {
+      this.newEmailCodeInput.addEventListener('input', (e) => this.formatCodeInput(e));
+    }
+
+    // Cancel buttons
+    document.querySelectorAll('[data-action="cancel"]').forEach(btn => {
+      btn.addEventListener('click', () => this.goToStep(1));
+    });
   }
 
   /**
    * Step 1: Handle new email submission
    * @param {Event} event
    */
-  async handleEmailSubmit(event) {
+  async handleNewEmailSubmit(event) {
     event.preventDefault();
 
     if (this.isSubmitting) return;
@@ -86,123 +107,192 @@ export class EmailChange {
       return;
     }
 
-    const token = this.getAuthToken();
-    if (!token) {
-      this.showToast('Please sign in to change email', 'error');
+    // Check if new email is same as current email
+    if (email.toLowerCase() === this.currentEmail.toLowerCase()) {
+      this.showToast('New email cannot be the same as your current email', 'error');
       return;
     }
 
+    // NOTE: HttpOnly cookie authentication - token sent automatically
     this.isSubmitting = true;
-    this.setButtonLoading(this.emailBtn, true, 'Checking...');
+    this.setButtonLoading(this.sendEmailCodeBtn, true, 'Sending...');
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    const token = this.getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
     try {
-      // First, check if email is available
-      const checkResponse = await fetch(`${this.baseUrl}/api/v1/email/check-availability`, {
+      // Request email change - sends code to OLD email
+      const response = await fetch(`${this.baseUrl}/api/v1/email/request-change`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ email })
-      });
-
-      const checkResult = await checkResponse.json();
-
-      if (!checkResponse.ok) {
-        if (checkResult.message?.toLowerCase().includes('already')) {
-          this.showToast('This email is already in use', 'error');
-        } else {
-          this.showToast(checkResult.message || 'Could not verify email availability', 'error');
-        }
-        this.setButtonLoading(this.emailBtn, false, 'Send Verification Code');
-        this.isSubmitting = false;
-        return;
-      }
-
-      // Send verification code to new email
-      const sendResponse = await fetch(`${this.baseUrl}/api/v1/email/request-change`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: headers,
+        credentials: 'same-origin',
         body: JSON.stringify({ new_email: email })
       });
 
-      const sendResult = await sendResponse.json();
+      const result = await response.json();
 
-      if (sendResponse.ok) {
+      if (response.ok) {
         this.newEmail = email;
-        this.showToast('Verification code sent to your new email!', 'success');
+        this.showToast('Verification code sent to your current email!', 'success');
+
+        // Update display elements
+        if (this.currentEmailDisplay) {
+          this.currentEmailDisplay.textContent = this.currentEmail;
+        }
+
         this.goToStep(2);
       } else {
-        this.showToast(sendResult.message || 'Failed to send verification code', 'error');
-        this.setButtonLoading(this.emailBtn, false, 'Send Verification Code');
+        this.showToast(result.message || 'Failed to send verification code', 'error');
+        this.setButtonLoading(this.sendEmailCodeBtn, false, 'Request Email Change');
       }
     } catch (error) {
-      console.error('Email check failed:', error);
+      console.error('Email change request failed:', error);
       this.showToast('Network error. Please try again.', 'error');
-      this.setButtonLoading(this.emailBtn, false, 'Send Verification Code');
+      this.setButtonLoading(this.sendEmailCodeBtn, false, 'Request Email Change');
     } finally {
       this.isSubmitting = false;
     }
   }
 
   /**
-   * Step 2: Handle verification code submission
+   * Step 2: Handle old email verification
    * @param {Event} event
    */
-  async handleVerifySubmit(event) {
+  async handleVerifyOldEmailSubmit(event) {
     event.preventDefault();
 
     if (this.isSubmitting) return;
 
-    const code = this.codeInput?.value.trim() || '';
+    const code = this.oldEmailCodeInput?.value.trim() || '';
 
-    if (!code || code.length < 20) {
-      this.showToast('Please enter the 20 character verification code', 'error');
-      return;
-    }
-
-    const token = this.getAuthToken();
-    if (!token) {
-      this.showToast('Please sign in to change email', 'error');
+    if (!code || code.length < 32) {
+      this.showToast('Please enter the verification code from your current email', 'error');
       return;
     }
 
     this.isSubmitting = true;
-    this.setButtonLoading(this.verifyBtn, true, 'Verifying...');
+    this.setButtonLoading(this.verifyOldEmailBtn, true, 'Verifying...');
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    const token = this.getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/email/verify-change`, {
+      const response = await fetch(`${this.baseUrl}/api/v1/email/verify-old-email`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          code: code,
-          new_email: this.newEmail
-        })
+        headers: headers,
+        credentials: 'same-origin',
+        body: JSON.stringify({ code: code })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        this.showToast('Old email verified! Check your new email for the next code.', 'success');
+
+        // Update display element
+        if (this.newEmailDisplay) {
+          this.newEmailDisplay.textContent = this.newEmail;
+        }
+
+        this.goToStep(3);
+      } else {
+        this.showToast(result.message || 'Invalid or expired verification code', 'error');
+        this.setButtonLoading(this.verifyOldEmailBtn, false, 'Verify Old Email');
+      }
+    } catch (error) {
+      console.error('Old email verification failed:', error);
+      this.showToast('Network error. Please try again.', 'error');
+      this.setButtonLoading(this.verifyOldEmailBtn, false, 'Verify Old Email');
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+
+  /**
+   * Step 3: Handle new email verification
+   * @param {Event} event
+   */
+  async handleVerifyNewEmailSubmit(event) {
+    event.preventDefault();
+
+    if (this.isSubmitting) return;
+
+    const code = this.newEmailCodeInput?.value.trim() || '';
+
+    if (!code || code.length < 32) {
+      this.showToast('Please enter the verification code from your new email', 'error');
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.setButtonLoading(this.verifyNewEmailBtn, true, 'Completing...');
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    const token = this.getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/email/verify-new-email`, {
+        method: 'POST',
+        headers: headers,
+        credentials: 'same-origin',
+        body: JSON.stringify({ code: code })
       });
 
       const result = await response.json();
 
       if (response.ok) {
         this.showToast('Email changed successfully!', 'success');
-        this.goToStep(3);
-        this.onEmailChanged(this.newEmail);
+        this.goToStep(4);
+        this.startRedirectCountdown();
       } else {
-        this.showToast(result.message || 'Invalid verification code', 'error');
-        this.setButtonLoading(this.verifyBtn, false, 'Verify & Change Email');
+        this.showToast(result.message || 'Invalid or expired verification code', 'error');
+        this.setButtonLoading(this.verifyNewEmailBtn, false, 'Complete Email Change');
       }
     } catch (error) {
-      console.error('Email verification failed:', error);
+      console.error('New email verification failed:', error);
       this.showToast('Network error. Please try again.', 'error');
-      this.setButtonLoading(this.verifyBtn, false, 'Verify & Change Email');
+      this.setButtonLoading(this.verifyNewEmailBtn, false, 'Complete Email Change');
     } finally {
       this.isSubmitting = false;
     }
+  }
+
+  /**
+   * Start countdown and redirect to sign-in page
+   */
+  startRedirectCountdown() {
+    let countdown = 5;
+    const countdownElement = document.getElementById('redirectCountdown');
+
+    const interval = setInterval(() => {
+      countdown--;
+      if (countdownElement) {
+        countdownElement.textContent = countdown;
+      }
+
+      if (countdown <= 0) {
+        clearInterval(interval);
+        window.location.href = '/sign-in';
+      }
+    }, 1000);
   }
 
   /**
@@ -216,16 +306,19 @@ export class EmailChange {
     this.step1Card?.classList.add('hidden');
     this.step2Card?.classList.add('hidden');
     this.step3Card?.classList.add('hidden');
+    this.step4Card?.classList.add('hidden');
 
     // Show target card
     const targetCard = this.getCardForStep(step);
     if (targetCard) {
       targetCard.classList.remove('hidden');
 
-      // Focus first input
-      const firstInput = targetCard.querySelector('input:not([type="hidden"])');
-      if (firstInput) {
-        setTimeout(() => firstInput.focus(), 100);
+      // Focus first input (except for success step)
+      if (step < 4) {
+        const firstInput = targetCard.querySelector('input:not([type="hidden"])');
+        if (firstInput) {
+          setTimeout(() => firstInput.focus(), 100);
+        }
       }
     }
 
@@ -233,15 +326,16 @@ export class EmailChange {
     this.updateStepIndicators(step);
 
     // Reset button states
-    this.setButtonLoading(this.emailBtn, false, 'Send Verification Code');
-    this.setButtonLoading(this.verifyBtn, false, 'Verify & Change Email');
+    this.setButtonLoading(this.sendEmailCodeBtn, false, 'Request Email Change');
+    this.setButtonLoading(this.verifyOldEmailBtn, false, 'Verify Old Email');
+    this.setButtonLoading(this.verifyNewEmailBtn, false, 'Complete Email Change');
 
     // Reset forms when going back to step 1
     if (step === 1) {
-      this.emailForm?.reset();
-      this.verifyForm?.reset();
+      this.newEmailForm?.reset();
+      this.verifyOldEmailForm?.reset();
+      this.verifyNewEmailForm?.reset();
       this.newEmail = '';
-      this.verificationCode = '';
     }
   }
 
@@ -255,6 +349,7 @@ export class EmailChange {
       case 1: return this.step1Card;
       case 2: return this.step2Card;
       case 3: return this.step3Card;
+      case 4: return this.step4Card;
       default: return null;
     }
   }
@@ -302,7 +397,7 @@ export class EmailChange {
    */
   formatCodeInput(event) {
     const input = event.target;
-    input.value = input.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
+    input.value = input.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
   }
 
   /**

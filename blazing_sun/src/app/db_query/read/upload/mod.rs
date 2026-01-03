@@ -22,6 +22,7 @@ pub struct Upload {
     pub chunks_received: Option<i32>,
     pub total_chunks: Option<i32>,
     pub user_id: Option<i64>,
+    pub title: Option<String>,
     pub description: Option<String>,
     pub metadata: Option<serde_json::Value>,
     pub created_at: DateTime<Utc>,
@@ -34,7 +35,7 @@ pub async fn get_by_id(db: &Pool<Postgres>, id: i64) -> Result<Upload, sqlx::Err
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads WHERE id = $1"#,
         id
     )
@@ -48,7 +49,7 @@ pub async fn get_by_uuid(db: &Pool<Postgres>, uuid: &Uuid) -> Result<Upload, sql
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads WHERE uuid = $1"#,
         uuid
     )
@@ -62,7 +63,7 @@ pub async fn get_by_user_id(db: &Pool<Postgres>, user_id: i64) -> Vec<Upload> {
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads WHERE user_id = $1 ORDER BY created_at DESC"#,
         user_id
     )
@@ -77,7 +78,7 @@ pub async fn get_by_storage_type(db: &Pool<Postgres>, storage_type: &str) -> Vec
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads WHERE storage_type = $1 ORDER BY created_at DESC"#,
         storage_type
     )
@@ -92,7 +93,7 @@ pub async fn get_public_by_uuid(db: &Pool<Postgres>, uuid: &Uuid) -> Result<Uplo
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads WHERE uuid = $1 AND storage_type = 'public' AND upload_status = 'completed'"#,
         uuid
     )
@@ -110,13 +111,22 @@ pub async fn get_private_by_uuid(
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads WHERE uuid = $1 AND storage_type = 'private' AND user_id = $2 AND upload_status = 'completed'"#,
         uuid,
         user_id
     )
     .fetch_one(db)
     .await
+}
+
+/// Check if upload exists by ID
+pub async fn exists(db: &Pool<Postgres>, upload_id: i64) -> bool {
+    sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM uploads WHERE id = $1)", upload_id)
+        .fetch_one(db)
+        .await
+        .unwrap_or(Some(false))
+        .unwrap_or(false)
 }
 
 /// Check if upload exists by UUID
@@ -134,7 +144,7 @@ pub async fn get_pending_by_user(db: &Pool<Postgres>, user_id: i64) -> Vec<Uploa
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads WHERE user_id = $1 AND upload_status IN ('pending', 'uploading') ORDER BY created_at DESC"#,
         user_id
     )
@@ -158,7 +168,7 @@ pub async fn get_all(db: &Pool<Postgres>, limit: i64, offset: i64) -> Vec<Upload
         Upload,
         r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                   storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                  user_id, description, metadata, created_at, updated_at
+                  user_id, title, description, metadata, created_at, updated_at
            FROM uploads ORDER BY created_at DESC LIMIT $1 OFFSET $2"#,
         limit,
         offset
@@ -182,7 +192,8 @@ pub async fn count_by_user(db: &Pool<Postgres>, user_id: i64) -> i64 {
 
 /// Get all uploads with pagination and optional filters (admin use)
 /// - storage_type: Optional filter for "public" or "private"
-/// - search: Optional search term for original_name
+/// - search: Optional search term for title, description, original_name
+///   If search starts with "*.", it's treated as file extension filter (e.g., "*.jpg")
 pub async fn get_all_filtered(
     db: &Pool<Postgres>,
     limit: i64,
@@ -190,20 +201,39 @@ pub async fn get_all_filtered(
     storage_type: Option<&str>,
     search: Option<&str>,
 ) -> Vec<Upload> {
+    // Determine if search is an extension filter (*.ext) or text search
+    let (is_extension_filter, extension, search_pattern) = match search {
+        Some(s) if s.starts_with("*.") => {
+            // Extension filter: "*.jpg" -> "jpg"
+            let ext = s.trim_start_matches("*.").to_lowercase();
+            (true, Some(ext), None)
+        }
+        Some(s) if s.starts_with(".*") => {
+            // Auto-correct: ".*jpg" -> "jpg" (user typed wrong order)
+            let ext = s.trim_start_matches(".*").to_lowercase();
+            (true, Some(ext), None)
+        }
+        Some(s) => {
+            // Text search: search in title, description, original_name
+            (false, None, Some(format!("%{}%", s)))
+        }
+        None => (false, None, None),
+    };
+
     // Build dynamic query based on filters
-    match (storage_type, search) {
-        (Some(st), Some(s)) => {
-            let search_pattern = format!("%{}%", s);
+    match (storage_type, is_extension_filter, extension, search_pattern) {
+        // Storage type + extension filter
+        (Some(st), true, Some(ext), _) => {
             sqlx::query_as!(
                 Upload,
                 r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                          user_id, description, metadata, created_at, updated_at
+                          user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
-                   WHERE storage_type = $1 AND original_name ILIKE $2
+                   WHERE storage_type = $1 AND LOWER(extension) = $2
                    ORDER BY created_at DESC LIMIT $3 OFFSET $4"#,
                 st,
-                search_pattern,
+                ext,
                 limit,
                 offset
             )
@@ -211,12 +241,36 @@ pub async fn get_all_filtered(
             .await
             .unwrap_or_default()
         }
-        (Some(st), None) => {
+        // Storage type + text search (title, description, original_name)
+        (Some(st), false, _, Some(pattern)) => {
             sqlx::query_as!(
                 Upload,
                 r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                          user_id, description, metadata, created_at, updated_at
+                          user_id, title, description, metadata, created_at, updated_at
+                   FROM uploads
+                   WHERE storage_type = $1 AND (
+                       original_name ILIKE $2 OR
+                       title ILIKE $2 OR
+                       description ILIKE $2
+                   )
+                   ORDER BY created_at DESC LIMIT $3 OFFSET $4"#,
+                st,
+                pattern,
+                limit,
+                offset
+            )
+            .fetch_all(db)
+            .await
+            .unwrap_or_default()
+        }
+        // Only storage type
+        (Some(st), _, _, None) => {
+            sqlx::query_as!(
+                Upload,
+                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+                          storage_type, storage_path, upload_status, chunks_received, total_chunks,
+                          user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
                    WHERE storage_type = $1
                    ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
@@ -228,17 +282,17 @@ pub async fn get_all_filtered(
             .await
             .unwrap_or_default()
         }
-        (None, Some(s)) => {
-            let search_pattern = format!("%{}%", s);
+        // Only extension filter
+        (None, true, Some(ext), _) => {
             sqlx::query_as!(
                 Upload,
                 r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
-                          user_id, description, metadata, created_at, updated_at
+                          user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
-                   WHERE original_name ILIKE $1
+                   WHERE LOWER(extension) = $1
                    ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
-                search_pattern,
+                ext,
                 limit,
                 offset
             )
@@ -246,32 +300,88 @@ pub async fn get_all_filtered(
             .await
             .unwrap_or_default()
         }
-        (None, None) => {
+        // Only text search (title, description, original_name)
+        (None, false, _, Some(pattern)) => {
+            sqlx::query_as!(
+                Upload,
+                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+                          storage_type, storage_path, upload_status, chunks_received, total_chunks,
+                          user_id, title, description, metadata, created_at, updated_at
+                   FROM uploads
+                   WHERE original_name ILIKE $1 OR title ILIKE $1 OR description ILIKE $1
+                   ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
+                pattern,
+                limit,
+                offset
+            )
+            .fetch_all(db)
+            .await
+            .unwrap_or_default()
+        }
+        // No filters
+        (None, _, _, None) => {
+            get_all(db, limit, offset).await
+        }
+        // Unreachable: extension filter always sets extension to Some and search_pattern to None
+        _ => {
             get_all(db, limit, offset).await
         }
     }
 }
 
 /// Count uploads with optional filters (admin use)
+/// Same filter logic as get_all_filtered
 pub async fn count_filtered(
     db: &Pool<Postgres>,
     storage_type: Option<&str>,
     search: Option<&str>,
 ) -> i64 {
-    match (storage_type, search) {
-        (Some(st), Some(s)) => {
-            let search_pattern = format!("%{}%", s);
+    // Determine if search is an extension filter (*.ext) or text search
+    let (is_extension_filter, extension, search_pattern) = match search {
+        Some(s) if s.starts_with("*.") => {
+            // Extension filter: "*.jpg" -> "jpg"
+            let ext = s.trim_start_matches("*.").to_lowercase();
+            (true, Some(ext), None)
+        }
+        Some(s) if s.starts_with(".*") => {
+            // Auto-correct: ".*jpg" -> "jpg" (user typed wrong order)
+            let ext = s.trim_start_matches(".*").to_lowercase();
+            (true, Some(ext), None)
+        }
+        Some(s) => {
+            // Text search: search in title, description, original_name
+            (false, None, Some(format!("%{}%", s)))
+        }
+        None => (false, None, None),
+    };
+
+    match (storage_type, is_extension_filter, extension, search_pattern) {
+        // Storage type + extension filter
+        (Some(st), true, Some(ext), _) => {
             sqlx::query_scalar!(
-                "SELECT COUNT(*) FROM uploads WHERE storage_type = $1 AND original_name ILIKE $2",
+                "SELECT COUNT(*) FROM uploads WHERE storage_type = $1 AND LOWER(extension) = $2",
                 st,
-                search_pattern
+                ext
             )
             .fetch_one(db)
             .await
             .unwrap_or(Some(0))
             .unwrap_or(0)
         }
-        (Some(st), None) => {
+        // Storage type + text search (title, description, original_name)
+        (Some(st), false, _, Some(pattern)) => {
+            sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM uploads WHERE storage_type = $1 AND (original_name ILIKE $2 OR title ILIKE $2 OR description ILIKE $2)",
+                st,
+                pattern
+            )
+            .fetch_one(db)
+            .await
+            .unwrap_or(Some(0))
+            .unwrap_or(0)
+        }
+        // Only storage type
+        (Some(st), _, _, None) => {
             sqlx::query_scalar!(
                 "SELECT COUNT(*) FROM uploads WHERE storage_type = $1",
                 st
@@ -281,18 +391,34 @@ pub async fn count_filtered(
             .unwrap_or(Some(0))
             .unwrap_or(0)
         }
-        (None, Some(s)) => {
-            let search_pattern = format!("%{}%", s);
+        // Only extension filter
+        (None, true, Some(ext), _) => {
             sqlx::query_scalar!(
-                "SELECT COUNT(*) FROM uploads WHERE original_name ILIKE $1",
-                search_pattern
+                "SELECT COUNT(*) FROM uploads WHERE LOWER(extension) = $1",
+                ext
             )
             .fetch_one(db)
             .await
             .unwrap_or(Some(0))
             .unwrap_or(0)
         }
-        (None, None) => {
+        // Only text search (title, description, original_name)
+        (None, false, _, Some(pattern)) => {
+            sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM uploads WHERE original_name ILIKE $1 OR title ILIKE $1 OR description ILIKE $1",
+                pattern
+            )
+            .fetch_one(db)
+            .await
+            .unwrap_or(Some(0))
+            .unwrap_or(0)
+        }
+        // No filters
+        (None, _, _, None) => {
+            count(db).await
+        }
+        // Unreachable: extension filter always sets extension to Some and search_pattern to None
+        _ => {
             count(db).await
         }
     }

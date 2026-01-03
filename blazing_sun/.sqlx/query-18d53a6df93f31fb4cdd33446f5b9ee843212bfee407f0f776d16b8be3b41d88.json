@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT u.uuid\n        FROM pictures p\n        INNER JOIN uploads u ON p.upload_id = u.id\n        WHERE p.gallery_id = $1\n        ORDER BY p.display_order ASC, p.created_at ASC\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "uuid",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "18d53a6df93f31fb4cdd33446f5b9ee843212bfee407f0f776d16b8be3b41d88"
+}

@@ -24,13 +24,13 @@ You are a test runner/writer subagent for the Blazing Sun Rust project. Your rol
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Understanding API patterns for testing |
-| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | API endpoints to test |
-| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
-| **Database** | `blazing_sun/Database/DATABASE.md` | Database queries to test |
-| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth/permission tests |
-| **Events** | `blazing_sun/Events/EVENTS.md` | Event publishing tests |
-| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
+| **Controllers** | `Documentation/blazing_sun/Controllers/CONTROLLERS.md` | Understanding API patterns for testing |
+| **API Routes** | `Documentation/blazing_sun/Routes/Api/API_ROUTES.md` | API endpoints to test |
+| **Web Routes** | `Documentation/blazing_sun/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | Database queries to test |
+| **Permissions** | `Documentation/blazing_sun/Permissions/PERMISSIONS.md` | Auth/permission tests |
+| **Events** | `Documentation/blazing_sun/Events/EVENTS.md` | Event publishing tests |
+| **Message Queue** | `Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
 
 ---
 
@@ -136,6 +136,40 @@ async fn test_happy_path() {
     // Assert
     assert_eq!(resp.status(), StatusCode::OK);
 }
+```
+
+---
+
+## Authentication for Testing (CRITICAL)
+
+**Development Testing Credentials:**
+- **Email**: `djmyle@gmail.com`
+- **Password**: `asdqwE123~~`
+
+**IMPORTANT RULES:**
+- ✅ USE these credentials for testing authenticated pages
+- ✅ Login to get JWT token for protected routes
+- ❌ DO NOT modify these credentials
+- ❌ DO NOT change the password
+- ℹ️ These are development-only credentials, NOT for production
+
+### Testing Protected Pages
+
+When testing pages that require authentication (e.g., `/admin/uploads`):
+
+1. **Login first** to get JWT token
+2. **Then navigate** to protected page
+3. **Take screenshots** at different viewport sizes
+
+```typescript
+test.beforeEach(async ({ page }) => {
+    // Login to get JWT
+    await page.goto('https://localhost/sign-in');
+    await page.fill('[name="email"]', 'djmyle@gmail.com');
+    await page.fill('[name="password"]', 'asdqwE123~~');
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/dashboard|profile|admin/); // Wait for redirect after login
+});
 ```
 
 ---

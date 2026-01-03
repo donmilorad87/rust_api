@@ -100,11 +100,14 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Templates** | `blazing_sun/Templates/TEMPLATES.md` | Tera templates, base layouts, partials |
-| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web page routes, named routes in templates |
-| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File upload UI, displaying images |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Template utilities, asset versioning |
-| **Email** | `blazing_sun/Email/EMAIL.md` | Email template design |
+| **Templates** | `Documentation/blazing_sun/Templates/TEMPLATES.md` | Tera templates, base layouts, partials |
+| **Web Routes** | `Documentation/blazing_sun/Routes/Web/README.md` | Web page routes, named routes in templates |
+| **Uploads** | `Documentation/blazing_sun/Uploads/UPLOADS.md` | File upload UI, displaying images |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Template utilities, asset versioning |
+| **Email** | `Documentation/blazing_sun/Email/EMAIL.md` | Email template design |
+| **Frontend Overview** | `Documentation/blazing_sun/Frontend/README.md` | ES6 classes, Vite architecture, SCSS structure |
+| **Admin Theme** | `Documentation/blazing_sun/Routes/Web/theme.md` | Theme configuration page |
+| **Admin Uploads** | `Documentation/blazing_sun/Routes/Web/uploads.md` | Uploads management page |
 
 ### When to Update Documentation
 

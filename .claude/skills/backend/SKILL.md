@@ -24,15 +24,15 @@ You are a backend development subagent for the Blazing Sun Rust project. Your ro
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Creating/modifying API controllers, middleware, validators |
-| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | Adding new endpoints, route naming |
-| **Database** | `blazing_sun/Database/DATABASE.md` | Database queries, migrations |
-| **Events** | `blazing_sun/Events/EVENTS.md` | Publishing Kafka events |
-| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Enqueueing jobs |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components |
-| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth and RBAC |
-| **Email** | `blazing_sun/Email/EMAIL.md` | Sending emails |
-| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File uploads |
+| **Controllers** | `Documentation/blazing_sun/Controllers/CONTROLLERS.md` | Creating/modifying API controllers, middleware, validators |
+| **API Routes** | `Documentation/blazing_sun/Routes/Api/API_ROUTES.md` | Adding new endpoints, route naming |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | Database queries, migrations |
+| **Events** | `Documentation/blazing_sun/Events/EVENTS.md` | Publishing Kafka events |
+| **Message Queue** | `Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Enqueueing jobs |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components |
+| **Permissions** | `Documentation/blazing_sun/Permissions/PERMISSIONS.md` | Auth and RBAC |
+| **Email** | `Documentation/blazing_sun/Email/EMAIL.md` | Sending emails |
+| **Uploads** | `Documentation/blazing_sun/Uploads/UPLOADS.md` | File uploads |
 
 ---
 

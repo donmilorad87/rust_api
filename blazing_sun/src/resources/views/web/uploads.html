@@ -12,17 +12,29 @@
         <header class="uploads-page__header">
             <h1 class="uploads-page__title">Uploads Management</h1>
             <div class="uploads-page__controls">
+                <button id="uploadBtn" class="btn btn--primary" aria-label="Upload files">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span class="btn__text">Upload Files</span>
+                </button>
                 <div class="search-input">
                     <svg class="search-input__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" id="searchInput" class="search-input__field" placeholder="Search uploads..." aria-label="Search uploads">
+                    <input type="text" id="searchInput" class="search-input__field" placeholder="Search by name, title, description or *.ext" aria-label="Search uploads by name, title, description, or file extension (*.jpg, *.png, etc.)">
                 </div>
                 <select id="filterStorage" class="filter-select" aria-label="Filter by storage type">
                     <option value="">All Types</option>
                     <option value="public">Public</option>
                     <option value="private">Private</option>
+                </select>
+                <select id="viewToggle" class="filter-select" aria-label="View mode">
+                    <option value="grid">Grid View</option>
+                    <option value="table">Table View</option>
                 </select>
             </div>
         </header>
@@ -48,10 +60,17 @@
         </div>
         {% endif %}
 
+        {# Grid view container #}
+        <div id="uploadsGrid" class="uploads-grid" style="display: grid;">
+            {# Populated by JavaScript #}
+        </div>
+
+        {# Table view container #}
         <div class="table-container">
             <table class="uploads-table" role="grid" aria-label="Uploads table">
                 <thead class="uploads-table__head">
                     <tr>
+                        <th class="uploads-table__header" scope="col">Preview</th>
                         <th class="uploads-table__header" scope="col">UUID</th>
                         <th class="uploads-table__header" scope="col">File Name</th>
                         <th class="uploads-table__header" scope="col">Type</th>
@@ -66,7 +85,7 @@
                 <tbody id="uploadsTable" class="uploads-table__body">
                     {# Populated by JavaScript #}
                     <tr>
-                        <td colspan="9" class="uploads-table__empty">
+                        <td colspan="10" class="uploads-table__empty">
                             <div class="empty-state">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                                     <circle cx="12" cy="12" r="10"></circle>

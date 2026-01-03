@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM image_variants WHERE upload_id = $1 AND variant_name = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a1ec9df096a59979683e7ba6fd6d1162c84bc15beb474b373355de6d57668c2b"
+}

@@ -24,20 +24,20 @@ You are a documentation writer subagent for the Blazing Sun Rust project. Your r
 
 | Documentation | Path | Purpose |
 |--------------|------|---------|
-| **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Docker services, networking, volumes |
-| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | API controllers, middleware, validators |
-| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | REST API endpoints |
-| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web page routes |
-| **Database** | `blazing_sun/Database/DATABASE.md` | PostgreSQL, migrations, SQLx |
-| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | MongoDB collections |
-| **Events** | `blazing_sun/Events/EVENTS.md` | Kafka event streaming |
-| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ jobs |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components |
-| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth and RBAC |
-| **Email** | `blazing_sun/Email/EMAIL.md` | Email system |
-| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File uploads, storage |
-| **Templates** | `blazing_sun/Templates/TEMPLATES.md` | Tera templates |
-| **Cron Jobs** | `blazing_sun/CronJobs/CRON_JOBS.md` | Scheduled tasks |
+| **Infrastructure** | `Documentation/docker_infrastructure/INFRASTRUCTURE.md` | Docker services, networking, volumes |
+| **Controllers** | `Documentation/blazing_sun/Controllers/CONTROLLERS.md` | API controllers, middleware, validators |
+| **API Routes** | `Documentation/blazing_sun/Routes/Api/API_ROUTES.md` | REST API endpoints |
+| **Web Routes** | `Documentation/blazing_sun/Routes/Web/WEB_ROUTES.md` | Web page routes |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | PostgreSQL, migrations, SQLx |
+| **MongoDB** | `Documentation/blazing_sun/MongoDB/MONGODB.md` | MongoDB collections |
+| **Events** | `Documentation/blazing_sun/Events/EVENTS.md` | Kafka event streaming |
+| **Message Queue** | `Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | RabbitMQ jobs |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components |
+| **Permissions** | `Documentation/blazing_sun/Permissions/PERMISSIONS.md` | Auth and RBAC |
+| **Email** | `Documentation/blazing_sun/Email/EMAIL.md` | Email system |
+| **Uploads** | `Documentation/blazing_sun/Uploads/UPLOADS.md` | File uploads, storage |
+| **Templates** | `Documentation/blazing_sun/Templates/TEMPLATES.md` | Tera templates |
+| **Cron Jobs** | `Documentation/blazing_sun/CronJobs/CRON_JOBS.md` | Scheduled tasks |
 
 ### Your Documentation Responsibilities
 

@@ -22,7 +22,7 @@
                         <img
                             id="avatarImage"
                             class="avatar__image"
-                            src="{{ user.avatar_url }}"
+                            src="{{ user.avatar_url | safe }}"
                             alt="Profile picture"
                         >
                         <div id="avatarPlaceholder" class="avatar__placeholder hidden">
@@ -162,18 +162,23 @@
 
                     <!-- Step Indicators -->
                     <div class="email-steps">
-                        <div class="email-step email-step--active">
+                        <div class="email-step email-step--active" data-step="1">
                             <span class="email-step__number">1</span>
                             <span class="email-step__label">New Email</span>
                         </div>
                         <div class="email-step__connector"></div>
-                        <div class="email-step">
+                        <div class="email-step" data-step="2">
                             <span class="email-step__number">2</span>
-                            <span class="email-step__label">Verify</span>
+                            <span class="email-step__label">Verify Old</span>
                         </div>
                         <div class="email-step__connector"></div>
-                        <div class="email-step">
+                        <div class="email-step" data-step="3">
                             <span class="email-step__number">3</span>
+                            <span class="email-step__label">Verify New</span>
+                        </div>
+                        <div class="email-step__connector"></div>
+                        <div class="email-step" data-step="4">
+                            <span class="email-step__number">4</span>
                             <span class="email-step__label">Done</span>
                         </div>
                     </div>
@@ -193,52 +198,82 @@
                                     aria-required="true"
                                     placeholder="Enter your new email"
                                 >
-                                <small class="form-group__hint">We'll send a verification code to this email</small>
+                                <small class="form-group__hint">We'll send a verification code to your current email first</small>
                             </div>
                             <button type="submit" id="sendEmailCodeBtn" class="btn btn--primary btn--full mt3">
-                                Send Verification Code
+                                Request Email Change
                             </button>
                         </form>
                     </div>
 
-                    <!-- Step 2: Verify Code -->
+                    <!-- Step 2: Verify Old Email -->
                     <div id="emailStep2" class="hidden">
                         <div class="message-box message-box--info">
-                            <p>A verification code has been sent to your new email address. Please check your inbox and enter the code below.</p>
+                            <p><strong>Step 1 of 2:</strong> A verification code has been sent to your current email address (<span id="currentEmailDisplay"></span>). Please check your inbox and enter the code below.</p>
                         </div>
-                        <form id="verifyEmailForm" aria-label="Verify email change">
+                        <form id="verifyOldEmailForm" aria-label="Verify old email">
                             <div class="form-group">
-                                <label class="form-group__label" for="email_code">Verification Code</label>
+                                <label class="form-group__label" for="old_email_code">Verification Code (Old Email)</label>
                                 <input
                                     type="text"
-                                    id="email_code"
-                                    name="email_code"
+                                    id="old_email_code"
+                                    name="old_email_code"
                                     class="form-group__input tc"
                                     required
-                                    maxlength="20"
-                                    placeholder="Enter 20 character code"
+                                    maxlength="32"
+                                    placeholder="Enter code from old email"
                                     autocomplete="one-time-code"
                                     aria-required="true"
                                 >
                             </div>
-                            <button type="submit" id="verifyEmailBtn" class="btn btn--primary btn--full mt3">
-                                Verify & Change Email
+                            <button type="submit" id="verifyOldEmailBtn" class="btn btn--primary btn--full mt3">
+                                Verify Old Email
+                            </button>
+                            <button type="button" class="btn btn--secondary btn--full mt2" data-action="cancel">
+                                Cancel
                             </button>
                         </form>
                     </div>
 
-                    <!-- Step 3: Success -->
+                    <!-- Step 3: Verify New Email -->
                     <div id="emailStep3" class="hidden">
+                        <div class="message-box message-box--info">
+                            <p><strong>Step 2 of 2:</strong> A verification code has been sent to your new email address (<span id="newEmailDisplay"></span>). Please check your inbox and enter the code below.</p>
+                        </div>
+                        <form id="verifyNewEmailForm" aria-label="Verify new email">
+                            <div class="form-group">
+                                <label class="form-group__label" for="new_email_code">Verification Code (New Email)</label>
+                                <input
+                                    type="text"
+                                    id="new_email_code"
+                                    name="new_email_code"
+                                    class="form-group__input tc"
+                                    required
+                                    maxlength="32"
+                                    placeholder="Enter code from new email"
+                                    autocomplete="one-time-code"
+                                    aria-required="true"
+                                >
+                            </div>
+                            <button type="submit" id="verifyNewEmailBtn" class="btn btn--primary btn--full mt3">
+                                Complete Email Change
+                            </button>
+                            <button type="button" class="btn btn--secondary btn--full mt2" data-action="cancel">
+                                Cancel
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Step 4: Success -->
+                    <div id="emailStep4" class="hidden">
                         <div class="message-box message-box--success tc">
                             <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 1rem; display: block;">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <h3 class="fw600 mb2">Email Changed Successfully!</h3>
-                            <p>Your email has been updated. You will now receive notifications at your new email address.</p>
+                            <p>Your email has been updated. You've been signed out for security. Please sign in with your new email address.</p>
+                            <p class="mt2"><small>Redirecting to sign in page in <span id="redirectCountdown">5</span> seconds...</small></p>
                         </div>
-                        <button type="button" class="btn btn--secondary btn--full mt3" data-action="start-over">
-                            Change Email Again
-                        </button>
                     </div>
                 </article>
             </section>

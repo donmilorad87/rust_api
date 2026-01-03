@@ -72,6 +72,11 @@
         "ordinal": 13,
         "name": "permissions",
         "type_info": "Int2"
+      },
+      {
+        "ordinal": 14,
+        "name": "avatar_id",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -94,7 +99,8 @@
       false,
       false,
       true,
-      false
+      false,
+      true
     ]
   },
   "hash": "2bd82f8a859d3ed17e30a787f40b64f535da9912c4bb7337f5d4ee228bda6128"

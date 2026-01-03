@@ -18,7 +18,11 @@ pub struct SiteConfig {
     pub identity_color_end: String,
     pub identity_size: String,
     pub logo_uuid: Option<Uuid>,
+    pub logo_id: Option<i64>,  // NEW: ID-based logo reference (replaces logo_uuid)
+    pub logo_storage_type: Option<String>,  // Storage type from uploads table
     pub favicon_uuid: Option<Uuid>,
+    pub favicon_id: Option<i64>,  // NEW: ID-based favicon reference (replaces favicon_uuid)
+    pub favicon_storage_type: Option<String>,  // Storage type from uploads table
     // Theme variables
     pub scss_variables: serde_json::Value,
     pub theme_light: serde_json::Value,
@@ -63,31 +67,37 @@ impl BuildStatus {
     }
 }
 
-/// Get the singleton site configuration
-/// Since there's only ever one row, we just fetch it directly
+/// Get the singleton site configuration with storage types
+/// JOINs with uploads table to get logo and favicon storage types
 pub async fn get(db: &Pool<Postgres>) -> Result<SiteConfig, sqlx::Error> {
     sqlx::query_as!(
         SiteConfig,
         r#"
         SELECT
-            id,
-            site_name,
-            show_site_name,
-            identity_color_start,
-            identity_color_end,
-            identity_size,
-            logo_uuid,
-            favicon_uuid,
-            scss_variables,
-            theme_light,
-            theme_dark,
-            last_build_at,
-            last_build_status,
-            last_build_error,
-            assets_version,
-            created_at,
-            updated_at
-        FROM site_config
+            sc.id,
+            sc.site_name,
+            sc.show_site_name,
+            sc.identity_color_start,
+            sc.identity_color_end,
+            sc.identity_size,
+            sc.logo_uuid,
+            sc.logo_id,
+            logo_upload.storage_type as "logo_storage_type?",
+            sc.favicon_uuid,
+            sc.favicon_id,
+            favicon_upload.storage_type as "favicon_storage_type?",
+            sc.scss_variables,
+            sc.theme_light,
+            sc.theme_dark,
+            sc.last_build_at,
+            sc.last_build_status,
+            sc.last_build_error,
+            sc.assets_version,
+            sc.created_at,
+            sc.updated_at
+        FROM site_config sc
+        LEFT JOIN uploads logo_upload ON sc.logo_uuid = logo_upload.uuid
+        LEFT JOIN uploads favicon_upload ON sc.favicon_uuid = favicon_upload.uuid
         LIMIT 1
         "#
     )
@@ -122,9 +132,13 @@ pub async fn get_branding(db: &Pool<Postgres>) -> Result<BrandingInfo, sqlx::Err
             sc.identity_color_end,
             sc.identity_size,
             sc.logo_uuid,
+            sc.logo_id,
             sc.favicon_uuid,
-            logo_upload.stored_name as logo_stored_name,
-            favicon_upload.stored_name as favicon_stored_name
+            sc.favicon_id,
+            logo_upload.stored_name as "logo_stored_name?",
+            favicon_upload.stored_name as "favicon_stored_name?",
+            logo_upload.storage_type as "logo_storage_type?",
+            favicon_upload.storage_type as "favicon_storage_type?"
         FROM site_config sc
         LEFT JOIN uploads logo_upload ON sc.logo_uuid = logo_upload.uuid
         LEFT JOIN uploads favicon_upload ON sc.favicon_uuid = favicon_upload.uuid
@@ -135,7 +149,7 @@ pub async fn get_branding(db: &Pool<Postgres>) -> Result<BrandingInfo, sqlx::Err
     .await
 }
 
-/// Branding info subset with stored filenames for public URL generation
+/// Branding info subset with stored filenames and storage types for URL generation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrandingInfo {
     pub site_name: String,
@@ -144,9 +158,13 @@ pub struct BrandingInfo {
     pub identity_color_end: String,
     pub identity_size: String,
     pub logo_uuid: Option<Uuid>,
+    pub logo_id: Option<i64>,  // NEW: ID-based logo reference
     pub favicon_uuid: Option<Uuid>,
+    pub favicon_id: Option<i64>,  // NEW: ID-based favicon reference
     pub logo_stored_name: Option<String>,
     pub favicon_stored_name: Option<String>,
+    pub logo_storage_type: Option<String>,
+    pub favicon_storage_type: Option<String>,
 }
 
 /// Get current assets version

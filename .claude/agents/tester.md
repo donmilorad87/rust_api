@@ -3,8 +3,7 @@ name: tester
 description: Unit and integration testing with TDD. Use for writing tests, test coverage, and test reports.
 tools: Read, Glob, Grep, Edit, Bash, Write
 model: inherit
-skill: tester
-color: teal
+color: pink
 ---
 
 # Tester Subagent
@@ -41,13 +40,13 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Understanding API handler patterns for testing |
-| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | API endpoints, request/response formats |
-| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
-| **Database** | `blazing_sun/Database/DATABASE.md` | Database queries to test |
-| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Auth/permission tests |
-| **Events** | `blazing_sun/Events/EVENTS.md` | Event publishing tests |
-| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
+| **Controllers** | `Documentation/blazing_sun/Controllers/CONTROLLERS.md` | Understanding API handler patterns for testing |
+| **API Routes** | `Documentation/blazing_sun/Routes/Api/API_ROUTES.md` | API endpoints, request/response formats |
+| **Web Routes** | `Documentation/blazing_sun/Routes/Web/WEB_ROUTES.md` | Web pages for Playwright tests |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | Database queries to test |
+| **Permissions** | `Documentation/blazing_sun/Permissions/PERMISSIONS.md` | Auth/permission tests |
+| **Events** | `Documentation/blazing_sun/Events/EVENTS.md` | Event publishing tests |
+| **Message Queue** | `Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Job processing tests |
 
 ### Test Location Reference
 

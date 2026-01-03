@@ -101,7 +101,7 @@ async fn test_sign_in() {
     let req = test::TestRequest::post()
         .uri("/api/v1/auth/sign-in")
         .set_json(SignInRequest {
-            email: "miler@piler.com".to_string(),
+            email: "djmyle@gmail.com".to_string(),
             password: "asdqwE123~~".to_string(),
         })
         .to_request();
@@ -180,10 +180,10 @@ async fn test_sign_in() {
     ));
 
     // Email matches
-    let email_pass = response.user.email == "miler@piler.com";
+    let email_pass = response.user.email == "djmyle@gmail.com";
     results.push(TestResult::new(
         "Email Match",
-        "miler@piler.com",
+        "djmyle@gmail.com",
         &response.user.email,
         email_pass,
     ));

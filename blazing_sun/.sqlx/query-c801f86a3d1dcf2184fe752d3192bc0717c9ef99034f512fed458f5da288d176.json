@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE galleries SET cover_image_id = $1, cover_image_uuid = $2 WHERE id = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c801f86a3d1dcf2184fe752d3192bc0717c9ef99034f512fed458f5da288d176"
+}

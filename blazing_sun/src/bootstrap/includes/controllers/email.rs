@@ -40,6 +40,9 @@ pub enum EmailTemplate {
     PasswordChange,
     ActivationSuccess,
     PasswordResetSuccess,
+    EmailChangeVerifyOld,
+    EmailChangeVerifyNew,
+    EmailChangeSuccess,
 }
 
 impl EmailTemplate {
@@ -52,6 +55,9 @@ impl EmailTemplate {
             EmailTemplate::PasswordChange => "password_change.html",
             EmailTemplate::ActivationSuccess => "activation_success.html",
             EmailTemplate::PasswordResetSuccess => "password_reset_success.html",
+            EmailTemplate::EmailChangeVerifyOld => "email_change_verify_old.html",
+            EmailTemplate::EmailChangeVerifyNew => "email_change_verify_new.html",
+            EmailTemplate::EmailChangeSuccess => "email_change_success.html",
         }
     }
 
@@ -64,6 +70,9 @@ impl EmailTemplate {
             EmailTemplate::PasswordChange => "Password Change Request",
             EmailTemplate::ActivationSuccess => "Account Activated Successfully",
             EmailTemplate::PasswordResetSuccess => "Password Changed Successfully",
+            EmailTemplate::EmailChangeVerifyOld => "Verify Your Email Change",
+            EmailTemplate::EmailChangeVerifyNew => "Confirm Your New Email Address",
+            EmailTemplate::EmailChangeSuccess => "Email Changed Successfully",
         }
     }
 }

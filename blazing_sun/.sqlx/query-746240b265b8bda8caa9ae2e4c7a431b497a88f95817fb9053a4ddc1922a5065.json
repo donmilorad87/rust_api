@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM activation_hashes\n        WHERE user_id = $1\n          AND hash_type = $2\n          AND used = 0\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "746240b265b8bda8caa9ae2e4c7a431b497a88f95817fb9053a4ddc1922a5065"
+}

@@ -1,0 +1,15 @@
+/**
+ * GALLERIES Page Main Stylesheet
+ *
+ * Entry point for all GALLERIES page styles
+ */
+
+// Import partials
+@import 'variables';
+@import 'galleries';
+@import 'modals';
+
+// Global resets and base styles specific to galleries page
+* {
+  box-sizing: border-box;
+}

@@ -148,6 +148,18 @@ pub async fn update_password(db: &Pool<Postgres>, user_id: i64, password: &str) 
     Ok(())
 }
 
+/// Update user email address (for email change flows with verification)
+pub async fn update_email(db: &Pool<Postgres>, user_id: i64, new_email: &str) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2",
+        new_email,
+        user_id
+    )
+    .execute(db)
+    .await?;
+    Ok(())
+}
+
 /// Set user activated flag
 pub async fn set_activated(db: &Pool<Postgres>, user_id: i64, activated: i16) -> Result<(), sqlx::Error> {
     sqlx::query!(
@@ -191,11 +203,20 @@ pub async fn delete(db: &Pool<Postgres>, user_id: i64) -> Result<bool, sqlx::Err
     Ok(result.rows_affected() > 0)
 }
 
-/// Update user's avatar
-pub async fn update_avatar(db: &Pool<Postgres>, user_id: i64, avatar_uuid: Option<Uuid>) -> Result<(), sqlx::Error> {
+/// Update user's avatar (both UUID and ID references)
+///
+/// Sets both avatar_uuid (legacy) and avatar_id (new ID-based reference).
+/// Pass None for both to clear avatar.
+pub async fn update_avatar(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    avatar_uuid: Option<Uuid>,
+    avatar_id: Option<i64>,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
-        "UPDATE users SET avatar_uuid = $1, updated_at = NOW() WHERE id = $2",
+        "UPDATE users SET avatar_uuid = $1, avatar_id = $2, updated_at = NOW() WHERE id = $3",
         avatar_uuid,
+        avatar_id,
         user_id
     )
     .execute(db)

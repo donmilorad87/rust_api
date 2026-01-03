@@ -17,10 +17,11 @@ import { UploadsPage } from './UploadsPage.js';
 function initPage() {
   // Get required elements
   const uploadsTable = document.getElementById('uploadsTable');
+  const uploadsGrid = document.getElementById('uploadsGrid');
   const pagination = document.getElementById('pagination');
 
   // Check if elements exist
-  if (!uploadsTable) {
+  if (!uploadsTable || !uploadsGrid) {
     console.error('UploadsPage: Required DOM elements not found');
     return;
   }
@@ -35,6 +36,7 @@ function initPage() {
   const uploadsController = new UploadsPage({
     baseUrl,
     uploadsTable,
+    uploadsGrid,
     pagination,
     showToast
   });

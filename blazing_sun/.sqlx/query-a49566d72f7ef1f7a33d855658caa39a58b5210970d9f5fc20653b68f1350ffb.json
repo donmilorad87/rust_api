@@ -1,0 +1,114 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            p.id,\n            p.gallery_id,\n            p.upload_id,\n            p.title,\n            p.description,\n            p.display_order,\n            p.created_at,\n            p.updated_at,\n            u.uuid as upload_uuid,\n            u.stored_name as upload_stored_name,\n            u.original_name as upload_original_name,\n            u.storage_type as upload_storage_type,\n            u.mime_type as upload_mime_type,\n            u.size_bytes as upload_size_bytes,\n            u.title as upload_title,\n            u.description as upload_description\n        FROM pictures p\n        INNER JOIN uploads u ON p.upload_id = u.id\n        WHERE p.gallery_id = $1\n        ORDER BY p.display_order ASC, p.created_at DESC\n        LIMIT $2 OFFSET $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "gallery_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "upload_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "upload_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "upload_stored_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "upload_original_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "upload_storage_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "upload_mime_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "upload_size_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 14,
+        "name": "upload_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 15,
+        "name": "upload_description",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "a49566d72f7ef1f7a33d855658caa39a58b5210970d9f5fc20653b68f1350ffb"
+}

@@ -10,7 +10,7 @@ use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use tracing::info;
+use tracing::{info, warn};
 use uuid::Uuid;
 
 /// Storage configuration (loaded from .env)
@@ -296,17 +296,47 @@ pub async fn save_file_with_subfolder(
 }
 
 /// Delete a file from storage
+/// Checks multiple possible locations to handle storage type migration edge cases
 pub async fn delete_file(storage_path: &str) -> Result<bool, UploadError> {
     let config = &*STORAGE_CONFIG;
     let full_path = config.base_path.join(storage_path);
 
+    // Try the primary path first
     if full_path.exists() {
         fs::remove_file(&full_path).await?;
         info!("File deleted: {}", storage_path);
-        Ok(true)
-    } else {
-        Ok(false)
+        return Ok(true);
     }
+
+    // If not found, check alternative locations (handle stale database paths)
+    // This handles cases where storage_type was changed but path wasn't updated
+    let path = std::path::Path::new(storage_path);
+    if let Some(filename) = path.file_name() {
+        let filename_str = filename.to_string_lossy();
+
+        // Build alternative paths to check
+        let alternative_paths = vec![
+            format!("public/{}", filename_str),
+            format!("private/{}", filename_str),
+            format!("private/profile-pictures/{}", filename_str),
+        ];
+
+        for alt_path in alternative_paths {
+            if alt_path == storage_path {
+                continue; // Skip if it's the same as the primary path
+            }
+
+            let alt_full_path = config.base_path.join(&alt_path);
+            if alt_full_path.exists() {
+                fs::remove_file(&alt_full_path).await?;
+                info!("File deleted from alternative location: {} (original path was {})", alt_path, storage_path);
+                return Ok(true);
+            }
+        }
+    }
+
+    warn!("File not found at any location: {}", storage_path);
+    Ok(false)
 }
 
 /// Get full file path from storage path
@@ -316,10 +346,48 @@ pub fn get_full_path(storage_path: &str) -> PathBuf {
 }
 
 /// Read file from storage
+/// Checks multiple possible locations to handle storage type migration edge cases
 pub async fn read_file(storage_path: &str) -> Result<Vec<u8>, UploadError> {
-    let full_path = get_full_path(storage_path);
-    let data = fs::read(&full_path).await?;
-    Ok(data)
+    let config = &*STORAGE_CONFIG;
+    let full_path = config.base_path.join(storage_path);
+
+    // Try the primary path first
+    if full_path.exists() {
+        let data = fs::read(&full_path).await?;
+        return Ok(data);
+    }
+
+    // If not found, check alternative locations (handle stale database paths)
+    let path = std::path::Path::new(storage_path);
+    if let Some(filename) = path.file_name() {
+        let filename_str = filename.to_string_lossy();
+
+        // Build alternative paths to check
+        let alternative_paths = vec![
+            format!("public/{}", filename_str),
+            format!("private/{}", filename_str),
+            format!("private/profile-pictures/{}", filename_str),
+        ];
+
+        for alt_path in alternative_paths {
+            if alt_path == storage_path {
+                continue; // Skip if it's the same as the primary path
+            }
+
+            let alt_full_path = config.base_path.join(&alt_path);
+            if alt_full_path.exists() {
+                info!("File read from alternative location: {} (original path was {})", alt_path, storage_path);
+                let data = fs::read(&alt_full_path).await?;
+                return Ok(data);
+            }
+        }
+    }
+
+    // File not found at any location, return error
+    Err(UploadError::from(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        format!("File not found at any location: {}", storage_path),
+    )))
 }
 
 /// Check if file exists

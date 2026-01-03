@@ -21,11 +21,16 @@ use uuid::Uuid;
 
 use crate::app::http::api::controllers::auth::Claims;
 use crate::app::http::api::controllers::responses::BaseResponse;
+use crate::app::mq::jobs::resize_image::ResizeImageParams;
+use crate::app::db_query::read::image_variant;
 use crate::bootstrap::includes::controllers::uploads::{self, chunked, StorageType};
+use crate::bootstrap::includes::image::is_supported_image;
+use crate::bootstrap::mq::{self, JobOptions};
 use crate::database::mutations::upload as db_upload_mutations;
 use crate::database::mutations::user as db_user_mutations;
 use crate::database::read::upload as db_upload_read;
 use crate::database::AppState;
+use crate::config::upload::UploadConfig;
 
 /// Upload Controller
 pub struct UploadController;
@@ -214,14 +219,71 @@ impl UploadController {
             storage_type: storage_type.as_str().to_string(),
             storage_path: result.storage_path.clone(),
             user_id: Some(user_id),
+            title: None,
             description: None,
         };
 
-        if let Err(e) = db_upload_mutations::create(&db, &params).await {
-            // Try to delete the file if database insert fails
-            let _ = uploads::delete_file(&result.storage_path).await;
-            return HttpResponse::InternalServerError()
-                .json(error_response(format!("Database error: {}", e)));
+        let upload_id = match db_upload_mutations::create(&db, &params).await {
+            Ok(id) => id,
+            Err(e) => {
+                // Try to delete the file if database insert fails
+                let _ = uploads::delete_file(&result.storage_path).await;
+                return HttpResponse::InternalServerError()
+                    .json(error_response(format!("Database error: {}", e)));
+            }
+        };
+
+        // Enqueue image resizing job for supported formats
+        if is_supported_image(&result.extension) {
+            if let Some(mq) = &state.mq {
+                // Build absolute file path for image processor
+                // storage_path in DB is relative (e.g., "public/filename.jpg")
+                // UPLOAD_STORAGE_PATH contains full path (e.g., "src/storage/app")
+                let storage_base = UploadConfig::storage_path();
+                let full_file_path = format!("{}/{}", storage_base, result.storage_path);
+
+                tracing::info!("Enqueueing resize job: storage_base={}, storage_path={}, full_file_path={}",
+                    storage_base, result.storage_path, full_file_path);
+
+                let resize_params = ResizeImageParams {
+                    upload_id,
+                    upload_uuid: result.uuid.to_string(),
+                    stored_name: result.stored_name.clone(),
+                    extension: result.extension.clone(),
+                    storage_type: storage_type.as_str().to_string(),
+                    file_path: full_file_path,
+                };
+
+                let options = JobOptions::new()
+                    .priority(5)
+                    .fault_tolerance(3);
+
+                if let Err(e) = mq::enqueue_job_dyn(
+                    mq,
+                    "resize_image",
+                    &resize_params,
+                    options,
+                )
+                .await
+                {
+                    tracing::warn!(
+                        "Failed to enqueue resize job for upload {}: {}",
+                        upload_id,
+                        e
+                    );
+                } else {
+                    tracing::info!(
+                        "Enqueued resize job for upload {} ({})",
+                        upload_id,
+                        result.original_name
+                    );
+                }
+            } else {
+                tracing::warn!(
+                    "Message queue not available, skipping resize for upload {}",
+                    upload_id
+                );
+            }
         }
 
         // Build URL
@@ -230,7 +292,9 @@ impl UploadController {
         HttpResponse::Created().json(serde_json::json!({
             "status": "success",
             "message": "File uploaded successfully",
+            "id": upload_id,
             "upload": {
+                "id": upload_id,
                 "uuid": result.uuid.to_string(),
                 "original_name": result.original_name,
                 "extension": result.extension,
@@ -322,27 +386,84 @@ impl UploadController {
                                 storage_type: storage_type.as_str().to_string(),
                                 storage_path: result.storage_path.clone(),
                                 user_id: Some(user_id),
+                                title: None,
                                 description: None,
                             };
 
-                            if db_upload_mutations::create(&db, &params).await.is_ok() {
-                                let url = Self::build_url(&result.uuid, storage_type);
-                                successful_uploads.push(UploadDto {
-                                    uuid: result.uuid.to_string(),
-                                    original_name: result.original_name,
-                                    extension: result.extension,
-                                    mime_type: result.mime_type,
-                                    size_bytes: result.size_bytes as i64,
-                                    storage_type: storage_type.as_str().to_string(),
-                                    url,
-                                    created_at: chrono::Utc::now().to_rfc3339(),
-                                });
-                            } else {
-                                let _ = uploads::delete_file(&result.storage_path).await;
-                                failed_uploads.push(FailedUpload {
-                                    filename,
-                                    error: "Database error".to_string(),
-                                });
+                            match db_upload_mutations::create(&db, &params).await {
+                                Ok(upload_id) => {
+                                    let url = Self::build_url(&result.uuid, storage_type);
+                                    successful_uploads.push(UploadDto {
+                                        uuid: result.uuid.to_string(),
+                                        original_name: result.original_name.clone(),
+                                        extension: result.extension.clone(),
+                                        mime_type: result.mime_type,
+                                        size_bytes: result.size_bytes as i64,
+                                        storage_type: storage_type.as_str().to_string(),
+                                        url,
+                                        created_at: chrono::Utc::now().to_rfc3339(),
+                                    });
+
+                                    // Enqueue image resizing job for supported formats
+                                    if is_supported_image(&result.extension) {
+                                        if let Some(mq) = &state.mq {
+                                            // Build absolute file path for image processor
+                                            // storage_path in DB is relative (e.g., "public/filename.jpg")
+                                            // UPLOAD_STORAGE_PATH contains full path (e.g., "src/storage/app")
+                                            let storage_base = UploadConfig::storage_path();
+                                            let full_file_path = format!("{}/{}", storage_base, result.storage_path);
+
+                                            tracing::info!("Enqueueing resize job (multiple): storage_base={}, storage_path={}, full_file_path={}",
+                                                storage_base, result.storage_path, full_file_path);
+
+                                            let resize_params = ResizeImageParams {
+                                                upload_id,
+                                                upload_uuid: result.uuid.to_string(),
+                                                stored_name: result.stored_name.clone(),
+                                                extension: result.extension.clone(),
+                                                storage_type: storage_type.as_str().to_string(),
+                                                file_path: full_file_path,
+                                            };
+
+                                            let options = JobOptions::new()
+                                                .priority(5)
+                                                .fault_tolerance(3);
+
+                                            if let Err(e) = mq::enqueue_job_dyn(
+                                                mq,
+                                                "resize_image",
+                                                &resize_params,
+                                                options,
+                                            )
+                                            .await
+                                            {
+                                                tracing::warn!(
+                                                    "Failed to enqueue resize job for upload {}: {}",
+                                                    upload_id,
+                                                    e
+                                                );
+                                            } else {
+                                                tracing::info!(
+                                                    "Enqueued resize job for upload {} ({})",
+                                                    upload_id,
+                                                    result.original_name
+                                                );
+                                            }
+                                        } else {
+                                            tracing::warn!(
+                                                "Message queue not available, skipping resize for upload {}",
+                                                upload_id
+                                            );
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    let _ = uploads::delete_file(&result.storage_path).await;
+                                    failed_uploads.push(FailedUpload {
+                                        filename,
+                                        error: "Database error".to_string(),
+                                    });
+                                }
                             }
                         }
                         Err(e) => {
@@ -374,6 +495,7 @@ impl UploadController {
     pub async fn download_public(
         state: web::Data<AppState>,
         path: web::Path<String>,
+        query: web::Query<std::collections::HashMap<String, String>>,
     ) -> HttpResponse {
         let uuid_str = path.into_inner();
         let uuid = match Uuid::parse_str(&uuid_str) {
@@ -393,12 +515,67 @@ impl UploadController {
             }
         };
 
+        // Check if a variant is requested (e.g., ?variant=thumb)
+        let storage_path = if let Some(variant_name) = query.get("variant") {
+            // Try to get the variant from database
+            match image_variant::get_variant(&db, upload.id, variant_name).await {
+                Ok(variant) => {
+                    // Use the variant's storage path
+                    // Extract full path by replacing the original filename with variant filename
+                    let original_path = std::path::Path::new(&upload.storage_path);
+                    if let Some(parent) = original_path.parent() {
+                        parent.join(&variant.stored_name).to_string_lossy().to_string()
+                    } else {
+                        variant.storage_path
+                    }
+                }
+                Err(_) => {
+                    // Variant not found, fallback to original
+                    tracing::warn!(
+                        "Variant '{}' not found for upload {}, serving original",
+                        variant_name,
+                        upload.id
+                    );
+                    upload.storage_path.clone()
+                }
+            }
+        } else {
+            upload.storage_path.clone()
+        };
+
         // Read file
-        let data = match uploads::read_file(&upload.storage_path).await {
+        let data = match uploads::read_file(&storage_path).await {
             Ok(d) => d,
             Err(_) => {
-                return HttpResponse::InternalServerError()
-                    .json(BaseResponse::error("Failed to read file"));
+                // If original file doesn't exist, try to serve a variant (e.g., _medium)
+                tracing::warn!("Original file not found at {}, trying variant", storage_path);
+
+                // Try common variants in order of preference: medium, large, small, thumb
+                let variants_to_try = vec!["_medium", "_large", "_small", "_thumb"];
+                let mut found_data = None;
+
+                for variant_suffix in variants_to_try {
+                    // Insert variant suffix before file extension
+                    let path_with_variant = if let Some(dot_pos) = storage_path.rfind('.') {
+                        format!("{}{}{}", &storage_path[..dot_pos], variant_suffix, &storage_path[dot_pos..])
+                    } else {
+                        format!("{}{}", storage_path, variant_suffix)
+                    };
+
+                    if let Ok(variant_data) = uploads::read_file(&path_with_variant).await {
+                        tracing::info!("Serving variant: {}", path_with_variant);
+                        found_data = Some(variant_data);
+                        break;
+                    }
+                }
+
+                match found_data {
+                    Some(d) => d,
+                    None => {
+                        return HttpResponse::InternalServerError()
+                            .json(BaseResponse::error("Failed to read file"));
+                    }
+                }
             }
         };
 
@@ -415,10 +592,13 @@ impl UploadController {
     /// This endpoint supports both:
     /// - Authorization: Bearer <token> header (for API calls)
     /// - auth_token cookie (for browser requests like <img src="...">)
+    /// Query parameters:
+    /// - variant: Optional image variant (thumb, small, medium, large, full)
     pub async fn download_private(
         state: web::Data<AppState>,
         req: HttpRequest,
         path: web::Path<String>,
+        query: web::Query<std::collections::HashMap<String, String>>,
     ) -> HttpResponse {
         // Use cookie fallback for browser requests (e.g., <img src="...">)
         let user_id = match get_user_id_with_cookie_fallback(&req, &state) {
@@ -444,8 +624,36 @@ impl UploadController {
             }
         };
 
+        // Check if a variant is requested (e.g., ?variant=thumb)
+        let storage_path = if let Some(variant_name) = query.get("variant") {
+            // Try to get the variant from database
+            match image_variant::get_variant(&db, upload.id, variant_name).await {
+                Ok(variant) => {
+                    // Use the variant's storage path
+                    // Extract full path by replacing the original filename with variant filename
+                    let original_path = std::path::Path::new(&upload.storage_path);
+                    if let Some(parent) = original_path.parent() {
+                        parent.join(&variant.stored_name).to_string_lossy().to_string()
+                    } else {
+                        variant.storage_path
+                    }
+                }
+                Err(_) => {
+                    // Variant not found, fallback to original
+                    tracing::warn!(
+                        "Variant '{}' not found for upload {}, serving original",
+                        variant_name,
+                        upload.id
+                    );
+                    upload.storage_path.clone()
+                }
+            }
+        } else {
+            upload.storage_path.clone()
+        };
+
         // Read file
-        let data = match uploads::read_file(&upload.storage_path).await {
+        let data = match uploads::read_file(&storage_path).await {
             Ok(d) => d,
             Err(_) => {
                 return HttpResponse::InternalServerError()
@@ -502,12 +710,47 @@ impl UploadController {
                 .json(BaseResponse::error("You don't have permission to delete this file"));
         }
 
+        // Check if this upload is used as logo or favicon in site_config
+        // If so, clear those references before deleting
+        if let Ok(site_config) = crate::app::db_query::read::site_config::get(&db).await {
+            use crate::app::db_query::mutations::site_config as site_config_mutations;
+
+            if site_config.logo_uuid == Some(uuid) {
+                tracing::info!("Clearing logo reference from site_config (upload being deleted)");
+                if let Err(e) = site_config_mutations::update_logo(&db, None).await {
+                    tracing::warn!("Failed to clear logo reference: {}", e);
+                }
+            }
+
+            if site_config.favicon_uuid == Some(uuid) {
+                tracing::info!("Clearing favicon reference from site_config (upload being deleted)");
+                if let Err(e) = site_config_mutations::update_favicon(&db, None).await {
+                    tracing::warn!("Failed to clear favicon reference: {}", e);
+                }
+            }
+        }
+
         // Delete from storage
         if let Err(e) = uploads::delete_file(&upload.storage_path).await {
             tracing::warn!("Failed to delete file from storage: {}", e);
         }
 
-        // Delete from database
+        // Delete all image variants (files and database records)
+        if let Ok(variants) = image_variant::get_by_upload_id(&db, upload.id).await {
+            for variant in variants {
+                // Delete variant file from storage
+                if let Err(e) = uploads::delete_file(&variant.storage_path).await {
+                    tracing::warn!(
+                        "Failed to delete variant file {} from storage: {}",
+                        variant.storage_path,
+                        e
+                    );
+                }
+            }
+            tracing::info!("Deleted variant files for upload_id={}", upload.id);
+        }
+
+        // Delete from database (CASCADE will delete variant records)
         if let Err(e) = db_upload_mutations::delete_by_uuid(&db, &uuid).await {
             return HttpResponse::InternalServerError()
                 .json(error_response(format!("Database error: {}", e)));
@@ -640,6 +883,7 @@ impl UploadController {
             storage_type: result.storage_type.as_str().to_string(),
             storage_path: result.storage_path.clone(),
             user_id: Some(user_id),
+            title: None,
             description: None,
         };
 
@@ -845,19 +1089,51 @@ impl UploadController {
             storage_type: "private".to_string(),
             storage_path: result.storage_path.clone(),
             user_id: Some(user_id),
+            title: None,
             description: Some("profile-picture".to_string()), // Mark as profile picture
         };
 
-        if let Err(e) = db_upload_mutations::create(&db, &upload_params).await {
-            // Try to delete the file if database insert fails
-            let _ = uploads::delete_file(&result.storage_path).await;
-            return HttpResponse::InternalServerError()
-                .json(error_response(format!("Database error: {}", e)));
+        let upload_id = match db_upload_mutations::create(&db, &upload_params).await {
+            Ok(id) => id,
+            Err(e) => {
+                // Try to delete the file if database insert fails
+                let _ = uploads::delete_file(&result.storage_path).await;
+                return HttpResponse::InternalServerError()
+                    .json(error_response(format!("Database error: {}", e)));
+            }
+        };
+
+        // Enqueue image resizing job for supported formats
+        if is_supported_image(&result.extension) {
+            if let Some(mq) = &state.mq {
+                // Build absolute file path for image processor
+                // storage_path in DB is relative (e.g., "private/profile-pictures/filename.jpg")
+                // UPLOAD_STORAGE_PATH contains full path (e.g., "src/storage/app")
+                let storage_base = UploadConfig::storage_path();
+                let full_file_path = format!("{}/{}", storage_base, result.storage_path);
+
+                tracing::info!("Enqueueing resize job for avatar: storage_base={}, storage_path={}, full_file_path={}",
+                    storage_base, result.storage_path, full_file_path);
+
+                let resize_params = ResizeImageParams {
+                    upload_id,
+                    upload_uuid: result.uuid.to_string(),
+                    stored_name: result.stored_name.clone(),
+                    extension: result.extension.clone(),
+                    storage_type: "private".to_string(),
+                    file_path: full_file_path,
+                };
+
+                let options = JobOptions::new().priority(1).fault_tolerance(3);
+                if let Err(e) = mq::enqueue_job_dyn(mq, "resize_image", &resize_params, options).await {
+                    tracing::warn!("Failed to enqueue resize_image job for avatar: {}", e);
+                }
+            }
         }
 
-        // Update user's avatar_uuid
-        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, Some(result.uuid)).await {
-            tracing::warn!("Failed to update user avatar_uuid: {}", e);
+        // Update user's avatar (both UUID and ID)
+        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, Some(result.uuid), Some(upload_id)).await {
+            tracing::warn!("Failed to update user avatar: {}", e);
             // Don't fail the request - upload was created successfully
         }
 
@@ -912,25 +1188,60 @@ impl UploadController {
             Ok(u) => u,
             Err(_) => {
                 // Avatar UUID exists but upload doesn't - clear the reference
-                let _ = db_user_mutations::update_avatar(&db, user_id, None).await;
+                let _ = db_user_mutations::update_avatar(&db, user_id, None, None).await;
                 return HttpResponse::Ok()
                     .json(BaseResponse::success("Profile picture reference cleared"));
             }
         };
+
+        // Check if this upload is used as logo or favicon in site_config
+        // If so, clear those references before deleting
+        if let Ok(site_config) = crate::app::db_query::read::site_config::get(&db).await {
+            use crate::app::db_query::mutations::site_config as site_config_mutations;
+
+            if site_config.logo_uuid == Some(avatar_uuid) {
+                tracing::info!("Clearing logo reference from site_config (avatar being deleted)");
+                if let Err(e) = site_config_mutations::update_logo(&db, None).await {
+                    tracing::warn!("Failed to clear logo reference: {}", e);
+                }
+            }
+
+            if site_config.favicon_uuid == Some(avatar_uuid) {
+                tracing::info!("Clearing favicon reference from site_config (avatar being deleted)");
+                if let Err(e) = site_config_mutations::update_favicon(&db, None).await {
+                    tracing::warn!("Failed to clear favicon reference: {}", e);
+                }
+            }
+        }
 
         // Delete file from storage
         if let Err(e) = uploads::delete_file(&upload.storage_path).await {
             tracing::warn!("Failed to delete avatar file from storage: {}", e);
         }
 
-        // Delete upload record by UUID
+        // Delete all image variants (files and database records)
+        if let Ok(variants) = image_variant::get_by_upload_id(&db, upload.id).await {
+            for variant in variants {
+                // Delete variant file from storage
+                if let Err(e) = uploads::delete_file(&variant.storage_path).await {
+                    tracing::warn!(
+                        "Failed to delete variant file {} from storage: {}",
+                        variant.storage_path,
+                        e
+                    );
+                }
+            }
+            tracing::info!("Deleted variant files for upload_id={}", upload.id);
+        }
+
+        // Delete upload record by UUID (CASCADE will delete variant records)
         if let Err(e) = db_upload_mutations::delete_by_uuid(&db, &avatar_uuid).await {
             tracing::warn!("Failed to delete upload record: {}", e);
         }
 
-        // Clear user's avatar_uuid (CASCADE should handle this, but be explicit)
-        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, None).await {
-            tracing::warn!("Failed to clear user avatar_uuid: {}", e);
+        // Clear user's avatar (both UUID and ID)
+        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, None, None).await {
+            tracing::warn!("Failed to clear user avatar: {}", e);
         }
 
         HttpResponse::Ok().json(BaseResponse::success("Profile picture deleted successfully"))
@@ -938,18 +1249,18 @@ impl UploadController {
 
     /// GET /api/v1/avatar/{uuid} - Get profile picture from uploads table (auth required)
     /// User can only access their own avatar
+    /// Supports both JWT header and cookie authentication (for <img> tags)
+    /// Supports variant query parameter: ?variant=thumb|small|medium|large|full
     pub async fn get_avatar(
         req: HttpRequest,
         state: web::Data<AppState>,
         path: web::Path<String>,
+        query: web::Query<std::collections::HashMap<String, String>>,
     ) -> HttpResponse {
-        // Extract user_id from JWT (auth middleware)
-        let user_id = match req.extensions().get::<i64>() {
-            Some(id) => *id,
-            None => {
-                return HttpResponse::Unauthorized()
-                    .json(BaseResponse::error("Authentication required"));
-            }
+        // Use cookie fallback for browser requests (e.g., <img src="...">)
+        let user_id = match get_user_id_with_cookie_fallback(&req, &state) {
+            Ok(id) => id,
+            Err(response) => return response,
         };
 
         let uuid_str = path.into_inner();
@@ -981,12 +1292,61 @@ impl UploadController {
                 .json(BaseResponse::error("Access denied"));
         }
 
-        // Read file from storage
-        let data = match uploads::read_file(&upload.storage_path).await {
+        // Check if a variant is requested (e.g., ?variant=thumb)
+        let storage_path = if let Some(variant_name) = query.get("variant") {
+            // Try to get the variant from database
+            match image_variant::get_variant(&db, upload.id, variant_name).await {
+                Ok(variant) => {
+                    // Use the variant's storage path
+                    variant.storage_path
+                }
+                Err(_) => {
+                    // Variant not found, fallback to original
+                    tracing::warn!(
+                        "Variant '{}' not found for avatar {}, serving original",
+                        variant_name,
+                        upload.id
+                    );
+                    upload.storage_path.clone()
+                }
+            }
+        } else {
+            upload.storage_path.clone()
+        };
+
+        // Read file from storage with fallback to variants if original doesn't exist
+        let data = match uploads::read_file(&storage_path).await {
             Ok(d) => d,
             Err(_) => {
-                return HttpResponse::InternalServerError()
-                    .json(BaseResponse::error("Failed to read file"));
+                // If original file doesn't exist, try to serve a variant (e.g., _medium)
+                tracing::warn!("Original avatar file not found at {}, trying variant", storage_path);
+
+                // Try common variants in order of preference: medium, large, small, thumb
+                let variants_to_try = vec!["_medium", "_large", "_small", "_thumb"];
+                let mut found_data = None;
+
+                for variant_suffix in variants_to_try {
+                    // Insert variant suffix before file extension
+                    let path_with_variant = if let Some(dot_pos) = storage_path.rfind('.') {
+                        format!("{}{}{}", &storage_path[..dot_pos], variant_suffix, &storage_path[dot_pos..])
+                    } else {
+                        format!("{}{}", storage_path, variant_suffix)
+                    };
+
+                    if let Ok(variant_data) = uploads::read_file(&path_with_variant).await {
+                        tracing::info!("Serving avatar variant: {}", path_with_variant);
+                        found_data = Some(variant_data);
+                        break;
+                    }
+                }
+
+                match found_data {
+                    Some(d) => d,
+                    None => {
+                        return HttpResponse::InternalServerError()
+                            .json(BaseResponse::error("Failed to read file"));
+                    }
+                }
             }
         };
 

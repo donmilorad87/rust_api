@@ -3,8 +3,7 @@ name: security-review
 description: Security auditing and vulnerability assessment. Use for OWASP compliance, code review, and security reports.
 tools: Read, Glob, Grep, Bash
 model: inherit
-skill: security-review
-color: red
+color: yellow
 ---
 
 # Security Subagent
@@ -41,12 +40,12 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Auth middleware, validators, request handling |
-| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | RBAC, permission checks, protected routes |
-| **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Container security, network isolation |
-| **Database** | `blazing_sun/Database/DATABASE.md` | SQL injection prevention, query safety |
-| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File upload security, validation |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Security headers, CORS config |
+| **Controllers** | `Documentation/blazing_sun/Controllers/CONTROLLERS.md` | Auth middleware, validators, request handling |
+| **Permissions** | `Documentation/blazing_sun/Permissions/PERMISSIONS.md` | RBAC, permission checks, protected routes |
+| **Infrastructure** | `Documentation/docker_infrastructure/INFRASTRUCTURE.md` | Container security, network isolation |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | SQL injection prevention, query safety |
+| **Uploads** | `Documentation/blazing_sun/Uploads/UPLOADS.md` | File upload security, validation |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Security headers, CORS config |
 
 ### Security Documentation Updates
 

@@ -57,6 +57,11 @@ server {
     # Advertise HTTP/3 support to clients
     add_header Alt-Svc 'h3=":443"; ma=86400' always;
 
+    # Allow large file uploads (match application config: 100MB + buffer)
+    client_max_body_size 150M;
+    client_body_buffer_size 128k;
+    client_body_timeout 300s;
+
     # ===================
     # Strip trailing slash (redirect /path/ to /path)
     # Excludes: root /, service paths (rabbitmq, prometheus, grafana, kafka, pgadmin, mongo, api, storage, assets)

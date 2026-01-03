@@ -621,7 +621,7 @@ test.describe('Forgot Password Page - Auth Redirect', () => {
     await page.goto('/sign-in');
     await page.waitForLoadState('networkidle');
 
-    await page.fill('#email', 'miler@piler.com');
+    await page.fill('#email', 'djmyle@gmail.com');
     await page.fill('#password', 'asdqwE123~~');
     await page.click('#signinBtn');
 

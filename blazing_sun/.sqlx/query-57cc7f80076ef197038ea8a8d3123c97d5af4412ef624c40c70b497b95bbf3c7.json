@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO activation_hashes\n            (user_id, hash, hash_type, expiry_time, metadata, used, created_at)\n        VALUES\n            ($1, $2, $3, $4, $5, 0, NOW())\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Varchar",
+        "Varchar",
+        "Timestamptz",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "57cc7f80076ef197038ea8a8d3123c97d5af4412ef624c40c70b497b95bbf3c7"
+}

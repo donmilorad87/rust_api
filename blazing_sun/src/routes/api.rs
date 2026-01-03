@@ -9,6 +9,8 @@ use actix_web::{middleware::from_fn, web};
 use crate::app::http::api::controllers::activation::ActivationController;
 use crate::app::http::api::controllers::admin::AdminController;
 use crate::app::http::api::controllers::auth::AuthController;
+use crate::app::http::api::controllers::email::EmailController;
+use crate::app::http::api::controllers::{gallery, picture};
 use crate::app::http::api::controllers::theme::ThemeController;
 use crate::app::http::api::controllers::upload::UploadController;
 use crate::app::http::api::controllers::user::UserController;
@@ -74,6 +76,26 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route(
                 "/verify-password-change",
                 web::post().to(ActivationController::verify_and_change_password),
+            ),
+    );
+
+    // ============================================
+    // Email Change Routes (Protected - requires JWT)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/email")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route(
+                "/request-change",
+                web::post().to(EmailController::request_change),
+            )
+            .route(
+                "/verify-old-email",
+                web::post().to(EmailController::verify_old_email),
+            )
+            .route(
+                "/verify-new-email",
+                web::post().to(EmailController::verify_new_email),
             ),
     );
 
@@ -178,6 +200,26 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route("/build/status", web::get().to(ThemeController::build_status)),
     );
 
+    // ============================================
+    // Gallery Routes (Protected - requires JWT)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/galleries")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(gallery::get_user_galleries))
+            .route("", web::post().to(gallery::create_gallery))
+            .route("/reorder", web::post().to(gallery::reorder_galleries))
+            .route("/{id}", web::get().to(gallery::get_gallery))
+            .route("/{id}", web::put().to(gallery::update_gallery))
+            .route("/{id}", web::delete().to(gallery::delete_gallery))
+            // Picture routes within gallery
+            .route("/{id}/pictures", web::get().to(picture::get_gallery_pictures))
+            .route("/{id}/pictures", web::post().to(picture::add_picture))
+            .route("/{id}/pictures/reorder", web::post().to(picture::reorder_pictures))
+            .route("/{gallery_id}/pictures/{picture_id}", web::put().to(picture::update_picture))
+            .route("/{gallery_id}/pictures/{picture_id}", web::delete().to(picture::remove_picture)),
+    );
+
     // SEO routes (Admin+ permission = 10 or 100)
     // NOTE: Actix middleware order is REVERSED - last .wrap() runs first!
     cfg.service(
@@ -219,6 +261,10 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .wrap(from_fn(require_permission(levels::ADMIN))) // Runs second (checks permissions)
             .wrap(from_fn(middleware::auth::verify_jwt))      // Runs first (extracts permissions)
             .route("/uploads", web::get().to(AdminController::list_uploads))
+            .route(
+                "/uploads/{uuid}/metadata",
+                web::patch().to(AdminController::update_upload_metadata),
+            )
             .route("/assets", web::get().to(AdminController::list_assets))
             .route(
                 "/users/{id}/avatar",
@@ -259,6 +305,21 @@ fn register_route_names() {
     route!("user.avatar", "/api/v1/user/avatar");
     route!("user.delete", "/api/v1/user/{id}");
 
+    // Gallery routes
+    route!("galleries.list", "/api/v1/galleries");
+    route!("galleries.create", "/api/v1/galleries");
+    route!("galleries.reorder", "/api/v1/galleries/reorder");
+    route!("galleries.show", "/api/v1/galleries/{id}");
+    route!("galleries.update", "/api/v1/galleries/{id}");
+    route!("galleries.delete", "/api/v1/galleries/{id}");
+
+    // Picture routes
+    route!("pictures.list", "/api/v1/galleries/{id}/pictures");
+    route!("pictures.add", "/api/v1/galleries/{id}/pictures");
+    route!("pictures.reorder", "/api/v1/galleries/{id}/pictures/reorder");
+    route!("pictures.update", "/api/v1/galleries/{gallery_id}/pictures/{picture_id}");
+    route!("pictures.remove", "/api/v1/galleries/{gallery_id}/pictures/{picture_id}");
+
     // Upload routes (all require auth except public download)
     route!("upload.public", "/api/v1/upload/public");
     route!("upload.private", "/api/v1/upload/private");
@@ -290,6 +351,10 @@ fn register_route_names() {
 
     // Admin routes (permission protected)
     route!("admin.uploads", "/api/v1/admin/uploads");
+    route!(
+        "admin.uploads.update_metadata",
+        "/api/v1/admin/uploads/{uuid}/metadata"
+    );
     route!("admin.assets", "/api/v1/admin/assets");
     route!("admin.users", "/api/v1/admin/users");
     route!("admin.delete_user_avatar", "/api/v1/admin/users/{id}/avatar");

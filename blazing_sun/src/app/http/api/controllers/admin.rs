@@ -49,6 +49,8 @@ pub struct AdminUploadDto {
     pub storage_path: String,
     pub upload_status: String,
     pub user_id: Option<i64>,
+    pub title: Option<String>,
+    pub description: Option<String>,
     pub created_at: String,
 }
 
@@ -134,6 +136,8 @@ impl AdminController {
                 storage_path: u.storage_path,
                 user_id: u.user_id,
                 upload_status: u.upload_status,
+                title: u.title,
+                description: u.description,
                 created_at: u.created_at.to_rfc3339(),
             })
             .collect();
@@ -269,8 +273,8 @@ impl AdminController {
             }
         }
 
-        // Clear user's avatar_uuid
-        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, None).await {
+        // Clear user's avatar (both UUID and ID)
+        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, None, None).await {
             return HttpResponse::InternalServerError()
                 .json(BaseResponse::error("Failed to clear user avatar"));
         }
@@ -310,10 +314,274 @@ impl AdminController {
             }
         }
     }
+
+    /// PATCH /api/v1/admin/uploads/{uuid}/metadata - Update upload metadata (Admin+)
+    pub async fn update_upload_metadata(
+        state: web::Data<AppState>,
+        path: web::Path<String>,
+        body: web::Json<UpdateUploadMetadataRequest>,
+    ) -> HttpResponse {
+        let uuid_str = path.into_inner();
+
+        // Parse UUID
+        let uuid = match uuid::Uuid::parse_str(&uuid_str) {
+            Ok(u) => u,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(BaseResponse::error("Invalid UUID format"));
+            }
+        };
+
+        let db = state.db.lock().await;
+
+        // Verify upload exists
+        let upload = match db_upload_read::get_by_uuid(&db, &uuid).await {
+            Ok(u) => u,
+            Err(_) => {
+                return HttpResponse::NotFound().json(BaseResponse::error("Upload not found"));
+            }
+        };
+
+        // Check if storage_type is being changed
+        let storage_type_changed = body.storage_type.is_some()
+            && body.storage_type.as_deref() != Some(&upload.storage_type);
+
+        // If storage type changed, move files
+        let new_storage_path = if storage_type_changed {
+            let new_storage_type = body.storage_type.as_ref().unwrap();
+
+            tracing::info!(
+                "Storage type changing from {} to {} for upload {}",
+                upload.storage_type,
+                new_storage_type,
+                upload.uuid
+            );
+
+            // Calculate new storage path
+            let stored_name = &upload.stored_name;
+            let mut actual_stored_name = stored_name.clone();
+            let mut new_path = if new_storage_type == "private" {
+                // Moving to private - determine subfolder based on description
+                if upload.description.as_deref() == Some("profile-picture") {
+                    format!("private/profile-pictures/{}", stored_name)
+                } else {
+                    format!("private/{}", stored_name)
+                }
+            } else {
+                // Moving to public - always flat structure
+                format!("public/{}", stored_name)
+            };
+
+            // Move the main file
+            use crate::bootstrap::includes::controllers::uploads;
+            let storage_base = crate::config::upload::UploadConfig::storage_path();
+            let mut old_full_path = std::path::PathBuf::from(storage_base).join(&upload.storage_path);
+            let mut new_full_path = std::path::PathBuf::from(storage_base).join(&new_path);
+
+            tracing::info!("Attempting to move: {:?} -> {:?}", old_full_path, new_full_path);
+
+            // Check if file exists at database path, if not search alternative locations
+            if !old_full_path.exists() {
+                tracing::warn!("File not found at database path: {:?}, checking alternative locations", old_full_path);
+
+                // Check alternative locations
+                if let Some(filename) = std::path::Path::new(&upload.storage_path).file_name() {
+                    let filename_str = filename.to_string_lossy();
+
+                    // Build list of alternative paths to check
+                    let mut alternative_paths = vec![
+                        format!("public/{}", filename_str),
+                        format!("private/{}", filename_str),
+                        format!("private/profile-pictures/{}", filename_str),
+                    ];
+
+                    // Also check for _full variant (used when original file is replaced by variants)
+                    let filename_string: String = filename_str.to_string();
+                    if let Some(stem) = std::path::Path::new(&filename_string).file_stem() {
+                        if let Some(ext) = std::path::Path::new(&filename_string).extension() {
+                            let stem_str = stem.to_string_lossy();
+                            let ext_str = ext.to_string_lossy();
+                            let full_variant = format!("{}_full.{}", stem_str, ext_str);
+                            alternative_paths.push(format!("public/{}", full_variant));
+                            alternative_paths.push(format!("private/{}", full_variant));
+                            alternative_paths.push(format!("private/profile-pictures/{}", full_variant));
+                        }
+                    }
+
+                    let mut found = false;
+                    for alt_path in alternative_paths {
+                        let alt_full_path = std::path::PathBuf::from(storage_base).join(&alt_path);
+                        if alt_full_path.exists() {
+                            tracing::info!("Found file at alternative location: {:?}", alt_full_path);
+                            old_full_path = alt_full_path;
+
+                            // Extract the actual filename from the alternative path
+                            if let Some(alt_filename) = std::path::Path::new(&alt_path).file_name() {
+                                actual_stored_name = alt_filename.to_string_lossy().to_string();
+                                tracing::info!("Updated stored_name to actual file: {}", actual_stored_name);
+
+                                // Recalculate new_path with the actual filename
+                                new_path = if new_storage_type == "private" {
+                                    if upload.description.as_deref() == Some("profile-picture") {
+                                        format!("private/profile-pictures/{}", actual_stored_name)
+                                    } else {
+                                        format!("private/{}", actual_stored_name)
+                                    }
+                                } else {
+                                    format!("public/{}", actual_stored_name)
+                                };
+                                new_full_path = std::path::PathBuf::from(storage_base).join(&new_path);
+                                tracing::info!("Recalculated destination path: {:?}", new_full_path);
+                            }
+
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if !found {
+                        tracing::error!("Source file does not exist at any location. Database path: {:?}", upload.storage_path);
+                        return HttpResponse::InternalServerError()
+                            .json(BaseResponse::error("Source file not found at any location - cannot migrate storage type"));
+                    }
+                } else {
+                    tracing::error!("Could not extract filename from storage_path: {}", upload.storage_path);
+                    return HttpResponse::InternalServerError()
+                        .json(BaseResponse::error("Invalid storage path"));
+                }
+            }
+
+            // Create parent directory for new path
+            if let Some(parent) = new_full_path.parent() {
+                if let Err(e) = tokio::fs::create_dir_all(parent).await {
+                    tracing::error!("Failed to create directory for moved file: {}", e);
+                    return HttpResponse::InternalServerError()
+                        .json(BaseResponse::error("Failed to create destination directory"));
+                }
+            }
+
+            // Move the file
+            if let Err(e) = tokio::fs::rename(&old_full_path, &new_full_path).await {
+                tracing::error!("Failed to move file from {:?} to {:?}: {}", old_full_path, new_full_path, e);
+                return HttpResponse::InternalServerError()
+                    .json(BaseResponse::error("Failed to move file - check server logs for details"));
+            }
+            tracing::info!("Successfully moved main file from {:?} to {:?}", old_full_path, new_full_path);
+
+            // Move all variant files
+            use crate::app::db_query::read::image_variant;
+            use crate::app::db_query::mutations::image_variant as image_variant_mutations;
+
+            if let Ok(variants) = image_variant::get_by_upload_id(&db, upload.id).await {
+                let variant_count = variants.len();
+                tracing::info!("Moving {} variant files", variant_count);
+
+                for variant in variants {
+                    let mut old_variant_full_path = std::path::PathBuf::from(storage_base).join(&variant.storage_path);
+
+                    // Calculate new variant path
+                    let new_variant_path = if new_storage_type == "private" {
+                        if upload.description.as_deref() == Some("profile-picture") {
+                            format!("private/profile-pictures/{}", variant.stored_name)
+                        } else {
+                            format!("private/{}", variant.stored_name)
+                        }
+                    } else {
+                        format!("public/{}", variant.stored_name)
+                    };
+
+                    let new_variant_full_path = std::path::PathBuf::from(storage_base).join(&new_variant_path);
+
+                    tracing::info!("Moving variant: {:?} -> {:?}", old_variant_full_path, new_variant_full_path);
+
+                    // Check if variant file exists at database path, if not search alternative locations
+                    if !old_variant_full_path.exists() {
+                        tracing::warn!("Variant file not found at database path: {:?}, checking alternatives", old_variant_full_path);
+
+                        // Check alternative locations
+                        if let Some(filename) = std::path::Path::new(&variant.storage_path).file_name() {
+                            let filename_str = filename.to_string_lossy();
+                            let alternative_paths = vec![
+                                format!("public/{}", filename_str),
+                                format!("private/{}", filename_str),
+                                format!("private/profile-pictures/{}", filename_str),
+                            ];
+
+                            let mut found = false;
+                            for alt_path in alternative_paths {
+                                let alt_full_path = std::path::PathBuf::from(storage_base).join(&alt_path);
+                                if alt_full_path.exists() {
+                                    tracing::info!("Found variant file at alternative location: {:?}", alt_full_path);
+                                    old_variant_full_path = alt_full_path;
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if !found {
+                                tracing::warn!("Variant file does not exist at any location: {:?}", variant.storage_path);
+                                continue;
+                            }
+                        } else {
+                            tracing::warn!("Could not extract filename from variant storage_path: {}", variant.storage_path);
+                            continue;
+                        }
+                    }
+
+                    // Move variant file
+                    if let Err(e) = tokio::fs::rename(&old_variant_full_path, &new_variant_full_path).await {
+                        tracing::error!("Failed to move variant file {:?} to {:?}: {}", old_variant_full_path, new_variant_full_path, e);
+                        // Don't fail the whole operation for variant move failure, just log
+                    } else {
+                        tracing::info!("Successfully moved variant {:?}", new_variant_full_path);
+                        // Update variant storage_path in database
+                        if let Err(e) = image_variant_mutations::update_storage_path(&db, variant.id, &new_variant_path).await {
+                            tracing::error!("Failed to update variant storage_path in database: {}", e);
+                        } else {
+                            tracing::info!("Updated variant storage_path in database for variant_id={}", variant.id);
+                        }
+                    }
+                }
+                tracing::info!("Finished moving {} variant files", variant_count);
+            }
+
+            Some(new_path)
+        } else {
+            None
+        };
+
+        // Update metadata
+        use crate::database::mutations::upload as db_upload_mutations;
+        match db_upload_mutations::update_metadata(
+            &db,
+            upload.id,
+            body.title.as_deref(),
+            body.description.as_deref(),
+            body.storage_type.as_deref(),
+            new_storage_path.as_deref(), // Update storage_path if it changed
+            None, // metadata JSON not updated here
+        )
+        .await
+        {
+            Ok(_) => HttpResponse::Ok().json(BaseResponse::success("Upload metadata updated")),
+            Err(e) => {
+                tracing::error!("Failed to update upload metadata: {}", e);
+                HttpResponse::InternalServerError()
+                    .json(BaseResponse::error("Failed to update metadata"))
+            }
+        }
+    }
 }
 
 /// Request to update user permissions
 #[derive(Deserialize)]
 pub struct UpdatePermissionsRequest {
     pub permissions: i16,
+}
+
+/// Request to update upload metadata
+#[derive(Deserialize)]
+pub struct UpdateUploadMetadataRequest {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub storage_type: Option<String>,
 }

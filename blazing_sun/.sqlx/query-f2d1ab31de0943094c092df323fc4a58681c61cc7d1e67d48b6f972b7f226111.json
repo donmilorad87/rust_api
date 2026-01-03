@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE image_variants\n           SET storage_path = $1, updated_at = NOW()\n           WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f2d1ab31de0943094c092df323fc4a58681c61cc7d1e67d48b6f972b7f226111"
+}

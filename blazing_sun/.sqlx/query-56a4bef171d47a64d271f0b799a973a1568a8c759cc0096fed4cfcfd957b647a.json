@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1\n            FROM activation_hashes\n            WHERE user_id = $1\n              AND hash_type = $2\n              AND used = 0\n              AND expiry_time > NOW()\n        ) as \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "56a4bef171d47a64d271f0b799a973a1568a8c759cc0096fed4cfcfd957b647a"
+}

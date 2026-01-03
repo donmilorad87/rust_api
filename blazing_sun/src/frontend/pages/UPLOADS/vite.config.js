@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: false,
       sourcemap: isDev,
       minify: !isDev,
+      cssCodeSplit: false,
       rollupOptions: {
         input: {
           app: resolve(__dirname, 'src/main.js'),

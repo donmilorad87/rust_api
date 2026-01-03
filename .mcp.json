@@ -1,0 +1,61 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--isolated"
+      ],
+      "env": {
+        "PLAYWRIGHT_LAUNCH_OPTIONS": "{\"ignoreHTTPSErrors\":true}",
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "ctx7sk-370431f4-3446-41ae-8ddd-7c0b788ac815"
+      ],
+      "env": {}
+    },
+    "db": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@bytebase/dbhub",
+        "--dsn",
+        "postgres://app:app@127.0.0.1:5432/blazing_sun"
+      ],
+      "env": {}
+    },
+    "figma": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "figma-developer-mcp",
+        "--stdio"
+      ],
+      "env": {
+        "FIGMA_API_KEY": "figd_zZ1DPzmFjBEUmSIqtXTRVkZYgx3Kte7sdftycnIj"
+      }
+    },
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_your_token_here"
+      }
+    }
+  }
+}

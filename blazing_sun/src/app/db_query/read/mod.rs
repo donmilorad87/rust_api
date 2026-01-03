@@ -1,6 +1,10 @@
+pub mod activation_hash;
 pub mod asset;
+pub mod gallery;
+pub mod image_variant;
 pub mod page_schema;
 pub mod page_seo;
+pub mod picture;
 pub mod site_config;
 pub mod upload;
 pub mod user;

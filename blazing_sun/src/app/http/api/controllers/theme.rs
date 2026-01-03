@@ -46,7 +46,9 @@ pub struct ThemeConfigDto {
     pub identity_color_end: String,
     pub identity_size: String,
     pub logo_uuid: Option<String>,
+    pub logo_storage_type: Option<String>,
     pub favicon_uuid: Option<String>,
+    pub favicon_storage_type: Option<String>,
     // Theme variables
     pub scss_variables: Value,
     pub theme_light: Value,
@@ -263,7 +265,9 @@ impl ThemeController {
                     identity_color_end: config.identity_color_end,
                     identity_size: config.identity_size,
                     logo_uuid: config.logo_uuid.map(|u| u.to_string()),
+                    logo_storage_type: config.logo_storage_type,
                     favicon_uuid: config.favicon_uuid.map(|u| u.to_string()),
+                    favicon_storage_type: config.favicon_storage_type,
                     // Theme variables
                     scss_variables: config.scss_variables,
                     theme_light: config.theme_light,

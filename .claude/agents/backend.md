@@ -86,15 +86,15 @@ Before starting any task, read these files:
 
 | Documentation | Path | When to Reference |
 |--------------|------|-------------------|
-| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Creating/modifying API controllers, middleware, validators |
-| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | Adding new endpoints, route naming conventions |
-| **Database** | `blazing_sun/Database/DATABASE.md` | Database queries, migrations, stored procedures |
-| **Events (Kafka)** | `blazing_sun/Events/EVENTS.md` | Publishing events, event types, handlers |
-| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Enqueueing jobs, job processing |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components, AppState |
-| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Role-based access control, auth middleware |
-| **Email** | `blazing_sun/Email/EMAIL.md` | Sending emails, email templates |
-| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | File upload handling, storage drivers |
+| **Controllers** | `Documentation/blazing_sun/Controllers/CONTROLLERS.md` | Creating/modifying API controllers, middleware, validators |
+| **API Routes** | `Documentation/blazing_sun/Routes/API/README.md` | Adding new endpoints, route naming conventions |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | Database queries, migrations, stored procedures |
+| **Events (Kafka)** | `Documentation/blazing_sun/Events/EVENTS.md` | Publishing events, event types, handlers |
+| **Message Queue** | `Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Enqueueing jobs, job processing |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Core framework components, AppState |
+| **Permissions** | `Documentation/blazing_sun/Permissions/PERMISSIONS.md` | Role-based access control, auth middleware |
+| **Email** | `Documentation/blazing_sun/Email/EMAIL.md` | Sending emails, email templates |
+| **Uploads** | `Documentation/blazing_sun/Uploads/UPLOADS.md` | File upload handling, storage drivers |
 
 ### When to Update Documentation
 

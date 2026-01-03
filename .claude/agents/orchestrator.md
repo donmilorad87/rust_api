@@ -3,7 +3,7 @@ name: orchestrator
 description: Coordinate specialized subagents for complex multi-domain tasks. Use for full-stack features requiring backend, frontend, database, and testing.
 tools: Read, Glob, Grep, Task
 model: inherit
-color: orange
+color: cyan
 ---
 
 # Orchestrator - Subagent Coordinator
@@ -32,20 +32,20 @@ You are the **Orchestrator** for the Blazing Sun project. Your role is to coordi
 
 | Documentation | Path | Related Agent |
 |--------------|------|---------------|
-| **Infrastructure** | `docker_infrastructure/INFRASTRUCTURE.md` | Dockerizator |
-| **Controllers** | `blazing_sun/Controllers/CONTROLLERS.md` | Backend |
-| **API Routes** | `blazing_sun/Routes/Api/API_ROUTES.md` | Backend |
-| **Web Routes** | `blazing_sun/Routes/Web/WEB_ROUTES.md` | Frontend |
-| **Database** | `blazing_sun/Database/DATABASE.md` | Database |
-| **MongoDB** | `blazing_sun/MongoDB/MONGODB.md` | Database |
-| **Events** | `blazing_sun/Events/EVENTS.md` | Backend |
-| **Message Queue** | `blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Backend |
-| **Bootstrap** | `blazing_sun/Bootstrap/BOOTSTRAP.md` | Backend |
-| **Permissions** | `blazing_sun/Permissions/PERMISSIONS.md` | Backend, Security |
-| **Email** | `blazing_sun/Email/EMAIL.md` | Backend |
-| **Uploads** | `blazing_sun/Uploads/UPLOADS.md` | Backend, Frontend |
-| **Templates** | `blazing_sun/Templates/TEMPLATES.md` | Frontend |
-| **Cron Jobs** | `blazing_sun/CronJobs/CRON_JOBS.md` | Backend |
+| **Infrastructure** | `Documentation/docker_infrastructure/INFRASTRUCTURE.md` | Dockerizator |
+| **Controllers** | `Documentation/blazing_sun/Controllers/CONTROLLERS.md` | Backend |
+| **API Routes** | `Documentation/blazing_sun/Routes/Api/API_ROUTES.md` | Backend |
+| **Web Routes** | `Documentation/blazing_sun/Routes/Web/WEB_ROUTES.md` | Frontend |
+| **Database** | `Documentation/blazing_sun/Database/DATABASE.md` | Database |
+| **MongoDB** | `Documentation/blazing_sun/MongoDB/MONGODB.md` | Database |
+| **Events** | `Documentation/blazing_sun/Events/EVENTS.md` | Backend |
+| **Message Queue** | `Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md` | Backend |
+| **Bootstrap** | `Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md` | Backend |
+| **Permissions** | `Documentation/blazing_sun/Permissions/PERMISSIONS.md` | Backend, Security |
+| **Email** | `Documentation/blazing_sun/Email/EMAIL.md` | Backend |
+| **Uploads** | `Documentation/blazing_sun/Uploads/UPLOADS.md` | Backend, Frontend |
+| **Templates** | `Documentation/blazing_sun/Templates/TEMPLATES.md` | Frontend |
+| **Cron Jobs** | `Documentation/blazing_sun/CronJobs/CRON_JOBS.md` | Backend |
 
 ### Orchestration with Documentation
 

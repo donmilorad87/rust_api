@@ -1,660 +1,902 @@
-# Blazing Sun Application
+# Blazing Sun - Full-Stack Web Application
 
-A Rust web application for personal finance tracking built with Actix-web, PostgreSQL, and event-driven architecture.
+A production-ready Rust web application featuring authentication, user management, file uploads with image processing, theme configuration, galleries, and SEO management. Built with Actix-web, PostgreSQL, RabbitMQ, and Apache Kafka.
 
-> **Infrastructure docs are in root folder.** See [../README.md](../README.md) for Docker and infrastructure documentation.
-
----
-
-## Tech Stack
-
-| Category       | Technology                                      |
-|----------------|------------------------------------------------|
-| Framework      | Actix-web 4                                    |
-| Database       | PostgreSQL + SQLx (compile-time checked queries)|
-| Queue (Tasks)  | RabbitMQ (lapin)                               |
-| Events         | Apache Kafka (rdkafka)                         |
-| Cache          | Redis                                          |
-| Templates      | Tera                                           |
-| Email          | Lettre (SMTP)                                  |
-| Auth           | JWT (jsonwebtoken) + Bcrypt                    |
-| Validation     | validator crate                                |
-| Logging        | tracing + tracing-subscriber                   |
-| Cron           | tokio-cron-scheduler                           |
-| Async Runtime  | Tokio                                          |
-| File Storage   | Local filesystem (S3-ready architecture)       |
+> **Infrastructure docs are in root folder.** See [../README.md](../README.md) for Docker, Nginx, Kafka, RabbitMQ, and infrastructure documentation.
 
 ---
 
-## Architecture
+## 🚀 Key Features
 
-### Event-Driven Design
+### ✅ Authentication & Authorization
+- JWT-based authentication with HttpOnly cookies
+- Bcrypt password hashing with salt
+- Account activation via email verification
+- Password reset with secure hash codes
+- 4-step email change verification flow
+- Permission-based access control (Basic, Admin, Super Admin)
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         HTTP Request                                 │
-└─────────────────────────────┬───────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Actix-web Handler                               │
-│  1. Validate request                                                 │
-│  2. Execute business logic                                           │
-│  3. Enqueue task (RabbitMQ) → fire-and-forget or wait               │
-│  4. Publish event (Kafka) → async notification                       │
-│  5. Return response                                                  │
-└─────────────────────────────┬───────────────────────────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              │                               │
-              ▼                               ▼
-┌─────────────────────────┐     ┌─────────────────────────┐
-│       RabbitMQ          │     │        Kafka            │
-│    (Task Queue)         │     │    (Event Stream)       │
-│                         │     │                         │
-│  - send_email           │     │  - user.events          │
-│  - create_user          │     │  - auth.events          │
-│  - future tasks...      │     │  - transaction.events   │
-└───────────┬─────────────┘     └───────────┬─────────────┘
-            │                               │
-            ▼                               ▼
-┌─────────────────────────┐     ┌─────────────────────────┐
-│      MQ Workers         │     │    Event Handlers       │
-│  (Process tasks)        │     │  (React to events)      │
-└─────────────────────────┘     └─────────────────────────┘
-```
+### 👤 User Management
+- Full CRUD operations for users
+- Profile editing (first name, last name)
+- Avatar upload with automatic image variants
+- Password change with strength indicator
+- Email change with dual verification
+- Admin user management interface
+- Permission level updates (Super Admin only)
 
-### Dual Messaging Strategy
+### 📁 File Upload System
+- Single and multiple file uploads
+- Chunked upload support (resumable uploads)
+- Image variant generation (thumb, small, medium, large, full)
+- RabbitMQ-based async image processing
+- Public/private storage separation
+- Metadata management (title, description, alt attributes)
+- Admin uploads management interface
+- Lazy loading and responsive images
+- CDN-ready architecture
 
-| System   | Purpose            | Pattern     | Use Cases                           |
-|----------|--------------------| ------------|-------------------------------------|
-| RabbitMQ | Commands/Tasks     | Work Queue  | Emails, user creation, background jobs |
-| Kafka    | Events/Facts       | Pub/Sub     | Audit logs, analytics, notifications   |
+### 🎨 Theme Configuration System
+- Dynamic SCSS compilation from database
+- Light/Dark theme support with CSS custom properties
+- Color management with HSL color picker
+- Typography configuration (fonts, sizes, weights, line-height)
+- Spacing system (margins, padding, gaps)
+- Branding (logo, favicon, site name)
+- Real-time preview before build
+- Versioned asset management
+- Automatic theme backup on changes
+
+### 🖼️ Gallery System
+- Create and manage image galleries
+- Add multiple pictures to galleries
+- Drag-and-drop reordering
+- Per-image metadata (title, description)
+- Image lightbox with navigation
+- Gallery visibility (public/private)
+
+### 🔍 SEO & Structured Data
+- Per-page SEO configuration (title, description, keywords)
+- Open Graph tags for social sharing
+- Canonical URLs and robots directives
+- Schema.org structured data builder
+- 30+ schema types (Organization, Article, Product, Person, Event, FAQ, etc.)
+- JSON-LD format with validation
+
+### 📧 Email System
+- SMTP via Lettre
+- Tera template engine for emails
+- 7 email templates (activation, welcome, password reset, etc.)
+- Async sending via RabbitMQ
+- Email queue with retries and fault tolerance
+
+### 📊 Event-Driven Architecture
+- Apache Kafka event streaming
+- 5 event domains (User, Auth, Transaction, Category, System)
+- Event handlers for audit logging, notifications, analytics
+- Dead-letter queue for failed events
+- Idempotent event processing
+
+### ⚙️ Task Queue (RabbitMQ)
+- Background job processing
+- Email sending jobs
+- User creation jobs
+- Image resizing jobs (5 variants per upload)
+- Priority queues (1-5 levels)
+- Fault tolerance with automatic retries
+- Dead-letter queue for permanent failures
+
+### ⏰ Cron Jobs
+- Scheduled background tasks
+- User counter job
+- Email list generation
+- Easy extensibility via tokio-cron-scheduler
 
 ---
 
-## Folder Structure
+## 🛠️ Tech Stack
+
+| Category | Technology | Version | Purpose |
+|----------|-----------|---------|---------|
+| **Language** | Rust | 1.83+ | Systems programming language |
+| **Framework** | Actix-web | 4.x | High-performance async web framework |
+| **Database** | PostgreSQL | 17 | Primary data store |
+| **Query Builder** | SQLx | 0.8+ | Compile-time checked SQL queries |
+| **Queue (Tasks)** | RabbitMQ | 4.x | Background job processing |
+| **Event Streaming** | Apache Kafka | 3.9+ | Event-driven architecture |
+| **Cache** | Redis | 7.x | Session storage, caching |
+| **Templates** | Tera | 1.x | Server-side rendering |
+| **Email** | Lettre | 0.11+ | SMTP email sending |
+| **Auth** | jsonwebtoken | 9.x | JWT tokens |
+| **Password** | bcrypt | 0.15+ | Password hashing |
+| **Validation** | validator | 0.18+ | Input validation |
+| **Logging** | tracing | 0.1+ | Structured logging |
+| **Cron** | tokio-cron-scheduler | 0.13+ | Scheduled tasks |
+| **Async Runtime** | Tokio | 1.x | Async/await runtime |
+| **Image Processing** | image | 0.25+ | Image resizing and optimization |
+| **SCSS Compiler** | grass | 0.13+ | SCSS → CSS compilation |
+| **Frontend Build** | Vite | 5.4+ | JavaScript/CSS bundler |
+| **CSS Preprocessor** | Sass/SCSS | 1.77+ | CSS with variables |
+| **Frontend JS** | Vanilla ES6 | - | No framework, plain JavaScript classes |
+
+---
+
+## 📂 Project Structure
 
 ```
 blazing_sun/
-├── Cargo.toml                          # Dependencies and project config
-├── Cargo.lock                          # Locked dependency versions
-├── .env                                # App environment variables
-├── .env.example                        # Example env file
+├── Cargo.toml                          # Rust dependencies
+├── .env                                # Environment variables
 ├── CLAUDE.md                           # AI assistant guidance
 ├── README.md                           # This file
 │
-├── migrations/                         # SQLx database migrations
+├── migrations/                         # Database migrations (SQLx)
 │   ├── 20251217202253_create_users_table.sql
-│   ├── 20251217203606_create_categories_table.sql
-│   ├── 20251217204134_create_transactions_table.sql
-│   ├── 20251222231150_add_user_fields_and_activation_hashes.sql
-│   └── 20251224120000_create_uploads_table.sql
-│
-├── .sqlx/                              # Cached query metadata (COMMIT TO GIT)
-│   └── query-*.json                    # SQLx offline mode cache
+│   ├── 20251224120000_create_uploads_table.sql
+│   ├── 20260101220000_create_image_variants_table.sql
+│   ├── 20260102030100_create_galleries_and_pictures.sql
+│   ├── 20251230181208_create_site_config_table.sql
+│   ├── 20251231011123_create_page_seo_table.sql
+│   └── ...
 │
 ├── storage/                            # File storage
 │   └── app/
-│       ├── public/                     # Public files (served by nginx at /storage/)
-│       └── private/                    # Private files (served by API)
+│       ├── public/                     # Public files (CDN/nginx at /storage/)
+│       └── private/                    # Private files (auth required)
+│           ├── profile-pictures/
+│           └── theme_backups/
 │
-├── tests/                              # Integration tests
+├── tests/                              # Integration and E2E tests
+│   ├── routes/
+│   │   ├── api/                        # API integration tests
+│   │   └── web/                        # Playwright E2E tests
+│   ├── scripts/                        # Test helper scripts
+│   └── debug/                          # Debug utilities
 │
 └── src/
     ├── main.rs                         # Application entry point
-    ├── lib.rs                          # Module exports
     │
-    ├── config/                         # Configuration (env vars via once_cell::Lazy)
-    │   ├── mod.rs                      # Re-exports all config modules
-    │   ├── app.rs                      # HOST, PORT, RUST_LOG
-    │   ├── database.rs                 # DATABASE_URL, max_connections
-    │   ├── jwt.rs                      # JWT_SECRET, EXPIRATION_TIME
-    │   ├── redis.rs                    # REDIS_URL
-    │   ├── rabbitmq.rs                 # RABBITMQ_URL
-    │   ├── kafka.rs                    # bootstrap_servers, group_id
+    ├── config/                         # Configuration (env vars)
+    │   ├── app.rs                      # HOST, PORT, RUST_LOG, ASSETS_VERSION
+    │   ├── database.rs                 # DATABASE_URL, pool settings
+    │   ├── jwt.rs                      # JWT_SECRET, expiration
+    │   ├── rabbitmq.rs                 # RabbitMQ connection
+    │   ├── kafka.rs                    # Kafka bootstrap servers
+    │   ├── redis.rs                    # Redis connection
+    │   ├── mongodb.rs                  # MongoDB connection
     │   ├── email.rs                    # SMTP settings
+    │   ├── upload.rs                   # Upload limits and storage
+    │   ├── theme.rs                    # Theme build settings
     │   ├── activation.rs               # Token expiry times
-    │   ├── cron.rs                     # Job schedules
-    │   └── upload.rs                   # Upload settings (max size, types, storage)
+    │   └── cron.rs                     # Cron schedules
     │
-    ├── bootstrap/                      # Core framework components
-    │   ├── mod.rs
-    │   │
-    │   ├── database/                   # Database connection
-    │   │   ├── mod.rs
-    │   │   └── database.rs             # AppState, create_pool()
-    │   │
-    │   ├── events/                     # Kafka Event System
-    │   │   ├── mod.rs                  # EventBus, init(), publish helpers
-    │   │   ├── types.rs                # DomainEvent, EventType, EventMetadata
+    ├── bootstrap/                      # Core framework layer
+    │   ├── database/                   # PostgreSQL connection pool
+    │   ├── events/                     # Kafka event system
+    │   │   ├── types.rs                # DomainEvent, EventType, Metadata
     │   │   ├── topics.rs               # Topic constants
     │   │   ├── producer.rs             # Kafka producer
-    │   │   ├── consumer.rs             # Kafka consumer, EventHandler trait
-    │   │   └── handlers/               # Event handlers (subscribers)
-    │   │       ├── mod.rs
-    │   │       ├── user.rs             # UserEventHandler, UserAuditHandler
-    │   │       └── auth.rs             # AuthEventHandler
-    │   │
-    │   ├── includes/                   # Shared controllers and utilities
-    │   │   ├── mod.rs
+    │   │   ├── consumer.rs             # Kafka consumer
+    │   │   └── handlers/               # Event handlers
+    │   ├── includes/                   # Shared utilities
     │   │   ├── controllers/
-    │   │   │   ├── mod.rs
-    │   │   │   ├── email.rs            # EmailController (SMTP sending)
-    │   │   │   └── uploads.rs          # UploadsController (file handling)
-    │   │   └── storage/                # Storage driver abstraction
-    │   │       ├── mod.rs              # StorageDriver trait, Storage manager
-    │   │       ├── local.rs            # Local filesystem driver
-    │   │       └── s3.rs               # S3 driver (placeholder)
-    │   │
-    │   ├── middleware/                 # HTTP Middleware
-    │   │   ├── mod.rs
+    │   │   │   ├── email.rs            # Email sending controller
+    │   │   │   └── uploads.rs          # Upload handling controller
+    │   │   ├── storage/                # Storage driver abstraction
+    │   │   │   ├── local.rs            # Local filesystem driver
+    │   │   │   └── s3.rs               # S3 driver (future)
+    │   │   ├── theme/                  # Theme build system
+    │   │   │   ├── parser.rs           # Parse SCSS/CSS from DB
+    │   │   │   ├── builder.rs          # Build SCSS files
+    │   │   │   ├── versioner.rs        # Asset versioning
+    │   │   │   └── updater.rs          # Update theme in DB/filesystem
+    │   │   └── image/                  # Image processing
+    │   │       └── processor.rs        # Resize, optimize, variants
+    │   ├── middleware/                 # HTTP middleware
     │   │   └── controllers/
-    │   │       ├── mod.rs
-    │   │       ├── auth.rs             # JwtMiddleware
-    │   │       ├── cors.rs             # CORS configuration
-    │   │       ├── json_error.rs       # JSON error handler
+    │   │       ├── auth.rs             # JWT authentication
+    │   │       ├── permission.rs       # Permission-based authorization
+    │   │       ├── cors.rs             # CORS headers
     │   │       ├── security_headers.rs # Security headers
     │   │       └── tracing_logger.rs   # Request logging
-    │   │
     │   ├── mq/                         # RabbitMQ core
-    │   │   ├── mod.rs
     │   │   └── controller/
-    │   │       ├── mod.rs
-    │   │       └── mq.rs               # MessageQueue, SharedQueue, enqueue functions
-    │   │
+    │   │       └── mq.rs               # MessageQueue, enqueue functions
     │   ├── routes/                     # Route registration
-    │   │   ├── mod.rs
     │   │   └── controller/
-    │   │       ├── mod.rs
-    │   │       ├── api.rs              # API routes registration
-    │   │       └── crons.rs            # Cron jobs registration
-    │   │
+    │   │       ├── api.rs              # API route registration
+    │   │       └── crons.rs            # Cron job registration
     │   └── utility/                    # Utility functions
-    │       ├── mod.rs
-    │       ├── auth.rs                 # Auth utilities (JWT, password)
-    │       └── template.rs             # Template helpers (assets function)
+    │       ├── auth.rs                 # JWT, password hashing
+    │       ├── template.rs             # Template helpers
+    │       └── assets.rs               # Asset URL generation
     │
     ├── app/                            # Application layer
-    │   ├── mod.rs
-    │   │
     │   ├── cron/                       # Cron job implementations
-    │   │   ├── mod.rs
-    │   │   ├── user_counter.rs         # Counts users periodically
-    │   │   └── list_user_emails.rs     # Lists user emails
+    │   │   ├── user_counter.rs
+    │   │   └── list_user_emails.rs
     │   │
     │   ├── db_query/                   # Database queries
-    │   │   ├── mod.rs
     │   │   ├── read/                   # SELECT queries
-    │   │   │   ├── mod.rs
-    │   │   │   ├── user/mod.rs         # User reads
-    │   │   │   └── upload/mod.rs       # Upload reads
+    │   │   │   ├── user/
+    │   │   │   ├── upload/
+    │   │   │   ├── gallery/
+    │   │   │   ├── picture/
+    │   │   │   ├── image_variant/
+    │   │   │   ├── site_config/
+    │   │   │   ├── page_seo/
+    │   │   │   ├── page_schema/
+    │   │   │   └── activation_hash/
     │   │   └── mutations/              # INSERT/UPDATE/DELETE
-    │   │       ├── mod.rs
-    │   │       ├── user/mod.rs         # User mutations
-    │   │       ├── upload/mod.rs       # Upload mutations
-    │   │       └── activation_hash/mod.rs
+    │   │       ├── user/
+    │   │       ├── upload/
+    │   │       ├── gallery/
+    │   │       ├── picture/
+    │   │       ├── image_variant/
+    │   │       ├── site_config/
+    │   │       ├── page_seo/
+    │   │       ├── page_schema/
+    │   │       └── activation_hash/
     │   │
     │   ├── http/                       # HTTP layer
-    │   │   ├── mod.rs
     │   │   ├── api/                    # API endpoints
-    │   │   │   ├── mod.rs
     │   │   │   ├── controllers/
-    │   │   │   │   ├── mod.rs
     │   │   │   │   ├── auth.rs         # Sign up, sign in
     │   │   │   │   ├── user.rs         # User CRUD
+    │   │   │   │   ├── email.rs        # Email change
     │   │   │   │   ├── activation.rs   # Account activation
-    │   │   │   │   ├── upload.rs       # File upload endpoints
-    │   │   │   │   └── responses.rs    # Response types
-    │   │   │   ├── validators/
-    │   │   │   │   ├── mod.rs
-    │   │   │   │   ├── auth.rs         # Auth request validation
-    │   │   │   │   └── user.rs         # User request validation
-    │   │   │   └── middlewares/
-    │   │   │       └── mod.rs
-    │   │   └── web/                    # Web pages (Tera templates)
-    │   │       ├── mod.rs
-    │   │       ├── controllers/
-    │   │       │   ├── mod.rs
-    │   │       │   └── pages.rs        # Page handlers
-    │   │       ├── validators/
-    │   │       │   └── mod.rs
-    │   │       └── middlewares/
-    │   │           └── mod.rs
+    │   │   │   │   ├── upload.rs       # File uploads
+    │   │   │   │   ├── gallery.rs      # Gallery management
+    │   │   │   │   ├── picture.rs      # Picture management
+    │   │   │   │   ├── theme.rs        # Theme configuration
+    │   │   │   │   └── admin.rs        # Admin operations
+    │   │   │   └── validators/
+    │   │   │       ├── auth.rs
+    │   │   │       └── user.rs
+    │   │   └── web/                    # Web pages (SSR)
+    │   │       └── controllers/
+    │   │           └── pages.rs        # All page handlers
     │   │
     │   └── mq/                         # Message queue jobs
-    │       ├── mod.rs
     │       ├── jobs/                   # Job definitions
-    │       │   ├── mod.rs
-    │       │   ├── create_user/mod.rs
-    │       │   └── email/mod.rs
+    │       │   ├── create_user/
+    │       │   ├── email/
+    │       │   └── resize_image/       # Image variant generation
     │       └── workers/                # Job processors
-    │           ├── mod.rs
-    │           ├── create_user/mod.rs
-    │           └── email/mod.rs
+    │           ├── create_user/
+    │           ├── email/
+    │           └── resize_image/       # Worker implementation
     │
     ├── routes/                         # Route definitions
     │   ├── mod.rs                      # Named routes registry
-    │   ├── api.rs                      # API route definitions
-    │   ├── web.rs                      # Web route definitions
-    │   └── crons.rs                    # Cron job definitions
+    │   ├── api.rs                      # 65+ API endpoints
+    │   ├── web.rs                      # 11 web page routes
+    │   └── crons.rs                    # Cron job schedules
     │
-    └── resources/                      # Static resources
-        ├── css/
-        │   └── toastify.min.css
-        ├── js/
-        │   └── toastify.min.js
+    ├── frontend/                       # Frontend source code
+    │   └── pages/                      # Page-specific builds
+    │       ├── GLOBAL/                 # Loaded on all pages
+    │       │   └── src/
+    │       │       ├── js/
+    │       │       │   ├── Navbar.js
+    │       │       │   └── ThemeManager.js
+    │       │       └── styles/
+    │       ├── PROFILE/                # Profile page (27KB JS, 8.5KB CSS)
+    │       │   └── src/
+    │       │       ├── ProfilePage.js
+    │       │       ├── AvatarUpload.js
+    │       │       ├── PasswordChange.js
+    │       │       ├── EmailChange.js
+    │       │       └── main.js
+    │       ├── UPLOADS/                # Admin uploads (33KB JS, 20KB CSS)
+    │       │   └── src/
+    │       │       ├── UploadsPage.js
+    │       │       ├── AssetPreview.js
+    │       │       ├── AssetInfoModal.js
+    │       │       ├── ImageLightbox.js
+    │       │       └── UploadModal.js
+    │       ├── THEME/                  # Theme config (97KB JS, 30KB CSS)
+    │       │   └── src/
+    │       │       ├── ThemeConfig.js
+    │       │       ├── ColorPicker.js
+    │       │       ├── SizePicker.js
+    │       │       ├── SchemaDefinitions.js
+    │       │       └── main.js
+    │       ├── GALLERIES/              # Galleries (31KB JS, 16KB CSS)
+    │       ├── REGISTERED_USERS/       # User management (13KB JS, 6.4KB CSS)
+    │       ├── SIGN_IN/                # Sign in page (3.2KB JS, 3.5KB CSS)
+    │       ├── SIGN_UP/                # Sign up page (5.4KB JS, 7.2KB CSS)
+    │       └── FORGOT_PASSWORD/        # Password reset (15KB JS, 14KB CSS)
+    │
+    └── resources/                      # Build output and static assets
+        ├── css/                        # Compiled CSS
+        │   ├── GLOBAL/style.css
+        │   ├── PROFILE/style.css
+        │   ├── UPLOADS/style.css
+        │   └── ...
+        ├── js/                         # Compiled JavaScript
+        │   ├── GLOBAL/app.js
+        │   ├── PROFILE/app.js
+        │   ├── UPLOADS/app.js
+        │   └── ...
         └── views/
             ├── emails/                 # Email templates (Tera)
             │   ├── base.html
             │   ├── welcome.html
             │   ├── account_activation.html
             │   ├── forgot_password.html
-            │   ├── user_must_set_password.html
             │   ├── password_change.html
             │   ├── activation_success.html
             │   └── password_reset_success.html
             └── web/                    # Web page templates (Tera)
+                ├── base.html
+                ├── homepage.html
+                ├── sign_in.html
+                ├── sign_up.html
+                ├── forgot_password.html
+                ├── profile.html
+                ├── galleries.html
+                ├── uploads.html
+                ├── admin_theme.html
+                ├── registered_users.html
+                ├── 404.html
+                └── partials/
+                    └── _navbar.html
 ```
 
 ---
 
-## Features
+## 🌐 Web Routes
 
-### Authentication & Authorization
-- JWT-based authentication
-- Bcrypt password hashing
-- Account activation via email
-- Password reset flow
-- Configurable token expiration
+### Public Pages (No Authentication)
+- `GET /` - Homepage (different content for logged/guest users)
+- `GET /sign-in` - Sign in page
+- `GET /sign-up` - Registration page
+- `GET /forgot-password` - Password reset request
 
-### User Management
-- Full CRUD operations
-- Partial updates (PATCH)
-- Profile management
-- Balance tracking (stored in cents)
+### Authenticated Pages (Login Required)
+- `GET /profile` - User profile management
+- `GET /galleries` - User galleries
+- `GET /logout` - Logout (clears JWT cookie)
 
-### File Upload System
-- Single and multiple file upload
-- Chunked upload support (resumable)
-- Configurable: max file size, max files, allowed types
-- Public/private file visibility
-- Database tracking of uploads
-- S3-ready architecture (storage driver abstraction)
-- Public files served by nginx at `/storage/`
-- Private files served by API with authentication
+### Admin Pages (Admin Permission = Level 10+)
+- `GET /admin/uploads` - File upload management
+- `GET /admin/theme` - Theme configuration
 
-### Event System (Kafka)
-- Domain events for all mutations
-- User lifecycle events (created, updated, deleted, activated)
-- Auth events (sign_in, sign_in_failed, sign_out)
-- Transaction events
-- Dead letter queue for failed events
-- Configurable event handlers
+### Super Admin Pages (Super Admin = Level 100)
+- `GET /superadmin/users` - User management
 
-### Task Queue (RabbitMQ)
-- Async email sending
-- User creation tasks
-- Priority levels (0-5)
-- Retry with fault tolerance
-- Dead letter queue for failed jobs
-
-### Email System
-- SMTP via Lettre
-- Tera templates
-- Templates: welcome, activation, password reset, etc.
-- Async sending via RabbitMQ
-
-### Cron Jobs
-- Configurable schedules via .env
-- User counter job
-- List user emails job
-- Easy to add new jobs
+### Static Assets
+- `GET /assets/js/*` - JavaScript files
+- `GET /assets/css/*` - CSS files
 
 ---
 
-## API Endpoints
+## 📡 API Endpoints (65+)
 
 ### Authentication (Public)
+- `POST /api/v1/auth/sign-up` - Register new user
+- `POST /api/v1/auth/sign-in` - Login and get JWT token
 
-| Method | Endpoint                          | Description                |
-|--------|-----------------------------------|----------------------------|
-| POST   | `/api/v1/auth/sign-up`            | Register new user          |
-| POST   | `/api/v1/auth/sign-in`            | Login, get JWT token       |
+### Account Activation & Password Reset (Public)
+- `POST /api/v1/account/activate-account` - Activate account with code
+- `POST /api/v1/account/forgot-password` - Request password reset
+- `POST /api/v1/account/verify-hash` - Verify reset hash
+- `POST /api/v1/account/reset-password` - Reset password with hash
 
-### Account (Public)
+### Password Change (JWT Required)
+- `POST /api/v1/password/change-password` - Change password (requires current password)
+- `POST /api/v1/password/verify-password-change` - Verify and change password
 
-| Method | Endpoint                          | Description                |
-|--------|-----------------------------------|----------------------------|
-| POST   | `/api/v1/account/activate-account`| Activate with code         |
-| POST   | `/api/v1/account/forgot-password` | Request reset code         |
-| POST   | `/api/v1/account/reset-password`  | Reset with code            |
+### Email Change (JWT Required - 4-Step Flow)
+- `POST /api/v1/email/request-change` - Step 1: Request email change
+- `POST /api/v1/email/verify-old-email` - Step 2: Verify old email code
+- `POST /api/v1/email/verify-new-email` - Step 3: Verify new email code
 
-### User (Auth Required)
+### User Management (JWT Required)
+- `GET /api/v1/user` - Get current user profile
+- `GET /api/v1/user/{id}` - Get user by ID
+- `PATCH /api/v1/user` - Update profile (partial)
+- `PUT /api/v1/user` - Update profile (full)
+- `PATCH /api/v1/user/avatar` - Update avatar
+- `DELETE /api/v1/user/{id}` - Delete user
 
-| Method | Endpoint                          | Description                |
-|--------|-----------------------------------|----------------------------|
-| GET    | `/api/v1/user`                    | Get current user profile   |
-| PATCH  | `/api/v1/user`                    | Partial update profile     |
-| PUT    | `/api/v1/user`                    | Full update profile        |
-| DELETE | `/api/v1/user/{id}`               | Delete user                |
+### File Uploads
+**Public:**
+- `GET /api/v1/upload/download/public/{uuid}` - Download public file
 
-### File Upload (Auth Required)
+**JWT Required:**
+- `POST /api/v1/upload/public` - Upload public file
+- `POST /api/v1/upload/private` - Upload private file
+- `POST /api/v1/upload/multiple` - Upload multiple files
+- `POST /api/v1/upload/avatar` - Upload avatar (auto-links to user)
+- `GET /api/v1/upload/private/{uuid}` - Download private file
+- `DELETE /api/v1/upload/{uuid}` - Delete upload
+- `GET /api/v1/upload/user` - Get user's uploads
 
-| Method | Endpoint                              | Description                |
-|--------|---------------------------------------|----------------------------|
-| POST   | `/api/v1/upload/single`               | Upload single file         |
-| POST   | `/api/v1/upload/multiple`             | Upload multiple files      |
-| POST   | `/api/v1/upload/chunk/init`           | Initialize chunked upload  |
-| POST   | `/api/v1/upload/chunk/upload`         | Upload chunk               |
-| POST   | `/api/v1/upload/chunk/complete`       | Complete chunked upload    |
-| GET    | `/api/v1/upload/chunk/status/{id}`    | Get upload status          |
-| GET    | `/api/v1/upload/private/{uuid}`       | Download private file      |
-| DELETE | `/api/v1/upload/{uuid}`               | Delete upload              |
+**Chunked Upload (JWT Required):**
+- `POST /api/v1/upload/chunked/start` - Start chunked upload
+- `POST /api/v1/upload/chunked/{uuid}/chunk/{index}` - Upload chunk
+- `POST /api/v1/upload/chunked/{uuid}/complete` - Complete upload
+- `DELETE /api/v1/upload/chunked/{uuid}` - Cancel upload
 
-### File Download (Public)
+### Galleries (JWT Required)
+- `GET /api/v1/galleries` - List user galleries
+- `POST /api/v1/galleries` - Create gallery
+- `GET /api/v1/galleries/{id}` - Get gallery details
+- `PUT /api/v1/galleries/{id}` - Update gallery
+- `DELETE /api/v1/galleries/{id}` - Delete gallery
+- `POST /api/v1/galleries/reorder` - Reorder galleries
 
-| Method | Endpoint                              | Description                |
-|--------|---------------------------------------|----------------------------|
-| GET    | `/api/v1/upload/download/public/{uuid}` | Download public file     |
+**Pictures:**
+- `GET /api/v1/galleries/{id}/pictures` - Get gallery pictures
+- `POST /api/v1/galleries/{id}/pictures` - Add picture to gallery
+- `PUT /api/v1/galleries/{gallery_id}/pictures/{picture_id}` - Update picture metadata
+- `DELETE /api/v1/galleries/{gallery_id}/pictures/{picture_id}` - Remove picture
+- `POST /api/v1/galleries/{id}/pictures/reorder` - Reorder pictures
 
-### Static Files (Public)
+### Theme Configuration (JWT + Admin Permission)
+- `GET /api/v1/admin/theme` - Get theme config
+- `PUT /api/v1/admin/theme` - Update theme config
+- `PUT /api/v1/admin/theme/branding` - Update branding (logo, favicon)
+- `POST /api/v1/admin/theme/build` - Trigger SCSS build
+- `GET /api/v1/admin/theme/build/status` - Check build status
 
-| URL                    | Description                |
-|------------------------|----------------------------|
-| `/storage/{filename}`  | Public files (nginx)       |
+### SEO Management (JWT + Admin Permission)
+- `GET /api/v1/admin/seo` - List all page SEO configs
+- `GET /api/v1/admin/seo/{route_name}` - Get SEO for specific page
+- `PUT /api/v1/admin/seo/{route_name}` - Update SEO
+- `PATCH /api/v1/admin/seo/{route_name}/toggle` - Toggle active status
 
----
+### Schema.org Management (JWT + Admin Permission)
+- `GET /api/v1/admin/seo/page/{id}/schemas` - List page schemas
+- `POST /api/v1/admin/seo/page/{id}/schemas` - Create schema
+- `GET /api/v1/admin/seo/schema/{id}` - Get schema by ID
+- `PUT /api/v1/admin/seo/schema/{id}` - Update schema
+- `DELETE /api/v1/admin/seo/schema/{id}` - Delete schema
 
-## Kafka Event System
+### Admin Operations
+**Admin (JWT + Admin Permission):**
+- `GET /api/v1/admin/uploads` - List all uploads
+- `PATCH /api/v1/admin/uploads/{uuid}/metadata` - Update upload metadata
+- `DELETE /api/v1/admin/users/{id}/avatar` - Delete user avatar
 
-### Topics
-
-| Topic                | Events                                    |
-|----------------------|-------------------------------------------|
-| `user.events`        | created, updated, deleted, activated      |
-| `auth.events`        | sign_in, sign_in_failed, sign_out         |
-| `transaction.events` | created, updated, deleted                 |
-| `category.events`    | created, updated, deleted                 |
-| `system.events`      | health_check, error, warning              |
-
-### Publishing Events
-
-```rust
-use crate::bootstrap::events;
-
-// Using helper functions
-if let Some(event_bus) = state.event_bus() {
-    events::publish::user_created(event_bus, user_id, &email, &first_name, &last_name, None).await?;
-    events::publish::auth_sign_in(event_bus, user_id, &email, ip, user_agent).await?;
-}
-```
-
----
-
-## RabbitMQ Jobs
-
-### Existing Jobs
-
-| Job           | Description              | Parameters           |
-|---------------|--------------------------|----------------------|
-| `send_email`  | Send email via SMTP      | `SendEmailParams`    |
-| `create_user` | Create user in database  | `CreateUserParams`   |
-
-### Enqueueing Jobs
-
-```rust
-use crate::bootstrap::mq::{self, JobOptions, JobStatus};
-
-// Fire and forget
-let options = JobOptions::new().priority(1).fault_tolerance(3);
-mq::enqueue_job_dyn(&mq, "send_email", &params, options).await?;
-
-// Wait for completion
-let status = mq::enqueue_and_wait_dyn(&mq, "create_user", &params, options, 30000).await?;
-```
+**Super Admin (JWT + Super Admin Permission):**
+- `GET /api/v1/admin/users` - List all users
+- `PATCH /api/v1/admin/users/{id}/permissions` - Update user permissions
 
 ---
 
-## Configuration
+## 🗄️ Database Schema
 
-All config loaded via `once_cell::Lazy` from environment:
+### Core Tables
 
-```rust
-// Access anywhere in code
-let host = AppConfig::host();
-let jwt_secret = JwtConfig::secret();
-let max_file_size = UploadConfig::max_file_size();
-let storage_driver = UploadConfig::storage_driver();
-```
+**users** - User accounts
+- `id` (BIGSERIAL) - Primary key
+- `email` (VARCHAR, UNIQUE) - Email address
+- `password` (VARCHAR) - Bcrypt hashed password
+- `first_name`, `last_name` (VARCHAR) - User name
+- `activated` (SMALLINT) - 0=inactive, 1=active
+- `permissions` (SMALLINT) - 1=basic, 10=admin, 50=affiliate, 100=super_admin
+- `avatar_uuid` (UUID) - FK to uploads
+- `avatar_id` (BIGINT) - FK to uploads (ID-based reference)
+- `created_at`, `updated_at` (TIMESTAMP)
 
-### Environment Variables
+**uploads** - File upload records
+- `id` (BIGSERIAL) - Primary key
+- `uuid` (UUID, UNIQUE) - Public identifier
+- `user_id` (BIGINT) - FK to users
+- `original_name`, `stored_name` (VARCHAR) - Filenames
+- `extension`, `mime_type` (VARCHAR) - File info
+- `size_bytes` (BIGINT) - File size
+- `storage_type` (VARCHAR) - 'public' or 'private'
+- `storage_path` (TEXT) - Full path
+- `upload_status` (VARCHAR) - 'pending', 'completed', 'failed'
+- `title` (VARCHAR 255) - For title attribute
+- `description` (TEXT) - For alt attribute
+- `metadata` (JSONB) - Additional metadata
+- `created_at`, `updated_at` (TIMESTAMP)
 
-```env
-# App
-HOST=0.0.0.0
-PORT=9999
-RUST_LOG=debug
+**image_variants** - Generated image sizes
+- `id` (BIGSERIAL) - Primary key
+- `upload_id` (BIGINT) - FK to uploads (CASCADE DELETE)
+- `variant_name` (VARCHAR) - 'thumb', 'small', 'medium', 'large', 'full'
+- `width`, `height` (INT) - Dimensions
+- `file_path` (TEXT) - Storage path
+- `file_size` (BIGINT) - Size in bytes
+- `created_at` (TIMESTAMP)
 
-# Database
-DATABASE_URL=postgres://user:pass@host:5432/db
-SQLX_OFFLINE=true
+**galleries** - Image gallery collections
+- `id` (BIGSERIAL) - Primary key
+- `user_id` (BIGINT) - FK to users
+- `name` (VARCHAR) - Gallery name
+- `description` (TEXT) - Gallery description
+- `visibility` (VARCHAR) - 'public' or 'private'
+- `cover_image_id` (BIGINT) - FK to uploads
+- `display_order` (INT) - Sort order
+- `created_at`, `updated_at` (TIMESTAMP)
 
-# JWT
-JWT_SECRET=your_secret
-EXPIRATION_TIME=60
+**pictures** - Gallery-Upload join table
+- `id` (BIGSERIAL) - Primary key
+- `gallery_id` (BIGINT) - FK to galleries (CASCADE DELETE)
+- `upload_id` (BIGINT) - FK to uploads (CASCADE DELETE)
+- `title` (VARCHAR) - Picture title
+- `description` (TEXT) - Picture description
+- `display_order` (INT) - Sort order within gallery
+- `created_at` (TIMESTAMP)
 
-# Upload Configuration
-UPLOAD_MAX_FILE_SIZE=104857600    # 100MB
-UPLOAD_MAX_FILES=10
-UPLOAD_ALLOWED_TYPES=jpg,jpeg,png,gif,webp,pdf
-UPLOAD_STORAGE_PATH=storage/app
+**site_config** - Theme and site configuration
+- `id` (BIGSERIAL) - Primary key
+- `logo_uuid` (UUID) - FK to uploads
+- `favicon_uuid` (UUID) - FK to uploads
+- `site_name` (VARCHAR 50) - Site display name
+- `show_site_name` (BOOLEAN) - Show name alongside logo
+- `scss_variables` (JSONB) - SCSS variable definitions
+- `theme_light` (JSONB) - Light theme CSS custom properties
+- `theme_dark` (JSONB) - Dark theme CSS custom properties
+- `last_build_at` (TIMESTAMP) - Last successful build
+- `build_status` (VARCHAR) - 'idle', 'building', 'success', 'failed'
+- `created_at`, `updated_at` (TIMESTAMP)
 
-# Storage Driver
-STORAGE_DRIVER=local              # or "s3"
-STORAGE_PUBLIC_URL=/storage
-STORAGE_PRIVATE_URL=/api/v1/upload/private
+**page_seo** - Per-page SEO configuration
+- `id` (BIGSERIAL) - Primary key
+- `route_name` (VARCHAR 100, UNIQUE) - Named route
+- `title` (VARCHAR 100) - Page title
+- `description` (TEXT) - Meta description
+- `keywords` (TEXT) - SEO keywords
+- `og_image_uuid` (UUID) - Open Graph image
+- `canonical_url` (TEXT) - Canonical URL
+- `robots` (VARCHAR 50) - Robot directives
+- `is_active` (BOOLEAN) - Enable/disable
+- `created_at`, `updated_at` (TIMESTAMP)
 
-# S3 (when STORAGE_DRIVER=s3)
-# AWS_ACCESS_KEY_ID=
-# AWS_SECRET_ACCESS_KEY=
-# AWS_REGION=
-# S3_BUCKET=
-# S3_ENDPOINT=
-```
+**page_schemas** - Schema.org structured data
+- `id` (BIGSERIAL) - Primary key
+- `page_seo_id` (BIGINT) - FK to page_seo (CASCADE DELETE)
+- `schema_type` (VARCHAR 100) - 'Organization', 'Article', 'Product', etc.
+- `schema_data` (JSONB) - Complete schema JSON
+- `is_active` (BOOLEAN) - Enable/disable
+- `display_order` (INT) - Order on page
+- `created_at`, `updated_at` (TIMESTAMP)
+
+**activation_hashes** - Email verification tokens
+- `id` (BIGSERIAL) - Primary key
+- `user_id` (BIGINT) - FK to users
+- `hash_value` (VARCHAR, UNIQUE) - Verification code
+- `hash_type` (VARCHAR) - 'account_activation', 'password_reset', 'email_change'
+- `metadata` (JSONB) - Additional data (e.g., new_email)
+- `expires_at` (TIMESTAMP) - Expiration time
+- `created_at` (TIMESTAMP)
 
 ---
 
-## Database Schema
+## 🔐 Permission System
 
-### Tables
-
-| Table              | Description                    |
-|--------------------|--------------------------------|
-| `users`            | User accounts with balance     |
-| `categories`       | User spending categories       |
-| `transactions`     | Income/expense records         |
-| `activation_hashes`| Account activation tokens      |
-| `uploads`          | File upload records            |
-
-### Users Table
-
-| Column                  | Type      | Description            |
-|-------------------------|-----------|------------------------|
-| id                      | BIGSERIAL | Primary key            |
-| email                   | VARCHAR   | Unique email           |
-| password                | VARCHAR   | Bcrypt hash            |
-| first_name              | VARCHAR   | First name             |
-| last_name               | VARCHAR   | Last name              |
-| balance                 | BIGINT    | Balance in cents       |
-| activated               | SMALLINT  | 0=inactive, 1=active   |
-| user_must_set_password  | SMALLINT  | 0=no, 1=yes            |
-| created_at              | TIMESTAMP | Creation time          |
-| updated_at              | TIMESTAMP | Last update            |
-
-### Uploads Table
-
-| Column        | Type      | Description            |
-|---------------|-----------|------------------------|
-| id            | BIGSERIAL | Primary key            |
-| uuid          | UUID      | Public identifier      |
-| user_id       | BIGINT    | FK to users            |
-| original_name | VARCHAR   | Original filename      |
-| stored_name   | VARCHAR   | Stored filename        |
-| storage_path  | VARCHAR   | Full path              |
-| mime_type     | VARCHAR   | MIME type              |
-| size_bytes    | BIGINT    | File size              |
-| extension     | VARCHAR   | File extension         |
-| visibility    | VARCHAR   | "public" or "private"  |
-| checksum      | VARCHAR   | SHA256 hash            |
-| created_at    | TIMESTAMP | Upload time            |
+| Level | Constant | Value | Access |
+|-------|----------|-------|--------|
+| **Basic** | `BASIC` | 1 | All authenticated users |
+| **Admin** | `ADMIN` | 10 | Theme, uploads, SEO management |
+| **Affiliate** | `AFFILIATE` | 50 | Same as admin (future features) |
+| **Super Admin** | `SUPER_ADMIN` | 100 | User management, permission updates |
 
 ---
 
-## Development Commands
+## 🖼️ Image Variant System
+
+### Automatic Processing
+
+When an image is uploaded:
+1. File saved to storage (public/private)
+2. Database record created in `uploads` table
+3. RabbitMQ job enqueued: `resize_image`
+4. Worker generates 5 variants:
+
+| Variant | Width (px) | Use Case |
+|---------|-----------|----------|
+| `thumb` | 160 | List thumbnails |
+| `small` | 320 | Mobile devices, cards |
+| `medium` | 640 | Tablet views, previews |
+| `large` | 1024 | Desktop views, modals |
+| `full` | 1920 | Full-screen display, downloads |
+
+5. Records created in `image_variants` table
+6. Files named: `{timestamp}_{uuid}_{variant}.{ext}`
+
+### Priority Queues
+
+| Upload Type | Priority | Reason |
+|-------------|----------|--------|
+| Avatar | 1 (High) | Immediate user feedback |
+| Public/Private | 5 (Standard) | Background processing |
+
+---
+
+## 🎨 Theme System
+
+### SCSS Build Process
+
+1. Admin updates theme config via UI
+2. Backend saves to `site_config` table (JSONB)
+3. Admin clicks "Build Theme"
+4. Backend:
+   - Parses SCSS variables from database
+   - Generates `_variables.scss` file
+   - Parses CSS custom properties
+   - Generates `theme.css` file
+   - Compiles SCSS → CSS using grass compiler
+   - Creates versioned backup
+   - Updates `ASSETS_VERSION` in `.env`
+5. Frontend reloads with new assets
+
+### Theme Versioning
+
+- **Format**: Millisecond timestamp (e.g., `1704133807456`)
+- **Location**: `.env` file: `ASSETS_VERSION=1704133807456`
+- **Usage**: `{{ assets('/css/GLOBAL/style.css', version=env.ASSETS_VERSION) }}`
+- **Purpose**: Cache busting on theme updates
+
+---
+
+## 📧 Email Templates
+
+| Template | File | Use Case |
+|----------|------|----------|
+| **Account Activation** | `account_activation.html` | User registration verification |
+| **Activation Success** | `activation_success.html` | Account activated confirmation |
+| **Welcome** | `welcome.html` | Welcome after activation |
+| **Forgot Password** | `forgot_password.html` | Password reset request |
+| **Password Reset Success** | `password_reset_success.html` | Password reset confirmation |
+| **Password Change** | `password_change.html` | Password changed notification |
+| **User Must Set Password** | `user_must_set_password.html` | Admin-created account setup |
+
+---
+
+## 🚀 Development Commands
 
 ```bash
-# Inside container: docker compose exec rust bash
+# Inside Rust container: docker compose exec rust bash
 
 # Build
 cargo build
 cargo check                    # Fast type check
+cargo build --release          # Production build
 
 # Run
 cargo run
 
 # Test
-cargo test
-cargo test -- --nocapture
+cargo test                     # All tests
+cargo test --test integration  # Integration tests only
+cargo test -- --nocapture      # Show println! output
 
 # Lint
-cargo clippy
-cargo fmt
+cargo clippy                   # Linting
+cargo fmt                      # Format code
+cargo fmt -- --check           # Check formatting
 
-# Migrations
-sqlx migrate run
-sqlx migrate add <name>
-sqlx migrate revert
+# Database Migrations
+sqlx migrate run               # Apply migrations
+sqlx migrate add <name>        # Create new migration
+sqlx migrate revert            # Revert last migration
 
-# SQLx cache (REQUIRED after changing queries)
-cargo sqlx prepare
+# SQLx Offline Mode (REQUIRED after query changes)
+cargo sqlx prepare             # Generate query metadata
+cargo sqlx prepare --check     # Verify queries
+
+# Frontend Build
+cd src/frontend/pages/GLOBAL && npm run build
+cd ../PROFILE && npm run build
+cd ../UPLOADS && npm run build
+# Or use helper script:
+./src/frontend/build-frontend.sh all        # Build all pages
+./src/frontend/build-frontend.sh PROFILE    # Build specific page
 ```
 
 ---
 
-## Adding New Features
+## 🧪 Testing
+
+### Integration Tests (Rust)
+```bash
+# Run all API tests
+cargo test --test integration
+
+# Run specific test module
+cargo test --test integration -- routes::api::SIGN_IN
+
+# Run with output
+cargo test -- --nocapture
+```
+
+### E2E Tests (Playwright)
+```bash
+cd tests
+npm test                       # Run all E2E tests
+npm test -- profile.spec.ts    # Run specific test
+```
+
+### Manual Testing Scripts
+```bash
+# Test avatar upload
+./tests/scripts/test_avatar_endpoint.sh
+
+# Test authentication
+./tests/scripts/test_cookie_signin.sh
+
+# Debug galleries
+node tests/debug/debug_galleries.js
+```
+
+---
+
+## 📦 Adding New Features
 
 ### New API Endpoint
 1. Create handler in `app/http/api/controllers/<name>.rs`
-2. Add validator in `app/http/api/validators/<name>.rs` (if needed)
+2. Add validator in `app/http/api/validators/<name>.rs`
 3. Register route in `routes/api.rs`
 4. Add database queries in `app/db_query/read/` or `mutations/`
-5. Publish Kafka event on success
+5. Publish Kafka event on success (optional)
 6. Run `cargo sqlx prepare` if queries changed
 
-### New Kafka Event Type
-1. Add variant to `EventType` enum in `bootstrap/events/types.rs`
-2. Add helper function in `bootstrap/events/mod.rs::publish`
-3. Create handler in `bootstrap/events/handlers/` if needed
-
-### New RabbitMQ Job
-1. Create `app/mq/jobs/<job_name>/mod.rs` with params struct
-2. Create `app/mq/workers/<job_name>/mod.rs` with `process()` fn
-3. Add to `app/mq/workers/mod.rs` match statement
+### New Web Page
+1. Create controller method in `app/http/web/controllers/pages.rs`
+2. Register route in `routes/web.rs`
+3. Create template in `resources/views/web/<page>.html`
+4. Create frontend module in `frontend/pages/<PAGE>/`
+5. Build frontend: `./src/frontend/build-frontend.sh <PAGE>`
 
 ### New Database Table
 1. Create migration: `sqlx migrate add <name>`
-2. Add read queries in `app/db_query/read/<entity>/mod.rs`
-3. Add mutations in `app/db_query/mutations/<entity>/mod.rs`
-4. Run `cargo sqlx prepare`
+2. Write SQL in `migrations/<timestamp>_<name>.sql`
+3. Apply migration: `sqlx migrate run`
+4. Add read queries in `app/db_query/read/<entity>/mod.rs`
+5. Add mutations in `app/db_query/mutations/<entity>/mod.rs`
+6. Run `cargo sqlx prepare`
+
+### New RabbitMQ Job
+1. Create job params in `app/mq/jobs/<job_name>/mod.rs`
+2. Create worker in `app/mq/workers/<job_name>/mod.rs`
+3. Add to worker router in `app/mq/workers/mod.rs`
+4. Enqueue job using `mq::enqueue_job_dyn()`
+
+### New Kafka Event
+1. Add event variant to `bootstrap/events/types.rs::EventType`
+2. Add payload struct to `bootstrap/events/types.rs`
+3. Add helper function in `bootstrap/events/mod.rs::publish`
+4. Create handler in `bootstrap/events/handlers/` (optional)
 
 ### New Cron Job
 1. Create job in `app/cron/<job_name>.rs`
 2. Register in `routes/crons.rs`
+3. Configure schedule in `.env`: `CRON_<JOB>_SCHEDULE=...`
 
 ---
 
-## Response Formats
+## 🔧 Environment Variables
 
-### Success Response
-```json
-{
-    "status": "success",
-    "message": "Operation completed"
-}
-```
+```env
+# Application
+HOST=0.0.0.0
+PORT=9999
+RUST_LOG=debug
+ASSETS_VERSION=1704133807456        # Auto-updated on theme build
+IMAGES_ASSETS_VERSION=1704133807456 # Image asset version
 
-### Error Response
-```json
-{
-    "status": "error",
-    "message": "Error description"
-}
-```
+# Database
+DATABASE_URL=postgres://user:pass@host:5432/db
+DATABASE_MAX_CONNECTIONS=10
+SQLX_OFFLINE=true                   # Enable offline mode
 
-### Validation Error
-```json
-{
-    "status": "error",
-    "message": "Validation failed",
-    "errors": {
-        "email": ["Invalid email format"],
-        "password": ["Must be at least 8 characters"]
-    }
-}
-```
+# JWT
+JWT_SECRET=your_secret_key_here
+JWT_EXPIRATION=60                   # Minutes
 
-### Sign In Response
-```json
-{
-    "status": "success",
-    "message": "Signed in successfully",
-    "token": "eyJhbGciOiJIUzI1NiIs...",
-    "user": {
-        "id": 1,
-        "email": "user@example.com",
-        "first_name": "John",
-        "last_name": "Doe",
-        "balance": 10000
-    }
-}
+# RabbitMQ
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+RABBITMQ_USER=admin
+RABBITMQ_PASSWORD=admin
+RABBITMQ_QUEUE=blazing_sun_jobs
+
+# Kafka
+KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+KAFKA_CLIENT_ID=blazing_sun
+KAFKA_GROUP_ID=blazing_sun_group
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# MongoDB
+MONGODB_URI=mongodb://admin:admin@mongodb:27017
+MONGODB_DATABASE=blazing_sun
+
+# Email (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+SMTP_FROM_ADDRESS=noreply@example.com
+SMTP_FROM_NAME=Blazing Sun
+
+# Upload Configuration
+UPLOAD_MAX_FILE_SIZE=104857600      # 100MB
+UPLOAD_MAX_FILES=10
+UPLOAD_ALLOWED_TYPES=jpg,jpeg,png,gif,webp,pdf
+UPLOAD_STORAGE_PATH=storage/app
+
+# Storage Driver
+STORAGE_DRIVER=local                # "local" or "s3"
+STORAGE_PUBLIC_URL=/storage
+STORAGE_PRIVATE_URL=/api/v1/upload/private
+
+# Theme Configuration
+THEME_SCSS_PATH=src/resources/scss
+THEME_CSS_OUTPUT_PATH=src/resources/css
+
+# Activation & Password Reset
+ACTIVATION_EXPIRATION_HOURS=24
+PASSWORD_RESET_EXPIRATION_HOURS=1
+EMAIL_CHANGE_EXPIRATION_HOURS=1
+
+# Cron Jobs
+CRON_ENABLED=true
+CRON_USER_COUNTER_SCHEDULE=0 */5 * * * *  # Every 5 minutes
+CRON_LIST_EMAILS_SCHEDULE=0 */10 * * * *  # Every 10 minutes
 ```
 
 ---
 
-## Template Helper Functions
+## 📚 Documentation
 
-For use in Tera templates:
+### Full Documentation
+- **Web Routes**: `Documentation/blazing_sun/Routes/Web/`
+- **API Endpoints**: `Documentation/blazing_sun/Routes/API/`
+- **Frontend Components**: `Documentation/blazing_sun/Frontend/`
+- **Backend Modules**: `Documentation/blazing_sun/Backend/`
+- **Feature Guides**: `Documentation/blazing_sun/`
 
-```rust
-use blazing_sun::bootstrap::utility::template::{assets, asset, private_asset};
-
-// Public file URL: /storage/filename.jpg
-let url = assets("filename.jpg", "public");
-let url = asset("filename.jpg");  // shorthand
-
-// Private file URL: /api/v1/upload/private/uuid
-let url = assets("uuid", "private");
-let url = private_asset("uuid");  // shorthand
-```
+### Quick References
+- [CLAUDE.md](CLAUDE.md) - AI assistant guidance
+- [Web Routes Quick Reference](../Documentation/blazing_sun/Routes/Web/quick-reference.md)
+- [API Routes Overview](../Documentation/blazing_sun/Routes/API/README.md)
 
 ---
 
-## Storage Driver Architecture
+## 🐛 Common Issues
 
-The storage system uses a trait-based abstraction for S3 compatibility:
+### SQLx Compile Errors
+**Problem**: `query data <hash> doesn't exist`
+**Solution**: Run `cargo sqlx prepare` after changing queries
 
-```rust
-// StorageDriver trait
-pub trait StorageDriver: Send + Sync {
-    async fn put(&self, data: &[u8], filename: &str, visibility: Visibility) -> Result<StoredFile, StorageError>;
-    async fn get(&self, path: &str) -> Result<Vec<u8>, StorageError>;
-    async fn delete(&self, path: &str) -> Result<bool, StorageError>;
-    async fn exists(&self, path: &str) -> Result<bool, StorageError>;
-    fn url(&self, path: &str, visibility: Visibility) -> String;
-}
+### Frontend Build Fails
+**Problem**: Sandbox permission errors
+**Solution**: Build inside Docker container: `./src/frontend/build-frontend.sh <PAGE>`
 
-// Switch drivers via STORAGE_DRIVER env var
-// Currently: "local" (default)
-// Future: "s3"
-```
+### RabbitMQ Worker Not Processing
+**Problem**: Jobs enqueued but not processed
+**Solution**: Ensure worker is running in `main.rs`, check `docker compose logs -f rust`
+
+### Theme Build Fails
+**Problem**: SCSS compilation error
+**Solution**: Check SCSS syntax in database, review error in logs
+
+---
+
+## 📄 License
+
+[Specify your license here]
+
+---
+
+## 👥 Contributors
+
+[List contributors here]
+
+---
+
+**Last Updated**: 2026-01-02
+**Rust Version**: 1.83+
+**Actix-web Version**: 4.x
+**PostgreSQL Version**: 17

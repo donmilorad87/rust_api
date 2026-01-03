@@ -6,6 +6,9 @@
 pub mod activation;
 pub mod admin;
 pub mod auth;
+pub mod email;
+pub mod gallery;
+pub mod picture;
 pub mod responses;
 pub mod theme;
 pub mod upload;
@@ -15,6 +18,7 @@ pub mod user;
 pub use activation::ActivationController;
 pub use admin::AdminController;
 pub use auth::AuthController;
+pub use email::EmailController;
 pub use theme::ThemeController;
 pub use upload::UploadController;
 pub use user::UserController;

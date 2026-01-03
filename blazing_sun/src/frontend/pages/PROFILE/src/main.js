@@ -92,30 +92,32 @@ function initProfilePage() {
     getAuthToken: () => profilePage.getAuthToken()
   });
 
-  // Initialize EmailChange
+  // Initialize EmailChange (4-step flow)
   const emailChange = new EmailChange({
     baseUrl,
     step1Card: document.getElementById('emailStep1'),
     step2Card: document.getElementById('emailStep2'),
     step3Card: document.getElementById('emailStep3'),
-    emailForm: document.getElementById('newEmailForm'),
-    verifyForm: document.getElementById('verifyEmailForm'),
+    step4Card: document.getElementById('emailStep4'),
+    newEmailForm: document.getElementById('newEmailForm'),
+    verifyOldEmailForm: document.getElementById('verifyOldEmailForm'),
+    verifyNewEmailForm: document.getElementById('verifyNewEmailForm'),
     newEmailInput: document.getElementById('new_email'),
-    codeInput: document.getElementById('email_code'),
-    emailBtn: document.getElementById('sendEmailCodeBtn'),
-    verifyBtn: document.getElementById('verifyEmailBtn'),
+    oldEmailCodeInput: document.getElementById('old_email_code'),
+    newEmailCodeInput: document.getElementById('new_email_code'),
+    sendEmailCodeBtn: document.getElementById('sendEmailCodeBtn'),
+    verifyOldEmailBtn: document.getElementById('verifyOldEmailBtn'),
+    verifyNewEmailBtn: document.getElementById('verifyNewEmailBtn'),
     stepIndicators: Array.from(document.querySelectorAll('.email-step')),
+    currentEmailDisplay: document.getElementById('currentEmailDisplay'),
+    newEmailDisplay: document.getElementById('newEmailDisplay'),
+    currentEmail: userData?.email || '',
     showToast,
-    getAuthToken: () => profilePage.getAuthToken(),
-    onEmailChanged: (newEmail) => {
-      profilePage.updateEmail(newEmail);
-    }
+    getAuthToken: () => profilePage.getAuthToken()
   });
 
-  // Set initial avatar from SSR user data (no polling needed)
-  if (userData && userData.avatar_url) {
-    avatarUpload.setAvatar(userData.avatar_url);
-  }
+  // Avatar is already server-side rendered in HTML - no need to set it via JavaScript
+  // The avatarUpload component only handles uploading new avatars
 
   // Make instances available globally for debugging
   window.profilePage = profilePage;

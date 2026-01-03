@@ -16,14 +16,15 @@ pub struct CreateUploadParams {
     pub storage_type: String,
     pub storage_path: String,
     pub user_id: Option<i64>,
+    pub title: Option<String>,
     pub description: Option<String>,
 }
 
 /// Create a new upload record
 pub async fn create(db: &Pool<Postgres>, params: &CreateUploadParams) -> Result<i64, sqlx::Error> {
     let result = sqlx::query_scalar!(
-        r#"INSERT INTO uploads (uuid, original_name, stored_name, extension, mime_type, size_bytes, storage_type, storage_path, user_id, description, upload_status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'completed')
+        r#"INSERT INTO uploads (uuid, original_name, stored_name, extension, mime_type, size_bytes, storage_type, storage_path, user_id, title, description, upload_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'completed')
            RETURNING id"#,
         params.uuid,
         params.original_name,
@@ -34,6 +35,7 @@ pub async fn create(db: &Pool<Postgres>, params: &CreateUploadParams) -> Result<
         params.storage_type,
         params.storage_path,
         params.user_id,
+        params.title,
         params.description
     )
     .fetch_one(db)
@@ -127,13 +129,46 @@ pub async fn mark_failed(db: &Pool<Postgres>, upload_id: i64) -> Result<(), sqlx
 pub async fn update_metadata(
     db: &Pool<Postgres>,
     upload_id: i64,
+    title: Option<&str>,
     description: Option<&str>,
+    storage_type: Option<&str>,
+    storage_path: Option<&str>,
     metadata: Option<&serde_json::Value>,
 ) -> Result<(), sqlx::Error> {
+    if let Some(t) = title {
+        sqlx::query!(
+            "UPDATE uploads SET title = $1, updated_at = NOW() WHERE id = $2",
+            t,
+            upload_id
+        )
+        .execute(db)
+        .await?;
+    }
+
     if let Some(desc) = description {
         sqlx::query!(
             "UPDATE uploads SET description = $1, updated_at = NOW() WHERE id = $2",
             desc,
+            upload_id
+        )
+        .execute(db)
+        .await?;
+    }
+
+    if let Some(st) = storage_type {
+        sqlx::query!(
+            "UPDATE uploads SET storage_type = $1, updated_at = NOW() WHERE id = $2",
+            st,
+            upload_id
+        )
+        .execute(db)
+        .await?;
+    }
+
+    if let Some(sp) = storage_path {
+        sqlx::query!(
+            "UPDATE uploads SET storage_path = $1, updated_at = NOW() WHERE id = $2",
+            sp,
             upload_id
         )
         .execute(db)

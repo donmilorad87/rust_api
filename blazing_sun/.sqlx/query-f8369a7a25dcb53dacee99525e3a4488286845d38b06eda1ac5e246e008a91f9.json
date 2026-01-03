@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE activation_hashes\n        SET used = 1\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f8369a7a25dcb53dacee99525e3a4488286845d38b06eda1ac5e246e008a91f9"
+}

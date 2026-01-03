@@ -1,0 +1,40 @@
+/**
+ * GALLERIES Page Variables
+ *
+ * CSS variables and design tokens for the galleries page
+ */
+
+:root {
+  // Layout
+  --galleries-max-width: 1400px;
+  --galleries-padding: 2rem;
+  --galleries-gap: 1.5rem;
+
+  // Grid
+  --gallery-card-min-width: 280px;
+  --gallery-card-aspect-ratio: 4 / 3;
+
+  // Colors
+  --gallery-card-bg: var(--color-surface, #ffffff);
+  --gallery-card-border: var(--color-border, #e5e7eb);
+  --gallery-card-hover-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+  // Overlay
+  --gallery-overlay-bg: rgba(0, 0, 0, 0.6);
+  --gallery-overlay-hover-bg: rgba(0, 0, 0, 0.8);
+
+  // Transitions
+  --gallery-transition-fast: 150ms ease;
+  --gallery-transition-normal: 250ms ease;
+
+  // Pictures Modal
+  --picture-card-min-width: 200px;
+}
+
+// Dark mode adjustments
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gallery-card-bg: var(--color-surface-dark, #1f2937);
+    --gallery-card-border: var(--color-border-dark, #374151);
+  }
+}

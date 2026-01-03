@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) FROM uploads WHERE storage_type = $1 AND (original_name ILIKE $2 OR title ILIKE $2 OR description ILIKE $2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "90a156686a3346061e7b460cd92217e9d15ae23fb000f91b24c3ee906b5c359f"
+}

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pictures\n            SET display_order = $1\n            WHERE id = $2 AND gallery_id = $3\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "28e52a82e2691d92160b5d4ba64aaa40d967c9a09a2d1bf12507042aa62e5fb4"
+}

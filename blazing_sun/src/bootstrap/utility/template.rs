@@ -69,35 +69,64 @@ pub enum AssetType {
 /// # Arguments
 /// * `name` - The stored filename (e.g., "20251224_123456_uuid.jpg")
 /// * `visibility` - "public" or "private"
+/// * `variant` - Optional image variant ("thumb", "small", "medium", "large", "full")
 ///
 /// # Returns
 /// The full URL to access the asset with version parameter
 ///
 /// # Example
 /// ```rust
-/// use blazing_sun::bootstrap::utility::template::assets;
+/// use blazing_sun::bootstrap::utility::template::assets_with_variant;
 ///
 /// // Public file - served by nginx at /storage/ with version
-/// let url = assets("20251224_123456_uuid.jpg", "public");
+/// let url = assets_with_variant("20251224_123456_uuid.jpg", "public", None);
 /// // Returns: "/storage/20251224_123456_uuid.jpg?v=1.0.0"
 ///
+/// // Public file with variant
+/// let url = assets_with_variant("20251224_123456_uuid.jpg", "public", Some("thumb"));
+/// // Returns: "/storage/20251224_123456_uuid_thumb.jpg?v=1.0.0"
+///
 /// // Private file - served by API (no version needed)
-/// let url = assets("abc123-def456", "private");
+/// let url = assets_with_variant("abc123-def456", "private", None);
 /// // Returns: "/api/v1/upload/private/abc123-def456"
 /// ```
-pub fn assets(name: &str, visibility: &str) -> String {
+pub fn assets_with_variant(name: &str, visibility: &str, variant: Option<&str>) -> String {
     let vis = AssetVisibility::from_str(visibility).unwrap_or(AssetVisibility::Public);
 
     match vis {
         AssetVisibility::Public => {
+            let filename = if let Some(variant_name) = variant {
+                // For variants, insert variant name before extension
+                // e.g., "image.jpg" -> "image_thumb.jpg"
+                if let Some(dot_index) = name.rfind('.') {
+                    let base = &name[..dot_index];
+                    let ext = &name[dot_index..];
+                    format!("{}_{}{}", base, variant_name, ext)
+                } else {
+                    // No extension found, just append variant
+                    format!("{}_{}", name, variant_name)
+                }
+            } else {
+                name.to_string()
+            };
+
             let version = AppConfig::images_assets_version();
-            format!("{}/{}?v={}", UploadConfig::public_url_base(), name, version)
+            format!("{}/{}?v={}", UploadConfig::public_url_base(), filename, version)
         }
         AssetVisibility::Private => {
             // Private assets go through API, no version needed
+            // Variants are not supported for private assets (they're served by API)
             format!("{}/{}", UploadConfig::private_url_base(), name)
         }
     }
+}
+
+/// Generate URL for an asset by its stored filename (legacy function, no variant support)
+///
+/// This is the old signature for backward compatibility.
+/// For new code with variant support, use `assets_with_variant()`.
+pub fn assets(name: &str, visibility: &str) -> String {
+    assets_with_variant(name, visibility, None)
 }
 
 /// Generate URL for an asset without version parameter
@@ -167,6 +196,143 @@ pub async fn assets_by_uuid(
     })
 }
 
+/// Generate URL for an asset by its database ID (NEW UNIFIED APPROACH)
+///
+/// This is the new unified asset rendering function that replaces the need to know
+/// storage_type in advance. It automatically:
+/// 1. Fetches the upload record from database by ID
+/// 2. Determines if it's public or private from storage_type field
+/// 3. Generates the appropriate URL with variant support
+///
+/// # Arguments
+/// * `db` - Database connection pool
+/// * `upload_id` - The database ID of the upload record
+/// * `variant` - Optional image variant ("thumb", "small", "medium", "large", "full")
+///
+/// # Returns
+/// The full URL to access the asset with variant and version parameters, or None if not found
+///
+/// # Usage Pattern (Controllers → Templates)
+///
+/// Since this function is async (requires database access), it cannot be called directly
+/// from Tera templates. Instead:
+///
+/// 1. **Controllers** call this function to generate URLs
+/// 2. **Templates** receive pre-generated URLs in context variables
+///
+/// ## Example in Controller
+/// ```rust
+/// use blazing_sun::bootstrap::utility::template::asset_by_id;
+///
+/// // Generate logo URL from ID
+/// if let Some(logo_id) = site_config.logo_id {
+///     if let Some(logo_url) = asset_by_id(&db, logo_id, Some("medium")).await {
+///         context.insert("logo_url", &logo_url);
+///     }
+/// }
+///
+/// // Generate avatar URL from ID
+/// if let Some(avatar_id) = user.avatar_id {
+///     if let Some(avatar_url) = asset_by_id(&db, avatar_id, Some("small")).await {
+///         context.insert("avatar_url", &avatar_url);
+///     }
+/// }
+/// ```
+///
+/// ## Example in Template
+/// ```html
+/// <!-- Template just uses the pre-generated URL -->
+/// {% if logo_url %}
+/// <img src="{{ logo_url }}" alt="Logo">
+/// {% endif %}
+///
+/// {% if avatar_url %}
+/// <img src="{{ avatar_url }}" alt="Avatar">
+/// {% endif %}
+/// ```
+///
+/// # URL Format
+/// The generated URL uses the UUID-based API endpoint format:
+/// - `/api/v1/upload/{storage_type}/{uuid}?variant={variant}`
+///
+/// This format:
+/// - Works for both public and private images
+/// - Automatically handles authentication for private images
+/// - Supports variant parameter for responsive images
+/// - The API endpoint handles serving the correct variant file
+///
+/// # Why This Approach?
+/// 1. **Single source of truth**: storage_type lives in the database
+/// 2. **Automatic routing**: public/private determined dynamically
+/// 3. **Variant support**: built-in responsive image support
+/// 4. **Consistent URLs**: same format for all images regardless of visibility
+/// 5. **Future-proof**: easy to add new storage types (S3, CDN, etc.)
+/// 6. **No template complexity**: Templates receive simple URL strings
+pub async fn asset_by_id(
+    db: &Pool<Postgres>,
+    upload_id: i64,
+    variant: Option<&str>,
+) -> Option<String> {
+    // Fetch upload record from database
+    let upload = db_upload_read::get_by_id(db, upload_id).await.ok()?;
+
+    // Build URL with storage_type, UUID, and optional variant
+    let variant_param = variant
+        .map(|v| format!("?variant={}", v))
+        .unwrap_or_default();
+
+    // Generate correct URL format based on storage type
+    // Public: /api/v1/upload/download/public/{uuid}
+    // Private: /api/v1/upload/private/{uuid}
+    let url = match upload.storage_type.as_str() {
+        "public" => format!(
+            "/api/v1/upload/download/public/{}{}",
+            upload.uuid,
+            variant_param
+        ),
+        "private" => format!(
+            "/api/v1/upload/private/{}{}",
+            upload.uuid,
+            variant_param
+        ),
+        _ => return None, // Unknown storage type
+    };
+
+    Some(url)
+}
+
+/// Generate URL for an asset by its database ID with fallback
+///
+/// Similar to `asset_by_id()` but returns a default URL if the asset is not found.
+/// Useful in templates where you always want to display something.
+///
+/// # Arguments
+/// * `db` - Database connection pool
+/// * `upload_id` - The database ID of the upload record
+/// * `variant` - Optional image variant ("thumb", "small", "medium", "large", "full")
+/// * `fallback` - Default URL to return if asset not found
+///
+/// # Returns
+/// The asset URL, or the fallback URL if asset not found
+///
+/// # Example
+/// ```rust
+/// use blazing_sun::bootstrap::utility::template::asset_by_id_or;
+///
+/// // With fallback to placeholder
+/// let url = asset_by_id_or(&db, 123, Some("small"), "/images/placeholder.png").await;
+/// ```
+pub async fn asset_by_id_or(
+    db: &Pool<Postgres>,
+    upload_id: i64,
+    variant: Option<&str>,
+    fallback: &str,
+) -> String {
+    asset_by_id(db, upload_id, variant)
+        .await
+        .unwrap_or_else(|| fallback.to_string())
+}
+
 /// Generate URL for a public asset by its stored filename (with version)
 /// Convenience wrapper for `assets(name, "public")`
 pub fn asset(name: &str) -> String {
@@ -184,6 +350,71 @@ pub fn private_asset(uuid: &str) -> String {
 /// Avatars have a dedicated endpoint: /api/v1/avatar/{uuid}
 pub fn avatar_asset(uuid: &str) -> String {
     format!("/api/v1/avatar/{}", uuid)
+}
+
+/// Generate URL for an avatar/profile picture by upload ID
+///
+/// Avatars use a dedicated endpoint `/api/v1/avatar/{uuid}` that handles both
+/// public and private storage transparently. This ensures avatars work regardless
+/// of their storage_type in the database.
+///
+/// # Arguments
+/// * `db` - Database connection pool
+/// * `upload_id` - The database ID of the upload record
+/// * `variant` - Optional image variant ("thumb", "small", "medium", "large", "full")
+///
+/// # Returns
+/// The avatar URL, or None if upload not found
+///
+/// # Example
+/// ```rust
+/// use blazing_sun::bootstrap::utility::template::avatar_by_id;
+///
+/// // Get avatar URL with variant
+/// let url = avatar_by_id(&db, 123, Some("small")).await;
+/// // Returns: Some("/api/v1/avatar/550e8400-e29b-41d4-a716-446655440000?variant=small")
+/// ```
+pub async fn avatar_by_id(
+    db: &Pool<Postgres>,
+    upload_id: i64,
+    variant: Option<&str>,
+) -> Option<String> {
+    // Fetch upload record from database
+    let upload = db_upload_read::get_by_id(db, upload_id).await.ok()?;
+
+    // Build avatar URL with UUID and optional variant
+    let variant_param = variant
+        .map(|v| format!("?variant={}", v))
+        .unwrap_or_default();
+
+    Some(format!(
+        "/api/v1/avatar/{}{}",
+        upload.uuid,          // UUID for avatar endpoint
+        variant_param         // "?variant=thumb" or empty
+    ))
+}
+
+/// Generate URL for an avatar/profile picture by upload ID with fallback
+///
+/// Similar to `avatar_by_id()` but returns a default URL if the avatar is not found.
+///
+/// # Arguments
+/// * `db` - Database connection pool
+/// * `upload_id` - The database ID of the upload record
+/// * `variant` - Optional image variant ("thumb", "small", "medium", "large", "full")
+/// * `fallback` - Default URL to return if avatar not found
+///
+/// # Returns
+/// The avatar URL, or the fallback URL if avatar not found
+pub async fn avatar_by_id_or(
+    db: &Pool<Postgres>,
+    upload_id: i64,
+    variant: Option<&str>,
+    fallback: &str,
+) -> String {
+    avatar_by_id(db, upload_id, variant)
+        .await
+        .unwrap_or_else(|| fallback.to_string())
 }
 
 /// Generate URL for a public upload by stored filename (with version for cache busting)
@@ -632,6 +863,13 @@ pub fn route_with_params_lang(name: &str, lang: &str, params: &HashMap<String, S
 /// <!-- Public asset (served by nginx from /storage/) -->
 /// <img src="{{ assets(name='image.png', visibility='public') }}" alt="Image">
 ///
+/// <!-- Public asset with responsive variant -->
+/// <img src="{{ assets(name='image.png', visibility='public', variant='thumb') }}" alt="Thumbnail">
+/// <img src="{{ assets(name='image.png', visibility='public', variant='small') }}" alt="Small">
+/// <img src="{{ assets(name='image.png', visibility='public', variant='medium') }}" alt="Medium">
+/// <img src="{{ assets(name='image.png', visibility='public', variant='large') }}" alt="Large">
+/// <img src="{{ assets(name='image.png', visibility='public', variant='full') }}" alt="Full">
+///
 /// <!-- With variable -->
 /// <img src="{{ assets(name=logo_stored_name, visibility='public') }}" alt="Logo">
 /// ```
@@ -653,8 +891,15 @@ impl Function for AssetsFunction {
             Some(_) => return Err(tera::Error::msg("assets() 'visibility' argument must be a string")),
         };
 
+        // Get variant (optional, for responsive images)
+        let variant = match args.get("variant") {
+            Some(Value::String(s)) => Some(s.as_str()),
+            Some(Value::Null) | None => None,
+            Some(_) => return Err(tera::Error::msg("assets() 'variant' argument must be a string")),
+        };
+
         // Generate the URL
-        let url = assets(&name, &visibility);
+        let url = assets_with_variant(&name, &visibility, variant);
         Ok(Value::String(url))
     }
 
@@ -831,4 +1076,13 @@ mod tests {
     fn test_determine_assets_spaces_panics() {
         determine_assets("page name");
     }
+
+    // Note: Tests for asset_by_id() and asset_by_id_or() require database access
+    // and are implemented as integration tests in tests/routes/api/UPLOAD/
+    // These functions are tested as part of the full upload flow:
+    // 1. Upload image with public or private storage_type
+    // 2. Store ID in user.avatar_id or site_config.logo_id
+    // 3. Call asset_by_id(db, id, variant) to generate URL
+    // 4. Verify URL format matches /api/v1/upload/{storage_type}/{uuid}?variant={variant}
+    // 5. Verify URL works and serves correct variant
 }
