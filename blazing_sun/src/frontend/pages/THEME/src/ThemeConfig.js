@@ -1,3 +1,5 @@
+import { getCsrfHeaders, getCsrfToken } from '../../GLOBAL/src/js/csrf.js';
+
 /**
  * ThemeConfig - Main controller for theme configuration page
  * Coordinates color pickers, size pickers, and image selectors
@@ -839,7 +841,7 @@ export class ThemeConfig {
 
       const response = await fetch(endpoint, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getCsrfHeaders(),
         credentials: 'include',
         body: JSON.stringify({
           schema_type: this.currentSchemaType,
@@ -873,6 +875,7 @@ export class ThemeConfig {
   async loadPageSchemas(pageId) {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/page/${pageId}/schemas`, {
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -985,6 +988,7 @@ export class ThemeConfig {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/schema/${schemaId}`, {
         method: 'DELETE',
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -1332,6 +1336,7 @@ export class ThemeConfig {
     console.log('loadConfig() called, fetching from:', `${this.baseUrl}/api/v1/admin/theme`);
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/theme`, {
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -1582,6 +1587,7 @@ export class ThemeConfig {
     try {
       // Get user's uploads (all images)
       const response = await fetch(`${this.baseUrl}/api/v1/upload/user`, {
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -1678,6 +1684,7 @@ export class ThemeConfig {
 
       // Download the private image
       const downloadResponse = await fetch(`${this.baseUrl}/api/v1/upload/private/${uuid}`, {
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -1692,8 +1699,15 @@ export class ThemeConfig {
       const formData = new FormData();
       formData.append('file', blob, filename);
 
+      const headers = {};
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        headers['X-CSRF-TOKEN'] = csrfToken;
+      }
+
       const uploadResponse = await fetch(`${this.baseUrl}/api/v1/upload/public`, {
         method: 'POST',
+        headers: headers,
         body: formData,
         credentials: 'include'
       });
@@ -1793,8 +1807,15 @@ export class ThemeConfig {
       this.showToast('Uploading image...', 'info');
 
       // Upload as public (logo/favicon must be public)
+      const headers = {};
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        headers['X-CSRF-TOKEN'] = csrfToken;
+      }
+
       const response = await fetch(`${this.baseUrl}/api/v1/upload/public`, {
         method: 'POST',
+        headers: headers,
         body: formData,
         credentials: 'include'
       });
@@ -1839,9 +1860,7 @@ export class ThemeConfig {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/theme`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         body: JSON.stringify(saveData),
         credentials: 'include'
       });
@@ -1922,9 +1941,7 @@ export class ThemeConfig {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/theme/branding`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         body: JSON.stringify(saveData),
         credentials: 'include'
       });
@@ -2038,9 +2055,7 @@ export class ThemeConfig {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/theme`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         body: JSON.stringify(saveData),
         credentials: 'include'
       });
@@ -2122,9 +2137,7 @@ export class ThemeConfig {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/theme`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         body: JSON.stringify(saveData),
         credentials: 'include'
       });
@@ -2204,9 +2217,7 @@ export class ThemeConfig {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/theme`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         body: JSON.stringify(saveData),
         credentials: 'include'
       });
@@ -2271,6 +2282,7 @@ export class ThemeConfig {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/theme/build`, {
         method: 'POST',
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -2679,6 +2691,7 @@ export class ThemeConfig {
   async loadSeoPages() {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/seo`, {
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -2742,6 +2755,7 @@ export class ThemeConfig {
 
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/${encodeURIComponent(routeName)}`, {
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -2903,9 +2917,7 @@ export class ThemeConfig {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/${encodeURIComponent(routeName)}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         body: JSON.stringify(seoData),
         credentials: 'include'
       });

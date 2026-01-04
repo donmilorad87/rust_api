@@ -1,8 +1,13 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+import { FormValidator, PasswordToggle } from '../../GLOBAL/src/js/FormValidator.js';
+
 /**
  * PasswordChange - Handles password change functionality
  * Features:
+ * - Rich reactive form validation
+ * - Password visibility toggle
  * - Current password verification
- * - New password with strength indicator
+ * - New password validation
  * - Confirm password matching
  */
 export class PasswordChange {
@@ -13,8 +18,6 @@ export class PasswordChange {
    * @param {HTMLInputElement} config.currentPasswordInput - Current password input
    * @param {HTMLInputElement} config.newPasswordInput - New password input
    * @param {HTMLInputElement} config.confirmPasswordInput - Confirm password input
-   * @param {HTMLElement} config.strengthBar - Password strength bar element
-   * @param {HTMLElement} config.strengthText - Password strength text element
    * @param {HTMLButtonElement} config.submitBtn - Submit button
    * @param {Function} config.showToast - Toast notification function
    * @param {Function} config.getAuthToken - Function to get JWT token
@@ -25,13 +28,15 @@ export class PasswordChange {
     this.currentPasswordInput = config.currentPasswordInput;
     this.newPasswordInput = config.newPasswordInput;
     this.confirmPasswordInput = config.confirmPasswordInput;
-    this.strengthBar = config.strengthBar;
-    this.strengthText = config.strengthText;
     this.submitBtn = config.submitBtn;
     this.showToast = config.showToast || this.defaultToast.bind(this);
     this.getAuthToken = config.getAuthToken || (() => null);
 
     this.isSubmitting = false;
+    this.validator = null;
+    this.currentPasswordToggle = null;
+    this.newPasswordToggle = null;
+    this.confirmPasswordToggle = null;
 
     this.init();
   }
@@ -45,13 +50,56 @@ export class PasswordChange {
       return;
     }
 
-    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+    // Initialize form validator
+    this.initValidator();
 
-    // Password strength indicator
-    if (this.newPasswordInput) {
-      this.newPasswordInput.addEventListener('input', (e) => {
-        this.updatePasswordStrength(e.target.value);
-      });
+    // Initialize password toggles
+    this.initPasswordToggles();
+
+    this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+  }
+
+  /**
+   * Initialize form validator with rich reactive validation
+   */
+  initValidator() {
+    const currentPasswordFeedback = document.getElementById('currentPasswordFeedback');
+    const newPasswordFeedback = document.getElementById('newPasswordFeedback');
+    const confirmPasswordFeedback = document.getElementById('confirmPasswordFeedback');
+
+    this.validator = new FormValidator({ validateOnInput: true });
+
+    if (this.currentPasswordInput && currentPasswordFeedback) {
+      this.validator.bindInput(this.currentPasswordInput, 'current_password', currentPasswordFeedback);
+    }
+
+    if (this.newPasswordInput && newPasswordFeedback) {
+      this.validator.bindInput(this.newPasswordInput, 'new_password', newPasswordFeedback);
+    }
+
+    if (this.confirmPasswordInput && this.newPasswordInput && confirmPasswordFeedback) {
+      this.validator.bindPasswordConfirm(this.confirmPasswordInput, this.newPasswordInput, confirmPasswordFeedback);
+    }
+  }
+
+  /**
+   * Initialize password visibility toggles
+   */
+  initPasswordToggles() {
+    const currentPasswordToggleBtn = document.getElementById('currentPasswordToggle');
+    const newPasswordToggleBtn = document.getElementById('newPasswordToggle');
+    const confirmPasswordToggleBtn = document.getElementById('confirmPasswordToggle');
+
+    if (this.currentPasswordInput && currentPasswordToggleBtn) {
+      this.currentPasswordToggle = new PasswordToggle(this.currentPasswordInput, currentPasswordToggleBtn);
+    }
+
+    if (this.newPasswordInput && newPasswordToggleBtn) {
+      this.newPasswordToggle = new PasswordToggle(this.newPasswordInput, newPasswordToggleBtn);
+    }
+
+    if (this.confirmPasswordInput && confirmPasswordToggleBtn) {
+      this.confirmPasswordToggle = new PasswordToggle(this.confirmPasswordInput, confirmPasswordToggleBtn);
     }
   }
 
@@ -64,12 +112,18 @@ export class PasswordChange {
 
     if (this.isSubmitting) return;
 
+    // Use FormValidator for validation
+    if (this.validator && !this.validator.validateAll()) {
+      return;
+    }
+
     const currentPassword = this.currentPasswordInput?.value || '';
     const newPassword = this.newPasswordInput?.value || '';
     const confirmPassword = this.confirmPasswordInput?.value || '';
 
-    // Validation
-    if (!this.validatePasswords(currentPassword, newPassword, confirmPassword)) {
+    // Additional check: new password must be different from current
+    if (currentPassword === newPassword) {
+      this.showToast('New password must be different from current password', 'error');
       return;
     }
 
@@ -84,9 +138,7 @@ export class PasswordChange {
     try {
       // Build headers - include Authorization only if we have a readable token
       // Otherwise, rely on HttpOnly cookie being sent automatically
-      const headers = {
-        'Content-Type': 'application/json'
-      };
+      const headers = getCsrfHeaders();
 
       const token = this.getAuthToken();
       if (token) {
@@ -109,7 +161,6 @@ export class PasswordChange {
       if (response.ok) {
         this.showToast('Password changed successfully! Redirecting to sign in...', 'success');
         this.form.reset();
-        this.updatePasswordStrength('');
 
         // Backend clears the HttpOnly auth cookie in the response
         // Redirect to sign-in page for re-authentication
@@ -126,118 +177,6 @@ export class PasswordChange {
       this.isSubmitting = false;
       this.setButtonLoading(false);
     }
-  }
-
-  /**
-   * Validate password inputs
-   * @param {string} currentPassword
-   * @param {string} newPassword
-   * @param {string} confirmPassword
-   * @returns {boolean}
-   */
-  validatePasswords(currentPassword, newPassword, confirmPassword) {
-    if (!currentPassword) {
-      this.showToast('Current password is required', 'error');
-      return false;
-    }
-
-    if (!newPassword) {
-      this.showToast('New password is required', 'error');
-      return false;
-    }
-
-    if (newPassword.length < 8) {
-      this.showToast('Password must be at least 8 characters', 'error');
-      return false;
-    }
-
-    if (!/[A-Z]/.test(newPassword)) {
-      this.showToast('Password must contain at least one uppercase letter', 'error');
-      return false;
-    }
-
-    if (!/[a-z]/.test(newPassword)) {
-      this.showToast('Password must contain at least one lowercase letter', 'error');
-      return false;
-    }
-
-    if (!/[0-9]/.test(newPassword)) {
-      this.showToast('Password must contain at least one digit', 'error');
-      return false;
-    }
-
-    if (!/[^\p{L}\p{N}]/u.test(newPassword)) {
-      this.showToast('Password must contain at least one special character', 'error');
-      return false;
-    }
-
-    if (newPassword !== confirmPassword) {
-      this.showToast('Passwords do not match', 'error');
-      return false;
-    }
-
-    if (currentPassword === newPassword) {
-      this.showToast('New password must be different from current password', 'error');
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Update password strength indicator
-   * @param {string} password
-   */
-  updatePasswordStrength(password) {
-    if (!this.strengthBar || !this.strengthText) return;
-
-    const strength = this.calculatePasswordStrength(password);
-
-    // Remove all strength classes
-    this.strengthBar.classList.remove(
-      'password-strength__bar--weak',
-      'password-strength__bar--fair',
-      'password-strength__bar--good',
-      'password-strength__bar--strong'
-    );
-
-    if (password.length === 0) {
-      this.strengthBar.style.width = '0';
-      this.strengthText.textContent = '';
-      return;
-    }
-
-    if (strength < 2) {
-      this.strengthBar.classList.add('password-strength__bar--weak');
-      this.strengthText.textContent = 'Weak';
-    } else if (strength < 3) {
-      this.strengthBar.classList.add('password-strength__bar--fair');
-      this.strengthText.textContent = 'Fair';
-    } else if (strength < 4) {
-      this.strengthBar.classList.add('password-strength__bar--good');
-      this.strengthText.textContent = 'Good';
-    } else {
-      this.strengthBar.classList.add('password-strength__bar--strong');
-      this.strengthText.textContent = 'Strong';
-    }
-  }
-
-  /**
-   * Calculate password strength score (0-5)
-   * @param {string} password
-   * @returns {number}
-   */
-  calculatePasswordStrength(password) {
-    let score = 0;
-
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
-
-    return Math.min(score, 5);
   }
 
   /**

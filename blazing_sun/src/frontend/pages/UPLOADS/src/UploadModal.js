@@ -1,3 +1,5 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+
 /**
  * UploadModal Component
  *
@@ -346,9 +348,7 @@ export class UploadModal {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/uploads/${this.uploadedFile.uuid}/metadata`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         credentials: 'include',
         body: JSON.stringify({
           title: title || null,

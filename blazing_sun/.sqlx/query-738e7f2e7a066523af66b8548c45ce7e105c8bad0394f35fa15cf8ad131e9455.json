@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE oauth_clients\n        SET\n            client_name = COALESCE($1, client_name),\n            description = COALESCE($2, description),\n            logo_url = COALESCE($3, logo_url),\n            homepage_url = COALESCE($4, homepage_url),\n            privacy_policy_url = COALESCE($5, privacy_policy_url),\n            terms_of_service_url = COALESCE($6, terms_of_service_url),\n            updated_at = NOW()\n        WHERE id = $7\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "738e7f2e7a066523af66b8548c45ce7e105c8bad0394f35fa15cf8ad131e9455"
+}

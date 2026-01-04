@@ -1,3 +1,5 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+
 /**
  * UsersPage Controller
  *
@@ -99,9 +101,7 @@ export class UsersPage {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/users?${params}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -298,9 +298,7 @@ export class UsersPage {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/users/${userId}/avatar`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -331,9 +329,7 @@ export class UsersPage {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/admin/users/${userId}/permissions`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         credentials: 'include',
         body: JSON.stringify({ permissions: permission })
       });

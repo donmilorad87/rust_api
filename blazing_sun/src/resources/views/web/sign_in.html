@@ -10,30 +10,54 @@
 <main class="container">
     <article class="card">
         <h1>Sign In</h1>
-        <form id="signinForm" aria-label="Sign in form">
+        <form id="signinForm" aria-label="Sign in form" novalidate>
+            <!-- Email Field -->
             <div class="form-group">
                 <label for="email">Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    autocomplete="email"
-                    aria-required="true"
-                >
+                <div class="input-wrapper">
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        autocomplete="email"
+                        aria-required="true"
+                        aria-describedby="emailFeedback"
+                        placeholder="you@example.com"
+                    >
+                </div>
+                <div id="emailFeedback" class="validation-feedback" aria-live="polite"></div>
             </div>
+
+            <!-- Password Field -->
             <div class="form-group">
                 <label for="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    autocomplete="current-password"
-                    aria-required="true"
-                >
+                <div class="input-wrapper input-wrapper--password">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        autocomplete="current-password"
+                        aria-required="true"
+                        aria-describedby="passwordFeedback"
+                        placeholder="Enter your password"
+                    >
+                    <button type="button" class="password-toggle" id="passwordToggle" aria-label="Show password">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                <div id="passwordFeedback" class="validation-feedback" aria-live="polite"></div>
             </div>
-            <button type="submit" class="btn" id="signinBtn">Sign In</button>
+
+            <!-- Remember Me Checkbox -->
+            <div class="form-group form-group--checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="remember" name="remember" value="1">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">Keep me logged in</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--full" id="signinBtn">Sign In</button>
         </form>
         <p class="text-center mt-1">
             <a href="/forgot-password" class="link">Forgot password?</a>

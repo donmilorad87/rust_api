@@ -1,7 +1,13 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+import { FormValidator } from '../../GLOBAL/src/js/FormValidator.js';
+
 /**
  * ProfilePage - Main controller for the profile page
  * Manages profile details editing (first name, last name)
  * Coordinates with AvatarUpload, PasswordChange, and EmailChange components
+ *
+ * Features:
+ * - Rich reactive form validation for name fields
  */
 export class ProfilePage {
   /**
@@ -32,6 +38,7 @@ export class ProfilePage {
     this.originalFirstName = this.firstNameInput?.value || '';
     this.originalLastName = this.lastNameInput?.value || '';
     this.authToken = null;
+    this.validator = null;
 
     this.init();
   }
@@ -61,6 +68,9 @@ export class ProfilePage {
     // User data comes from SSR (window.USER_DATA), no API call needed
     // Inputs are pre-filled via Tera template
 
+    // Initialize form validator
+    this.initValidator();
+
     // Form submission
     if (this.profileForm) {
       this.profileForm.addEventListener('submit', (e) => this.handleSubmit(e));
@@ -77,6 +87,24 @@ export class ProfilePage {
     // Disable save button initially (no changes yet)
     if (this.saveBtn) {
       this.saveBtn.disabled = true;
+    }
+  }
+
+  /**
+   * Initialize form validator with rich reactive validation
+   */
+  initValidator() {
+    const firstNameFeedback = document.getElementById('firstNameFeedback');
+    const lastNameFeedback = document.getElementById('lastNameFeedback');
+
+    this.validator = new FormValidator({ validateOnInput: true });
+
+    if (this.firstNameInput && firstNameFeedback) {
+      this.validator.bindInput(this.firstNameInput, 'first_name', firstNameFeedback);
+    }
+
+    if (this.lastNameInput && lastNameFeedback) {
+      this.validator.bindInput(this.lastNameInput, 'last_name', lastNameFeedback);
     }
   }
 
@@ -129,18 +157,13 @@ export class ProfilePage {
 
     if (this.isSubmitting) return;
 
+    // Use FormValidator for validation
+    if (this.validator && !this.validator.validateAll()) {
+      return;
+    }
+
     const firstName = this.firstNameInput?.value.trim() || '';
     const lastName = this.lastNameInput?.value.trim() || '';
-
-    // Validation
-    if (!firstName) {
-      this.showToast('First name is required', 'error');
-      return;
-    }
-    if (!lastName) {
-      this.showToast('Last name is required', 'error');
-      return;
-    }
 
     this.isSubmitting = true;
     this.setButtonLoading(true);
@@ -148,9 +171,7 @@ export class ProfilePage {
     try {
       // Build headers - include Authorization only if we have a readable token
       // Otherwise, rely on HttpOnly cookie being sent automatically
-      const headers = {
-        'Content-Type': 'application/json'
-      };
+      const headers = getCsrfHeaders();
 
       if (this.authToken) {
         headers['Authorization'] = `Bearer ${this.authToken}`;

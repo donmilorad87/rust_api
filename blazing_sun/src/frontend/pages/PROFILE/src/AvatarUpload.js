@@ -1,3 +1,5 @@
+import { getCsrfToken } from '../../GLOBAL/src/js/csrf.js';
+
 /**
  * AvatarUpload - Handles profile picture upload functionality
  * Features:
@@ -152,8 +154,15 @@ export class AvatarUpload {
     try {
       // Upload avatar using dedicated endpoint
       // This creates an asset record and updates user's avatar_uuid in one step
+      const headers = {};
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        headers['X-CSRF-TOKEN'] = csrfToken;
+      }
+
       const response = await fetch(`${this.baseUrl}/api/v1/upload/avatar`, {
         method: 'POST',
+        headers: headers,
         credentials: 'same-origin', // Ensure HttpOnly auth cookie is sent
         body: formData
       });

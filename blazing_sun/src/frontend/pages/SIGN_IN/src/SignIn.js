@@ -1,6 +1,14 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+import { FormValidator, PasswordToggle } from '../../GLOBAL/src/js/FormValidator.js';
+
 /**
  * SignIn Page Controller
  * Handles user authentication and redirects to homepage on success.
+ *
+ * Features:
+ * - Rich reactive form validation
+ * - Password visibility toggle
+ * - "Keep me logged in" checkbox
  *
  * Flow:
  * 1. User fills sign-in form (email, password)
@@ -23,12 +31,14 @@ export class SignIn {
     this.showToast = config.showToast || this.defaultToast.bind(this);
 
     this.isSubmitting = false;
+    this.validator = null;
+    this.passwordToggle = null;
 
     this.init();
   }
 
   /**
-   * Initialize event listeners
+   * Initialize event listeners and validation
    */
   init() {
     if (!this.signinForm) {
@@ -36,7 +46,46 @@ export class SignIn {
       return;
     }
 
+    // Initialize form validator
+    this.initValidator();
+
+    // Initialize password toggle
+    this.initPasswordToggle();
+
+    // Form submit handler
     this.signinForm.addEventListener('submit', (e) => this.handleSignin(e));
+  }
+
+  /**
+   * Initialize form validator with rich reactive validation
+   */
+  initValidator() {
+    const emailInput = this.signinForm.querySelector('#email');
+    const passwordInput = this.signinForm.querySelector('#password');
+    const emailFeedback = document.getElementById('emailFeedback');
+    const passwordFeedback = document.getElementById('passwordFeedback');
+
+    this.validator = new FormValidator({ validateOnInput: true });
+
+    if (emailInput && emailFeedback) {
+      this.validator.bindInput(emailInput, 'email', emailFeedback);
+    }
+
+    if (passwordInput && passwordFeedback) {
+      this.validator.bindInput(passwordInput, 'password', passwordFeedback);
+    }
+  }
+
+  /**
+   * Initialize password visibility toggle
+   */
+  initPasswordToggle() {
+    const passwordInput = this.signinForm.querySelector('#password');
+    const toggleBtn = document.getElementById('passwordToggle');
+
+    if (passwordInput && toggleBtn) {
+      this.passwordToggle = new PasswordToggle(passwordInput, toggleBtn);
+    }
   }
 
   /**
@@ -48,11 +97,12 @@ export class SignIn {
 
     if (this.isSubmitting) return;
 
-    const formData = this.getFormData();
-
-    if (!this.validateFormData(formData)) {
+    // Use FormValidator for validation
+    if (this.validator && !this.validator.validateAll()) {
       return;
     }
+
+    const formData = this.getFormData();
 
     this.setButtonLoading(true, 'Signing in...');
     this.isSubmitting = true;
@@ -66,7 +116,7 @@ export class SignIn {
 
       // Store token in cookie for server-side auth
       if (result.data.token) {
-        this.setAuthCookie(result.data.token);
+        this.setAuthCookie(result.data.token, formData.remember);
       }
 
       // Redirect to homepage after brief delay
@@ -87,51 +137,19 @@ export class SignIn {
   getFormData() {
     return {
       email: this.signinForm.querySelector('#email')?.value.trim() || '',
-      password: this.signinForm.querySelector('#password')?.value || ''
+      password: this.signinForm.querySelector('#password')?.value || '',
+      remember: this.signinForm.querySelector('#remember')?.checked || false
     };
-  }
-
-  /**
-   * Validate form data
-   * @param {Object} data
-   * @returns {boolean}
-   */
-  validateFormData(data) {
-    if (!data.email) {
-      this.showToast('Email is required', 'error');
-      return false;
-    }
-
-    if (!this.isValidEmail(data.email)) {
-      this.showToast('Please enter a valid email address', 'error');
-      return false;
-    }
-
-    if (!data.password) {
-      this.showToast('Password is required', 'error');
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Validate email format
-   * @param {string} email
-   * @returns {boolean}
-   */
-  isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   }
 
   /**
    * Set auth cookie with JWT token
    * @param {string} token
+   * @param {boolean} remember - Whether to extend cookie lifetime
    */
-  setAuthCookie(token) {
-    // Cookie expires in 7 days
-    const maxAge = 60 * 60 * 24 * 7;
+  setAuthCookie(token, remember = false) {
+    // 30 days if "remember me" is checked, else 7 days
+    const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
     document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}; SameSite=Strict`;
   }
 
@@ -180,9 +198,7 @@ export class SignIn {
   async apiRequest(endpoint, method = 'GET', data = null) {
     const options = {
       method,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: getCsrfHeaders()
     };
 
     if (data) {

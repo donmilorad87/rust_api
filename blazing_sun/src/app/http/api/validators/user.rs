@@ -5,7 +5,7 @@
 use serde::Deserialize;
 use validator::Validate;
 
-use crate::app::http::api::validators::auth::validate_password;
+use crate::app::http::api::validators::auth::{validate_name, validate_password};
 
 /// PATCH /user - Full update request (ALL fields required except password)
 /// Email is NOT updatable
@@ -37,6 +37,23 @@ impl PatchUserRequest {
             Vec::new()
         }
     }
+
+    /// Validate name fields (letters only, min 2 chars)
+    pub fn validate_names(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+
+        let first_name_errors = validate_name(&self.first_name, "first_name");
+        for err in first_name_errors {
+            errors.push(format!("first_name: {}", err));
+        }
+
+        let last_name_errors = validate_name(&self.last_name, "last_name");
+        for err in last_name_errors {
+            errors.push(format!("last_name: {}", err));
+        }
+
+        errors
+    }
 }
 
 /// PUT /user - Partial update request (at least ONE field required)
@@ -67,14 +84,16 @@ impl PutUserRequest {
         let mut errors = Vec::new();
 
         if let Some(ref first_name) = self.first_name {
-            if first_name.len() < 2 {
-                errors.push("first_name: minimum 2 characters".to_string());
+            let name_errors = validate_name(first_name, "first_name");
+            for err in name_errors {
+                errors.push(format!("first_name: {}", err));
             }
         }
 
         if let Some(ref last_name) = self.last_name {
-            if last_name.len() < 2 {
-                errors.push("last_name: minimum 2 characters".to_string());
+            let name_errors = validate_name(last_name, "last_name");
+            for err in name_errors {
+                errors.push(format!("last_name: {}", err));
             }
         }
 

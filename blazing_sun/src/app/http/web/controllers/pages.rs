@@ -16,6 +16,7 @@
 use crate::app::db_query::read::page_schema as db_page_schema;
 use crate::app::db_query::read::page_seo as db_page_seo;
 use crate::bootstrap::utility::auth::is_logged;
+use crate::bootstrap::utility::csrf;
 use crate::bootstrap::utility::template::{
     get_assets_version, get_images_version, register_template_functions,
 };
@@ -23,6 +24,7 @@ use crate::database::read::site_config as db_site_config;
 use crate::database::read::user as db_user;
 use crate::database::AppState;
 use sqlx::{Pool, Postgres};
+use actix_session::Session;
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use once_cell::sync::Lazy;
 use serde::Serialize;
@@ -87,7 +89,7 @@ impl PagesController {
     }
 
     /// Create base context with common variables and auth info
-    fn base_context(req: &HttpRequest) -> Context {
+    fn base_context(req: &HttpRequest, session: &Session) -> Context {
         let auth = is_logged(req);
 
         let mut context = Context::new();
@@ -106,6 +108,15 @@ impl PagesController {
         if let Some(user_id) = auth.user_id {
             context.insert("user_id", &user_id);
         }
+
+        // CSRF token for forms and AJAX requests
+        if let Ok(token) = csrf::get_or_create_token(session) {
+            context.insert("csrf_token", &token);
+        } else {
+            error!("Failed to get or create CSRF token");
+            context.insert("csrf_token", "");
+        }
+
         context
     }
 
@@ -249,9 +260,9 @@ impl PagesController {
     }
 
     /// Homepage - shows different content for logged/guest users
-    pub async fn homepage(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+    pub async fn homepage(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
         let auth = is_logged(&req);
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
 
         // Add branding (logo, favicon, site name)
         let db = state.db.lock().await;
@@ -269,13 +280,13 @@ impl PagesController {
     }
 
     /// Sign Up page - redirects to profile if logged in
-    pub async fn sign_up(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+    pub async fn sign_up(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
         let auth = is_logged(&req);
         if auth.is_logged {
             return Ok(Self::redirect("/profile"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         Self::add_seo_to_context(&mut context, &db, "web.sign_up").await;
@@ -285,13 +296,13 @@ impl PagesController {
     }
 
     /// Sign In page - redirects to profile if logged in
-    pub async fn sign_in(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+    pub async fn sign_in(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
         let auth = is_logged(&req);
         if auth.is_logged {
             return Ok(Self::redirect("/profile"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         Self::add_seo_to_context(&mut context, &db, "web.sign_in").await;
@@ -301,13 +312,13 @@ impl PagesController {
     }
 
     /// Forgot Password page - redirects to profile if logged in
-    pub async fn forgot_password(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+    pub async fn forgot_password(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
         let auth = is_logged(&req);
         if auth.is_logged {
             return Ok(Self::redirect("/profile"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         Self::add_seo_to_context(&mut context, &db, "web.forgot_password").await;
@@ -319,6 +330,7 @@ impl PagesController {
     /// Profile page - redirects to sign-in if not logged in
     pub async fn profile(
         req: HttpRequest,
+        session: Session,
         state: web::Data<AppState>,
     ) -> Result<HttpResponse> {
         let auth = is_logged(&req);
@@ -326,7 +338,7 @@ impl PagesController {
             return Ok(Self::redirect("/sign-in"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
 
         // Add branding (logo, favicon, site name)
@@ -361,6 +373,42 @@ impl PagesController {
         Ok(Self::render("profile.html", &context))
     }
 
+    /// OAuth Applications page - redirects to sign-in if not logged in
+    pub async fn oauth_applications(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged {
+            return Ok(Self::redirect("/sign-in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+
+        // Add branding (logo, favicon, site name)
+        Self::add_branding_to_context(&mut context, &db).await;
+        Self::add_seo_to_context(&mut context, &db, "oauth.applications").await;
+
+        // Fetch user data if we have a user_id
+        if let Some(user_id) = auth.user_id {
+            if let Ok(user) = db_user::get_by_id(&db, user_id).await {
+                let template_user = TemplateUser {
+                    id: user.id,
+                    email: user.email,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    avatar_url: None, // Not needed for OAuth page
+                };
+                context.insert("user", &template_user);
+            }
+        }
+        drop(db);
+
+        Ok(Self::render("oauth_applications.html", &context))
+    }
+
     /// Logout - clears auth cookie and redirects to homepage
     pub async fn logout(_req: HttpRequest) -> Result<HttpResponse> {
         use actix_web::cookie::{Cookie, time::Duration};
@@ -379,7 +427,7 @@ impl PagesController {
     }
 
     /// Uploads Admin page - requires Admin+ permissions
-    pub async fn uploads(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+    pub async fn uploads(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
         let auth = is_logged(&req);
 
         // Must be logged in
@@ -392,7 +440,7 @@ impl PagesController {
             return Ok(Self::redirect("/"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         Self::add_seo_to_context(&mut context, &db, "admin.uploads").await;
@@ -402,7 +450,7 @@ impl PagesController {
     }
 
     /// Theme Configuration Admin page - requires Admin+ permissions
-    pub async fn theme(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+    pub async fn theme(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
         let auth = is_logged(&req);
 
         // Must be logged in
@@ -415,7 +463,7 @@ impl PagesController {
             return Ok(Self::redirect("/"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         Self::add_seo_to_context(&mut context, &db, "admin.theme").await;
@@ -427,6 +475,7 @@ impl PagesController {
     /// Registered Users Admin page - requires Super Admin permissions
     pub async fn registered_users(
         req: HttpRequest,
+        session: Session,
         state: web::Data<AppState>,
     ) -> Result<HttpResponse> {
         let auth = is_logged(&req);
@@ -441,7 +490,7 @@ impl PagesController {
             return Ok(Self::redirect("/"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         Self::add_seo_to_context(&mut context, &db, "admin.users").await;
@@ -454,7 +503,7 @@ impl PagesController {
     }
 
     /// Galleries page - requires authentication
-    pub async fn galleries(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
+    pub async fn galleries(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
         let auth = is_logged(&req);
 
         // Must be logged in
@@ -462,7 +511,7 @@ impl PagesController {
             return Ok(Self::redirect("/sign-in"));
         }
 
-        let mut context = Self::base_context(&req);
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         Self::add_seo_to_context(&mut context, &db, "web.galleries").await;
@@ -473,8 +522,8 @@ impl PagesController {
     }
 
     /// 404 Not Found page
-    pub async fn not_found(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse> {
-        let mut context = Self::base_context(&req);
+    pub async fn not_found(req: HttpRequest, session: Session, state: web::Data<AppState>) -> Result<HttpResponse> {
+        let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
         Self::add_branding_to_context(&mut context, &db).await;
         drop(db);
@@ -497,6 +546,102 @@ impl PagesController {
                         e
                     ))
             }
+        }
+    }
+}
+
+// ============================================================================
+// OAuth Consent Page Rendering (used by OAuth API controller)
+// ============================================================================
+
+/// Scope information for consent page display
+#[derive(Debug, Clone, Serialize)]
+pub struct ConsentScopeInfo {
+    pub scope_name: String,
+    pub scope_description: String,
+    pub sensitive: bool,
+}
+
+/// Data required to render the OAuth consent page
+#[derive(Debug, Clone)]
+pub struct OAuthConsentData {
+    pub client_name: String,
+    pub client_id: String,
+    pub client_type: String,
+    pub logo_url: Option<String>,
+    pub homepage_url: Option<String>,
+    pub privacy_policy_url: Option<String>,
+    pub terms_of_service_url: Option<String>,
+    pub scopes: Vec<ConsentScopeInfo>,
+    pub redirect_uri: String,
+    pub scope_string: String,
+    pub state: Option<String>,
+    pub code_challenge: Option<String>,
+    pub code_challenge_method: Option<String>,
+}
+
+/// Render the OAuth consent page
+/// This is called from the OAuth API controller when user consent is needed
+pub async fn render_oauth_consent(
+    req: &HttpRequest,
+    session: &Session,
+    state: &AppState,
+    data: OAuthConsentData,
+) -> HttpResponse {
+    // Start with base context (includes csrf_token, theme, is_logged, etc.)
+    let mut context = PagesController::base_context(req, session);
+
+    // Add branding (logo, favicon, site name)
+    let db = state.db.lock().await;
+    PagesController::add_branding_to_context(&mut context, &db).await;
+    drop(db);
+
+    // Client information
+    context.insert("client_name", &data.client_name);
+    context.insert("client_id", &data.client_id);
+    context.insert("client_type", &data.client_type);
+
+    // Optional client URLs (override logo_url from branding if client has one)
+    if let Some(ref url) = data.logo_url {
+        context.insert("client_logo_url", url);
+    }
+    if let Some(ref url) = data.homepage_url {
+        context.insert("homepage_url", url);
+    }
+    if let Some(ref url) = data.privacy_policy_url {
+        context.insert("privacy_policy_url", url);
+    }
+    if let Some(ref url) = data.terms_of_service_url {
+        context.insert("terms_of_service_url", url);
+    }
+
+    // Scopes
+    context.insert("scopes", &data.scopes);
+
+    // OAuth parameters for the form
+    context.insert("redirect_uri", &data.redirect_uri);
+    context.insert("scope", &data.scope_string);
+
+    if let Some(ref state_param) = data.state {
+        context.insert("state", state_param);
+    }
+    if let Some(ref code_challenge) = data.code_challenge {
+        context.insert("code_challenge", code_challenge);
+    }
+    if let Some(ref code_challenge_method) = data.code_challenge_method {
+        context.insert("code_challenge_method", code_challenge_method);
+    }
+
+    match WEB_TEMPLATES.render("oauth_consent.html", &context) {
+        Ok(html) => HttpResponse::Ok().content_type("text/html").body(html),
+        Err(e) => {
+            error!("OAuth consent template rendering error: {}", e);
+            HttpResponse::InternalServerError()
+                .content_type("text/html")
+                .body(format!(
+                    "<h1>500 - Internal Server Error</h1><p>Template error: {}</p>",
+                    e
+                ))
         }
     }
 }

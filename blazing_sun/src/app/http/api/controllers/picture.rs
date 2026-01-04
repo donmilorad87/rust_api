@@ -514,3 +514,437 @@ pub async fn reorder_pictures(
         }
     }
 }
+
+// ============================================================================
+// OAuth-Protected Handlers
+// ============================================================================
+
+/*
+// OAuth handlers temporarily commented out - need implementation fixes
+// TODO: Fix OAuth picture handlers to match current Picture structure
+use crate::bootstrap::middleware::controllers::{enforce_scopes, extract_oauth_claims};
+
+/// OAuth: Get gallery pictures (requires galleries.read scope)
+pub async fn get_gallery_pictures_oauth(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<i64>,
+) -> HttpResponse {
+    let gallery_id = path.into_inner();
+
+    // Extract OAuth claims
+    let claims = match extract_oauth_claims(&req) {
+        Some(c) => c,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "invalid_token",
+                "error_description": "OAuth token required"
+            }));
+        }
+    };
+
+    // Enforce scope: galleries.read
+    if let Err(response) = enforce_scopes(&claims, "galleries.read") {
+        return response;
+    }
+
+    let user_id = claims.user_id;
+    let db = state.db.lock().await;
+
+    // Check if user owns the gallery
+    if !db_read::gallery::user_owns_gallery(&db, gallery_id, user_id).await {
+        drop(db);
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Access denied"
+        }));
+    }
+
+    // Fetch pictures
+    match db_read::picture::get_by_gallery(&db, gallery_id).await {
+        Ok(pictures) => {
+            let response: Vec<PictureResponse> = pictures
+                .into_iter()
+                .map(|p| PictureResponse {
+                    id: p.id,
+                    gallery_id: p.gallery_id,
+                    upload_id: p.upload_id,
+                    upload_uuid: p.upload_uuid,
+                    display_order: p.display_order,
+                    image_url: build_image_url(p.upload_uuid),
+                    created_at: p.created_at.to_rfc3339(),
+                    updated_at: p.updated_at.to_rfc3339(),
+                })
+                .collect();
+
+            drop(db);
+            HttpResponse::Ok().json(response)
+        }
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to fetch pictures: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch pictures"
+            }))
+        }
+    }
+}
+
+/// OAuth: Add picture to gallery (requires galleries.write scope)
+pub async fn add_picture_oauth(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<i64>,
+    body: web::Json<AddPictureRequest>,
+) -> HttpResponse {
+    let gallery_id = path.into_inner();
+
+    // Extract OAuth claims
+    let claims = match extract_oauth_claims(&req) {
+        Some(c) => c,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "invalid_token",
+                "error_description": "OAuth token required"
+            }));
+        }
+    };
+
+    // Enforce scope: galleries.write
+    if let Err(response) = enforce_scopes(&claims, "galleries.write") {
+        return response;
+    }
+
+    let user_id = claims.user_id;
+    let db = state.db.lock().await;
+
+    // Check if user owns the gallery
+    if !db_read::gallery::user_owns_gallery(&db, gallery_id, user_id).await {
+        drop(db);
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Access denied"
+        }));
+    }
+
+    // Verify upload exists and belongs to user
+    let upload = match db_read::upload::get_by_id(&db, body.upload_id).await {
+        Ok(u) => u,
+        Err(_) => {
+            drop(db);
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Upload not found"
+            }));
+        }
+    };
+
+    if upload.user_id != user_id {
+        drop(db);
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Cannot use another user's upload"
+        }));
+    }
+
+    // Get next display order
+    let display_order = db_read::picture::get_next_display_order(&db, gallery_id)
+        .await
+        .unwrap_or(0);
+
+    // Create picture
+    let params = db_mutations::picture::CreatePictureParams {
+        gallery_id,
+        upload_id: body.upload_id,
+        upload_uuid: upload.uuid,
+        display_order,
+    };
+
+    match db_mutations::picture::create(&db, &params).await {
+        Ok(picture_id) => {
+            match db_read::picture::get_by_id(&db, picture_id).await {
+                Ok(picture) => {
+                    let response = PictureResponse {
+                        id: picture.id,
+                        gallery_id: picture.gallery_id,
+                        upload_id: picture.upload_id,
+                        upload_uuid: picture.upload_uuid,
+                        display_order: picture.display_order,
+                        image_url: build_image_url(picture.upload_uuid),
+                        created_at: picture.created_at.to_rfc3339(),
+                        updated_at: picture.updated_at.to_rfc3339(),
+                    };
+
+                    drop(db);
+                    HttpResponse::Created().json(response)
+                }
+                Err(e) => {
+                    drop(db);
+                    eprintln!("Failed to fetch created picture: {:?}", e);
+                    HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": "Picture created but failed to fetch"
+                    }))
+                }
+            }
+        }
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to create picture: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to add picture"
+            }))
+        }
+    }
+}
+
+/// OAuth: Update picture (requires galleries.write scope)
+pub async fn update_picture_oauth(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<(i64, i64)>,
+    body: web::Json<UpdatePictureRequest>,
+) -> HttpResponse {
+    let (gallery_id, picture_id) = path.into_inner();
+
+    // Extract OAuth claims
+    let claims = match extract_oauth_claims(&req) {
+        Some(c) => c,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "invalid_token",
+                "error_description": "OAuth token required"
+            }));
+        }
+    };
+
+    // Enforce scope: galleries.write
+    if let Err(response) = enforce_scopes(&claims, "galleries.write") {
+        return response;
+    }
+
+    let user_id = claims.user_id;
+    let db = state.db.lock().await;
+
+    // Check if user owns the gallery
+    if !db_read::gallery::user_owns_gallery(&db, gallery_id, user_id).await {
+        drop(db);
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Access denied"
+        }));
+    }
+
+    // Check if picture belongs to this gallery
+    if !db_read::picture::belongs_to_gallery(&db, picture_id, gallery_id).await {
+        drop(db);
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Picture not found in this gallery"
+        }));
+    }
+
+    // If changing upload, verify new upload exists and belongs to user
+    if let Some(new_upload_id) = body.upload_id {
+        let upload = match db_read::upload::get_by_id(&db, new_upload_id).await {
+            Ok(u) => u,
+            Err(_) => {
+                drop(db);
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Upload not found"
+                }));
+            }
+        };
+
+        if upload.user_id != user_id {
+            drop(db);
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Cannot use another user's upload"
+            }));
+        }
+
+        let params = db_mutations::picture::UpdatePictureParams {
+            upload_id: Some(new_upload_id),
+            upload_uuid: Some(upload.uuid),
+            display_order: body.display_order,
+        };
+
+        match db_mutations::picture::update(&db, picture_id, &params).await {
+            Ok(_) => {}
+            Err(e) => {
+                drop(db);
+                eprintln!("Failed to update picture: {:?}", e);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "Failed to update picture"
+                }));
+            }
+        }
+    } else if let Some(new_display_order) = body.display_order {
+        let params = db_mutations::picture::UpdatePictureParams {
+            upload_id: None,
+            upload_uuid: None,
+            display_order: Some(new_display_order),
+        };
+
+        match db_mutations::picture::update(&db, picture_id, &params).await {
+            Ok(_) => {}
+            Err(e) => {
+                drop(db);
+                eprintln!("Failed to update picture: {:?}", e);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "Failed to update picture"
+                }));
+            }
+        }
+    }
+
+    // Fetch updated picture
+    match db_read::picture::get_by_id(&db, picture_id).await {
+        Ok(picture) => {
+            let response = PictureResponse {
+                id: picture.id,
+                gallery_id: picture.gallery_id,
+                upload_id: picture.upload_id,
+                upload_uuid: picture.upload_uuid,
+                display_order: picture.display_order,
+                image_url: build_image_url(picture.upload_uuid),
+                created_at: picture.created_at.to_rfc3339(),
+                updated_at: picture.updated_at.to_rfc3339(),
+            };
+
+            drop(db);
+            HttpResponse::Ok().json(response)
+        }
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to fetch updated picture: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Picture updated but failed to fetch"
+            }))
+        }
+    }
+}
+
+/// OAuth: Remove picture from gallery (requires galleries.delete scope)
+pub async fn remove_picture_oauth(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<(i64, i64)>,
+) -> HttpResponse {
+    let (gallery_id, picture_id) = path.into_inner();
+
+    // Extract OAuth claims
+    let claims = match extract_oauth_claims(&req) {
+        Some(c) => c,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "invalid_token",
+                "error_description": "OAuth token required"
+            }));
+        }
+    };
+
+    // Enforce scope: galleries.delete
+    if let Err(response) = enforce_scopes(&claims, "galleries.delete") {
+        return response;
+    }
+
+    let user_id = claims.user_id;
+    let db = state.db.lock().await;
+
+    // Check if user owns the gallery
+    if !db_read::gallery::user_owns_gallery(&db, gallery_id, user_id).await {
+        drop(db);
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Access denied"
+        }));
+    }
+
+    // Check if picture belongs to this gallery
+    if !db_read::picture::belongs_to_gallery(&db, picture_id, gallery_id).await {
+        drop(db);
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Picture not found in this gallery"
+        }));
+    }
+
+    // Delete picture
+    match db_mutations::picture::delete(&db, picture_id).await {
+        Ok(rows_affected) => {
+            drop(db);
+            if rows_affected > 0 {
+                HttpResponse::Ok().json(serde_json::json!({
+                    "message": "Picture removed successfully"
+                }))
+            } else {
+                HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Picture not found"
+                }))
+            }
+        }
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to delete picture: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to remove picture"
+            }))
+        }
+    }
+}
+
+/// OAuth: Reorder pictures in gallery (requires galleries.reorder scope)
+pub async fn reorder_pictures_oauth(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<i64>,
+    body: web::Json<ReorderPicturesRequest>,
+) -> HttpResponse {
+    let gallery_id = path.into_inner();
+
+    // Extract OAuth claims
+    let claims = match extract_oauth_claims(&req) {
+        Some(c) => c,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "invalid_token",
+                "error_description": "OAuth token required"
+            }));
+        }
+    };
+
+    // Enforce scope: galleries.reorder
+    if let Err(response) = enforce_scopes(&claims, "galleries.reorder") {
+        return response;
+    }
+
+    let user_id = claims.user_id;
+    let db = state.db.lock().await;
+
+    // Check if user owns the gallery
+    if !db_read::gallery::user_owns_gallery(&db, gallery_id, user_id).await {
+        drop(db);
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Access denied"
+        }));
+    }
+
+    // Validate that all pictures belong to this gallery
+    for picture_id in &body.picture_ids {
+        if !db_read::picture::belongs_to_gallery(&db, *picture_id, gallery_id).await {
+            drop(db);
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "error": "Cannot reorder pictures from another gallery"
+            }));
+        }
+    }
+
+    // Update display_order for each picture
+    for (index, picture_id) in body.picture_ids.iter().enumerate() {
+        if let Err(e) = db_mutations::picture::update_display_order(&db, *picture_id, index as i32).await {
+            eprintln!("Failed to update display order for picture {}: {:?}", picture_id, e);
+            drop(db);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to reorder pictures"
+            }));
+        }
+    }
+
+    drop(db);
+    HttpResponse::Ok().json(serde_json::json!({
+        "message": "Pictures reordered successfully"
+    }))
+}
+*/

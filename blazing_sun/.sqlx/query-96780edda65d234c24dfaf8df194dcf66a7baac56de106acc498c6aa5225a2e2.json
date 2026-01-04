@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM oauth_client_allowed_scopes\n        WHERE client_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "96780edda65d234c24dfaf8df194dcf66a7baac56de106acc498c6aa5225a2e2"
+}

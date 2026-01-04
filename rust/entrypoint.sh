@@ -108,6 +108,19 @@ sync_env_vars() {
     # Sync Upload Configuration variables
     sync_env_var "UPLOAD_STORAGE_PATH" "$UPLOAD_STORAGE_PATH"
 
+    # Sync Session Configuration variables
+    sync_env_var "SESSION_DRIVER" "$SESSION_DRIVER"
+    sync_env_var "SESSION_REDIS_URL" "$SESSION_REDIS_URL"
+    sync_env_var "SESSION_COOKIE" "$SESSION_COOKIE"
+    sync_env_var "SESSION_LIFETIME_MINUTES" "$SESSION_LIFETIME_MINUTES"
+    sync_env_var "SESSION_REFRESH_TTL" "$SESSION_REFRESH_TTL"
+    sync_env_var "SESSION_REGENERATE_ON_LOGIN" "$SESSION_REGENERATE_ON_LOGIN"
+    sync_env_var "SESSION_SECURE_COOKIE" "$SESSION_SECURE_COOKIE"
+    sync_env_var "SESSION_HTTP_ONLY" "$SESSION_HTTP_ONLY"
+    sync_env_var "SESSION_SAMESITE" "$SESSION_SAMESITE"
+    sync_env_var "SESSION_COOKIE_PATH" "$SESSION_COOKIE_PATH"
+    sync_env_var "SESSION_KEY_PREFIX" "$SESSION_KEY_PREFIX"
+
     echo ""
 }
 

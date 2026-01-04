@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+
+{% block title %}OAuth Applications - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/OAUTH_APPLICATIONS/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="oauth-content">
+    <div class="oauth-page">
+        <header class="oauth-page__header">
+            <h1 class="oauth-page__title">OAuth 2.0 Applications</h1>
+            <p class="oauth-page__description">
+                Manage your OAuth applications and review apps you've authorized.
+            </p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="oauth-tabs">
+            <button type="button" class="oauth-tabs__tab oauth-tabs__tab--active" data-tab="my-apps" id="myAppsTab">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                My Applications
+            </button>
+            <button type="button" class="oauth-tabs__tab" data-tab="authorized-apps" id="authorizedAppsTab">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                Authorized Apps
+                <span class="oauth-tabs__badge" id="authorizedAppsBadge" style="display: none;">0</span>
+            </button>
+        </div>
+
+        <!-- Tab Content: My Applications -->
+        <div class="oauth-tab-content oauth-tab-content--active" id="myAppsContent">
+            <div class="oauth-page__controls">
+                <button type="button" class="btn btn--primary" id="createAppBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span class="btn__text">Create Application</span>
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading applications...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state" style="display: none;">
+                <div class="error-state__icon">⚠️</div>
+                <h2 class="error-state__title">Failed to Load Applications</h2>
+                <p class="error-state__message"></p>
+                <button id="retryBtn" class="btn btn--secondary">Retry</button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state__icon">🔐</div>
+                <h2 class="empty-state__title">No OAuth Applications Yet</h2>
+                <p class="empty-state__message">Create your first OAuth application to enable third-party integrations</p>
+                <button class="btn btn--primary" id="createAppFromEmpty">
+                    Create Application
+                </button>
+            </div>
+
+            <!-- Applications List -->
+            <div id="appsListContainer" class="apps-list" style="display: none;"></div>
+        </div>
+
+        <!-- Tab Content: Authorized Apps -->
+        <div class="oauth-tab-content" id="authorizedAppsContent" style="display: none;">
+            <p class="oauth-page__description" style="margin-bottom: 1.5rem;">
+                These are applications you've authorized to access your account. You can revoke access at any time.
+            </p>
+
+            <!-- Authorized Apps Loading State -->
+            <div id="authorizedLoadingState" class="loading-state" style="display: none;">
+                <div class="spinner"></div>
+                <p>Loading authorized apps...</p>
+            </div>
+
+            <!-- Authorized Apps Error State -->
+            <div id="authorizedErrorState" class="error-state" style="display: none;">
+                <div class="error-state__icon">⚠️</div>
+                <h2 class="error-state__title">Failed to Load Authorized Apps</h2>
+                <p class="error-state__message"></p>
+                <button id="authorizedRetryBtn" class="btn btn--secondary">Retry</button>
+            </div>
+
+            <!-- Authorized Apps Empty State -->
+            <div id="authorizedEmptyState" class="empty-state" style="display: none;">
+                <div class="empty-state__icon">🛡️</div>
+                <h2 class="empty-state__title">No Authorized Apps</h2>
+                <p class="empty-state__message">You haven't authorized any third-party applications yet.</p>
+            </div>
+
+            <!-- Authorized Apps List -->
+            <div id="authorizedAppsListContainer" class="apps-list" style="display: none;"></div>
+        </div>
+    </div>
+</main>
+
+<!-- Create/Edit Application Modal -->
+<div id="appModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container modal__container--large" role="document">
+        <header class="modal__header">
+            <h2 id="modalTitle" class="modal__title">Create OAuth Application</h2>
+            <button type="button" class="modal__close" id="modalCloseBtn" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <form id="oauthAppForm" class="form">
+                <!-- Basic Information -->
+                <fieldset class="form__fieldset">
+                    <legend class="form__legend">Basic Information</legend>
+
+                    <div class="form__group">
+                        <label for="appName" class="form__label">Application Name *</label>
+                        <input
+                            type="text"
+                            id="appName"
+                            name="client_name"
+                            class="form__input"
+                            required
+                            maxlength="255"
+                            placeholder="My Application"
+                        >
+                        <span class="form__error" id="appNameError"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="appDescription" class="form__label">Description</label>
+                        <textarea
+                            id="appDescription"
+                            name="description"
+                            class="form__textarea"
+                            rows="3"
+                            placeholder="Brief description of your application"
+                        ></textarea>
+                        <span class="form__error" id="appDescriptionError"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="appClientType" class="form__label">Client Type *</label>
+                        <select id="appClientType" name="client_type" class="form__select" required>
+                            <option value="public">Public (Mobile/SPA)</option>
+                            <option value="confidential">Confidential (Server-side)</option>
+                        </select>
+                        <small class="form__help">
+                            <strong>Public:</strong> For mobile apps and SPAs (PKCE required).<br>
+                            <strong>Confidential:</strong> For server-side apps (uses client secret).
+                        </small>
+                        <span class="form__error" id="appClientTypeError"></span>
+                    </div>
+                </fieldset>
+
+                <!-- Application URLs -->
+                <fieldset class="form__fieldset">
+                    <legend class="form__legend">Application URLs</legend>
+
+                    <div class="form__group">
+                        <label for="appHomepage" class="form__label">Homepage URL</label>
+                        <input
+                            type="url"
+                            id="appHomepage"
+                            name="homepage_url"
+                            class="form__input"
+                            placeholder="https://example.com"
+                        >
+                        <span class="form__error" id="appHomepageError"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="appPrivacy" class="form__label">Privacy Policy URL</label>
+                        <input
+                            type="url"
+                            id="appPrivacy"
+                            name="privacy_policy_url"
+                            class="form__input"
+                            placeholder="https://example.com/privacy"
+                        >
+                        <span class="form__error" id="appPrivacyError"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label for="appTerms" class="form__label">Terms of Service URL</label>
+                        <input
+                            type="url"
+                            id="appTerms"
+                            name="terms_of_service_url"
+                            class="form__input"
+                            placeholder="https://example.com/terms"
+                        >
+                        <span class="form__error" id="appTermsError"></span>
+                    </div>
+                </fieldset>
+
+                <input type="hidden" id="appId" name="app_id">
+            </form>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary" id="cancelBtn">Cancel</button>
+            <button type="submit" form="oauthAppForm" class="btn btn--primary" id="saveOAuthAppBtn">
+                <span class="btn__text">Create Application</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Application Details Modal -->
+<div id="appDetailsModal" class="modal" role="dialog" aria-labelledby="detailsModalTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container modal__container--extra-large" role="document">
+        <header class="modal__header">
+            <h2 id="detailsModalTitle" class="modal__title">Application Details</h2>
+            <button type="button" class="modal__close" id="detailsModalCloseBtn" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <!-- Credentials Section -->
+            <section class="details-section">
+                <h3 class="details-section__title">Credentials</h3>
+                <div class="credentials-grid">
+                    <div class="credential-item">
+                        <label class="credential-item__label">Client ID</label>
+                        <div class="credential-item__value">
+                            <code id="detailClientId">-</code>
+                            <button type="button" class="btn-icon" data-action="copy-to-clipboard" data-target="detailClientId" title="Copy">📋</button>
+                        </div>
+                    </div>
+                    <div class="credential-item" id="clientSecretSection" style="display: none;">
+                        <label class="credential-item__label">Client Secret</label>
+                        <div class="credential-item__value">
+                            <code id="detailClientSecret">-</code>
+                            <button type="button" class="btn-icon" data-action="copy-to-clipboard" data-target="detailClientSecret" title="Copy">📋</button>
+                        </div>
+                        <small class="credential-item__help">⚠️ Store this securely. It won't be shown again.</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Redirect URIs Section -->
+            <section class="details-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 class="details-section__title" style="margin: 0;">Redirect URIs</h3>
+                    <button type="button" class="btn btn--small btn--primary" data-action="show-sso-url-modal">
+                        🔗 Generate OAuth URL
+                    </button>
+                </div>
+                <p class="details-section__desc">Authorized callback URLs for OAuth flow</p>
+                <div id="redirectUrisList"></div>
+                <div id="redirectUriInputs" class="uri-inputs-container">
+                    <div class="add-uri-form">
+                        <input type="text" placeholder="https://example.com/callback" class="form__input form__input--full redirect-uri-input" />
+                        <button type="button" class="btn-add-uri" title="Add Another Redirect URI" data-action="add-redirect-uri">+</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn--small btn--primary" style="margin-top: 0.5rem;" data-action="save-all-redirect-uris">
+                    💾 Save All Redirect URIs
+                </button>
+            </section>
+
+            <!-- Authorized Origins Section -->
+            <section class="details-section">
+                <h3 class="details-section__title">Authorized JavaScript Origins</h3>
+                <p class="details-section__desc">Authorized domains for CORS (JavaScript clients)</p>
+                <div id="authorizedOriginsList"></div>
+                <div id="authorizedOriginInputs" class="uri-inputs-container">
+                    <div class="add-uri-form">
+                        <input type="text" placeholder="https://example.com" class="form__input form__input--full origin-input" />
+                        <button type="button" class="btn-add-uri" title="Add Another Origin" data-action="add-origin">+</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn--small btn--primary" style="margin-top: 0.5rem;" data-action="save-all-origins">
+                    💾 Save All Origins
+                </button>
+            </section>
+
+            <!-- Enabled APIs Section (Google Cloud Platform Style) -->
+            <section class="details-section">
+                <h3 class="details-section__title">Enabled APIs</h3>
+                <p class="details-section__desc">Enable APIs to grant access to specific resources</p>
+                <div id="enabledApisList" class="apis-list">
+                    <p class="loading-text">Loading available APIs...</p>
+                </div>
+            </section>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--danger" id="deleteApplicationBtn">
+                <span class="btn__text">Delete Application</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="modal" role="dialog" aria-labelledby="deleteConfirmTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container" role="document">
+        <header class="modal__header">
+            <h2 id="deleteConfirmTitle" class="modal__title">⚠️ Delete Application</h2>
+            <button type="button" class="modal__close" id="deleteConfirmCloseBtn" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <div class="alert alert--danger" style="margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-weight: 600;">⚠️ This action CANNOT be undone!</p>
+            </div>
+
+            <p style="margin-bottom: 1rem;">You are about to permanently delete the application:</p>
+            <p style="font-weight: 700; font-size: 1.125rem; margin-bottom: 1.5rem; color: #dc2626;" id="deleteAppNameDisplay">-</p>
+
+            <p style="margin-bottom: 1rem;">All associated data will be permanently deleted:</p>
+            <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+                <li>Redirect URIs</li>
+                <li>Authorized JavaScript Origins</li>
+                <li>Enabled APIs</li>
+                <li>All OAuth authorization codes</li>
+                <li>All OAuth access tokens</li>
+                <li>All OAuth refresh tokens</li>
+            </ul>
+
+            <p style="margin-bottom: 0.5rem; font-weight: 600;">To confirm deletion, please type the application name:</p>
+            <form id="deleteConfirmForm">
+                <div class="form__group">
+                    <input
+                        type="text"
+                        id="deleteConfirmInput"
+                        class="form__input"
+                        placeholder="Type application name here"
+                        required
+                        autocomplete="off"
+                    >
+                    <span class="form__error" id="deleteConfirmError"></span>
+                </div>
+            </form>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary" id="cancelDeleteBtn">Cancel</button>
+            <button type="submit" form="deleteConfirmForm" class="btn btn--danger" id="confirmDeleteBtn">
+                <span class="btn__text">Delete Application</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Client Secret Modal (shown once after creation) -->
+<div id="clientSecretModal" class="modal" role="dialog" aria-labelledby="clientSecretTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container" role="document">
+        <header class="modal__header">
+            <h2 id="clientSecretTitle" class="modal__title">🔑 Client Secret Generated</h2>
+            <button type="button" class="modal__close" id="clientSecretCloseBtn" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <div class="alert alert--warning" style="margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-weight: 600;">⚠️ IMPORTANT: Save this secret now!</p>
+                <p style="margin: 0.5rem 0 0 0;">This is the only time you'll be able to view this client secret. Store it securely.</p>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Client Secret:</label>
+                <div style="display: flex; gap: 0.5rem; align-items: start;">
+                    <code id="newClientSecret" style="
+                        flex: 1;
+                        padding: 1rem;
+                        background: #f3f4f6;
+                        border: 1px solid #d1d5db;
+                        border-radius: 0.375rem;
+                        font-family: 'Courier New', monospace;
+                        font-size: 0.875rem;
+                        word-break: break-all;
+                        color: #1f2937;
+                    ">-</code>
+                    <button type="button" class="btn-icon" id="copyClientSecretBtn" title="Copy to clipboard" style="
+                        padding: 0.75rem;
+                        background: #3b82f6;
+                        color: white;
+                        border: none;
+                        border-radius: 0.375rem;
+                        cursor: pointer;
+                        font-size: 1.25rem;
+                    ">📋</button>
+                </div>
+            </div>
+
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.375rem; padding: 1rem; margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-size: 0.875rem; color: #92400e;">
+                    <strong>Security Best Practices:</strong>
+                </p>
+                <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0; font-size: 0.875rem; color: #92400e;">
+                    <li>Never share this secret publicly or commit it to version control</li>
+                    <li>Store it in a secure password manager or environment variable</li>
+                    <li>Rotate secrets regularly for enhanced security</li>
+                    <li>If compromised, delete this secret and create a new one immediately</li>
+                </ul>
+            </div>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--primary" id="clientSecretContinueBtn">
+                <span class="btn__text">I've Saved It - Continue</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Enable API Confirmation Modal -->
+<div id="enableApiModal" class="modal" role="dialog" aria-labelledby="enableApiTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container" role="document">
+        <header class="modal__header">
+            <h2 id="enableApiTitle" class="modal__title">Enable API</h2>
+            <button type="button" class="modal__close" id="enableApiCloseBtn" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <div class="alert alert--info" style="margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-weight: 600;">You are about to enable an API</p>
+            </div>
+
+            <p style="margin-bottom: 1rem;">Enable <strong id="enableApiNameDisplay">-</strong> for this application?</p>
+
+            <p style="margin-bottom: 1rem; color: #6b7280;">This will grant the required read scope to your application. You can configure additional permissions after enabling.</p>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary" id="cancelEnableApiBtn">Cancel</button>
+            <button type="button" class="btn btn--primary" id="confirmEnableApiBtn">
+                <span class="btn__text">Enable API</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Disable API Confirmation Modal -->
+<div id="disableApiModal" class="modal" role="dialog" aria-labelledby="disableApiTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container" role="document">
+        <header class="modal__header">
+            <h2 id="disableApiTitle" class="modal__title">Disable API</h2>
+            <button type="button" class="modal__close" id="disableApiCloseBtn" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <div class="alert alert--warning" style="margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-weight: 600;">Warning: This will revoke API access</p>
+            </div>
+
+            <p style="margin-bottom: 1rem;">Disable <strong id="disableApiNameDisplay">-</strong> for this application?</p>
+
+            <p style="margin-bottom: 1rem; color: #dc2626; font-weight: 500;">This will remove all associated scopes from your application.</p>
+
+            <p style="margin-bottom: 0; color: #6b7280; font-size: 0.875rem;">Any integrations using these scopes will stop working until the API is re-enabled.</p>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary" id="cancelDisableApiBtn">Cancel</button>
+            <button type="button" class="btn btn--danger" id="confirmDisableApiBtn">
+                <span class="btn__text">Disable API</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- SSO URL Generator Modal -->
+<div id="ssoUrlModal" class="modal" role="dialog" aria-labelledby="ssoUrlTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container modal__container--large" role="document">
+        <header class="modal__header">
+            <h2 id="ssoUrlTitle" class="modal__title">🔗 OAuth 2.0 Authorization URL</h2>
+            <button type="button" class="modal__close" id="ssoUrlCloseBtn" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <div class="alert alert--info" style="margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-weight: 600;">📘 Integration Guide</p>
+                <p style="margin: 0.5rem 0 0 0;">Use this URL to redirect users to the OAuth authorization page from your application.</p>
+            </div>
+
+            <!-- Redirect URI Selection -->
+            <div class="form__group" style="margin-bottom: 1.5rem;">
+                <label for="ssoRedirectUriSelect" class="form__label">Select Redirect URI:</label>
+                <select id="ssoRedirectUriSelect" class="form__select">
+                    <option value="">-- Select a redirect URI --</option>
+                </select>
+                <small class="form__help">The user will be redirected to this URL after authorization.</small>
+            </div>
+
+            <!-- Generated OAuth URL -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Authorization URL:</label>
+                <div style="display: flex; gap: 0.5rem; align-items: start;">
+                    <code id="ssoUrlDisplay" style="
+                        flex: 1;
+                        padding: 1rem;
+                        background: #f3f4f6;
+                        border: 1px solid #d1d5db;
+                        border-radius: 0.375rem;
+                        font-family: 'Courier New', monospace;
+                        font-size: 0.75rem;
+                        word-break: break-all;
+                        color: #1f2937;
+                        line-height: 1.6;
+                        max-height: 200px;
+                        overflow-y: auto;
+                    ">Select a redirect URI to generate the URL</code>
+                    <button type="button" class="btn-icon" id="copySsoUrlBtn" title="Copy to clipboard" disabled style="
+                        padding: 0.75rem;
+                        background: #3b82f6;
+                        color: white;
+                        border: none;
+                        border-radius: 0.375rem;
+                        cursor: pointer;
+                        font-size: 1.25rem;
+                    ">📋</button>
+                </div>
+            </div>
+
+            <!-- OAuth Flow Steps -->
+            <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 0.375rem; padding: 1rem;">
+                <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #1e40af;">
+                    <strong>OAuth 2.0 Flow:</strong>
+                </p>
+                <ol style="margin: 0; padding-left: 1.5rem; font-size: 0.875rem; color: #1e3a8a;">
+                    <li>User clicks link in your app → Redirected to this authorization URL</li>
+                    <li>User sees consent screen → Approves requested scopes</li>
+                    <li>User is redirected back to your redirect_uri with authorization code</li>
+                    <li>Your backend exchanges code for access token at <code>/oauth/token</code></li>
+                    <li>Use access token to call protected APIs</li>
+                </ol>
+            </div>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary" data-action="hide-sso-url-modal">Close</button>
+        </footer>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="/assets/js/OAUTH_APPLICATIONS/app.js?v={{ assets_version }}"></script>
+{% endblock %}

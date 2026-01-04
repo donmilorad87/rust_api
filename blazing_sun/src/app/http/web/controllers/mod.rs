@@ -5,3 +5,4 @@
 pub mod pages;
 
 pub use pages::PagesController;
+pub use pages::{render_oauth_consent, ConsentScopeInfo, OAuthConsentData};

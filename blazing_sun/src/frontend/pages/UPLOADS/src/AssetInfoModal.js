@@ -1,3 +1,5 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+
 /**
  * AssetInfoModal Component
  *
@@ -229,9 +231,7 @@ export class AssetInfoModal {
         `${this.baseUrl}/api/v1/admin/uploads/${this.currentUpload.uuid}/metadata`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: getCsrfHeaders(),
           credentials: 'include',
           body: JSON.stringify(payload)
         }

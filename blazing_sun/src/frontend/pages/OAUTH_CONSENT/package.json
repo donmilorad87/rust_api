@@ -1,0 +1,14 @@
+{
+  "name": "blazing-sun-oauth-consent",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build --mode production",
+    "build:dev": "vite build --mode development",
+    "watch": "vite build --watch --mode development"
+  },
+  "devDependencies": {
+    "sass": "^1.69.5",
+    "vite": "^5.0.2"
+  }
+}

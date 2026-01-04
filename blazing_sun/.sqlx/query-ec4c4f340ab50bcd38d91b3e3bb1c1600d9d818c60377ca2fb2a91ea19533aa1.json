@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO oauth_client_allowed_scopes (client_id, scope_id)\n            VALUES ($1, $2)\n            ON CONFLICT (client_id, scope_id) DO NOTHING\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ec4c4f340ab50bcd38d91b3e3bb1c1600d9d818c60377ca2fb2a91ea19533aa1"
+}

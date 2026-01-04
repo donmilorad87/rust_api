@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO oauth_authorization_codes (\n            code, client_id, user_id, redirect_uri, scopes,\n            code_challenge, code_challenge_method, expires_at\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int8",
+        "Int8",
+        "Varchar",
+        "TextArray",
+        "Varchar",
+        "Varchar",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5d773a656302b92567a039b8d003806c01dce110c55b30a7b2c94360b79bb4f7"
+}

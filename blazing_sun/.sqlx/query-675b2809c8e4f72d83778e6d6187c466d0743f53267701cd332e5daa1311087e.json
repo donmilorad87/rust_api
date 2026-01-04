@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM oauth_consent_grants\n        WHERE client_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "675b2809c8e4f72d83778e6d6187c466d0743f53267701cd332e5daa1311087e"
+}

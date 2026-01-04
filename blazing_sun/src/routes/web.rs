@@ -48,6 +48,7 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     // Web Pages (Authenticated)
     // ============================================
     cfg.route("/profile", web::get().to(PagesController::profile));
+    cfg.route("/oauth/applications", web::get().to(PagesController::oauth_applications));
     cfg.route("/galleries", web::get().to(PagesController::galleries));
     cfg.route("/logout", web::get().to(PagesController::logout));
 
@@ -86,6 +87,7 @@ fn register_route_names() {
     route!("web.sign_in", "/sign-in");
     route!("web.forgot_password", "/forgot-password");
     route!("web.profile", "/profile");
+    route!("oauth.applications", "/oauth/applications");
     route!("web.galleries", "/galleries");
     route!("web.logout", "/logout");
 

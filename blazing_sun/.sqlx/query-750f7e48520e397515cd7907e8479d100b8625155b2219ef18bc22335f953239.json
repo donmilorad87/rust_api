@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            cea.client_id,\n            cea.api_product_id,\n            ap.product_key,\n            ap.product_name,\n            ap.product_description,\n            cea.created_at\n        FROM oauth_client_enabled_apis cea\n        JOIN oauth_api_products ap ON cea.api_product_id = ap.id\n        WHERE cea.client_id = $1\n        ORDER BY ap.product_name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "client_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "api_product_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "product_key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "product_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "product_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "750f7e48520e397515cd7907e8479d100b8625155b2219ef18bc22335f953239"
+}

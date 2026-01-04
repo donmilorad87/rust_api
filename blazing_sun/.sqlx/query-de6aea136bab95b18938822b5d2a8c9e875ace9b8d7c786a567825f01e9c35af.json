@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE oauth_api_products\n        SET is_active = true\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "de6aea136bab95b18938822b5d2a8c9e875ace9b8d7c786a567825f01e9c35af"
+}

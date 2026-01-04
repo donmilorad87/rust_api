@@ -2,7 +2,7 @@
 //!
 //! This module provides database connection pooling and application state management.
 
-use crate::config::{DatabaseConfig, JwtConfig, MongoDbConfig};
+use crate::config::{DatabaseConfig, JwtConfig, MongoDbConfig, OAuthConfig};
 use crate::events::SharedEventBus;
 use actix_web::web;
 use mongodb::{Client as MongoClient, Database as MongoDatabase};
@@ -25,6 +25,18 @@ pub struct AppState {
     pub mq: Option<DynMq>,
     pub events: Option<SharedEventBus>,
     pub mongodb: Option<SharedMongoDb>,
+    /// OAuth public key path for JWT verification (RS256)
+    pub oauth_public_key_path: &'static str,
+    /// OAuth private key path for JWT signing (RS256)
+    pub oauth_private_key_path: &'static str,
+    /// OAuth issuer URL for JWT validation
+    pub oauth_issuer: &'static str,
+    /// OAuth JWT Key ID (kid) for JWKS
+    pub oauth_jwt_kid: &'static str,
+    /// OAuth access token TTL in seconds
+    pub oauth_access_token_ttl_seconds: i64,
+    /// OAuth refresh token TTL in days
+    pub oauth_refresh_token_ttl_days: i64,
 }
 
 impl AppState {
@@ -79,6 +91,12 @@ pub async fn state() -> web::Data<AppState> {
         mq: None,
         events: None,
         mongodb: None,
+        oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
+        oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
+        oauth_issuer: OAuthConfig::jwt_issuer(),
+        oauth_jwt_kid: OAuthConfig::jwt_kid(),
+        oauth_access_token_ttl_seconds: OAuthConfig::access_token_ttl_seconds(),
+        oauth_refresh_token_ttl_days: OAuthConfig::refresh_token_ttl_days(),
     })
 }
 
@@ -90,6 +108,12 @@ pub async fn state_with_mq(mq: DynMq) -> web::Data<AppState> {
         mq: Some(mq),
         events: None,
         mongodb: None,
+        oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
+        oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
+        oauth_issuer: OAuthConfig::jwt_issuer(),
+        oauth_jwt_kid: OAuthConfig::jwt_kid(),
+        oauth_access_token_ttl_seconds: OAuthConfig::access_token_ttl_seconds(),
+        oauth_refresh_token_ttl_days: OAuthConfig::refresh_token_ttl_days(),
     })
 }
 
@@ -101,6 +125,12 @@ pub async fn state_with_mq_and_events(mq: DynMq, events: SharedEventBus) -> web:
         mq: Some(mq),
         events: Some(events),
         mongodb: None,
+        oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
+        oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
+        oauth_issuer: OAuthConfig::jwt_issuer(),
+        oauth_jwt_kid: OAuthConfig::jwt_kid(),
+        oauth_access_token_ttl_seconds: OAuthConfig::access_token_ttl_seconds(),
+        oauth_refresh_token_ttl_days: OAuthConfig::refresh_token_ttl_days(),
     })
 }
 
@@ -116,5 +146,11 @@ pub async fn state_full(
         mq: Some(mq),
         events,
         mongodb,
+        oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
+        oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
+        oauth_issuer: OAuthConfig::jwt_issuer(),
+        oauth_jwt_kid: OAuthConfig::jwt_kid(),
+        oauth_access_token_ttl_seconds: OAuthConfig::access_token_ttl_seconds(),
+        oauth_refresh_token_ttl_days: OAuthConfig::refresh_token_ttl_days(),
     })
 }

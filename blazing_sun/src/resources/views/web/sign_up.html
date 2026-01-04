@@ -11,71 +11,104 @@
     <!-- Sign Up Form -->
     <article class="card" id="signupCard">
         <h1 class="card__title">Create Account</h1>
-        <form id="signupForm" aria-label="Sign up form">
+        <form id="signupForm" aria-label="Sign up form" novalidate>
+            <!-- First Name -->
             <div class="form-group">
                 <label class="form-group__label" for="first_name">First Name</label>
-                <input
-                    type="text"
-                    id="first_name"
-                    name="first_name"
-                    class="form-group__input"
-                    required
-                    autocomplete="given-name"
-                    aria-required="true"
-                >
+                <div class="input-wrapper">
+                    <input
+                        type="text"
+                        id="first_name"
+                        name="first_name"
+                        class="form-group__input"
+                        autocomplete="given-name"
+                        aria-required="true"
+                        aria-describedby="firstNameFeedback"
+                        placeholder="Enter your first name"
+                    >
+                </div>
+                <div id="firstNameFeedback" class="validation-feedback" aria-live="polite"></div>
             </div>
+
+            <!-- Last Name -->
             <div class="form-group">
                 <label class="form-group__label" for="last_name">Last Name</label>
-                <input
-                    type="text"
-                    id="last_name"
-                    name="last_name"
-                    class="form-group__input"
-                    required
-                    autocomplete="family-name"
-                    aria-required="true"
-                >
+                <div class="input-wrapper">
+                    <input
+                        type="text"
+                        id="last_name"
+                        name="last_name"
+                        class="form-group__input"
+                        autocomplete="family-name"
+                        aria-required="true"
+                        aria-describedby="lastNameFeedback"
+                        placeholder="Enter your last name"
+                    >
+                </div>
+                <div id="lastNameFeedback" class="validation-feedback" aria-live="polite"></div>
             </div>
+
+            <!-- Email -->
             <div class="form-group">
                 <label class="form-group__label" for="email">Email</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    class="form-group__input"
-                    required
-                    autocomplete="email"
-                    aria-required="true"
-                >
+                <div class="input-wrapper">
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="form-group__input"
+                        autocomplete="email"
+                        aria-required="true"
+                        aria-describedby="emailFeedback"
+                        placeholder="you@example.com"
+                    >
+                </div>
+                <div id="emailFeedback" class="validation-feedback" aria-live="polite"></div>
             </div>
+
+            <!-- Password -->
             <div class="form-group">
                 <label class="form-group__label" for="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    class="form-group__input"
-                    required
-                    minlength="8"
-                    autocomplete="new-password"
-                    aria-required="true"
-                    aria-describedby="password-hint"
-                >
-                <small id="password-hint" class="c-muted fs-sm">Minimum 8 characters</small>
+                <div class="input-wrapper input-wrapper--password">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-group__input"
+                        autocomplete="new-password"
+                        aria-required="true"
+                        aria-describedby="passwordFeedback"
+                        placeholder="Create a strong password"
+                    >
+                    <button type="button" class="password-toggle" id="passwordToggle" aria-label="Show password">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                <div id="passwordFeedback" class="validation-feedback" aria-live="polite"></div>
             </div>
+
+            <!-- Confirm Password -->
             <div class="form-group">
                 <label class="form-group__label" for="confirm_password">Confirm Password</label>
-                <input
-                    type="password"
-                    id="confirm_password"
-                    name="confirm_password"
-                    class="form-group__input"
-                    required
-                    autocomplete="new-password"
-                    aria-required="true"
-                >
+                <div class="input-wrapper input-wrapper--password">
+                    <input
+                        type="password"
+                        id="confirm_password"
+                        name="confirm_password"
+                        class="form-group__input"
+                        autocomplete="new-password"
+                        aria-required="true"
+                        aria-describedby="confirmPasswordFeedback"
+                        placeholder="Confirm your password"
+                    >
+                    <button type="button" class="password-toggle" id="confirmPasswordToggle" aria-label="Show password">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+                <div id="confirmPasswordFeedback" class="validation-feedback" aria-live="polite"></div>
             </div>
-            <button type="submit" class="btn mt3">Sign Up</button>
+
+            <button type="submit" class="btn btn--primary btn--full mt3">Sign Up</button>
         </form>
         <p class="card__footer">
             Already have an account? <a href="/sign-in" class="link">Sign In</a>

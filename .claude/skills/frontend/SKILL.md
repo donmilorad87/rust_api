@@ -147,6 +147,63 @@ When building/debugging pages that require authentication:
 - Minimize external dependencies
 - Follow existing code patterns
 
+---
+
+## UI Dialog Rules (CRITICAL)
+
+**NEVER use native browser dialogs. ALWAYS use custom modals.**
+
+### Prohibited
+
+- `alert()` - Native browser alert
+- `confirm()` - Native browser confirm dialog
+- `prompt()` - Native browser prompt dialog
+- Any native browser modal dialogs
+
+### Required
+
+Always use custom HTML/CSS modals for:
+- Confirmation dialogs (e.g., "Are you sure you want to delete?")
+- Success/Error messages (use toast notifications or inline messages)
+- User input prompts (use custom modal forms)
+- Warning messages (use styled alert components)
+
+### Why?
+
+1. **Consistency** - Native dialogs look different across browsers/OS
+2. **Styling** - Native dialogs cannot be styled to match the app theme
+3. **UX** - Custom modals provide better user experience
+4. **Accessibility** - Custom modals can be properly accessible with ARIA
+5. **Control** - Custom modals don't block the JavaScript thread
+
+### Implementation Pattern
+
+```javascript
+// ❌ WRONG - Never do this
+if (confirm('Are you sure you want to delete?')) {
+    deleteItem();
+}
+
+// ✅ CORRECT - Use custom modal
+showConfirmModal({
+    title: 'Delete Item',
+    message: 'Are you sure you want to delete this item?',
+    confirmText: 'Delete',
+    confirmClass: 'btn--danger',
+    onConfirm: () => deleteItem()
+});
+```
+
+### Toast Notifications for Messages
+
+```javascript
+// ❌ WRONG
+alert('Item saved successfully!');
+
+// ✅ CORRECT
+showToast('Item saved successfully!', 'success');
+```
+
 
 ## Architecture Plan
 

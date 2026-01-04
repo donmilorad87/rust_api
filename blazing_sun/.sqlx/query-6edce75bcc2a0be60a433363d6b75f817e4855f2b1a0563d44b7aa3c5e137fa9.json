@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, code, client_id, user_id, redirect_uri, scopes,\n               code_challenge, code_challenge_method, expires_at, is_used, created_at\n        FROM oauth_authorization_codes\n        WHERE code = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "client_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "redirect_uri",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "scopes",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "code_challenge",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "code_challenge_method",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_used",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6edce75bcc2a0be60a433363d6b75f817e4855f2b1a0563d44b7aa3c5e137fa9"
+}

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Authorize {{ client_name }} - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/OAUTH_CONSENT/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <article class="oauth-consent-card">
+        <!-- Client Info -->
+        <header class="oauth-consent__header">
+            {% if client_logo_url %}
+            <img src="{{ client_logo_url }}" alt="{{ client_name }} logo" class="oauth-consent__logo">
+            {% endif %}
+            <h1 class="oauth-consent__title">Authorize {{ client_name }}</h1>
+            <p class="oauth-consent__subtitle">{{ client_name }} wants to access your account</p>
+        </header>
+
+        <!-- Requested Scopes -->
+        <section class="oauth-consent__scopes">
+            <h2 class="oauth-consent__scopes-title">This application will be able to:</h2>
+            <ul class="oauth-consent__scope-list">
+                {% for scope in scopes %}
+                <li class="oauth-consent__scope-item {% if scope.sensitive %}oauth-consent__scope-item--sensitive{% endif %}">
+                    <span class="oauth-consent__scope-icon" aria-hidden="true">
+                        {% if scope.sensitive %}⚠{% else %}✓{% endif %}
+                    </span>
+                    <div class="oauth-consent__scope-content">
+                        <strong class="oauth-consent__scope-name">{{ scope.scope_description }}</strong>
+                        {% if scope.sensitive %}
+                        <span class="oauth-consent__scope-badge">Sensitive</span>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Additional Client Information -->
+        {% if privacy_policy_url or terms_of_service_url or homepage_url %}
+        <aside class="oauth-consent__links">
+            <p class="oauth-consent__links-title">Learn more about {{ client_name }}:</p>
+            <ul class="oauth-consent__link-list">
+                {% if homepage_url %}
+                <li><a href="{{ homepage_url }}" target="_blank" rel="noopener noreferrer" class="link">Homepage</a></li>
+                {% endif %}
+                {% if privacy_policy_url %}
+                <li><a href="{{ privacy_policy_url }}" target="_blank" rel="noopener noreferrer" class="link">Privacy Policy</a></li>
+                {% endif %}
+                {% if terms_of_service_url %}
+                <li><a href="{{ terms_of_service_url }}" target="_blank" rel="noopener noreferrer" class="link">Terms of Service</a></li>
+                {% endif %}
+            </ul>
+        </aside>
+        {% endif %}
+
+        <!-- Consent Form -->
+        <form id="consentForm" class="oauth-consent__form" aria-label="OAuth consent form">
+            <!-- Hidden OAuth Parameters -->
+            <input type="hidden" name="client_id" value="{{ client_id }}">
+            <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
+            <input type="hidden" name="scope" value="{{ scope }}">
+            {% if state %}
+            <input type="hidden" name="state" value="{{ state }}">
+            {% endif %}
+            {% if code_challenge %}
+            <input type="hidden" name="code_challenge" value="{{ code_challenge }}">
+            {% endif %}
+            {% if code_challenge_method %}
+            <input type="hidden" name="code_challenge_method" value="{{ code_challenge_method }}">
+            {% endif %}
+
+            <!-- Buttons -->
+            <div class="oauth-consent__actions">
+                <button
+                    type="submit"
+                    name="approved"
+                    value="true"
+                    class="btn btn--primary"
+                    id="approveBtn"
+                >
+                    Authorize
+                </button>
+                <button
+                    type="submit"
+                    name="approved"
+                    value="false"
+                    class="btn btn--secondary"
+                    id="denyBtn"
+                >
+                    Deny
+                </button>
+            </div>
+        </form>
+
+        <!-- Security Notice -->
+        <footer class="oauth-consent__footer">
+            <p class="oauth-consent__notice">
+                <strong>Important:</strong> By authorizing {{ client_name }}, you're granting this application
+                access to your account. Only authorize applications you trust.
+            </p>
+            {% if client_type == "public" %}
+            <p class="oauth-consent__warning">
+                ⚠ This is a <strong>public</strong> client application. It cannot securely store secrets.
+                Be cautious about granting sensitive permissions.
+            </p>
+            {% endif %}
+        </footer>
+    </article>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set base URL for API requests
+    window.BASE_URL = '{{ base_url | safe }}';
+    // Set login status for OAuth consent page
+    window.IS_LOGGED_IN = {% if is_logged %}true{% else %}false{% endif %};
+</script>
+<script src="/assets/js/OAUTH_CONSENT/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

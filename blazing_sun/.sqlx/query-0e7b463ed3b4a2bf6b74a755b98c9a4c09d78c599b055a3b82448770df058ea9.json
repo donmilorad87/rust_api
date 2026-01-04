@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1 FROM oauth_client_allowed_scopes cas\n            JOIN oauth_scope_catalog sc ON cas.scope_id = sc.id\n            WHERE cas.client_id = $1 AND sc.scope_name = $2\n        ) as \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "0e7b463ed3b4a2bf6b74a755b98c9a4c09d78c599b055a3b82448770df058ea9"
+}

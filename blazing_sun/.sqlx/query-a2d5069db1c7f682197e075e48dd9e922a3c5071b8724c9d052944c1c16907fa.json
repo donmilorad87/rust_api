@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM session_refresh_tokens\n        WHERE token_hash = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a2d5069db1c7f682197e075e48dd9e922a3c5071b8724c9d052944c1c16907fa"
+}

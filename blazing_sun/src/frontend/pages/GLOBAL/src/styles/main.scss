@@ -21,3 +21,9 @@
 
 // Global utility classes (single source of truth)
 @use 'utilities';
+
+// Form validation feedback styles
+@use 'form-validation';
+
+// Login modal component
+@use 'login-modal';

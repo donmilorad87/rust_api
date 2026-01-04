@@ -1,0 +1,187 @@
+// ============================================
+// Form Validation Styles
+// ============================================
+// Rich reactive form validation feedback
+
+// Input wrapper for password toggle
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    input {
+        flex: 1;
+        padding-right: 2.5rem;
+    }
+
+    &--password input {
+        padding-right: 3rem;
+    }
+}
+
+// Password toggle button
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: var(--text-primary);
+    }
+
+    &:focus {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+// Validation feedback container
+.validation-feedback {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+// Individual validation item - only shown when invalid
+// Valid items are hidden, invalid items shown as tags
+.validation-item {
+    display: none; // Hidden by default (no input yet)
+    align-items: center;
+    gap: 0.5rem;
+    padding: 4px 8px;
+    width: fit-content;
+    border-radius: 0.24rem;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+
+    // Valid = hide completely (rule satisfied)
+    &.valid {
+        display: none !important;
+    }
+
+    // Invalid = show as red tag
+    &.invalid {
+        display: flex;
+        border: 1px solid #ef4444;
+        background: rgba(239, 68, 68, 0.24);
+        color: #ef4444;
+
+        .validation-icon::before {
+            content: "✗";
+        }
+    }
+}
+
+.validation-icon {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.validation-text {
+    flex: 1;
+}
+
+// Input validation states
+input.input--valid {
+    border-color: #10b981 !important;
+
+    &:focus {
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+}
+
+input.input--invalid {
+    border-color: #ef4444 !important;
+
+    &:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+}
+
+// Checkbox styling - inline flex layout
+.form-group--checkbox {
+    margin: 1rem 0;
+}
+
+.checkbox-label {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+
+    input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+
+        &:checked + .checkbox-custom {
+            background: var(--primary, #667eea);
+            border-color: var(--primary, #667eea);
+
+            &::after {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        &:focus + .checkbox-custom {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+    }
+}
+
+.checkbox-custom {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--input-border);
+    border-radius: 4px;
+    background: var(--input-bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    &::after {
+        content: "✓";
+        color: white;
+        font-size: 11px;
+        font-weight: bold;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s ease;
+    }
+}
+
+.checkbox-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}

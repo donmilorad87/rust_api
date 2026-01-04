@@ -1,3 +1,5 @@
+import { getCsrfHeaders, getCsrfToken } from '../../GLOBAL/src/js/csrf.js';
+
 /**
  * GalleriesPage Controller
  *
@@ -155,9 +157,7 @@ export class GalleriesPage {
       const response = await fetch(`${this.baseUrl}/api/v1/galleries`, {
         method: 'GET',
         credentials: 'include',
-        headers: {
-          'Accept': 'application/json'
-        }
+        headers: getCsrfHeaders({ 'Accept': 'application/json' })
       });
 
       if (!response.ok) {
@@ -353,10 +353,7 @@ export class GalleriesPage {
     const response = await fetch(`${this.baseUrl}/api/v1/galleries`, {
       method: 'POST',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: getCsrfHeaders({ 'Accept': 'application/json' }),
       body: JSON.stringify(data)
     });
 
@@ -378,10 +375,7 @@ export class GalleriesPage {
     const response = await fetch(`${this.baseUrl}/api/v1/galleries/${id}`, {
       method: 'PUT',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: getCsrfHeaders({ 'Accept': 'application/json' }),
       body: JSON.stringify(data)
     });
 
@@ -444,9 +438,7 @@ export class GalleriesPage {
     const response = await fetch(`${this.baseUrl}/api/v1/galleries/${id}`, {
       method: 'DELETE',
       credentials: 'include',
-      headers: {
-        'Accept': 'application/json'
-      }
+      headers: getCsrfHeaders({ 'Accept': 'application/json' })
     });
 
     if (!response.ok) {
@@ -493,9 +485,7 @@ export class GalleriesPage {
       const response = await fetch(`${this.baseUrl}/api/v1/galleries/${galleryId}/pictures`, {
         method: 'GET',
         credentials: 'include',
-        headers: {
-          'Accept': 'application/json'
-        }
+        headers: getCsrfHeaders({ 'Accept': 'application/json' })
       });
 
       if (!response.ok) {
@@ -596,9 +586,7 @@ export class GalleriesPage {
       const response = await fetch(`${this.baseUrl}/api/v1/galleries/${this.currentGalleryForPictures.id}/pictures/${pictureId}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: {
-          'Accept': 'application/json'
-        }
+        headers: getCsrfHeaders({ 'Accept': 'application/json' })
       });
 
       if (!response.ok) {
@@ -854,10 +842,7 @@ export class GalleriesPage {
       const response = await fetch(`${this.baseUrl}/api/v1/galleries/${this.currentGalleryForPictures.id}/pictures/${picture.id}`, {
         method: 'PUT',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: getCsrfHeaders({ 'Accept': 'application/json' }),
         body: JSON.stringify({
           title: newTitle,
           description: newDescription
@@ -1219,9 +1204,16 @@ export class GalleriesPage {
     const formData = new FormData();
     formData.append('file', file);
 
+    const headers = {};
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+
     const response = await fetch(`${this.baseUrl}/api/v1/upload/public`, {
       method: 'POST',
       credentials: 'include',
+      headers: headers,
       body: formData
     });
 
@@ -1244,10 +1236,7 @@ export class GalleriesPage {
     const response = await fetch(`${this.baseUrl}/api/v1/galleries/${this.currentGalleryForPictures.id}/pictures`, {
       method: 'POST',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: getCsrfHeaders({ 'Accept': 'application/json' }),
       body: JSON.stringify({
         upload_id: uploadId,
         title: title || 'Untitled',

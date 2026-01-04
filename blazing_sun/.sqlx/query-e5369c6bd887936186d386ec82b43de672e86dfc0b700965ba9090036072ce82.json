@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            cas.client_id,\n            cas.scope_id,\n            sc.scope_name,\n            sc.scope_description,\n            sc.sensitive,\n            cas.created_at\n        FROM oauth_client_allowed_scopes cas\n        JOIN oauth_scope_catalog sc ON cas.scope_id = sc.id\n        WHERE cas.client_id = $1\n        ORDER BY sc.scope_name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "client_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "scope_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "scope_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "scope_description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "sensitive",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e5369c6bd887936186d386ec82b43de672e86dfc0b700965ba9090036072ce82"
+}

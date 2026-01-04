@@ -67,33 +67,41 @@
                 <!-- Personal Information -->
                 <article class="profile-card">
                     <h2 class="profile-card__title">Personal Information</h2>
-                    <form id="profileForm" aria-label="Edit profile form">
+                    <form id="profileForm" aria-label="Edit profile form" novalidate>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-group__label" for="first_name">First Name</label>
-                                <input
-                                    type="text"
-                                    id="first_name"
-                                    name="first_name"
-                                    class="form-group__input"
-                                    required
-                                    autocomplete="given-name"
-                                    aria-required="true"
-                                    value="{% if user %}{{ user.first_name }}{% endif %}"
-                                >
+                                <div class="input-wrapper">
+                                    <input
+                                        type="text"
+                                        id="first_name"
+                                        name="first_name"
+                                        class="form-group__input"
+                                        autocomplete="given-name"
+                                        aria-required="true"
+                                        aria-describedby="firstNameFeedback"
+                                        value="{% if user %}{{ user.first_name }}{% endif %}"
+                                        placeholder="Enter your first name"
+                                    >
+                                </div>
+                                <div id="firstNameFeedback" class="validation-feedback" aria-live="polite"></div>
                             </div>
                             <div class="form-group">
                                 <label class="form-group__label" for="last_name">Last Name</label>
-                                <input
-                                    type="text"
-                                    id="last_name"
-                                    name="last_name"
-                                    class="form-group__input"
-                                    required
-                                    autocomplete="family-name"
-                                    aria-required="true"
-                                    value="{% if user %}{{ user.last_name }}{% endif %}"
-                                >
+                                <div class="input-wrapper">
+                                    <input
+                                        type="text"
+                                        id="last_name"
+                                        name="last_name"
+                                        class="form-group__input"
+                                        autocomplete="family-name"
+                                        aria-required="true"
+                                        aria-describedby="lastNameFeedback"
+                                        value="{% if user %}{{ user.last_name }}{% endif %}"
+                                        placeholder="Enter your last name"
+                                    >
+                                </div>
+                                <div id="lastNameFeedback" class="validation-feedback" aria-live="polite"></div>
                             </div>
                         </div>
                         <button type="submit" id="saveProfileBtn" class="btn btn--primary btn--full mt4" disabled>
@@ -105,50 +113,63 @@
                 <!-- Change Password -->
                 <article class="profile-card mt4">
                     <h2 class="profile-card__title">Change Password</h2>
-                    <form id="passwordForm" aria-label="Change password form">
+                    <form id="passwordForm" aria-label="Change password form" novalidate>
                         <div class="form-group">
                             <label class="form-group__label" for="current_password">Current Password</label>
-                            <input
-                                type="password"
-                                id="current_password"
-                                name="current_password"
-                                class="form-group__input"
-                                required
-                                autocomplete="current-password"
-                                aria-required="true"
-                            >
+                            <div class="input-wrapper input-wrapper--password">
+                                <input
+                                    type="password"
+                                    id="current_password"
+                                    name="current_password"
+                                    class="form-group__input"
+                                    autocomplete="current-password"
+                                    aria-required="true"
+                                    aria-describedby="currentPasswordFeedback"
+                                    placeholder="Enter your current password"
+                                >
+                                <button type="button" class="password-toggle" id="currentPasswordToggle" aria-label="Show password">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                            <div id="currentPasswordFeedback" class="validation-feedback" aria-live="polite"></div>
                         </div>
                         <div class="form-group">
                             <label class="form-group__label" for="new_password">New Password</label>
-                            <input
-                                type="password"
-                                id="new_password"
-                                name="new_password"
-                                class="form-group__input"
-                                required
-                                minlength="8"
-                                autocomplete="new-password"
-                                aria-required="true"
-                                aria-describedby="password-strength-hint"
-                            >
-                            <div class="password-strength">
-                                <div class="password-strength__track">
-                                    <div class="password-strength__bar"></div>
-                                </div>
+                            <div class="input-wrapper input-wrapper--password">
+                                <input
+                                    type="password"
+                                    id="new_password"
+                                    name="new_password"
+                                    class="form-group__input"
+                                    autocomplete="new-password"
+                                    aria-required="true"
+                                    aria-describedby="newPasswordFeedback"
+                                    placeholder="Enter your new password"
+                                >
+                                <button type="button" class="password-toggle" id="newPasswordToggle" aria-label="Show password">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
                             </div>
-                            <small id="password-strength-hint" class="password-strength-text"></small>
+                            <div id="newPasswordFeedback" class="validation-feedback" aria-live="polite"></div>
                         </div>
                         <div class="form-group">
                             <label class="form-group__label" for="confirm_password">Confirm New Password</label>
-                            <input
-                                type="password"
-                                id="confirm_password"
-                                name="confirm_password"
-                                class="form-group__input"
-                                required
-                                autocomplete="new-password"
-                                aria-required="true"
-                            >
+                            <div class="input-wrapper input-wrapper--password">
+                                <input
+                                    type="password"
+                                    id="confirm_password"
+                                    name="confirm_password"
+                                    class="form-group__input"
+                                    autocomplete="new-password"
+                                    aria-required="true"
+                                    aria-describedby="confirmPasswordFeedback"
+                                    placeholder="Confirm your new password"
+                                >
+                                <button type="button" class="password-toggle" id="confirmPasswordToggle" aria-label="Show password">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                            <div id="confirmPasswordFeedback" class="validation-feedback" aria-live="polite"></div>
                         </div>
                         <button type="submit" id="changePasswordBtn" class="btn btn--primary btn--full mt4">
                             Change Password
@@ -185,19 +206,22 @@
 
                     <!-- Step 1: Enter New Email -->
                     <div id="emailStep1">
-                        <form id="newEmailForm" aria-label="Request email change">
+                        <form id="newEmailForm" aria-label="Request email change" novalidate>
                             <div class="form-group">
                                 <label class="form-group__label" for="new_email">New Email Address</label>
-                                <input
-                                    type="email"
-                                    id="new_email"
-                                    name="new_email"
-                                    class="form-group__input"
-                                    required
-                                    autocomplete="email"
-                                    aria-required="true"
-                                    placeholder="Enter your new email"
-                                >
+                                <div class="input-wrapper">
+                                    <input
+                                        type="email"
+                                        id="new_email"
+                                        name="new_email"
+                                        class="form-group__input"
+                                        autocomplete="email"
+                                        aria-required="true"
+                                        aria-describedby="newEmailFeedback"
+                                        placeholder="Enter your new email"
+                                    >
+                                </div>
+                                <div id="newEmailFeedback" class="validation-feedback" aria-live="polite"></div>
                                 <small class="form-group__hint">We'll send a verification code to your current email first</small>
                             </div>
                             <button type="submit" id="sendEmailCodeBtn" class="btn btn--primary btn--full mt3">
@@ -275,6 +299,20 @@
                             <p class="mt2"><small>Redirecting to sign in page in <span id="redirectCountdown">5</span> seconds...</small></p>
                         </div>
                     </div>
+                </article>
+
+                <!-- Developer Console -->
+                <article class="profile-card mt4">
+                    <div class="profile-card__header">
+                        <h2 class="profile-card__title">Developer Console</h2>
+                    </div>
+                    <p class="profile-card__description">Manage OAuth 2.0 applications that integrate with your account. Create API clients and manage their access to your data.</p>
+                    <a href="{{ route(name='oauth.applications') }}" class="btn btn--primary mt3">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                        Manage OAuth Applications
+                    </a>
                 </article>
             </section>
         </div>

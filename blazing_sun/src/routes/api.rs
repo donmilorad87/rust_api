@@ -10,7 +10,7 @@ use crate::app::http::api::controllers::activation::ActivationController;
 use crate::app::http::api::controllers::admin::AdminController;
 use crate::app::http::api::controllers::auth::AuthController;
 use crate::app::http::api::controllers::email::EmailController;
-use crate::app::http::api::controllers::{gallery, picture};
+use crate::app::http::api::controllers::{gallery, oauth, oauth_api_product, oauth_client, oauth_gallery, oauth_scope, picture};
 use crate::app::http::api::controllers::theme::ThemeController;
 use crate::app::http::api::controllers::upload::UploadController;
 use crate::app::http::api::controllers::user::UserController;
@@ -29,7 +29,10 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1/auth")
             .route("/sign-up", web::post().to(AuthController::sign_up))
-            .route("/sign-in", web::post().to(AuthController::sign_in)),
+            .route("/sign-in", web::post().to(AuthController::sign_in))
+            .route("/sign-out", web::post().to(AuthController::sign_out))
+            .route("/sign-out-all", web::post().to(AuthController::sign_out_all))
+            .route("/refresh", web::post().to(AuthController::refresh)),
     );
 
     // ============================================
@@ -220,6 +223,22 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route("/{gallery_id}/pictures/{picture_id}", web::delete().to(picture::remove_picture)),
     );
 
+    // ============================================
+    // OAuth-Protected Gallery Routes
+    // ============================================
+    // OAuth galleries API with scope-based permissions and ownership enforcement
+    // - galleries.read: Can read ALL galleries
+    // - galleries.write: Can create/edit/delete ONLY OWNED galleries
+    cfg.service(
+        web::scope("/api/v1/oauth/galleries")
+            .wrap(from_fn(middleware::oauth_auth::verify_oauth_jwt))
+            .route("", web::get().to(oauth_gallery::list_galleries))
+            .route("", web::post().to(oauth_gallery::create_gallery))
+            .route("/{id}", web::get().to(oauth_gallery::get_gallery))
+            .route("/{id}", web::put().to(oauth_gallery::update_gallery))
+            .route("/{id}", web::delete().to(oauth_gallery::delete_gallery)),
+    );
+
     // SEO routes (Admin+ permission = 10 or 100)
     // NOTE: Actix middleware order is REVERSED - last .wrap() runs first!
     cfg.service(
@@ -271,6 +290,154 @@ pub fn register(cfg: &mut web::ServiceConfig) {
                 web::delete().to(AdminController::delete_user_avatar),
             ),
     );
+
+    // ============================================
+    // OAuth Client Routes (Protected - requires JWT OR session)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/oauth/clients")
+            .wrap(from_fn(middleware::dual_auth::verify_jwt_or_session))
+            // OAuth Client CRUD
+            .route("", web::get().to(oauth_client::get_user_clients))
+            .route("", web::post().to(oauth_client::create_client))
+            .route("/{client_id}", web::get().to(oauth_client::get_client))
+            .route("/{client_id}", web::put().to(oauth_client::update_client))
+            .route("/{client_id}", web::delete().to(oauth_client::delete_client))
+            // TODO: Implement client activation/deactivation endpoints
+            // .route(
+            //     "/{client_id}/deactivate",
+            //     web::post().to(oauth_client::deactivate_client),
+            // )
+            // .route(
+            //     "/{client_id}/activate",
+            //     web::post().to(oauth_client::activate_client),
+            // )
+            // TODO: Implement client secrets management endpoints
+            // .route(
+            //     "/{client_id}/secrets",
+            //     web::get().to(oauth_client::get_client_secrets),
+            // )
+            // .route(
+            //     "/{client_id}/secrets",
+            //     web::post().to(oauth_client::create_client_secret),
+            // )
+            // .route(
+            //     "/{client_id}/secrets/{secret_id}",
+            //     web::delete().to(oauth_client::delete_client_secret),
+            // )
+            // Redirect URIs Management
+            .route(
+                "/{client_id}/redirect-uris",
+                web::get().to(oauth_client::get_redirect_uris),
+            )
+            .route(
+                "/{client_id}/redirect-uris",
+                web::post().to(oauth_client::add_redirect_uri),
+            )
+            .route(
+                "/{client_id}/redirect-uris/{uri_id}",
+                web::delete().to(oauth_client::delete_redirect_uri),
+            )
+            // Authorized Domains Management
+            .route(
+                "/{client_id}/authorized-domains",
+                web::get().to(oauth_client::get_authorized_domains),
+            )
+            .route(
+                "/{client_id}/authorized-domains",
+                web::post().to(oauth_client::add_authorized_domain),
+            )
+            .route(
+                "/{client_id}/authorized-domains/{domain_id}",
+                web::delete().to(oauth_client::delete_authorized_domain),
+            )
+            // OAuth API Product Management (Google Cloud Console Approach)
+            // List all available API products with scopes
+            .route(
+                "/{client_id}/api-products",
+                web::get().to(oauth_api_product::list_api_products),
+            )
+            // List enabled APIs for this client
+            .route(
+                "/{client_id}/enabled-apis",
+                web::get().to(oauth_api_product::list_enabled_apis),
+            )
+            // Enable an API (user then selects individual scopes)
+            .route(
+                "/{client_id}/enable-api",
+                web::post().to(oauth_api_product::enable_api),
+            )
+            // Disable an API (revokes all API scopes)
+            .route(
+                "/{client_id}/enabled-apis/{api_id}",
+                web::delete().to(oauth_api_product::disable_api),
+            )
+            // Grant a specific scope to the client
+            .route(
+                "/{client_id}/scopes",
+                web::post().to(oauth_api_product::grant_scope),
+            )
+            // Revoke a specific scope from the client
+            .route(
+                "/{client_id}/scopes/{scope_id}",
+                web::delete().to(oauth_api_product::revoke_scope),
+            ),
+    );
+
+    // ============================================
+    // OAuth Scope Queries
+    // ============================================
+    // List scopes for a specific API product (public endpoint)
+    cfg.service(
+        web::resource("/api/v1/oauth/api-products/{api_id}/scopes")
+            .route(web::get().to(oauth_scope::list_scopes_by_api_product)),
+    );
+
+    // List all scopes available to a client (requires authentication)
+    cfg.service(
+        web::resource("/api/v1/oauth/clients/{client_id}/scopes")
+            .wrap(from_fn(middleware::dual_auth::verify_jwt_or_session))
+            .route(web::get().to(oauth_scope::list_client_scopes)),
+    );
+
+    // ============================================
+    // OAuth 2.0 Authorization Flow
+    // GET: Shows consent page (with login modal if not authenticated)
+    // POST: Processes consent (requires authentication - checked in controller)
+    // Uses optional JWT middleware - both endpoints extract user_id if present,
+    // but the controller handles authentication requirements for POST.
+    // ============================================
+    cfg.service(
+        web::scope("/oauth/authorize")
+            .wrap(from_fn(middleware::auth::verify_jwt_optional))
+            .route("", web::get().to(oauth::authorize_get))
+            .route("", web::post().to(oauth::authorize_post)),
+    );
+
+    // ============================================
+    // OAuth 2.0 Token Endpoints (Public - uses client credentials)
+    // ============================================
+    cfg.route("/oauth/token", web::post().to(oauth::token_post));
+    cfg.route("/oauth/revoke", web::post().to(oauth::revoke_post));
+
+    // ============================================
+    // OAuth 2.0 Authorized Apps (User-facing - requires auth)
+    // Manage apps the user has authorized (consent grants)
+    // ============================================
+    cfg.service(
+        web::scope("/oauth/authorized-apps")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(oauth::get_authorized_apps))
+            .route("/revoke", web::post().to(oauth::revoke_app_authorization)),
+    );
+
+    // ============================================
+    // OAuth 2.0 JWKS Endpoint (Public - for JWT verification)
+    // ============================================
+    cfg.service(
+        web::scope("/.well-known")
+            .route("/jwks.json", web::get().to(oauth::jwks_json)),
+    );
 }
 
 /// Register all route names for URL generation
@@ -278,6 +445,9 @@ fn register_route_names() {
     // Auth routes
     route!("auth.sign_up", "/api/v1/auth/sign-up");
     route!("auth.sign_in", "/api/v1/auth/sign-in");
+    route!("auth.sign_out", "/api/v1/auth/sign-out");
+    route!("auth.sign_out_all", "/api/v1/auth/sign-out-all");
+    route!("auth.refresh", "/api/v1/auth/refresh");
 
     // Account routes
     route!("account.activate", "/api/v1/account/activate-account");

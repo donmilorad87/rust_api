@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            c.id,\n            c.user_id,\n            c.client_id,\n            c.client_name,\n            c.client_type,\n            c.description,\n            c.logo_url,\n            c.homepage_url,\n            c.privacy_policy_url,\n            c.terms_of_service_url,\n            c.is_active,\n            c.created_at,\n            c.updated_at,\n            COUNT(DISTINCT r.id) as \"redirect_uri_count!\",\n            COUNT(DISTINCT d.id) as \"authorized_domain_count!\",\n            COUNT(DISTINCT s.id) FILTER (WHERE s.is_active = true) as \"secret_count!\"\n        FROM oauth_clients c\n        LEFT JOIN oauth_redirect_uris r ON c.id = r.client_id\n        LEFT JOIN oauth_authorized_domains d ON c.id = d.client_id\n        LEFT JOIN oauth_client_secrets s ON c.id = s.client_id\n        WHERE c.user_id = $1\n        GROUP BY c.id\n        ORDER BY c.created_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "client_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "client_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "client_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "logo_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "homepage_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "privacy_policy_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "terms_of_service_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "redirect_uri_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 14,
+        "name": "authorized_domain_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 15,
+        "name": "secret_count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "96ab1709c84a63be0ff6a14b1e9d6e88cd0fe198c104cf918401b888d6dfe98f"
+}

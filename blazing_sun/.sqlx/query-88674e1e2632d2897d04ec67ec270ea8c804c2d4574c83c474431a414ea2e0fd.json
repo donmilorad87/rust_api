@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, scope_name, scope_description, sensitive, api_product_id, created_at\n        FROM oauth_scope_catalog\n        ORDER BY scope_name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "scope_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "scope_description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "sensitive",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "api_product_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "88674e1e2632d2897d04ec67ec270ea8c804c2d4574c83c474431a414ea2e0fd"
+}

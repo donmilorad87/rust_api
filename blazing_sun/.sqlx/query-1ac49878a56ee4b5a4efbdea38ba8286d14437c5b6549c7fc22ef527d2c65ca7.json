@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE oauth_consent_grants\n        SET granted_scopes = $3, updated_at = NOW()\n        WHERE user_id = $1 AND client_id = $2 AND is_active = TRUE\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "1ac49878a56ee4b5a4efbdea38ba8286d14437c5b6549c7fc22ef527d2c65ca7"
+}

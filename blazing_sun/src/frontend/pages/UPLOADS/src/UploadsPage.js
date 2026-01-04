@@ -1,3 +1,5 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+
 /**
  * UploadsPage Controller
  *
@@ -152,9 +154,7 @@ export class UploadsPage {
 
       const response = await fetch(`${this.baseUrl}/api/v1/admin/uploads?${params}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
@@ -454,9 +454,7 @@ export class UploadsPage {
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/upload/${uuid}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getCsrfHeaders(),
         credentials: 'include'
       });
 

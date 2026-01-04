@@ -1,3 +1,6 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+import { FormValidator } from '../../GLOBAL/src/js/FormValidator.js';
+
 /**
  * EmailChange - Handles email change functionality with 4-step verification flow
  * Steps:
@@ -55,6 +58,7 @@ export class EmailChange {
     this.currentStep = 1;
     this.isSubmitting = false;
     this.newEmail = '';
+    this.validator = null;
 
     this.init();
   }
@@ -63,6 +67,9 @@ export class EmailChange {
    * Initialize event listeners
    */
   init() {
+    // Initialize form validator
+    this.initValidator();
+
     // Step 1: New email form
     if (this.newEmailForm) {
       this.newEmailForm.addEventListener('submit', (e) => this.handleNewEmailSubmit(e));
@@ -93,6 +100,19 @@ export class EmailChange {
   }
 
   /**
+   * Initialize form validator with rich reactive validation
+   */
+  initValidator() {
+    const newEmailFeedback = document.getElementById('newEmailFeedback');
+
+    this.validator = new FormValidator({ validateOnInput: true });
+
+    if (this.newEmailInput && newEmailFeedback) {
+      this.validator.bindInput(this.newEmailInput, 'email', newEmailFeedback);
+    }
+  }
+
+  /**
    * Step 1: Handle new email submission
    * @param {Event} event
    */
@@ -101,11 +121,12 @@ export class EmailChange {
 
     if (this.isSubmitting) return;
 
-    const email = this.newEmailInput?.value.trim() || '';
-
-    if (!this.validateEmail(email)) {
+    // Use FormValidator for validation
+    if (this.validator && !this.validator.validateAll()) {
       return;
     }
+
+    const email = this.newEmailInput?.value.trim() || '';
 
     // Check if new email is same as current email
     if (email.toLowerCase() === this.currentEmail.toLowerCase()) {
@@ -117,9 +138,7 @@ export class EmailChange {
     this.isSubmitting = true;
     this.setButtonLoading(this.sendEmailCodeBtn, true, 'Sending...');
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
+    const headers = getCsrfHeaders();
 
     const token = this.getAuthToken();
     if (token) {
@@ -179,9 +198,7 @@ export class EmailChange {
     this.isSubmitting = true;
     this.setButtonLoading(this.verifyOldEmailBtn, true, 'Verifying...');
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
+    const headers = getCsrfHeaders();
 
     const token = this.getAuthToken();
     if (token) {
@@ -239,9 +256,7 @@ export class EmailChange {
     this.isSubmitting = true;
     this.setButtonLoading(this.verifyNewEmailBtn, true, 'Completing...');
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
+    const headers = getCsrfHeaders();
 
     const token = this.getAuthToken();
     if (token) {
@@ -369,26 +384,6 @@ export class EmailChange {
         indicator.classList.add('email-step--active');
       }
     });
-  }
-
-  /**
-   * Validate email format
-   * @param {string} email
-   * @returns {boolean}
-   */
-  validateEmail(email) {
-    if (!email) {
-      this.showToast('Email is required', 'error');
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      this.showToast('Please enter a valid email address', 'error');
-      return false;
-    }
-
-    return true;
   }
 
   /**

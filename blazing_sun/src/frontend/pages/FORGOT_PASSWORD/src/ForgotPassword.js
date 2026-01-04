@@ -1,3 +1,6 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+import { FormValidator, PasswordToggle } from '../../GLOBAL/src/js/FormValidator.js';
+
 /**
  * ForgotPassword Page Controller
  * Handles the 3-step password reset flow:
@@ -37,6 +40,10 @@ export class ForgotPassword {
     this.isSubmitting = false;
     this.userEmail = '';
     this.verifiedCode = '';
+    this.emailValidator = null;
+    this.passwordValidator = null;
+    this.newPasswordToggle = null;
+    this.confirmPasswordToggle = null;
 
     this.init();
   }
@@ -50,6 +57,12 @@ export class ForgotPassword {
       return;
     }
 
+    // Initialize validators
+    this.initValidators();
+
+    // Initialize password toggles
+    this.initPasswordToggles();
+
     this.requestForm.addEventListener('submit', (e) => this.handleRequestCode(e));
     this.verifyForm.addEventListener('submit', (e) => this.handleVerifyCode(e));
     this.resetForm.addEventListener('submit', (e) => this.handleResetPassword(e));
@@ -59,11 +72,54 @@ export class ForgotPassword {
     if (codeInput) {
       codeInput.addEventListener('input', (e) => this.formatCodeInput(e));
     }
+  }
 
-    // Add password strength indicator
+  /**
+   * Initialize form validators with rich reactive validation
+   */
+  initValidators() {
+    const emailInput = document.getElementById('email');
+    const emailFeedback = document.getElementById('emailFeedback');
+
     const newPasswordInput = document.getElementById('new_password');
-    if (newPasswordInput) {
-      newPasswordInput.addEventListener('input', (e) => this.updatePasswordStrength(e.target.value));
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    const newPasswordFeedback = document.getElementById('newPasswordFeedback');
+    const confirmPasswordFeedback = document.getElementById('confirmPasswordFeedback');
+
+    // Email validator (step 1)
+    this.emailValidator = new FormValidator({ validateOnInput: true });
+
+    if (emailInput && emailFeedback) {
+      this.emailValidator.bindInput(emailInput, 'email', emailFeedback);
+    }
+
+    // Password validator (step 3)
+    this.passwordValidator = new FormValidator({ validateOnInput: true });
+
+    if (newPasswordInput && newPasswordFeedback) {
+      this.passwordValidator.bindInput(newPasswordInput, 'password', newPasswordFeedback);
+    }
+
+    if (confirmPasswordInput && newPasswordInput && confirmPasswordFeedback) {
+      this.passwordValidator.bindPasswordConfirm(confirmPasswordInput, newPasswordInput, confirmPasswordFeedback);
+    }
+  }
+
+  /**
+   * Initialize password visibility toggles
+   */
+  initPasswordToggles() {
+    const newPasswordInput = document.getElementById('new_password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    const newPasswordToggleBtn = document.getElementById('newPasswordToggle');
+    const confirmPasswordToggleBtn = document.getElementById('confirmPasswordToggle');
+
+    if (newPasswordInput && newPasswordToggleBtn) {
+      this.newPasswordToggle = new PasswordToggle(newPasswordInput, newPasswordToggleBtn);
+    }
+
+    if (confirmPasswordInput && confirmPasswordToggleBtn) {
+      this.confirmPasswordToggle = new PasswordToggle(confirmPasswordInput, confirmPasswordToggleBtn);
     }
   }
 
@@ -76,11 +132,12 @@ export class ForgotPassword {
 
     if (this.isSubmitting) return;
 
-    const email = this.requestForm.querySelector('#email')?.value.trim() || '';
-
-    if (!this.validateEmail(email)) {
+    // Use FormValidator for email validation
+    if (this.emailValidator && !this.emailValidator.validateAll()) {
       return;
     }
+
+    const email = this.requestForm.querySelector('#email')?.value.trim() || '';
 
     this.setButtonLoading(this.requestBtn, true, 'Sending...');
     this.isSubmitting = true;
@@ -155,9 +212,6 @@ export class ForgotPassword {
 
     if (this.isSubmitting) return;
 
-    const newPassword = this.resetForm.querySelector('#new_password')?.value || '';
-    const confirmPassword = this.resetForm.querySelector('#confirm_password')?.value || '';
-    const email = this.userEmail || document.getElementById('reset_email')?.value || '';
     const code = this.verifiedCode;
 
     if (!code) {
@@ -166,9 +220,13 @@ export class ForgotPassword {
       return;
     }
 
-    if (!this.validatePasswords(newPassword, confirmPassword)) {
+    // Use FormValidator for password validation
+    if (this.passwordValidator && !this.passwordValidator.validateAll()) {
       return;
     }
+
+    const newPassword = this.resetForm.querySelector('#new_password')?.value || '';
+    const confirmPassword = this.resetForm.querySelector('#confirm_password')?.value || '';
 
     this.setButtonLoading(this.resetBtn, true, 'Resetting...');
     this.isSubmitting = true;
@@ -239,131 +297,12 @@ export class ForgotPassword {
   }
 
   /**
-   * Validate email format
-   * @param {string} email
-   * @returns {boolean}
-   */
-  validateEmail(email) {
-    if (!email) {
-      this.showToast('Email is required', 'error');
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      this.showToast('Please enter a valid email address', 'error');
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Validate password requirements
-   * @param {string} password
-   * @param {string} confirmPassword
-   * @returns {boolean}
-   */
-  validatePasswords(password, confirmPassword) {
-    if (!password) {
-      this.showToast('Password is required', 'error');
-      return false;
-    }
-
-    if (password.length < 8) {
-      this.showToast('Password must be at least 8 characters', 'error');
-      return false;
-    }
-
-    if (!/[A-Z]/.test(password)) {
-      this.showToast('Password must contain at least one uppercase letter', 'error');
-      return false;
-    }
-
-    if (!/[a-z]/.test(password)) {
-      this.showToast('Password must contain at least one lowercase letter', 'error');
-      return false;
-    }
-
-    if (!/[0-9]/.test(password)) {
-      this.showToast('Password must contain at least one digit', 'error');
-      return false;
-    }
-
-    if (!/[^\p{L}\p{N}]/u.test(password)) {
-      this.showToast('Password must contain at least one special character', 'error');
-      return false;
-    }
-
-    if (password !== confirmPassword) {
-      this.showToast('Passwords do not match', 'error');
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
    * Format code input to only allow alphanumeric characters
    * @param {Event} event
    */
   formatCodeInput(event) {
     const input = event.target;
     input.value = input.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
-  }
-
-  /**
-   * Update password strength indicator
-   * @param {string} password
-   */
-  updatePasswordStrength(password) {
-    const strengthBar = document.querySelector('.password-strength__bar');
-    const strengthText = document.querySelector('.password-strength-text');
-
-    if (!strengthBar || !strengthText) return;
-
-    const strength = this.calculatePasswordStrength(password);
-
-    // Remove all strength classes
-    strengthBar.classList.remove('password-strength__bar--weak', 'password-strength__bar--fair', 'password-strength__bar--good', 'password-strength__bar--strong');
-
-    if (password.length === 0) {
-      strengthBar.style.width = '0';
-      strengthText.textContent = '';
-      return;
-    }
-
-    if (strength < 2) {
-      strengthBar.classList.add('password-strength__bar--weak');
-      strengthText.textContent = 'Weak';
-    } else if (strength < 3) {
-      strengthBar.classList.add('password-strength__bar--fair');
-      strengthText.textContent = 'Fair';
-    } else if (strength < 4) {
-      strengthBar.classList.add('password-strength__bar--good');
-      strengthText.textContent = 'Good';
-    } else {
-      strengthBar.classList.add('password-strength__bar--strong');
-      strengthText.textContent = 'Strong';
-    }
-  }
-
-  /**
-   * Calculate password strength score (0-5)
-   * @param {string} password
-   * @returns {number}
-   */
-  calculatePasswordStrength(password) {
-    let score = 0;
-
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;
-
-    return Math.min(score, 5);
   }
 
   /**
@@ -412,9 +351,7 @@ export class ForgotPassword {
   async apiRequest(endpoint, method = 'GET', data = null) {
     const options = {
       method,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: getCsrfHeaders()
     };
 
     if (data) {

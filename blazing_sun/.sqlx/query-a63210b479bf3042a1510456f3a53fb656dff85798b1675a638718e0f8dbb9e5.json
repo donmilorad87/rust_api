@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM oauth_client_enabled_apis\n        WHERE client_id = $1 AND api_product_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a63210b479bf3042a1510456f3a53fb656dff85798b1675a638718e0f8dbb9e5"
+}

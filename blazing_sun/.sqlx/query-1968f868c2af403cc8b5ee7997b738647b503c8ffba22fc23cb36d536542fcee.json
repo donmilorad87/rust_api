@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM oauth_refresh_tokens\n        WHERE is_revoked = true\n          AND created_at < NOW() - INTERVAL '1 day' * $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1968f868c2af403cc8b5ee7997b738647b503c8ffba22fc23cb36d536542fcee"
+}

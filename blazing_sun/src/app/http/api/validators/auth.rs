@@ -2,8 +2,38 @@
 //!
 //! Validation rules for authentication requests.
 
+use regex::Regex;
 use serde::Deserialize;
+use std::sync::LazyLock;
 use validator::Validate;
+
+/// Regex for valid name characters (letters, spaces, hyphens, apostrophes)
+static NAME_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^[a-zA-Z\s'-]+$").unwrap());
+
+/// Validate name field (first_name or last_name)
+///
+/// Name must:
+/// - Be at least 2 characters
+/// - Contain only letters, spaces, hyphens, and apostrophes
+pub fn validate_name(name: &str, field_name: &str) -> Vec<String> {
+    let mut errors = Vec::new();
+
+    if name.is_empty() {
+        errors.push(format!("{} is required", field_name));
+        return errors;
+    }
+
+    if name.len() < 2 {
+        errors.push("minimum 2 characters".to_string());
+    }
+
+    if !NAME_REGEX.is_match(name) {
+        errors.push("letters only (no special characters)".to_string());
+    }
+
+    errors
+}
 
 /// Validate password strength
 ///
@@ -72,6 +102,8 @@ pub fn validate_passwords_match(password: &str, confirm_password: &str) -> Optio
 pub struct SigninRequestRaw {
     pub email: Option<String>,
     pub password: Option<String>,
+    #[serde(default)]
+    pub remember_me: bool,
 }
 
 /// Validated sign-in request
@@ -80,4 +112,5 @@ pub struct SigninRequest {
     #[validate(email(message = "invalid email format"))]
     pub email: String,
     pub password: String,
+    pub remember_me: bool,
 }

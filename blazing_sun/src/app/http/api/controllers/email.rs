@@ -18,9 +18,9 @@ use crate::database::mutations::activation_hash as db_activation_hash_mutations;
 use crate::database::read::user as db_user;
 use crate::database::mutations::user as db_user_mutations;
 use crate::database::AppState;
-use crate::mq;
-use crate::mq::jobs::email::{EmailTemplate, SendEmailParams};
-use crate::mq::JobOptions;
+use crate::bootstrap::mq;
+use crate::app::mq::jobs::email::{EmailTemplate, SendEmailParams};
+use crate::bootstrap::mq::JobOptions;
 use std::collections::HashMap;
 
 /// Email Controller

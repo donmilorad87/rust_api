@@ -1,6 +1,14 @@
+import { getCsrfHeaders } from '../../GLOBAL/src/js/csrf.js';
+import { FormValidator, PasswordToggle } from '../../GLOBAL/src/js/FormValidator.js';
+
 /**
  * SignUp Page Controller
  * Handles user registration and account activation flow.
+ *
+ * Features:
+ * - Rich reactive form validation
+ * - Password visibility toggle
+ * - Password confirmation matching
  *
  * Flow:
  * 1. User fills sign-up form
@@ -30,6 +38,9 @@ export class SignUp {
 
     this.userEmail = '';
     this.isSubmitting = false;
+    this.validator = null;
+    this.passwordToggle = null;
+    this.confirmPasswordToggle = null;
 
     this.init();
   }
@@ -43,42 +54,70 @@ export class SignUp {
       return;
     }
 
+    // Initialize form validator
+    this.initValidator();
+
+    // Initialize password toggles
+    this.initPasswordToggles();
+
     this.signupForm.addEventListener('submit', (e) => this.handleSignup(e));
     this.activationForm.addEventListener('submit', (e) => this.handleActivation(e));
-
-    this.setupInputValidation();
   }
 
   /**
-   * Setup real-time input validation
+   * Initialize form validator with rich reactive validation
    */
-  setupInputValidation() {
+  initValidator() {
+    const firstNameInput = this.signupForm.querySelector('#first_name');
+    const lastNameInput = this.signupForm.querySelector('#last_name');
+    const emailInput = this.signupForm.querySelector('#email');
     const passwordInput = this.signupForm.querySelector('#password');
-    const confirmInput = this.signupForm.querySelector('#confirm_password');
+    const confirmPasswordInput = this.signupForm.querySelector('#confirm_password');
 
-    if (passwordInput && confirmInput) {
-      confirmInput.addEventListener('input', () => {
-        this.validatePasswordMatch(passwordInput, confirmInput);
-      });
+    const firstNameFeedback = document.getElementById('firstNameFeedback');
+    const lastNameFeedback = document.getElementById('lastNameFeedback');
+    const emailFeedback = document.getElementById('emailFeedback');
+    const passwordFeedback = document.getElementById('passwordFeedback');
+    const confirmPasswordFeedback = document.getElementById('confirmPasswordFeedback');
 
-      passwordInput.addEventListener('input', () => {
-        if (confirmInput.value) {
-          this.validatePasswordMatch(passwordInput, confirmInput);
-        }
-      });
+    this.validator = new FormValidator({ validateOnInput: true });
+
+    if (firstNameInput && firstNameFeedback) {
+      this.validator.bindInput(firstNameInput, 'first_name', firstNameFeedback);
+    }
+
+    if (lastNameInput && lastNameFeedback) {
+      this.validator.bindInput(lastNameInput, 'last_name', lastNameFeedback);
+    }
+
+    if (emailInput && emailFeedback) {
+      this.validator.bindInput(emailInput, 'email', emailFeedback);
+    }
+
+    if (passwordInput && passwordFeedback) {
+      this.validator.bindInput(passwordInput, 'password', passwordFeedback);
+    }
+
+    if (confirmPasswordInput && passwordInput && confirmPasswordFeedback) {
+      this.validator.bindPasswordConfirm(confirmPasswordInput, passwordInput, confirmPasswordFeedback);
     }
   }
 
   /**
-   * Validate password confirmation matches
-   * @param {HTMLInputElement} passwordInput
-   * @param {HTMLInputElement} confirmInput
+   * Initialize password visibility toggles
    */
-  validatePasswordMatch(passwordInput, confirmInput) {
-    if (confirmInput.value && passwordInput.value !== confirmInput.value) {
-      confirmInput.classList.add('form-group__input--error');
-    } else {
-      confirmInput.classList.remove('form-group__input--error');
+  initPasswordToggles() {
+    const passwordInput = this.signupForm.querySelector('#password');
+    const confirmPasswordInput = this.signupForm.querySelector('#confirm_password');
+    const passwordToggleBtn = document.getElementById('passwordToggle');
+    const confirmPasswordToggleBtn = document.getElementById('confirmPasswordToggle');
+
+    if (passwordInput && passwordToggleBtn) {
+      this.passwordToggle = new PasswordToggle(passwordInput, passwordToggleBtn);
+    }
+
+    if (confirmPasswordInput && confirmPasswordToggleBtn) {
+      this.confirmPasswordToggle = new PasswordToggle(confirmPasswordInput, confirmPasswordToggleBtn);
     }
   }
 
@@ -91,12 +130,13 @@ export class SignUp {
 
     if (this.isSubmitting) return;
 
-    const submitBtn = this.signupForm.querySelector('button[type="submit"]');
-    const formData = this.getSignupFormData();
-
-    if (!this.validateSignupData(formData)) {
+    // Use FormValidator for validation
+    if (this.validator && !this.validator.validateAll()) {
       return;
     }
+
+    const submitBtn = this.signupForm.querySelector('button[type="submit"]');
+    const formData = this.getSignupFormData();
 
     this.setButtonLoading(submitBtn, true, 'Creating account...');
     this.isSubmitting = true;
@@ -170,60 +210,6 @@ export class SignUp {
   }
 
   /**
-   * Validate sign-up form data
-   * @param {Object} data
-   * @returns {boolean}
-   */
-  validateSignupData(data) {
-    if (!data.first_name) {
-      this.showToast('First name is required', 'error');
-      return false;
-    }
-
-    if (!data.last_name) {
-      this.showToast('Last name is required', 'error');
-      return false;
-    }
-
-    if (!data.email) {
-      this.showToast('Email is required', 'error');
-      return false;
-    }
-
-    if (!this.isValidEmail(data.email)) {
-      this.showToast('Please enter a valid email address', 'error');
-      return false;
-    }
-
-    if (!data.password) {
-      this.showToast('Password is required', 'error');
-      return false;
-    }
-
-    if (data.password.length < 8) {
-      this.showToast('Password must be at least 8 characters', 'error');
-      return false;
-    }
-
-    if (data.password !== data.confirm_password) {
-      this.showToast('Passwords do not match', 'error');
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Validate email format
-   * @param {string} email
-   * @returns {boolean}
-   */
-  isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  /**
    * Show activation form, hide sign-up form
    */
   showActivationForm() {
@@ -289,9 +275,7 @@ export class SignUp {
   async apiRequest(endpoint, method = 'GET', data = null) {
     const options = {
       method,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: getCsrfHeaders()
     };
 
     if (data) {

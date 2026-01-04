@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, user_id, client_id, client_name, client_type, description, logo_url,\n               homepage_url, privacy_policy_url, terms_of_service_url, is_active,\n               created_at, updated_at\n        FROM oauth_clients\n        WHERE client_id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "client_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "client_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "client_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "logo_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "homepage_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "privacy_policy_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "terms_of_service_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5228808eabcc3da4d57f085a5fdc88bf2dffe1f7b97f2178950db29e687644c6"
+}

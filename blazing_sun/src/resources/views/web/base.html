@@ -22,6 +22,9 @@
     {% if twitter_title %}<meta name="twitter:title" content="{{ twitter_title }}">{% endif %}
     {% if twitter_description %}<meta name="twitter:description" content="{{ twitter_description }}">{% endif %}
 
+    {# CSRF Token for AJAX requests #}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
     {# Dynamic Favicon - uses UUID-based URL with variant support #}
     {% if favicon_url %}
     <link rel="icon" href="{{ favicon_url }}">

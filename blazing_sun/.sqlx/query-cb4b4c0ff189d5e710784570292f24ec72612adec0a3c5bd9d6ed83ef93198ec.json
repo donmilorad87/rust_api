@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            cg.id as consent_id,\n            c.id as client_db_id,\n            c.client_id,\n            c.client_name,\n            c.description as client_description,\n            c.logo_url,\n            c.homepage_url,\n            c.privacy_policy_url,\n            cg.granted_scopes,\n            cg.created_at as authorized_at,\n            cg.updated_at as last_used_at\n        FROM oauth_consent_grants cg\n        INNER JOIN oauth_clients c ON cg.client_id = c.id\n        WHERE cg.user_id = $1\n          AND cg.is_active = true\n          AND c.is_active = true\n        ORDER BY cg.updated_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "consent_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "client_db_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "client_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "client_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "client_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "logo_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "homepage_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "privacy_policy_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "granted_scopes",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 9,
+        "name": "authorized_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "last_used_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cb4b4c0ff189d5e710784570292f24ec72612adec0a3c5bd9d6ed83ef93198ec"
+}

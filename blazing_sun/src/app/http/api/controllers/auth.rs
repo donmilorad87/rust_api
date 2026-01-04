@@ -4,7 +4,7 @@
 //! - Sign Up: Create a new user account
 //! - Sign In: Authenticate and receive JWT token
 
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -14,11 +14,13 @@ use crate::app::http::api::controllers::responses::{
     BaseResponse, MissingFieldsResponse, UserDto, ValidationErrorResponse,
 };
 use crate::app::http::api::validators::auth::{
-    validate_password, validate_passwords_match, SigninRequest, SigninRequestRaw, SignupRequest,
-    SignupRequestRaw,
+    validate_name, validate_password, validate_passwords_match, SigninRequest, SigninRequestRaw,
+    SignupRequest, SignupRequestRaw,
 };
 use crate::config::{ActivationConfig, JwtConfig};
 use crate::database::mutations::activation_hash as db_activation_hash;
+use crate::database::mutations::session_refresh_token as db_refresh_token_mut;
+use crate::database::read::session_refresh_token as db_refresh_token;
 use crate::database::read::user as db_user;
 use crate::database::AppState;
 use crate::events;
@@ -145,6 +147,24 @@ impl AuthController {
                 .push(mismatch_error);
         }
 
+        // Validate first_name (letters only, min 2 chars)
+        let first_name_errors = validate_name(&user.first_name, "first_name");
+        if !first_name_errors.is_empty() {
+            errors
+                .entry("first_name".to_string())
+                .or_default()
+                .extend(first_name_errors);
+        }
+
+        // Validate last_name (letters only, min 2 chars)
+        let last_name_errors = validate_name(&user.last_name, "last_name");
+        if !last_name_errors.is_empty() {
+            errors
+                .entry("last_name".to_string())
+                .or_default()
+                .extend(last_name_errors);
+        }
+
         // If validation errors, return with object format
         if !errors.is_empty() {
             return HttpResponse::BadRequest().json(ValidationErrorResponse::new(errors));
@@ -243,14 +263,10 @@ impl AuthController {
                     "User created successfully. Please check your email for activation code.",
                 ))
             }
-            Ok(JobStatus::Failed) => {
-                HttpResponse::InternalServerError()
-                    .json(BaseResponse::error("Failed to create user"))
-            }
-            Ok(_) => {
-                HttpResponse::InternalServerError()
-                    .json(BaseResponse::error("Unexpected job status"))
-            }
+            Ok(JobStatus::Failed) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Failed to create user")),
+            Ok(_) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Unexpected job status")),
             Err(e) => {
                 tracing::error!("Job error: {}", e);
                 HttpResponse::InternalServerError()
@@ -300,6 +316,7 @@ impl AuthController {
         let user_data = SigninRequest {
             email: raw.email.clone().unwrap(),
             password: raw.password.clone().unwrap(),
+            remember_me: raw.remember_me,
         };
 
         let mut errors: HashMap<String, Vec<String>> = HashMap::new();
@@ -370,14 +387,16 @@ impl AuthController {
 
         // Check if user is activated
         if user.activated == 0 {
-            return HttpResponse::Forbidden()
-                .json(BaseResponse::error("Account not activated. Please check your email for activation code."));
+            return HttpResponse::Forbidden().json(BaseResponse::error(
+                "Account not activated. Please check your email for activation code.",
+            ));
         }
 
         // Check if user must set password
         if user.user_must_set_password == 1 {
-            return HttpResponse::Forbidden()
-                .json(BaseResponse::error("You must set your password before logging in. Please check your email."));
+            return HttpResponse::Forbidden().json(BaseResponse::error(
+                "You must set your password before logging in. Please check your email.",
+            ));
         }
 
         let claims = Claims {
@@ -413,27 +432,283 @@ impl AuthController {
         use actix_web::cookie::{Cookie, SameSite};
         let cookie = Cookie::build("auth_token", token.clone())
             .path("/")
-            .max_age(actix_web::cookie::time::Duration::minutes(JwtConfig::expiration_minutes()))
+            .max_age(actix_web::cookie::time::Duration::minutes(
+                JwtConfig::expiration_minutes(),
+            ))
             .http_only(true)
             .same_site(SameSite::Lax)
             .finish();
 
+        let mut response = HttpResponse::Ok();
+        response.cookie(cookie);
+
+        // If remember_me is checked, create a long-lived refresh token
+        if user_data.remember_me {
+            let refresh_token = match db_refresh_token_mut::create(
+                &db,
+                user.id,
+                None, // TODO: extract device info from User-Agent
+                None, // TODO: extract IP from request
+            )
+            .await
+            {
+                Ok(token) => token,
+                Err(e) => {
+                    tracing::warn!("Failed to create refresh token: {}", e);
+                    // Continue without refresh token - not critical
+                    return response.json(SignInResponse {
+                        base: BaseResponse::success("Signed in successfully"),
+                        token,
+                        user: UserDto {
+                            id: user.id,
+                            email: user.email.clone(),
+                            first_name: user.first_name.clone(),
+                            last_name: user.last_name.clone(),
+                            balance: user.balance,
+                            permissions: user.permissions,
+                            avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
+                            created_at: user.created_at,
+                            updated_at: user.updated_at,
+                        },
+                    });
+                }
+            };
+
+            // Set refresh_token cookie (long-lived, HttpOnly, Secure)
+            let refresh_cookie = Cookie::build("refresh_token", refresh_token)
+                .path("/api/v1/auth")
+                .max_age(actix_web::cookie::time::Duration::days(
+                    JwtConfig::refresh_expiration_days(),
+                ))
+                .http_only(true)
+                .same_site(SameSite::Strict)
+                .finish();
+            response.cookie(refresh_cookie);
+        }
+
+        response.json(SignInResponse {
+            base: BaseResponse::success("Signed in successfully"),
+            token,
+            user: UserDto {
+                id: user.id,
+                email: user.email.clone(),
+                first_name: user.first_name.clone(),
+                last_name: user.last_name.clone(),
+                balance: user.balance,
+                permissions: user.permissions,
+                avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
+                created_at: user.created_at,
+                updated_at: user.updated_at,
+            },
+        })
+    }
+
+    /// Sign Out - Revoke refresh token
+    ///
+    /// # Route
+    /// `POST /api/v1/auth/sign-out`
+    ///
+    /// # Responses
+    /// - 200: Signed out successfully
+    pub async fn sign_out(
+        state: web::Data<AppState>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        use actix_web::cookie::{Cookie, SameSite};
+
+        let db = state.db.lock().await;
+
+        // Get refresh token from cookie
+        if let Some(refresh_cookie) = req.cookie("refresh_token") {
+            let token_hash = db_refresh_token_mut::hash_token(refresh_cookie.value());
+            if let Err(e) = db_refresh_token_mut::revoke_by_hash(&db, &token_hash).await {
+                tracing::warn!("Failed to revoke refresh token: {}", e);
+            }
+        }
+
+        // Clear both cookies
+        let clear_auth = Cookie::build("auth_token", "")
+            .path("/")
+            .max_age(actix_web::cookie::time::Duration::ZERO)
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .finish();
+
+        let clear_refresh = Cookie::build("refresh_token", "")
+            .path("/api/v1/auth")
+            .max_age(actix_web::cookie::time::Duration::ZERO)
+            .http_only(true)
+            .same_site(SameSite::Strict)
+            .finish();
+
         HttpResponse::Ok()
-            .cookie(cookie)
-            .json(SignInResponse {
-                base: BaseResponse::success("Signed in successfully"),
-                token,
-                user: UserDto {
-                    id: user.id,
-                    email: user.email.clone(),
-                    first_name: user.first_name.clone(),
-                    last_name: user.last_name.clone(),
-                    balance: user.balance,
-                    permissions: user.permissions,
-                    avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
-                    created_at: user.created_at,
-                    updated_at: user.updated_at,
-                },
-            })
+            .cookie(clear_auth)
+            .cookie(clear_refresh)
+            .json(BaseResponse::success("Signed out successfully"))
+    }
+
+    /// Refresh - Exchange refresh token for new access token
+    ///
+    /// # Route
+    /// `POST /api/v1/auth/refresh`
+    ///
+    /// # Responses
+    /// - 200: New access token issued
+    /// - 401: Invalid or expired refresh token
+    pub async fn refresh(
+        state: web::Data<AppState>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        use actix_web::cookie::{Cookie, SameSite};
+
+        // Get refresh token from cookie
+        let refresh_cookie = match req.cookie("refresh_token") {
+            Some(cookie) => cookie,
+            None => {
+                return HttpResponse::Unauthorized()
+                    .json(BaseResponse::error("No refresh token provided"));
+            }
+        };
+
+        let token_hash = db_refresh_token_mut::hash_token(refresh_cookie.value());
+        let db = state.db.lock().await;
+
+        // Validate refresh token
+        let refresh_record = match db_refresh_token::get_valid_by_hash(&db, &token_hash).await {
+            Ok(record) => record,
+            Err(_) => {
+                return HttpResponse::Unauthorized()
+                    .json(BaseResponse::error("Invalid or expired refresh token"));
+            }
+        };
+
+        // Update last_used_at
+        if let Err(e) = db_refresh_token_mut::update_last_used(&db, &token_hash).await {
+            tracing::warn!("Failed to update refresh token last_used_at: {}", e);
+        }
+
+        // Get user
+        let user = match db_user::get_by_id(&db, refresh_record.user_id).await {
+            Ok(u) => u,
+            Err(_) => {
+                return HttpResponse::Unauthorized()
+                    .json(BaseResponse::error("User not found"));
+            }
+        };
+
+        // Check if user is still active
+        if user.activated == 0 {
+            return HttpResponse::Forbidden()
+                .json(BaseResponse::error("Account not activated"));
+        }
+
+        // Generate new access token
+        let claims = Claims {
+            sub: user.id,
+            role: "user".to_string(),
+            permissions: user.permissions,
+            exp: (Utc::now() + Duration::minutes(JwtConfig::expiration_minutes())).timestamp(),
+        };
+
+        let token = jsonwebtoken::encode(
+            &jsonwebtoken::Header::default(),
+            &claims,
+            &jsonwebtoken::EncodingKey::from_secret(state.jwt_secret.as_bytes()),
+        )
+        .unwrap();
+
+        // Set new auth_token cookie
+        let cookie = Cookie::build("auth_token", token.clone())
+            .path("/")
+            .max_age(actix_web::cookie::time::Duration::minutes(
+                JwtConfig::expiration_minutes(),
+            ))
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .finish();
+
+        HttpResponse::Ok().cookie(cookie).json(SignInResponse {
+            base: BaseResponse::success("Token refreshed successfully"),
+            token,
+            user: UserDto {
+                id: user.id,
+                email: user.email.clone(),
+                first_name: user.first_name.clone(),
+                last_name: user.last_name.clone(),
+                balance: user.balance,
+                permissions: user.permissions,
+                avatar_uuid: user.avatar_uuid.map(|u| u.to_string()),
+                created_at: user.created_at,
+                updated_at: user.updated_at,
+            },
+        })
+    }
+
+    /// Sign Out All - Revoke all refresh tokens for a user (logout from all devices)
+    ///
+    /// # Route
+    /// `POST /api/v1/auth/sign-out-all`
+    ///
+    /// # Responses
+    /// - 200: Signed out from all devices
+    /// - 401: Not authenticated
+    pub async fn sign_out_all(
+        state: web::Data<AppState>,
+        req: HttpRequest,
+    ) -> HttpResponse {
+        use actix_web::cookie::{Cookie, SameSite};
+
+        // Get user_id from JWT (must be authenticated)
+        let token = match req.cookie("auth_token") {
+            Some(cookie) => cookie.value().to_string(),
+            None => {
+                return HttpResponse::Unauthorized()
+                    .json(BaseResponse::error("Not authenticated"));
+            }
+        };
+
+        let claims = match jsonwebtoken::decode::<Claims>(
+            &token,
+            &jsonwebtoken::DecodingKey::from_secret(state.jwt_secret.as_bytes()),
+            &jsonwebtoken::Validation::default(),
+        ) {
+            Ok(data) => data.claims,
+            Err(_) => {
+                return HttpResponse::Unauthorized()
+                    .json(BaseResponse::error("Invalid token"));
+            }
+        };
+
+        let db = state.db.lock().await;
+
+        // Revoke all refresh tokens for this user
+        match db_refresh_token_mut::revoke_all_for_user(&db, claims.sub).await {
+            Ok(count) => {
+                tracing::info!("Revoked {} refresh tokens for user {}", count, claims.sub);
+            }
+            Err(e) => {
+                tracing::error!("Failed to revoke all refresh tokens: {}", e);
+            }
+        }
+
+        // Clear current session cookies
+        let clear_auth = Cookie::build("auth_token", "")
+            .path("/")
+            .max_age(actix_web::cookie::time::Duration::ZERO)
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .finish();
+
+        let clear_refresh = Cookie::build("refresh_token", "")
+            .path("/api/v1/auth")
+            .max_age(actix_web::cookie::time::Duration::ZERO)
+            .http_only(true)
+            .same_site(SameSite::Strict)
+            .finish();
+
+        HttpResponse::Ok()
+            .cookie(clear_auth)
+            .cookie(clear_refresh)
+            .json(BaseResponse::success("Signed out from all devices"))
     }
 }

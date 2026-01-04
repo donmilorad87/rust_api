@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO oauth_client_enabled_apis (client_id, api_product_id)\n            VALUES ($1, $2)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6660a15cd1495d0d6a362c3784c1ab5eb99340c212c3ba06eae8bb7758966c5c"
+}

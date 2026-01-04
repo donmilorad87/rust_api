@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM oauth_authorization_codes\n        WHERE code = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ca698ed31df8b3d86475877c7e4eb10b2a25401b714c83b0d8d501e452a6af7d"
+}

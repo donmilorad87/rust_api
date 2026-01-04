@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE oauth_refresh_tokens\n        SET is_revoked = true, revoked_at = NOW()\n        WHERE user_id = $1 AND client_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "098c44865ed71ab33a473ec31232613cf2a7883c4e3efa25bf912abfeab2db27"
+}

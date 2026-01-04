@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1 FROM oauth_client_enabled_apis cea\n            JOIN oauth_api_products ap ON cea.api_product_id = ap.id\n            WHERE cea.client_id = $1 AND ap.product_name = $2\n        ) as \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "40a84ac321ddffded7e6eb3259fbb6b699e1e776cd27be1672106a8501878df9"
+}

@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, product_key, product_name, product_description, icon_url, documentation_url, is_active, created_at, updated_at\n        FROM oauth_api_products\n        WHERE is_active = true\n        ORDER BY product_name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "product_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "product_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "icon_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "documentation_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e8287151e824b421fd68d3ccda24f9312a996147f6e90433a753a38d672f4358"
+}

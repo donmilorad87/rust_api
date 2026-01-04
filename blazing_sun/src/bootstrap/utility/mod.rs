@@ -4,6 +4,8 @@
 
 pub mod assets;
 pub mod auth;
+pub mod csrf;
+pub mod oauth_jwt;
 pub mod template;
 
 pub use auth::*;
