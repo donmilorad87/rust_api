@@ -21,6 +21,9 @@ export class GalleriesPage {
     this.selectedFiles = [];
     this.fileMetadata = []; // Stores {title, description} for each file
     this.currentLightboxIndex = 0;
+    this.selectedPictureIds = new Set();
+    this.pendingPictureDeleteIds = [];
+    this.currentPicturesList = [];
 
     this.init();
   }
@@ -77,6 +80,28 @@ export class GalleriesPage {
     const addPictureBtn = document.getElementById('addPictureBtn');
     if (addPictureBtn) {
       addPictureBtn.addEventListener('click', () => this.handleAddPictures());
+    }
+
+    this.selectAllPicturesCheckbox = document.getElementById('selectAllPictures');
+    if (this.selectAllPicturesCheckbox) {
+      this.selectAllPicturesCheckbox.addEventListener('change', () => this.handleSelectAllPictures());
+    }
+
+    this.bulkDeletePicturesBtn = document.getElementById('bulkDeletePicturesBtn');
+    if (this.bulkDeletePicturesBtn) {
+      this.bulkDeletePicturesBtn.addEventListener('click', () => {
+        const selected = Array.from(this.selectedPictureIds);
+        if (selected.length > 0) {
+          this.openPictureDeleteModal(selected);
+        }
+      });
+    }
+
+    this.selectedPicturesCount = document.getElementById('selectedPicturesCount');
+
+    const confirmPictureDeleteBtn = document.getElementById('confirmPictureDeleteBtn');
+    if (confirmPictureDeleteBtn) {
+      confirmPictureDeleteBtn.addEventListener('click', () => this.handleConfirmPictureDelete());
     }
 
     // Upload controls
@@ -455,6 +480,10 @@ export class GalleriesPage {
    */
   showPicturesModal(gallery) {
     this.currentGalleryForPictures = gallery;
+    this.selectedPictureIds.clear();
+    this.pendingPictureDeleteIds = [];
+    this.currentPicturesList = [];
+    this.updateBulkSelectionUI();
 
     const modal = document.getElementById('picturesModal');
     const title = document.getElementById('picturesModalTitle');
@@ -498,6 +527,9 @@ export class GalleriesPage {
       if (pictures.length === 0) {
         picturesGrid.innerHTML = '';
         picturesEmpty.style.display = 'block';
+        this.currentPicturesList = [];
+        this.selectedPictureIds.clear();
+        this.updateBulkSelectionUI();
       } else {
         this.renderPictures(pictures);
       }
@@ -516,6 +548,8 @@ export class GalleriesPage {
     if (!picturesGrid) return;
 
     picturesGrid.innerHTML = '';
+    this.selectedPictureIds.clear();
+    this.currentPicturesList = pictures;
 
     pictures.forEach(picture => {
       const card = document.createElement('div');
@@ -523,6 +557,10 @@ export class GalleriesPage {
       card.dataset.pictureId = picture.id;
 
       card.innerHTML = `
+        <label class="picture-card__select" aria-label="Select picture">
+          <input type="checkbox" class="picture-card__checkbox" data-picture-id="${picture.id}">
+          <span class="picture-card__checkmark" aria-hidden="true"></span>
+        </label>
         <div class="picture-card__image-wrapper" data-action="view-picture">
           <img src="${picture.urls.medium}" alt="${this.escapeHtml(picture.title || 'Picture')}" class="picture-card__image">
         </div>
@@ -553,6 +591,19 @@ export class GalleriesPage {
         imageWrapper.addEventListener('click', () => this.openPictureLightbox(pictures, pictures.indexOf(picture)));
       }
 
+      const selectCheckbox = card.querySelector('.picture-card__checkbox');
+      if (selectCheckbox) {
+        selectCheckbox.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+        selectCheckbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          const isSelected = selectCheckbox.checked;
+          card.classList.toggle('picture-card--selected', isSelected);
+          this.togglePictureSelection(picture.id, isSelected);
+        });
+      }
+
       // Edit picture button
       const editBtn = card.querySelector('[data-action="edit-picture"]');
       if (editBtn) {
@@ -567,41 +618,161 @@ export class GalleriesPage {
       if (removeBtn) {
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.removePictureFromGallery(picture.id);
+          this.openPictureDeleteModal([picture.id]);
         });
       }
 
       picturesGrid.appendChild(card);
     });
+
+    this.updateBulkSelectionUI();
   }
 
   /**
    * Remove a picture from the gallery
    * @param {number} pictureId - Picture ID
    */
-  async removePictureFromGallery(pictureId) {
-    if (!confirm('Remove this picture from the gallery?')) return;
+  async deletePicturesFromGallery(pictureIds) {
+    if (!this.currentGalleryForPictures || pictureIds.length === 0) return;
 
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/galleries/${this.currentGalleryForPictures.id}/pictures/${pictureId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: getCsrfHeaders({ 'Accept': 'application/json' })
-      });
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/galleries/${this.currentGalleryForPictures.id}/pictures/bulk-delete`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: getCsrfHeaders({ 'Accept': 'application/json' }),
+          body: JSON.stringify({ picture_ids: pictureIds })
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to remove picture');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to remove pictures');
       }
 
-      this.showToast('Picture removed successfully', 'success');
+      this.showToast('Pictures removed successfully', 'success');
+      this.selectedPictureIds.clear();
+      this.updateBulkSelectionUI();
 
       if (this.currentGalleryForPictures) {
         this.loadGalleryPictures(this.currentGalleryForPictures.id);
       }
     } catch (error) {
-      console.error('Failed to remove picture:', error);
+      console.error('Failed to remove pictures:', error);
       this.showToast(error.message, 'error');
     }
+  }
+
+  /**
+   * Update selection state for a picture
+   * @param {number} pictureId - Picture ID
+   * @param {boolean} isSelected - Selection state
+   */
+  togglePictureSelection(pictureId, isSelected) {
+    if (isSelected) {
+      this.selectedPictureIds.add(pictureId);
+    } else {
+      this.selectedPictureIds.delete(pictureId);
+    }
+
+    this.updateBulkSelectionUI();
+  }
+
+  /**
+   * Select or deselect all pictures
+   */
+  handleSelectAllPictures() {
+    const shouldSelectAll = this.selectAllPicturesCheckbox?.checked;
+    const pictureIds = this.currentPicturesList.map((picture) => picture.id);
+
+    this.selectedPictureIds = new Set(shouldSelectAll ? pictureIds : []);
+
+    const checkboxes = document.querySelectorAll('.picture-card__checkbox');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = shouldSelectAll;
+      const card = checkbox.closest('.picture-card');
+      if (card) {
+        card.classList.toggle('picture-card--selected', shouldSelectAll);
+      }
+    });
+
+    this.updateBulkSelectionUI();
+  }
+
+  /**
+   * Refresh bulk selection UI state
+   */
+  updateBulkSelectionUI() {
+    const selectedCount = this.selectedPictureIds.size;
+    const totalCount = this.currentPicturesList.length;
+
+    if (this.selectedPicturesCount) {
+      this.selectedPicturesCount.textContent = `${selectedCount} selected`;
+    }
+
+    if (this.selectAllPicturesCheckbox) {
+      this.selectAllPicturesCheckbox.disabled = totalCount === 0;
+      this.selectAllPicturesCheckbox.checked = selectedCount > 0 && selectedCount === totalCount;
+      this.selectAllPicturesCheckbox.indeterminate =
+        selectedCount > 0 && selectedCount < totalCount;
+    }
+
+    if (this.bulkDeletePicturesBtn) {
+      this.bulkDeletePicturesBtn.disabled = selectedCount === 0;
+      this.bulkDeletePicturesBtn.classList.toggle('btn--hidden', selectedCount === 0);
+    }
+  }
+
+  /**
+   * Show picture delete confirmation modal
+   * @param {number[]} pictureIds - Picture IDs to remove
+   */
+  openPictureDeleteModal(pictureIds) {
+    this.pendingPictureDeleteIds = pictureIds;
+    const modal = document.getElementById('pictureDeleteModal');
+    const message = document.getElementById('pictureDeleteMessage');
+
+    if (!modal || !message) return;
+
+    const count = pictureIds.length;
+    message.textContent =
+      count === 1
+        ? 'Remove this picture from the gallery?'
+        : `Remove ${count} pictures from the gallery?`;
+
+    this.openModal(modal);
+  }
+
+  /**
+   * Handle picture delete confirmation
+   */
+  async handleConfirmPictureDelete() {
+    const modal = document.getElementById('pictureDeleteModal');
+    const confirmBtn = document.getElementById('confirmPictureDeleteBtn');
+
+    if (!this.pendingPictureDeleteIds || this.pendingPictureDeleteIds.length === 0) {
+      if (modal) {
+        this.closeModal(modal);
+      }
+      return;
+    }
+
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+    }
+
+    await this.deletePicturesFromGallery(this.pendingPictureDeleteIds);
+
+    if (modal) {
+      this.closeModal(modal);
+    }
+
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+    }
+
+    this.pendingPictureDeleteIds = [];
   }
 
   /**
@@ -1127,6 +1298,10 @@ export class GalleriesPage {
     const uploadDropZone = document.getElementById('uploadDropZone');
     const uploadPreview = document.getElementById('uploadPreview');
     const uploadActions = document.querySelector('.upload-actions');
+    const uploadBtn = document.getElementById('uploadFilesBtn');
+    const progressContainer = document.getElementById('uploadProgress');
+    const progressText = document.getElementById('uploadProgressText');
+    const progressFill = document.getElementById('uploadProgressFill');
     const picturesGrid = document.getElementById('picturesGrid');
     const picturesEmpty = document.getElementById('picturesEmpty');
     const addPictureBtn = document.getElementById('addPictureBtn');
@@ -1139,6 +1314,15 @@ export class GalleriesPage {
       uploadPreview.innerHTML = '';
     }
     if (uploadActions) uploadActions.style.display = 'none';
+    if (uploadBtn) {
+      uploadBtn.disabled = false;
+      uploadBtn.querySelector('.btn__text').textContent = 'Upload & Add to Gallery';
+    }
+    if (progressContainer && progressText && progressFill) {
+      progressContainer.style.display = 'none';
+      progressText.textContent = '0/0';
+      progressFill.style.width = '0%';
+    }
     if (picturesGrid) picturesGrid.style.display = 'grid';
     if (addPictureBtn) addPictureBtn.style.display = 'inline-flex';
     if (fileInput) fileInput.value = '';
@@ -1158,9 +1342,20 @@ export class GalleriesPage {
     }
 
     const uploadBtn = document.getElementById('uploadFilesBtn');
+    const progressContainer = document.getElementById('uploadProgress');
+    const progressText = document.getElementById('uploadProgressText');
+    const progressFill = document.getElementById('uploadProgressFill');
+    const totalUploads = this.selectedFiles.length;
+
     if (uploadBtn) {
       uploadBtn.disabled = true;
       uploadBtn.querySelector('.btn__text').textContent = 'Uploading...';
+    }
+
+    if (progressContainer && progressText && progressFill) {
+      progressContainer.style.display = 'flex';
+      progressText.textContent = `0/${totalUploads}`;
+      progressFill.style.width = '0%';
     }
 
     try {
@@ -1174,6 +1369,12 @@ export class GalleriesPage {
 
         // Add to gallery with metadata
         await this.addPictureToGallery(uploadId, metadata.title, metadata.description);
+
+        const completed = i + 1;
+        if (progressContainer && progressText && progressFill) {
+          progressText.textContent = `${completed}/${totalUploads}`;
+          progressFill.style.width = `${Math.round((completed / totalUploads) * 100)}%`;
+        }
       }
 
       this.showToast(`${this.selectedFiles.length} picture(s) added successfully`, 'success');

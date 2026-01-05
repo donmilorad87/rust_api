@@ -30,7 +30,7 @@
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
                 Authorized Apps
-                <span class="oauth-tabs__badge" id="authorizedAppsBadge" style="display: none;">0</span>
+                <span class="oauth-tabs__badge hidden" id="authorizedAppsBadge">0</span>
             </button>
         </div>
 
@@ -53,7 +53,7 @@
             </div>
 
             <!-- Error State -->
-            <div id="errorState" class="error-state" style="display: none;">
+            <div id="errorState" class="error-state hidden">
                 <div class="error-state__icon">⚠️</div>
                 <h2 class="error-state__title">Failed to Load Applications</h2>
                 <p class="error-state__message"></p>
@@ -61,7 +61,7 @@
             </div>
 
             <!-- Empty State -->
-            <div id="emptyState" class="empty-state" style="display: none;">
+            <div id="emptyState" class="empty-state hidden">
                 <div class="empty-state__icon">🔐</div>
                 <h2 class="empty-state__title">No OAuth Applications Yet</h2>
                 <p class="empty-state__message">Create your first OAuth application to enable third-party integrations</p>
@@ -71,23 +71,23 @@
             </div>
 
             <!-- Applications List -->
-            <div id="appsListContainer" class="apps-list" style="display: none;"></div>
+            <div id="appsListContainer" class="apps-list hidden"></div>
         </div>
 
         <!-- Tab Content: Authorized Apps -->
-        <div class="oauth-tab-content" id="authorizedAppsContent" style="display: none;">
-            <p class="oauth-page__description" style="margin-bottom: 1.5rem;">
+        <div class="oauth-tab-content hidden" id="authorizedAppsContent">
+            <p class="oauth-page__description oauth-page__description--spaced">
                 These are applications you've authorized to access your account. You can revoke access at any time.
             </p>
 
             <!-- Authorized Apps Loading State -->
-            <div id="authorizedLoadingState" class="loading-state" style="display: none;">
+            <div id="authorizedLoadingState" class="loading-state hidden">
                 <div class="spinner"></div>
                 <p>Loading authorized apps...</p>
             </div>
 
             <!-- Authorized Apps Error State -->
-            <div id="authorizedErrorState" class="error-state" style="display: none;">
+            <div id="authorizedErrorState" class="error-state hidden">
                 <div class="error-state__icon">⚠️</div>
                 <h2 class="error-state__title">Failed to Load Authorized Apps</h2>
                 <p class="error-state__message"></p>
@@ -95,14 +95,14 @@
             </div>
 
             <!-- Authorized Apps Empty State -->
-            <div id="authorizedEmptyState" class="empty-state" style="display: none;">
+            <div id="authorizedEmptyState" class="empty-state hidden">
                 <div class="empty-state__icon">🛡️</div>
                 <h2 class="empty-state__title">No Authorized Apps</h2>
                 <p class="empty-state__message">You haven't authorized any third-party applications yet.</p>
             </div>
 
             <!-- Authorized Apps List -->
-            <div id="authorizedAppsListContainer" class="apps-list" style="display: none;"></div>
+            <div id="authorizedAppsListContainer" class="apps-list hidden"></div>
         </div>
     </div>
 </main>
@@ -244,7 +244,7 @@
                             <button type="button" class="btn-icon" data-action="copy-to-clipboard" data-target="detailClientId" title="Copy">📋</button>
                         </div>
                     </div>
-                    <div class="credential-item" id="clientSecretSection" style="display: none;">
+                    <div class="credential-item hidden" id="clientSecretSection">
                         <label class="credential-item__label">Client Secret</label>
                         <div class="credential-item__value">
                             <code id="detailClientSecret">-</code>
@@ -257,8 +257,8 @@
 
             <!-- Redirect URIs Section -->
             <section class="details-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h3 class="details-section__title" style="margin: 0;">Redirect URIs</h3>
+                <div class="details-section__row">
+                    <h3 class="details-section__title details-section__title--tight">Redirect URIs</h3>
                     <button type="button" class="btn btn--small btn--primary" data-action="show-sso-url-modal">
                         🔗 Generate OAuth URL
                     </button>
@@ -271,7 +271,7 @@
                         <button type="button" class="btn-add-uri" title="Add Another Redirect URI" data-action="add-redirect-uri">+</button>
                     </div>
                 </div>
-                <button type="button" class="btn btn--small btn--primary" style="margin-top: 0.5rem;" data-action="save-all-redirect-uris">
+                <button type="button" class="btn btn--small btn--primary btn--stacked" data-action="save-all-redirect-uris">
                     💾 Save All Redirect URIs
                 </button>
             </section>
@@ -287,7 +287,7 @@
                         <button type="button" class="btn-add-uri" title="Add Another Origin" data-action="add-origin">+</button>
                     </div>
                 </div>
-                <button type="button" class="btn btn--small btn--primary" style="margin-top: 0.5rem;" data-action="save-all-origins">
+                <button type="button" class="btn btn--small btn--primary btn--stacked" data-action="save-all-origins">
                     💾 Save All Origins
                 </button>
             </section>
@@ -323,15 +323,15 @@
             </button>
         </header>
         <div class="modal__body">
-            <div class="alert alert--danger" style="margin-bottom: 1.5rem;">
-                <p style="margin: 0; font-weight: 600;">⚠️ This action CANNOT be undone!</p>
+            <div class="alert alert--danger">
+                <p class="alert__title">⚠️ This action CANNOT be undone!</p>
             </div>
 
-            <p style="margin-bottom: 1rem;">You are about to permanently delete the application:</p>
-            <p style="font-weight: 700; font-size: 1.125rem; margin-bottom: 1.5rem; color: #dc2626;" id="deleteAppNameDisplay">-</p>
+            <p class="modal__text">You are about to permanently delete the application:</p>
+            <p class="delete-confirm__app-name" id="deleteAppNameDisplay">-</p>
 
-            <p style="margin-bottom: 1rem;">All associated data will be permanently deleted:</p>
-            <ul style="margin-bottom: 1.5rem; padding-left: 1.5rem;">
+            <p class="modal__text">All associated data will be permanently deleted:</p>
+            <ul class="delete-confirm__list">
                 <li>Redirect URIs</li>
                 <li>Authorized JavaScript Origins</li>
                 <li>Enabled APIs</li>
@@ -340,7 +340,7 @@
                 <li>All OAuth refresh tokens</li>
             </ul>
 
-            <p style="margin-bottom: 0.5rem; font-weight: 600;">To confirm deletion, please type the application name:</p>
+            <p class="delete-confirm__prompt">To confirm deletion, please type the application name:</p>
             <form id="deleteConfirmForm">
                 <div class="form__group">
                     <input
@@ -378,42 +378,24 @@
             </button>
         </header>
         <div class="modal__body">
-            <div class="alert alert--warning" style="margin-bottom: 1.5rem;">
-                <p style="margin: 0; font-weight: 600;">⚠️ IMPORTANT: Save this secret now!</p>
-                <p style="margin: 0.5rem 0 0 0;">This is the only time you'll be able to view this client secret. Store it securely.</p>
+            <div class="alert alert--warning">
+                <p class="alert__title">⚠️ IMPORTANT: Save this secret now!</p>
+                <p class="alert__text">This is the only time you'll be able to view this client secret. Store it securely.</p>
             </div>
 
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Client Secret:</label>
-                <div style="display: flex; gap: 0.5rem; align-items: start;">
-                    <code id="newClientSecret" style="
-                        flex: 1;
-                        padding: 1rem;
-                        background: #f3f4f6;
-                        border: 1px solid #d1d5db;
-                        border-radius: 0.375rem;
-                        font-family: 'Courier New', monospace;
-                        font-size: 0.875rem;
-                        word-break: break-all;
-                        color: #1f2937;
-                    ">-</code>
-                    <button type="button" class="btn-icon" id="copyClientSecretBtn" title="Copy to clipboard" style="
-                        padding: 0.75rem;
-                        background: #3b82f6;
-                        color: white;
-                        border: none;
-                        border-radius: 0.375rem;
-                        cursor: pointer;
-                        font-size: 1.25rem;
-                    ">📋</button>
+            <div class="code-block">
+                <label class="code-block__label" for="newClientSecret">Client Secret:</label>
+                <div class="code-block__row">
+                    <code id="newClientSecret" class="code-block__value">-</code>
+                    <button type="button" class="btn-icon code-block__action" id="copyClientSecretBtn" title="Copy to clipboard">📋</button>
                 </div>
             </div>
 
-            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.375rem; padding: 1rem; margin-bottom: 1.5rem;">
-                <p style="margin: 0; font-size: 0.875rem; color: #92400e;">
+            <div class="info-panel info-panel--warning">
+                <p class="info-panel__text">
                     <strong>Security Best Practices:</strong>
                 </p>
-                <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0; font-size: 0.875rem; color: #92400e;">
+                <ul class="info-panel__list">
                     <li>Never share this secret publicly or commit it to version control</li>
                     <li>Store it in a secure password manager or environment variable</li>
                     <li>Rotate secrets regularly for enhanced security</li>
@@ -443,13 +425,13 @@
             </button>
         </header>
         <div class="modal__body">
-            <div class="alert alert--info" style="margin-bottom: 1.5rem;">
-                <p style="margin: 0; font-weight: 600;">You are about to enable an API</p>
+            <div class="alert alert--info">
+                <p class="alert__title">You are about to enable an API</p>
             </div>
 
-            <p style="margin-bottom: 1rem;">Enable <strong id="enableApiNameDisplay">-</strong> for this application?</p>
+            <p class="modal__text">Enable <strong id="enableApiNameDisplay">-</strong> for this application?</p>
 
-            <p style="margin-bottom: 1rem; color: #6b7280;">This will grant the required read scope to your application. You can configure additional permissions after enabling.</p>
+            <p class="modal__text modal__text--muted">This will grant the required read scope to your application. You can configure additional permissions after enabling.</p>
         </div>
         <footer class="modal__footer">
             <button type="button" class="btn btn--secondary" id="cancelEnableApiBtn">Cancel</button>
@@ -474,15 +456,15 @@
             </button>
         </header>
         <div class="modal__body">
-            <div class="alert alert--warning" style="margin-bottom: 1.5rem;">
-                <p style="margin: 0; font-weight: 600;">Warning: This will revoke API access</p>
+            <div class="alert alert--warning">
+                <p class="alert__title">Warning: This will revoke API access</p>
             </div>
 
-            <p style="margin-bottom: 1rem;">Disable <strong id="disableApiNameDisplay">-</strong> for this application?</p>
+            <p class="modal__text">Disable <strong id="disableApiNameDisplay">-</strong> for this application?</p>
 
-            <p style="margin-bottom: 1rem; color: #dc2626; font-weight: 500;">This will remove all associated scopes from your application.</p>
+            <p class="modal__text modal__text--danger">This will remove all associated scopes from your application.</p>
 
-            <p style="margin-bottom: 0; color: #6b7280; font-size: 0.875rem;">Any integrations using these scopes will stop working until the API is re-enabled.</p>
+            <p class="modal__text modal__text--muted modal__text--sm">Any integrations using these scopes will stop working until the API is re-enabled.</p>
         </div>
         <footer class="modal__footer">
             <button type="button" class="btn btn--secondary" id="cancelDisableApiBtn">Cancel</button>
@@ -507,13 +489,13 @@
             </button>
         </header>
         <div class="modal__body">
-            <div class="alert alert--info" style="margin-bottom: 1.5rem;">
-                <p style="margin: 0; font-weight: 600;">📘 Integration Guide</p>
-                <p style="margin: 0.5rem 0 0 0;">Use this URL to redirect users to the OAuth authorization page from your application.</p>
+            <div class="alert alert--info">
+                <p class="alert__title">📘 Integration Guide</p>
+                <p class="alert__text">Use this URL to redirect users to the OAuth authorization page from your application.</p>
             </div>
 
             <!-- Redirect URI Selection -->
-            <div class="form__group" style="margin-bottom: 1.5rem;">
+            <div class="form__group form__group--spaced">
                 <label for="ssoRedirectUriSelect" class="form__label">Select Redirect URI:</label>
                 <select id="ssoRedirectUriSelect" class="form__select">
                     <option value="">-- Select a redirect URI --</option>
@@ -522,41 +504,42 @@
             </div>
 
             <!-- Generated OAuth URL -->
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Authorization URL:</label>
-                <div style="display: flex; gap: 0.5rem; align-items: start;">
-                    <code id="ssoUrlDisplay" style="
-                        flex: 1;
-                        padding: 1rem;
-                        background: #f3f4f6;
-                        border: 1px solid #d1d5db;
-                        border-radius: 0.375rem;
-                        font-family: 'Courier New', monospace;
-                        font-size: 0.75rem;
-                        word-break: break-all;
-                        color: #1f2937;
-                        line-height: 1.6;
-                        max-height: 200px;
-                        overflow-y: auto;
-                    ">Select a redirect URI to generate the URL</code>
-                    <button type="button" class="btn-icon" id="copySsoUrlBtn" title="Copy to clipboard" disabled style="
-                        padding: 0.75rem;
-                        background: #3b82f6;
-                        color: white;
-                        border: none;
-                        border-radius: 0.375rem;
-                        cursor: pointer;
-                        font-size: 1.25rem;
-                    ">📋</button>
+            <div class="code-block">
+                <label class="code-block__label" for="ssoUrlDisplay">Authorization URL:</label>
+                <div class="code-block__row">
+                    <code id="ssoUrlDisplay" class="code-block__value code-block__value--scroll">Select a redirect URI to generate the URL</code>
+                    <button type="button" class="btn-icon code-block__action" id="copySsoUrlBtn" title="Copy to clipboard" disabled>📋</button>
                 </div>
             </div>
 
+            <div class="info-panel info-panel--warning" id="pkceRequirementNote">
+                PKCE is required for all clients. Use the verifier below when exchanging the code.
+            </div>
+
+            <div class="code-block">
+                <label class="code-block__label" for="pkceVerifierDisplay">PKCE Code Verifier (store securely):</label>
+                <div class="code-block__row">
+                    <code id="pkceVerifierDisplay" class="code-block__value code-block__value--scroll">Generate a PKCE verifier to continue</code>
+                    <button type="button" class="btn-icon code-block__action" id="copyPkceVerifierBtn" title="Copy code verifier" disabled>📋</button>
+                </div>
+            </div>
+
+            <div class="code-block">
+                <label class="code-block__label" for="pkceChallengeDisplay">PKCE Code Challenge (S256):</label>
+                <div class="code-block__row">
+                    <code id="pkceChallengeDisplay" class="code-block__value code-block__value--scroll">Generate a PKCE challenge to continue</code>
+                    <button type="button" class="btn-icon code-block__action" id="copyPkceChallengeBtn" title="Copy code challenge" disabled>📋</button>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn--secondary" id="regeneratePkceBtn">Regenerate PKCE</button>
+
             <!-- OAuth Flow Steps -->
-            <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 0.375rem; padding: 1rem;">
-                <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #1e40af;">
+            <div class="info-panel info-panel--info">
+                <p class="info-panel__title">
                     <strong>OAuth 2.0 Flow:</strong>
                 </p>
-                <ol style="margin: 0; padding-left: 1.5rem; font-size: 0.875rem; color: #1e3a8a;">
+                <ol class="info-panel__list info-panel__list--ordered">
                     <li>User clicks link in your app → Redirected to this authorization URL</li>
                     <li>User sees consent screen → Approves requested scopes</li>
                     <li>User is redirected back to your redirect_uri with authorization code</li>

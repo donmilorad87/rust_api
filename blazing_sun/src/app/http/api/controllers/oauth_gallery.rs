@@ -14,12 +14,14 @@
 //! - OAuth client owner's user_id determines ownership
 //! - All operations (write, edit, delete) enforce ownership except read
 
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::app::db_query::{mutations as db_mutations, read as db_read};
 use crate::bootstrap::database::database::AppState;
-use crate::bootstrap::middleware::oauth_auth::{extract_oauth_claims, enforce_scopes};
+use crate::bootstrap::middleware::oauth_auth::{extract_oauth_claims, enforce_scopes, has_scopes};
+use crate::config::AppConfig;
+use crate::mq::{self, JobOptions, JobResult};
 
 /// Request body for creating a gallery
 #[derive(Debug, Deserialize)]
@@ -42,7 +44,7 @@ pub struct UpdateGalleryRequest {
 pub struct GalleryResponse {
     pub id: i64,
     pub user_id: i64,
-    pub name: String,
+    pub title: String,
     pub description: Option<String>,
     pub is_public: bool,
     pub display_order: i32,
@@ -52,11 +54,56 @@ pub struct GalleryResponse {
     pub updated_at: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct PaginationParams {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
 /// Build cover image URL for a gallery
-fn build_cover_image_url(cover_image_uuid: Option<uuid::Uuid>) -> String {
+fn build_cover_image_url(base_url: &str, cover_image_uuid: Option<uuid::Uuid>) -> String {
     match cover_image_uuid {
-        Some(uuid) => format!("/api/v1/upload/download/public/{}", uuid),
-        None => "/assets/img/gallery-placeholder.svg".to_string(),
+        Some(uuid) => build_public_upload_url(base_url, &uuid.to_string()),
+        None => build_full_url(base_url, "/assets/img/gallery-placeholder.svg"),
+    }
+}
+
+fn build_full_url(base_url: &str, path: &str) -> String {
+    format!("{}{}", base_url.trim_end_matches('/'), path)
+}
+
+fn build_public_upload_url(base_url: &str, upload_uuid: &str) -> String {
+    build_full_url(
+        base_url,
+        &format!("/api/v1/upload/download/public/{}", upload_uuid),
+    )
+}
+
+fn normalize_pagination(params: &PaginationParams) -> (i64, i64) {
+    let limit = params.limit.unwrap_or(16).max(1);
+    let offset = params.offset.unwrap_or(0).max(0);
+    (limit, offset)
+}
+
+fn job_result_to_response(result: JobResult<serde_json::Value>) -> HttpResponse {
+    match result {
+        JobResult::Success(payload) => {
+            let status = payload
+                .get("status_code")
+                .and_then(|value| value.as_u64())
+                .and_then(|code| StatusCode::from_u16(code as u16).ok())
+                .unwrap_or(StatusCode::OK);
+            let body = payload.get("body").cloned().unwrap_or(serde_json::json!({}));
+            HttpResponse::build(status).json(body)
+        }
+        JobResult::Retry(reason) => HttpResponse::ServiceUnavailable().json(serde_json::json!({
+            "error": "job_retry",
+            "error_description": reason
+        })),
+        JobResult::Failed(reason) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "job_failed",
+            "error_description": reason
+        })),
     }
 }
 
@@ -72,6 +119,7 @@ fn build_cover_image_url(cover_image_uuid: Option<uuid::Uuid>) -> String {
 pub async fn list_galleries(
     req: HttpRequest,
     state: web::Data<AppState>,
+    query: web::Query<PaginationParams>,
 ) -> HttpResponse {
     // Extract OAuth claims
     let claims = match extract_oauth_claims(&req) {
@@ -89,47 +137,21 @@ pub async fn list_galleries(
         return response;
     }
 
-    let user_id = claims.user_id;
-    let db = state.db.lock().await;
+    let (limit, offset) = normalize_pagination(&query);
+    let Some(ref mq) = state.mq else {
+        return HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "server_error", "error_description": "Message queue not available"}));
+    };
 
-    // Fetch galleries with counts
-    match db_read::gallery::get_by_user_with_counts(&db, user_id).await {
-        Ok(galleries) => {
-            let mut response: Vec<GalleryResponse> = Vec::new();
+    let params = mq::jobs::ListGalleriesParams { limit, offset };
+    let options = JobOptions::new().priority(0).fault_tolerance(1);
 
-            for g in galleries {
-                // Get first picture UUID for cover image
-                let first_picture_uuid = db_read::picture::get_first_picture_uuid(&db, g.id)
-                    .await
-                    .unwrap_or(None);
-
-                response.push(GalleryResponse {
-                    id: g.id,
-                    user_id: g.user_id,
-                    name: g.name,
-                    description: g.description,
-                    is_public: g.is_public,
-                    display_order: g.display_order,
-                    picture_count: g.picture_count,
-                    cover_image_url: build_cover_image_url(first_picture_uuid),
-                    created_at: g.created_at.to_rfc3339(),
-                    updated_at: g.updated_at.to_rfc3339(),
-                });
-            }
-
-            drop(db);
-            HttpResponse::Ok().json(serde_json::json!({
-                "galleries": response
-            }))
-        }
-        Err(e) => {
-            drop(db);
-            tracing::error!("Failed to fetch galleries: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "server_error",
-                "error_description": "Failed to fetch galleries"
-            }))
-        }
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_list_galleries", &params, options, 30000).await {
+        Ok(result) => job_result_to_response(result),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "server_error",
+            "error_description": format!("Failed to process job: {}", e)
+        })),
     }
 }
 
@@ -163,6 +185,7 @@ pub async fn get_gallery(
         return response;
     }
 
+    let base_url = AppConfig::app_url();
     let db = state.db.lock().await;
 
     // Fetch gallery details (NO OWNERSHIP CHECK for galleries.read)
@@ -180,12 +203,12 @@ pub async fn get_gallery(
             let response = GalleryResponse {
                 id: gallery.id,
                 user_id: gallery.user_id,
-                name: gallery.name,
+                title: gallery.name,
                 description: gallery.description,
                 is_public: gallery.is_public,
                 display_order: gallery.display_order,
                 picture_count,
-                cover_image_url: build_cover_image_url(first_picture_uuid),
+                cover_image_url: build_cover_image_url(base_url, first_picture_uuid),
                 created_at: gallery.created_at.to_rfc3339(),
                 updated_at: gallery.updated_at.to_rfc3339(),
             };
@@ -208,6 +231,57 @@ pub async fn get_gallery(
                 "error_description": "Failed to fetch gallery"
             }))
         }
+    }
+}
+
+/// OAuth: Get gallery images by gallery ID
+///
+/// **Scope Required**: `galleries.read`
+///
+/// **Endpoint**: `GET /api/v1/oauth/galleries/{id}/images`
+pub async fn list_gallery_images(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<i64>,
+    query: web::Query<PaginationParams>,
+) -> HttpResponse {
+    let gallery_id = path.into_inner();
+
+    // Extract OAuth claims
+    let claims = match extract_oauth_claims(&req) {
+        Some(c) => c,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "invalid_token",
+                "error_description": "OAuth token required"
+            }));
+        }
+    };
+
+    // Enforce scope: galleries.read
+    if let Err(response) = enforce_scopes(&claims, "galleries.read") {
+        return response;
+    }
+
+    let (limit, offset) = normalize_pagination(&query);
+    let Some(ref mq) = state.mq else {
+        return HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "server_error", "error_description": "Message queue not available"}));
+    };
+
+    let params = mq::jobs::ListGalleryImagesParams {
+        gallery_id,
+        limit,
+        offset,
+    };
+    let options = JobOptions::new().priority(0).fault_tolerance(1);
+
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_list_gallery_images", &params, options, 30000).await {
+        Ok(result) => job_result_to_response(result),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "server_error",
+            "error_description": format!("Failed to process job: {}", e)
+        })),
     }
 }
 
@@ -240,6 +314,7 @@ pub async fn create_gallery(
     }
 
     let user_id = claims.user_id;
+    let base_url = AppConfig::app_url();
 
     // Validate name
     if body.name.trim().is_empty() {
@@ -286,12 +361,12 @@ pub async fn create_gallery(
                     let response = GalleryResponse {
                         id: gallery.id,
                         user_id: gallery.user_id,
-                        name: gallery.name,
+                        title: gallery.name,
                         description: gallery.description,
                         is_public: gallery.is_public,
                         display_order: gallery.display_order,
                         picture_count: 0,
-                        cover_image_url: build_cover_image_url(first_picture_uuid),
+                        cover_image_url: build_cover_image_url(base_url, first_picture_uuid),
                         created_at: gallery.created_at.to_rfc3339(),
                         updated_at: gallery.updated_at.to_rfc3339(),
                     };
@@ -352,6 +427,7 @@ pub async fn update_gallery(
     }
 
     let user_id = claims.user_id;
+    let base_url = AppConfig::app_url();
     let db = state.db.lock().await;
 
     // OWNERSHIP CHECK: Can only update own galleries
@@ -407,12 +483,12 @@ pub async fn update_gallery(
                     let response = GalleryResponse {
                         id: gallery.id,
                         user_id: gallery.user_id,
-                        name: gallery.name,
+                        title: gallery.name,
                         description: gallery.description,
                         is_public: gallery.is_public,
                         display_order: gallery.display_order,
                         picture_count,
-                        cover_image_url: build_cover_image_url(first_picture_uuid),
+                        cover_image_url: build_cover_image_url(base_url, first_picture_uuid),
                         created_at: gallery.created_at.to_rfc3339(),
                         updated_at: gallery.updated_at.to_rfc3339(),
                     };
@@ -467,44 +543,86 @@ pub async fn delete_gallery(
     };
 
     // Enforce scope: galleries.delete
-    if let Err(response) = enforce_scopes(&claims, "galleries.delete") {
-        return response;
-    }
-
-    let user_id = claims.user_id;
-    let db = state.db.lock().await;
-
-    // OWNERSHIP CHECK: Can only delete own galleries
-    if !db_read::gallery::user_owns_gallery(&db, gallery_id, user_id).await {
-        drop(db);
+    if !has_scopes(&claims, "galleries.delete") {
         return HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "insufficient_permissions",
-            "error_description": "You can only delete galleries you own"
+            "error": "insufficient_scope",
+            "error_description": "You do not have scope access for deletion",
+            "scope": "galleries.delete"
         }));
     }
 
-    // Delete gallery (cascade deletes all pictures)
-    match db_mutations::gallery::delete(&db, gallery_id).await {
-        Ok(rows_affected) => {
-            drop(db);
-            if rows_affected > 0 {
-                HttpResponse::Ok().json(serde_json::json!({
-                    "message": "Gallery deleted successfully"
-                }))
-            } else {
-                HttpResponse::NotFound().json(serde_json::json!({
-                    "error": "not_found",
-                    "error_description": "Gallery not found"
-                }))
-            }
+    let Some(ref mq) = state.mq else {
+        return HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "server_error", "error_description": "Message queue not available"}));
+    };
+
+    let params = mq::jobs::DeleteGalleryParams {
+        gallery_id,
+        user_id: claims.user_id,
+        client_id: claims.client_id.clone(),
+    };
+    let options = JobOptions::new().priority(0).fault_tolerance(1);
+
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_delete_gallery", &params, options, 30000).await {
+        Ok(result) => job_result_to_response(result),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "server_error",
+            "error_description": format!("Failed to process job: {}", e)
+        })),
+    }
+}
+
+/// OAuth: Delete a picture by ID
+///
+/// **Scope Required**: `galleries.delete`
+///
+/// **Ownership**: Can only delete pictures owned by the authorizing user
+///
+/// **Endpoint**: `DELETE /api/v1/oauth/pictures/{id}`
+pub async fn delete_picture(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<i64>,
+) -> HttpResponse {
+    let picture_id = path.into_inner();
+
+    // Extract OAuth claims
+    let claims = match extract_oauth_claims(&req) {
+        Some(c) => c,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "invalid_token",
+                "error_description": "OAuth token required"
+            }));
         }
-        Err(e) => {
-            drop(db);
-            tracing::error!("Failed to delete gallery: {:?}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "server_error",
-                "error_description": "Failed to delete gallery"
-            }))
-        }
+    };
+
+    // Enforce scope: galleries.delete
+    if !has_scopes(&claims, "galleries.delete") {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "insufficient_scope",
+            "error_description": "You do not have scope access for deletion",
+            "scope": "galleries.delete"
+        }));
+    }
+
+    let Some(ref mq) = state.mq else {
+        return HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "server_error", "error_description": "Message queue not available"}));
+    };
+
+    let params = mq::jobs::DeletePictureParams {
+        picture_id,
+        user_id: claims.user_id,
+        client_id: claims.client_id.clone(),
+    };
+    let options = JobOptions::new().priority(0).fault_tolerance(1);
+
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_delete_picture", &params, options, 30000).await {
+        Ok(result) => job_result_to_response(result),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "server_error",
+            "error_description": format!("Failed to process job: {}", e)
+        })),
     }
 }

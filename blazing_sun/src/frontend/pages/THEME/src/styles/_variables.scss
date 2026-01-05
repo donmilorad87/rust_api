@@ -20,8 +20,8 @@ $theme-header-height: 60px;
 
 // Tab colors
 $tab-active-bg: var(--card-bg);
-$tab-hover-bg: rgba(102, 126, 234, 0.1);
-$tab-border: rgba(102, 126, 234, 0.3);
+$tab-hover-bg: color-mix(in srgb, var(--color-accent) 10%, transparent);
+$tab-border: color-mix(in srgb, var(--color-accent) 30%, transparent);
 
 // Color picker
 $color-picker-size: 40px;
@@ -29,13 +29,13 @@ $color-picker-border-radius: 8px;
 
 // Size picker
 $size-picker-preview-height: 6px;
-$size-picker-preview-bg: rgba(102, 126, 234, 0.2);
-$size-picker-preview-fill: var(--color-primary, #667eea);
+$size-picker-preview-bg: color-mix(in srgb, var(--color-accent) 20%, transparent);
+$size-picker-preview-fill: var(--color-accent, #667eea);
 
 // Image selector
 $image-preview-size: 120px;
 $image-grid-gap: 1rem;
 
 // Build overlay
-$overlay-bg: rgba(0, 0, 0, 0.8);
+$overlay-bg: color-mix(in srgb, var(--text-primary) 80%, transparent);
 $overlay-z-index: 1000;

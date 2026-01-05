@@ -6,7 +6,7 @@
 //!
 //! # Request Body
 //! ```json
-//! { "code": "40-character-hash-code" }
+//! { "code": "20-character-hash-code" }
 //! ```
 //!
 //! # Expected Responses
@@ -214,9 +214,9 @@ async fn test_verify_hash_valid_code() {
 
     results.push(TestResult::new(
         "Code Length",
-        "40",
+        "20",
         &format!("{}", code.len()),
-        code.len() == 40,
+        code.len() == 20,
     ));
 
     // Step 2: Call verify-hash with the code
@@ -509,9 +509,9 @@ async fn test_verify_hash_empty_code() {
 // Test: Error - Invalid Code Format (Short)
 // ============================================
 
-/// Test: Code is too short (not 40 characters)
+/// Test: Code is too short (not 20 characters)
 ///
-/// When code is shorter than 40 characters:
+/// When code is shorter than 20 characters:
 /// - HTTP Status: 400 Bad Request
 /// - Response indicates invalid code format
 #[actix_rt::test]
@@ -524,9 +524,9 @@ async fn test_verify_hash_short_code() {
     let app_state = state().await;
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
-    // Code with only 20 characters
+    // Code with only 19 characters
     let payload = VerifyHashRequestRequired {
-        code: "12345678901234567890".to_string(),
+        code: "1234567890123456789".to_string(),
     };
 
     // Act
@@ -582,9 +582,9 @@ async fn test_verify_hash_short_code() {
 // Test: Error - Invalid Code Format (Long)
 // ============================================
 
-/// Test: Code is too long (more than 40 characters)
+/// Test: Code is too long (more than 20 characters)
 ///
-/// When code is longer than 40 characters:
+/// When code is longer than 20 characters:
 /// - HTTP Status: 400 Bad Request
 /// - Response indicates invalid code format
 #[actix_rt::test]
@@ -597,9 +597,9 @@ async fn test_verify_hash_long_code() {
     let app_state = state().await;
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
-    // Code with 60 characters
+    // Code with 25 characters
     let payload = VerifyHashRequestRequired {
-        code: "123456789012345678901234567890123456789012345678901234567890".to_string(),
+        code: "1234567890123456789012345".to_string(),
     };
 
     // Act
@@ -670,9 +670,9 @@ async fn test_verify_hash_nonexistent_code() {
     let app_state = state().await;
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
-    // Valid format but non-existent code (40 characters)
+    // Valid format but non-existent code (20 characters)
     let payload = VerifyHashRequestRequired {
-        code: "0000000000000000000000000000000000000000".to_string(),
+        code: "00000000000000000000".to_string(),
     };
 
     // Act
@@ -743,7 +743,7 @@ async fn test_verify_hash_sql_injection() {
     let app_state = state().await;
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
-    // SQL injection attempt (padded to 40 chars)
+    // SQL injection attempt (padded for length check)
     let payload = VerifyHashRequestRequired {
         code: "'; DROP TABLE users; --0000000000000000".to_string(),
     };
@@ -813,7 +813,7 @@ async fn test_verify_hash_xss_attempt() {
     let app_state = state().await;
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
-    // XSS attempt (padded to 40 chars)
+    // XSS attempt (padded for length check)
     let payload = VerifyHashRequestRequired {
         code: "<script>alert('xss')</script>0000000000".to_string(),
     };
@@ -929,9 +929,9 @@ async fn test_verify_hash_code_with_whitespace() {
     let app_state = state().await;
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
-    // Code with whitespace (40 chars including spaces)
+    // Code with whitespace (20 chars including spaces)
     let payload = VerifyHashRequestRequired {
-        code: "  12345678901234567890123456789012345678  ".to_string(),
+        code: "  1234567890123456  ".to_string(),
     };
 
     // Act
@@ -1026,9 +1026,9 @@ async fn test_verify_hash_full_integration_flow() {
 
     results.push(TestResult::new(
         "Code Received",
-        "40 characters",
+        "20 characters",
         &format!("{} chars", code.len()),
-        code.len() == 40,
+        code.len() == 20,
     ));
 
     // Step 2: First verify-hash call

@@ -24,7 +24,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
+    background: color-mix(in srgb, var(--text-primary) 90%, transparent);
     cursor: pointer;
   }
 
@@ -48,16 +48,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
+    background: color-mix(in srgb, var(--text-primary) 50%, transparent);
     border: none;
     border-radius: var(--radius-full);
-    color: white;
+    color: var(--text-on-dark, #ffffff);
     cursor: pointer;
     transition: background 0.2s;
     z-index: 10002;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.8);
+      background: color-mix(in srgb, var(--text-primary) 80%, transparent);
     }
 
     svg {
@@ -79,12 +79,12 @@
     max-height: 100%;
     object-fit: contain;
     border-radius: var(--radius-lg);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-2xl);
   }
 
   &__title {
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
+    background: color-mix(in srgb, var(--text-primary) 70%, transparent);
+    color: var(--text-on-dark, #ffffff);
     padding: 0.5rem 1rem;
     border-radius: var(--radius-md);
     max-width: 80%;
@@ -101,17 +101,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-primary);
+    background: var(--color-accent);
     border: none;
     border-radius: var(--radius-full);
-    color: white;
+    color: var(--text-on-primary, #ffffff);
     cursor: pointer;
     transition: background 0.2s;
     text-decoration: none;
     z-index: 10002;
 
     &:hover {
-      background: var(--color-primary-hover);
+      background: var(--color-accent-dark, #4f46e5);
     }
 
     svg {
@@ -130,41 +130,41 @@
   align-items: center;
   justify-content: center;
   padding: 3rem 2rem;
-  border: 2px dashed var(--color-border);
+  border: 2px dashed var(--border-color-light);
   border-radius: var(--radius-lg);
-  background: var(--color-bg-secondary);
+  background: var(--table-row-alt-bg);
   cursor: pointer;
   transition: all $transition-fast;
   text-align: center;
 
   &:hover {
-    border-color: var(--color-primary);
-    background: var(--color-bg-primary);
+    border-color: var(--color-accent);
+    background: var(--card-bg);
   }
 
   &--dragover {
-    border-color: var(--color-primary);
-    background: rgba(13, 110, 253, 0.05);
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 5%, transparent);
   }
 
   svg {
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     margin-bottom: 1rem;
   }
 
   &__text {
     font-size: 0.875rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
 
     strong {
-      color: var(--color-primary);
+      color: var(--color-accent);
     }
   }
 
   &__hint {
     font-size: 0.75rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
   }
 
   &__input {
@@ -178,7 +178,7 @@
   &__bar {
     width: 100%;
     height: 8px;
-    background: var(--color-bg-secondary);
+    background: var(--table-row-alt-bg);
     border-radius: var(--radius-full);
     overflow: hidden;
     margin-bottom: 1rem;
@@ -186,15 +186,92 @@
 
   &__fill {
     height: 100%;
-    background: var(--color-primary);
+    background: var(--color-accent);
     transition: width 0.3s ease-out;
     width: 0%;
   }
 
   &__text {
     text-align: center;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     font-size: 0.875rem;
+  }
+}
+
+// ============================================
+// CONFIRM MODAL
+// ============================================
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity $transition-fast;
+
+  &--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--modal-backdrop);
+    z-index: 9100;
+  }
+
+  &__dialog {
+    position: relative;
+    width: min(420px, 90vw);
+    border-radius: $radius-lg;
+    background: var(--modal-bg);
+    border: 1px solid var(--modal-border);
+    box-shadow: var(--modal-shadow);
+    padding: 1.25rem;
+    z-index: 9101;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+  }
+
+  &__close {
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+
+  &__message {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
   }
 }
 
@@ -205,7 +282,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    background: var(--color-bg-secondary);
+    background: var(--table-row-alt-bg);
     padding: 1rem;
     border-radius: var(--radius-md);
     margin-bottom: 1.5rem;
@@ -219,7 +296,7 @@
   max-height: 200px;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background: var(--color-bg-primary);
+  background: var(--card-bg);
 
   img {
     max-width: 100%;
@@ -234,7 +311,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 
   svg {
     opacity: 0.5;
@@ -246,7 +323,7 @@
   text-align: center;
 
   strong {
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     margin-right: 0.5rem;
   }
 }
@@ -265,15 +342,15 @@
   display: flex;
   flex-direction: column;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--color-border);
+  border: 2px solid var(--border-color-light);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all $transition-fast;
-  background: var(--color-bg-primary);
+  background: var(--card-bg);
 
   &:hover {
-    border-color: var(--color-primary);
-    background: var(--color-bg-secondary);
+    border-color: var(--color-accent);
+    background: var(--table-row-alt-bg);
   }
 
   input[type="radio"] {
@@ -282,17 +359,17 @@
     pointer-events: none;
 
     &:checked + .toggle-option__label {
-      color: var(--color-primary);
+      color: var(--color-accent);
     }
 
     &:checked ~ .toggle-option__hint {
-      color: var(--color-text-secondary);
+      color: var(--text-secondary);
     }
   }
 
   input[type="radio"]:checked ~ & {
-    border-color: var(--color-primary);
-    background: rgba(13, 110, 253, 0.05);
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 5%, transparent);
   }
 
   &__label {
@@ -301,7 +378,7 @@
     gap: 0.5rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     margin-bottom: 0.25rem;
     transition: color $transition-fast;
 
@@ -312,7 +389,7 @@
 
   &__hint {
     font-size: 0.75rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     margin-left: 1.5rem;
     transition: color $transition-fast;
   }
@@ -320,8 +397,8 @@
 
 // Checked state (adjacent sibling selector doesn't work with hidden input, so we use JS)
 .toggle-option:has(input[type="radio"]:checked) {
-  border-color: var(--color-primary);
-  background: rgba(13, 110, 253, 0.05);
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
 }
 
 // ============================================

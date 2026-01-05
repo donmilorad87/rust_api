@@ -10,7 +10,7 @@ use tracing::{error, info, warn};
 pub async fn process(
     _mq: &MessageQueue,
     job: &QueuedJob,
-) -> Result<JobResult<()>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<JobResult<serde_json::Value>, Box<dyn std::error::Error + Send + Sync>> {
     info!("Processing resize_image job: {}", job.id);
 
     // Deserialize the payload
@@ -113,7 +113,7 @@ pub async fn process(
                         );
                     }
 
-                    Ok(JobResult::Success(()))
+                    Ok(JobResult::Success(serde_json::Value::Null))
                 }
                 Err(e) => {
                     error!(

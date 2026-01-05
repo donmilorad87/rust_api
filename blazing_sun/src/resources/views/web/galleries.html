@@ -113,6 +113,16 @@
         </header>
         <div class="modal__body">
             <div class="pictures-modal__controls">
+                <div class="pictures-modal__bulk">
+                    <label class="picture-select-all">
+                        <input type="checkbox" id="selectAllPictures" class="picture-select-all__checkbox">
+                        <span class="picture-select-all__label">Select all</span>
+                    </label>
+                    <span id="selectedPicturesCount" class="picture-select-all__count">0 selected</span>
+                    <button type="button" id="bulkDeletePicturesBtn" class="btn btn--danger btn--hidden" disabled>
+                        <span class="btn__text">Delete Selected</span>
+                    </button>
+                </div>
                 <button id="addPictureBtn" class="btn btn--primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -141,6 +151,12 @@
                         <button id="uploadFilesBtn" class="btn btn--primary" disabled>
                             <span class="btn__text">Upload & Add to Gallery</span>
                         </button>
+                    </div>
+                    <div id="uploadProgress" class="upload-progress" style="display: none;">
+                        <div class="upload-progress__text" id="uploadProgressText">0/0</div>
+                        <div class="upload-progress__bar">
+                            <div class="upload-progress__fill" id="uploadProgressFill" style="width: 0%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -176,6 +192,31 @@
             <button type="button" class="btn btn--secondary modal__close">Cancel</button>
             <button type="button" class="btn btn--danger" id="confirmDeleteBtn">
                 <span class="btn__text">Delete</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Picture Delete Confirmation Modal -->
+<div id="pictureDeleteModal" class="modal" role="dialog" aria-labelledby="pictureDeleteModalTitle" aria-hidden="true">
+    <div class="modal__overlay" aria-hidden="true"></div>
+    <div class="modal__container modal--small" role="document">
+        <header class="modal__header">
+            <h2 id="pictureDeleteModalTitle" class="modal__title">Remove Pictures</h2>
+            <button class="modal__close" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <p id="pictureDeleteMessage" class="delete-modal__message"></p>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--secondary modal__close">Cancel</button>
+            <button type="button" class="btn btn--danger" id="confirmPictureDeleteBtn">
+                <span class="btn__text">Remove</span>
             </button>
         </footer>
     </div>

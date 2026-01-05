@@ -13,12 +13,22 @@ export class AssetPreview {
    * @param {Function} onDeleteClick - Callback when Delete button is clicked
    * @param {Function} onPreviewClick - Callback when preview is clicked
    */
-  constructor(upload, baseUrl, onEditClick, onDeleteClick, onPreviewClick) {
+  constructor(
+    upload,
+    baseUrl,
+    onEditClick,
+    onDeleteClick,
+    onPreviewClick,
+    onSelectToggle,
+    isSelected = false
+  ) {
     this.upload = upload;
     this.baseUrl = baseUrl;
     this.onEditClick = onEditClick;
     this.onDeleteClick = onDeleteClick;
     this.onPreviewClick = onPreviewClick;
+    this.onSelectToggle = onSelectToggle;
+    this.isSelected = isSelected;
   }
 
   /**
@@ -27,7 +37,7 @@ export class AssetPreview {
    */
   render() {
     const card = document.createElement('div');
-    card.className = 'asset-card';
+    card.className = `asset-card${this.isSelected ? ' asset-card--selected' : ''}`;
     card.dataset.uuid = this.upload.uuid;
 
     const isImage = this.isImageType(this.upload.mime_type);
@@ -49,6 +59,10 @@ export class AssetPreview {
 
     card.innerHTML = `
       <div class="asset-card__preview">
+        <label class="asset-card__select" aria-label="Select upload">
+          <input type="checkbox" class="asset-card__checkbox" ${this.isSelected ? 'checked' : ''}>
+          <span class="asset-card__checkmark" aria-hidden="true"></span>
+        </label>
         ${previewHtml}
         <div class="asset-card__overlay">
           <div class="asset-card__actions">
@@ -85,6 +99,8 @@ export class AssetPreview {
     // Bind events
     const editBtn = card.querySelector('.btn--edit');
     const deleteBtn = card.querySelector('.btn--delete');
+    const checkbox = card.querySelector('.asset-card__checkbox');
+    const selectLabel = card.querySelector('.asset-card__select');
 
     editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -96,10 +112,29 @@ export class AssetPreview {
       this.onDeleteClick(this.upload.uuid);
     });
 
+    if (selectLabel) {
+      selectLabel.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    if (checkbox) {
+      checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      checkbox.addEventListener('change', (e) => {
+        e.stopPropagation();
+        card.classList.toggle('asset-card--selected', checkbox.checked);
+        if (this.onSelectToggle) {
+          this.onSelectToggle(this.upload.uuid, checkbox.checked);
+        }
+      });
+    }
+
     // Click on card preview to open image
     const preview = card.querySelector('.asset-card__preview');
     preview.addEventListener('click', (e) => {
-      if (!e.target.closest('.btn')) {
+      if (!e.target.closest('.btn') && !e.target.closest('.asset-card__select')) {
         if (this.onPreviewClick) {
           // For images, use full variant in lightbox; for others use base URL
           const isImage = this.isImageType(this.upload.mime_type);

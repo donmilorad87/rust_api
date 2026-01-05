@@ -10,6 +10,7 @@
 | pgAdmin     | http://localhost:5050/pgadmin | admin@blazingsun.app / pgadmin_secret_password |
 | Grafana     | https://localhost/grafana/    | admin / admin                        |
 | Prometheus  | http://localhost:9090         | -                                    |
+| PHP OAuth Test | https://localhost:8889     | -                                    |
 
 ## Nginx Configuration
 

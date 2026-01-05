@@ -52,6 +52,8 @@ use actix_web::{App, http::StatusCode, test};
 use blazing_sun::{configure_api, state};
 use serde::{Deserialize, Serialize};
 use tabled::{Table, Tabled, settings::Style};
+use crate::routes::api::helpers::ensure_test_user;
+use uuid::Uuid;
 
 // ============================================
 // Request/Response Structures
@@ -195,7 +197,7 @@ async fn test_reset_password_valid() {
 
     // Arrange
     let app_state = state().await;
-    let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
+    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
 
     let mut results = vec![];
 
@@ -439,7 +441,7 @@ async fn test_reset_password_missing_password() {
 
     // Arrange
     let app_state = state().await;
-    let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
+    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
 
     let payload = ResetPasswordRequest {
         code: Some("1234567890123456789012345678901234567890".to_string()),
@@ -497,7 +499,7 @@ async fn test_reset_password_missing_confirm_password() {
 
     // Arrange
     let app_state = state().await;
-    let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
+    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
 
     let payload = ResetPasswordRequest {
         code: Some("1234567890123456789012345678901234567890".to_string()),
@@ -1476,10 +1478,11 @@ async fn test_reset_password_full_integration() {
 
     // Arrange
     let app_state = state().await;
-    let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
+    let test_email = format!("reset_password_full_{}@example.com", Uuid::new_v4());
+    ensure_test_user(&app_state, &test_email, "asdqwE123~~").await;
+    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
 
     let mut results = vec![];
-    let test_email = "djmyle@gmail.com";
     let new_password = "IntegrationTest123!";
 
     // Step 1: Get reset code from forgot-password

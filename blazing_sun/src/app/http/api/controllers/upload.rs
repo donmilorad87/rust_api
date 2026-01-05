@@ -21,11 +21,13 @@ use uuid::Uuid;
 
 use crate::app::http::api::controllers::auth::Claims;
 use crate::app::http::api::controllers::responses::BaseResponse;
+use crate::app::mq::jobs::delete_upload::DeleteUploadParams;
 use crate::app::mq::jobs::resize_image::ResizeImageParams;
 use crate::app::db_query::read::image_variant;
 use crate::bootstrap::includes::controllers::uploads::{self, chunked, StorageType};
 use crate::bootstrap::includes::image::is_supported_image;
-use crate::bootstrap::mq::{self, JobOptions};
+use crate::bootstrap::middleware::controllers::permission::is_admin;
+use crate::bootstrap::mq::{self, JobOptions, JobStatus};
 use crate::database::mutations::upload as db_upload_mutations;
 use crate::database::mutations::user as db_user_mutations;
 use crate::database::read::upload as db_upload_read;
@@ -704,59 +706,39 @@ impl UploadController {
             }
         };
 
-        // Check ownership
-        if upload.user_id != Some(user_id) {
+        let permissions = req.extensions().get::<i16>().copied().unwrap_or(1);
+        let can_admin_delete = is_admin(permissions);
+
+        // Check ownership (admins can delete any upload)
+        if upload.user_id != Some(user_id) && !can_admin_delete {
             return HttpResponse::Forbidden()
                 .json(BaseResponse::error("You don't have permission to delete this file"));
         }
 
-        // Check if this upload is used as logo or favicon in site_config
-        // If so, clear those references before deleting
-        if let Ok(site_config) = crate::app::db_query::read::site_config::get(&db).await {
-            use crate::app::db_query::mutations::site_config as site_config_mutations;
-
-            if site_config.logo_uuid == Some(uuid) {
-                tracing::info!("Clearing logo reference from site_config (upload being deleted)");
-                if let Err(e) = site_config_mutations::update_logo(&db, None).await {
-                    tracing::warn!("Failed to clear logo reference: {}", e);
-                }
-            }
-
-            if site_config.favicon_uuid == Some(uuid) {
-                tracing::info!("Clearing favicon reference from site_config (upload being deleted)");
-                if let Err(e) = site_config_mutations::update_favicon(&db, None).await {
-                    tracing::warn!("Failed to clear favicon reference: {}", e);
-                }
-            }
-        }
-
-        // Delete from storage
-        if let Err(e) = uploads::delete_file(&upload.storage_path).await {
-            tracing::warn!("Failed to delete file from storage: {}", e);
-        }
-
-        // Delete all image variants (files and database records)
-        if let Ok(variants) = image_variant::get_by_upload_id(&db, upload.id).await {
-            for variant in variants {
-                // Delete variant file from storage
-                if let Err(e) = uploads::delete_file(&variant.storage_path).await {
-                    tracing::warn!(
-                        "Failed to delete variant file {} from storage: {}",
-                        variant.storage_path,
-                        e
-                    );
-                }
-            }
-            tracing::info!("Deleted variant files for upload_id={}", upload.id);
-        }
-
-        // Delete from database (CASCADE will delete variant records)
-        if let Err(e) = db_upload_mutations::delete_by_uuid(&db, &uuid).await {
+        let Some(ref mq) = state.mq else {
             return HttpResponse::InternalServerError()
-                .json(error_response(format!("Database error: {}", e)));
-        }
+                .json(BaseResponse::error("Message queue not available"));
+        };
 
-        HttpResponse::Ok().json(BaseResponse::success("File deleted successfully"))
+        let params = DeleteUploadParams {
+            upload_uuid: uuid.to_string(),
+        };
+        let options = JobOptions::new().priority(0).fault_tolerance(3);
+
+        match mq::enqueue_and_wait_dyn(mq, "delete_upload", &params, options, 30000).await {
+            Ok(JobStatus::Completed) => {
+                HttpResponse::Ok().json(BaseResponse::success("File deleted successfully"))
+            }
+            Ok(JobStatus::Failed) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Failed to delete file")),
+            Ok(_) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Unexpected job status")),
+            Err(e) => {
+                tracing::error!("Delete upload job error: {}", e);
+                HttpResponse::InternalServerError()
+                    .json(BaseResponse::error("Failed to delete file"))
+            }
+        }
     }
 
     /// POST /upload/chunked/start - Start a chunked upload session (requires auth)

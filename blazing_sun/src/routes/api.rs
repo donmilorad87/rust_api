@@ -219,6 +219,7 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route("/{id}/pictures", web::get().to(picture::get_gallery_pictures))
             .route("/{id}/pictures", web::post().to(picture::add_picture))
             .route("/{id}/pictures/reorder", web::post().to(picture::reorder_pictures))
+            .route("/{id}/pictures/bulk-delete", web::post().to(picture::bulk_delete_pictures))
             .route("/{gallery_id}/pictures/{picture_id}", web::put().to(picture::update_picture))
             .route("/{gallery_id}/pictures/{picture_id}", web::delete().to(picture::remove_picture)),
     );
@@ -235,8 +236,15 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route("", web::get().to(oauth_gallery::list_galleries))
             .route("", web::post().to(oauth_gallery::create_gallery))
             .route("/{id}", web::get().to(oauth_gallery::get_gallery))
+            .route("/{id}/images", web::get().to(oauth_gallery::list_gallery_images))
             .route("/{id}", web::put().to(oauth_gallery::update_gallery))
             .route("/{id}", web::delete().to(oauth_gallery::delete_gallery)),
+    );
+
+    cfg.service(
+        web::scope("/api/v1/oauth/pictures")
+            .wrap(from_fn(middleware::oauth_auth::verify_oauth_jwt))
+            .route("/{id}", web::delete().to(oauth_gallery::delete_picture)),
     );
 
     // SEO routes (Admin+ permission = 10 or 100)
@@ -267,6 +275,8 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .wrap(from_fn(require_permission(levels::SUPER_ADMIN))) // Runs second (checks permissions)
             .wrap(from_fn(middleware::auth::verify_jwt))            // Runs first (extracts permissions)
             .route("", web::get().to(AdminController::list_users))
+            .route("/bulk", web::post().to(AdminController::bulk_user_actions))
+            .route("/{id}", web::delete().to(AdminController::delete_user))
             .route(
                 "/{id}/permissions",
                 web::patch().to(AdminController::update_user_permissions),
@@ -280,6 +290,10 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .wrap(from_fn(require_permission(levels::ADMIN))) // Runs second (checks permissions)
             .wrap(from_fn(middleware::auth::verify_jwt))      // Runs first (extracts permissions)
             .route("/uploads", web::get().to(AdminController::list_uploads))
+            .route(
+                "/uploads/bulk-delete",
+                web::post().to(AdminController::bulk_delete_uploads),
+            )
             .route(
                 "/uploads/{uuid}/metadata",
                 web::patch().to(AdminController::update_upload_metadata),
@@ -375,6 +389,11 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             // Grant a specific scope to the client
             .route(
                 "/{client_id}/scopes",
+                web::get().to(oauth_scope::list_client_scopes),
+            )
+            // Grant a specific scope to the client
+            .route(
+                "/{client_id}/scopes",
                 web::post().to(oauth_api_product::grant_scope),
             )
             // Revoke a specific scope from the client
@@ -393,12 +412,6 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(oauth_scope::list_scopes_by_api_product)),
     );
 
-    // List all scopes available to a client (requires authentication)
-    cfg.service(
-        web::resource("/api/v1/oauth/clients/{client_id}/scopes")
-            .wrap(from_fn(middleware::dual_auth::verify_jwt_or_session))
-            .route(web::get().to(oauth_scope::list_client_scopes)),
-    );
 
     // ============================================
     // OAuth 2.0 Authorization Flow
@@ -419,6 +432,7 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     // ============================================
     cfg.route("/oauth/token", web::post().to(oauth::token_post));
     cfg.route("/oauth/revoke", web::post().to(oauth::revoke_post));
+    cfg.route("/oauth/callback/exchange", web::post().to(oauth::callback_exchange_post));
 
     // ============================================
     // OAuth 2.0 Authorized Apps (User-facing - requires auth)
@@ -487,6 +501,7 @@ fn register_route_names() {
     route!("pictures.list", "/api/v1/galleries/{id}/pictures");
     route!("pictures.add", "/api/v1/galleries/{id}/pictures");
     route!("pictures.reorder", "/api/v1/galleries/{id}/pictures/reorder");
+    route!("pictures.bulk_delete", "/api/v1/galleries/{id}/pictures/bulk-delete");
     route!("pictures.update", "/api/v1/galleries/{gallery_id}/pictures/{picture_id}");
     route!("pictures.remove", "/api/v1/galleries/{gallery_id}/pictures/{picture_id}");
 
@@ -521,12 +536,15 @@ fn register_route_names() {
 
     // Admin routes (permission protected)
     route!("admin.uploads", "/api/v1/admin/uploads");
+    route!("admin.uploads.bulk_delete", "/api/v1/admin/uploads/bulk-delete");
     route!(
         "admin.uploads.update_metadata",
         "/api/v1/admin/uploads/{uuid}/metadata"
     );
     route!("admin.assets", "/api/v1/admin/assets");
     route!("admin.users", "/api/v1/admin/users");
+    route!("admin.users.bulk", "/api/v1/admin/users/bulk");
+    route!("admin.delete_user", "/api/v1/admin/users/{id}");
     route!("admin.delete_user_avatar", "/api/v1/admin/users/{id}/avatar");
     route!(
         "admin.update_user_permissions",

@@ -1,5 +1,6 @@
 use rand::Rng;
 use actix_session::Session;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 const CSRF_TOKEN_LENGTH: usize = 32;
 const SESSION_CSRF_KEY: &str = "csrf_token";
@@ -8,7 +9,7 @@ const SESSION_CSRF_KEY: &str = "csrf_token";
 pub fn generate_token() -> String {
     let mut rng = rand::thread_rng();
     let bytes: Vec<u8> = (0..CSRF_TOKEN_LENGTH).map(|_| rng.gen()).collect();
-    base64::encode(&bytes)
+    STANDARD.encode(&bytes)
 }
 
 /// Get or create CSRF token from session

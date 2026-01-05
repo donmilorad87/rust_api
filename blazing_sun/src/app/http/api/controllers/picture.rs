@@ -6,7 +6,9 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::app::db_query::{mutations as db_mutations, read as db_read};
+use crate::app::mq::jobs::bulk_delete_pictures::BulkDeletePicturesParams;
 use crate::bootstrap::database::database::AppState;
+use crate::bootstrap::mq::{self, JobOptions, JobStatus};
 use crate::bootstrap::utility::assets;
 
 /// Request body for adding a picture to a gallery
@@ -27,6 +29,12 @@ pub struct UpdatePictureRequest {
 /// Request body for reordering pictures
 #[derive(Debug, Deserialize)]
 pub struct ReorderPicturesRequest {
+    pub picture_ids: Vec<i64>,
+}
+
+/// Request body for bulk deleting pictures
+#[derive(Debug, Deserialize)]
+pub struct BulkDeletePicturesRequest {
     pub picture_ids: Vec<i64>,
 }
 
@@ -463,6 +471,99 @@ pub async fn remove_picture(
             eprintln!("Failed to remove picture: {:?}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to remove picture"
+            }))
+        }
+    }
+}
+
+/// Bulk remove pictures from a gallery
+pub async fn bulk_delete_pictures(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<i64>,
+    body: web::Json<BulkDeletePicturesRequest>,
+) -> HttpResponse {
+    let gallery_id = path.into_inner();
+
+    // Get authenticated user ID from JWT (set by auth middleware)
+    let user_id = match req.extensions().get::<i64>() {
+        Some(id) => *id,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Unauthorized"
+            }));
+        }
+    };
+
+    let mut picture_ids = body.picture_ids.clone();
+    picture_ids.sort_unstable();
+    picture_ids.dedup();
+
+    if picture_ids.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "No pictures selected"
+        }));
+    }
+
+    let db = state.db.lock().await;
+
+    // Check if user owns the gallery
+    if !db_read::gallery::user_owns_gallery(&db, gallery_id, user_id).await {
+        drop(db);
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Access denied"
+        }));
+    }
+
+    // Verify all picture IDs belong to this gallery
+    let valid_ids = match db_read::picture::get_ids_by_gallery_and_ids(&db, gallery_id, &picture_ids)
+        .await
+    {
+        Ok(ids) => ids,
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to validate pictures: {:?}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to validate pictures"
+            }));
+        }
+    };
+
+    if valid_ids.len() != picture_ids.len() {
+        drop(db);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Some pictures do not belong to this gallery"
+        }));
+    }
+
+    drop(db);
+
+    let Some(ref mq) = state.mq else {
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Message queue not available"
+        }));
+    };
+
+    let params = BulkDeletePicturesParams {
+        gallery_id,
+        picture_ids,
+    };
+    let options = JobOptions::new().priority(0).fault_tolerance(3);
+
+    match mq::enqueue_and_wait_dyn(mq, "bulk_delete_pictures", &params, options, 30000).await {
+        Ok(JobStatus::Completed) => HttpResponse::Ok().json(serde_json::json!({
+            "message": "Pictures removed successfully"
+        })),
+        Ok(JobStatus::Failed) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to remove pictures"
+        })),
+        Ok(_) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Unexpected job status"
+        })),
+        Err(e) => {
+            tracing::error!("Bulk delete pictures job error: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to remove pictures"
             }))
         }
     }

@@ -368,8 +368,7 @@ pub async fn enable_api(
 
     let scope_names: Vec<String> = scopes.iter().map(|s| s.scope_name.clone()).collect();
 
-    // Enable the API product (WITHOUT auto-granting scopes)
-    // User will select individual scopes after enabling the API
+    // Enable the API product (auto-grant all scopes for the API product)
     if let Err(_) = db_mutations::oauth_scope::enable_client_api_product(&db, client.id, body.api_product_id).await {
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "database_error",
@@ -377,8 +376,13 @@ pub async fn enable_api(
         }));
     }
 
-    // NOTE: Scopes are NOT automatically granted
-    // User must manually select which scopes to grant after enabling the API
+    let scope_ids: Vec<i64> = scopes.iter().map(|s| s.id).collect();
+    if let Err(_) = db_mutations::oauth_scope::add_client_scopes_batch(&db, client.id, &scope_ids).await {
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "database_error",
+            "message": "Failed to grant API product scopes"
+        }));
+    }
 
     HttpResponse::Ok().json(EnableApiResponse {
         message: format!("{} has been enabled successfully", api_product.product_name),
@@ -459,8 +463,11 @@ pub async fn disable_api(
         }
     };
 
-    let scope_ids: Vec<i64> = scopes.iter().map(|s| s.id).collect();
-    let scope_names: Vec<String> = scopes.iter().map(|s| s.scope_name.clone()).collect();
+    let (scope_ids, scope_names): (Vec<i64>, Vec<String>) = scopes
+        .iter()
+        .filter(|s| s.scope_name != "galleries.read")
+        .map(|s| (s.id, s.scope_name.clone()))
+        .unzip();
 
     // Disable the API product
     if let Err(_) = db_mutations::oauth_scope::disable_client_api_product(&db, client.id, api_product_id).await {
@@ -652,6 +659,13 @@ pub async fn revoke_scope(
             }));
         }
     };
+
+    if scope.scope_name == "galleries.read" {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "scope_locked",
+            "message": "Scope 'galleries.read' cannot be revoked"
+        }));
+    }
 
     // Check if scope is granted
     let is_granted = match db_read::oauth_scope::client_has_scope(&db, client.id, scope_id).await {

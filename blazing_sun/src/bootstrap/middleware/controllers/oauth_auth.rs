@@ -110,6 +110,8 @@ pub async fn verify_oauth_jwt(
     let mut validation = Validation::new(Algorithm::RS256);
     validation.set_issuer(&[&state.oauth_issuer]);
     validation.validate_exp = true;
+    // OAuth access tokens use client_id as aud; skip aud validation here.
+    validation.validate_aud = false;
 
     // Decode and verify JWT
     match decode::<OAuthClaims>(&token, &decoding_key, &validation) {

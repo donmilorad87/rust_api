@@ -14,6 +14,7 @@
 | kafka      | 172.28.0.17  | 9092/9093     | Broker API + topics exist            | Event streaming (KRaft mode)         |
 | kafka-ui   | 172.28.0.18  | 8080          | -                                    | Kafka management UI                  |
 | pgadmin    | 172.28.0.19  | 5050          | -                                    | PostgreSQL admin panel               |
+| php-oauth  | 172.28.0.22  | 443 (host 8889) | -                                  | OAuth callback test service          |
 
 **Network**: `devnet` (172.28.0.0/16)
 

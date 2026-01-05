@@ -168,6 +168,10 @@ export default class OAuthConsentPage {
 
             if (response.redirected) {
                 // Follow the redirect to the callback URL
+                if (!this.isValidRedirectUri(response.url)) {
+                    this.showError('Invalid redirect URI. Please contact the application owner.');
+                    return;
+                }
                 window.location.href = response.url;
                 return;
             }
@@ -177,9 +181,13 @@ export default class OAuthConsentPage {
 
             if (data.redirect_uri) {
                 // Redirect with authorization code or error
+                if (!this.isValidRedirectUri(data.redirect_uri)) {
+                    this.showError('Invalid redirect URI. Please contact the application owner.');
+                    return;
+                }
                 window.location.href = data.redirect_uri;
             } else if (data.error) {
-                this.showError(data.error_description || data.error);
+                this.showError(this.buildErrorMessage(data));
             }
         } catch (error) {
             console.error('Consent submission error:', error);
@@ -209,6 +217,8 @@ export default class OAuthConsentPage {
      * @param {string} message - Error message
      */
     showError(message) {
+        this.showToast(message, 'error');
+
         // Create or update error element
         let errorEl = document.querySelector('.oauth-consent__error');
 
@@ -225,5 +235,76 @@ export default class OAuthConsentPage {
         setTimeout(() => {
             errorEl.style.display = 'none';
         }, 5000);
+    }
+
+    /**
+     * Build a human-friendly error message from API response
+     * @param {Object} data
+     */
+    buildErrorMessage(data) {
+        if (data?.error && data?.error_description) {
+            return `${data.error}: ${data.error_description}`;
+        }
+
+        if (data?.error_description) {
+            return data.error_description;
+        }
+
+        if (data?.error) {
+            return data.error;
+        }
+
+        return 'Authorization failed. Please try again.';
+    }
+
+    /**
+     * Show toast notification using Toastify if available
+     * @param {string} message
+     * @param {string} type
+     */
+    showToast(message, type = 'info') {
+        const colors = {
+            success: 'linear-gradient(to right, #00b09b, #96c93d)',
+            error: 'linear-gradient(to right, #ff5f6d, #ffc371)',
+            info: 'linear-gradient(to right, #667eea, #764ba2)'
+        };
+
+        if (typeof Toastify !== 'undefined') {
+            Toastify({
+                text: message,
+                duration: 5000,
+                gravity: 'top',
+                position: 'right',
+                style: {
+                    background: colors[type] || colors.info
+                }
+            }).showToast();
+        } else {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+    }
+
+    /**
+     * Validate redirect URI scheme and host.
+     * @param {string} redirectUri
+     */
+    isValidRedirectUri(redirectUri) {
+        try {
+            const parsed = new URL(redirectUri);
+            const protocol = parsed.protocol.toLowerCase();
+            const host = parsed.hostname.toLowerCase();
+
+            if (protocol === 'https:') {
+                return true;
+            }
+
+            if (protocol === 'http:') {
+                return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+            }
+        } catch (_) {
+            return false;
+        }
+
+        return false;
     }
 }

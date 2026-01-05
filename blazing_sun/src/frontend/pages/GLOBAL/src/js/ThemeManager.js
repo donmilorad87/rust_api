@@ -22,6 +22,13 @@ export class ThemeManager {
    * Initialize theme manager
    */
   init() {
+    const storedTheme = this.getStoredTheme();
+    if (storedTheme) {
+      this.applyTheme(storedTheme);
+    } else {
+      this.applyTheme(this.getSystemTheme());
+    }
+
     // Bind toggle button
     if (this.toggleButton) {
       this.toggleButton.addEventListener('click', () => this.toggle());
@@ -33,16 +40,39 @@ export class ThemeManager {
    * @returns {string} 'light' or 'dark'
    */
   getTheme() {
+    return this.getStoredTheme() || this.LIGHT_THEME;
+  }
+
+  /**
+   * Get theme from cookie when present.
+   * @returns {string|null} 'light', 'dark', or null
+   */
+  getStoredTheme() {
     const cookie = document.cookie
       .split('; ')
       .find(row => row.startsWith(this.COOKIE_NAME + '='));
 
-    if (cookie) {
-      const value = cookie.split('=')[1];
-      if (value === this.DARK_THEME || value === this.LIGHT_THEME) {
-        return value;
-      }
+    if (!cookie) {
+      return null;
     }
+
+    const value = cookie.split('=')[1];
+    if (value === this.DARK_THEME || value === this.LIGHT_THEME) {
+      return value;
+    }
+
+    return null;
+  }
+
+  /**
+   * Detect system theme preference.
+   * @returns {string} 'light' or 'dark'
+   */
+  getSystemTheme() {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return this.DARK_THEME;
+    }
+
     return this.LIGHT_THEME;
   }
 

@@ -4,35 +4,37 @@
 // These are SCSS variables (compile-time) for BEM components
 // CSS custom properties (runtime) are in GLOBAL/src/styles/_theme.scss
 
-// Spacing Scale (from design system)
-$spacing-xs: 0.5rem;
-$spacing-sm: 0.75rem;
-$spacing-md: 1rem;
-$spacing-lg: 1.5rem;
-$spacing-xl: 2rem;
-$spacing-2xl: 3rem;
+@use '../../../GLOBAL/src/styles/variables' as global;
 
-// Border Radius (from design system)
-$radius-sm: 0.25rem;
-$radius-md: 0.375rem;
-$radius-lg: 0.5rem;
-$radius-xl: 0.75rem;
+// Spacing Scale (from GLOBAL theme CSS variables)
+$spacing-xs: var(--spacing-xs, #{global.$spacing-xs});
+$spacing-sm: var(--spacing-sm, #{global.$spacing-sm});
+$spacing-md: var(--spacing-md, #{global.$spacing-md});
+$spacing-lg: var(--spacing-lg, #{global.$spacing-lg});
+$spacing-xl: var(--spacing-xl, #{global.$spacing-xl});
+$spacing-2xl: var(--spacing-2xl, #{global.$spacing-xxl});
 
-// Typography (from design system)
-$font-size-xs: 0.75rem;
-$font-size-sm: 0.875rem;
-$font-size-base: 1rem;
-$font-size-lg: 1.125rem;
-$font-size-xl: 1.25rem;
-$font-size-2xl: 1.875rem;
+// Border Radius (from GLOBAL theme CSS variables)
+$radius-sm: var(--radius-sm, #{global.$radius-sm});
+$radius-md: var(--radius-md, #{global.$radius-md});
+$radius-lg: var(--radius-lg, #{global.$radius-lg});
+$radius-xl: var(--radius-xl, #{global.$radius-xl});
 
-// Breakpoints (from design system)
-$breakpoint-sm: 640px;
-$breakpoint-md: 768px;
-$breakpoint-lg: 1024px;
-$breakpoint-xl: 1280px;
+// Typography (from GLOBAL SCSS variables)
+$font-size-xs: global.$font-size-xs;
+$font-size-sm: global.$font-size-sm;
+$font-size-base: global.$font-size-base;
+$font-size-lg: global.$font-size-lg;
+$font-size-xl: global.$font-size-xl;
+$font-size-2xl: global.$font-size-2xl;
 
-// Transitions (from design system)
-$transition-fast: 150ms ease-in-out;
-$transition-normal: 250ms ease-in-out;
-$transition-slow: 350ms ease-in-out;
+// Breakpoints (from GLOBAL SCSS variables)
+$breakpoint-sm: global.$breakpoint-sm;
+$breakpoint-md: global.$breakpoint-md;
+$breakpoint-lg: global.$breakpoint-lg;
+$breakpoint-xl: global.$breakpoint-xl;
+
+// Transitions (from GLOBAL SCSS variables)
+$transition-fast: global.$transition-fast;
+$transition-normal: global.$transition-normal;
+$transition-slow: global.$transition-slow;

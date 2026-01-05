@@ -31,6 +31,14 @@ export class UploadsPage {
     this.uploadsGrid = options.uploadsGrid;
     this.pagination = options.pagination;
     this.showToast = options.showToast;
+    this.confirmModal = document.getElementById('confirmUploadModal');
+    this.confirmTitle = document.getElementById('confirmUploadModalTitle');
+    this.confirmMessage = document.getElementById('confirmUploadModalMessage');
+    this.confirmButton = document.querySelector('#confirmUploadModal [data-action="confirm-modal"]');
+    this.cancelButton = document.querySelector('#confirmUploadModal [data-action="cancel-modal"]');
+    this.selectAllUploadsCheckbox = document.getElementById('selectAllUploads');
+    this.selectedUploadsCount = document.getElementById('selectedUploadsCount');
+    this.bulkDeleteUploadsBtn = document.getElementById('bulkDeleteUploadsBtn');
 
     // State
     this.currentPage = 1;
@@ -38,6 +46,8 @@ export class UploadsPage {
     this.uploads = [];
     this.totalUploads = 0;
     this.viewMode = 'grid'; // 'grid' or 'table'
+    this.pendingAction = null;
+    this.selectedUploadUuids = new Set();
 
     // Initialize modals
     this.modal = new AssetInfoModal({
@@ -61,8 +71,33 @@ export class UploadsPage {
    * Initialize the page
    */
   init() {
+    this.initConfirmModal();
     this.bindEvents();
     this.loadUploads();
+  }
+
+  /**
+   * Initialize confirm modal interactions
+   */
+  initConfirmModal() {
+    if (!this.confirmModal || !this.confirmButton || !this.cancelButton) {
+      return;
+    }
+
+    this.confirmModal.addEventListener('click', (e) => {
+      const closeAction = e.target.closest('[data-action="close-modal"]');
+      const cancelAction = e.target.closest('[data-action="cancel-modal"]');
+      if (closeAction || cancelAction) {
+        this.closeConfirmModal();
+      }
+    });
+
+    this.confirmButton.addEventListener('click', () => {
+      if (typeof this.pendingAction === 'function') {
+        this.pendingAction();
+      }
+      this.closeConfirmModal();
+    });
   }
 
   /**
@@ -104,6 +139,17 @@ export class UploadsPage {
       }
     });
 
+    this.uploadsTable.addEventListener('change', (e) => {
+      const checkbox = e.target.closest('.upload-select__checkbox');
+      if (!checkbox) return;
+      const uuid = checkbox.dataset.uuid;
+      const row = checkbox.closest('.uploads-table__row');
+      if (row) {
+        row.classList.toggle('uploads-table__row--selected', checkbox.checked);
+      }
+      this.toggleUploadSelection(uuid, checkbox.checked);
+    });
+
     // Search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -124,6 +170,14 @@ export class UploadsPage {
         this.currentPage = 1;
         this.loadUploads();
       });
+    }
+
+    if (this.selectAllUploadsCheckbox) {
+      this.selectAllUploadsCheckbox.addEventListener('change', () => this.handleSelectAllUploads());
+    }
+
+    if (this.bulkDeleteUploadsBtn) {
+      this.bulkDeleteUploadsBtn.addEventListener('click', () => this.confirmBulkDelete());
     }
   }
 
@@ -167,6 +221,7 @@ export class UploadsPage {
       if (data.status === 'success') {
         this.uploads = data.uploads || [];
         this.totalUploads = data.total || 0;
+        this.selectedUploadUuids.clear();
         this.renderView();
         this.renderPagination();
       } else {
@@ -213,11 +268,15 @@ export class UploadsPage {
           this.baseUrl,
           (upload) => this.modal.open(upload),
           (uuid) => this.confirmDelete(uuid),
-          (upload, downloadUrl) => this.handlePreviewClick(upload, downloadUrl)
+          (upload, downloadUrl) => this.handlePreviewClick(upload, downloadUrl),
+          (uuid, isSelected) => this.toggleUploadSelection(uuid, isSelected),
+          this.selectedUploadUuids.has(upload.uuid)
         );
         this.uploadsGrid.appendChild(preview.render());
       });
     }
+
+    this.updateBulkSelectionUI();
   }
 
   /**
@@ -251,6 +310,7 @@ export class UploadsPage {
 
     const rows = this.uploads.map(upload => this.createRow(upload)).join('');
     this.uploadsTable.innerHTML = rows;
+    this.updateBulkSelectionUI();
 
     // Add delegated click handlers for thumbnails
     this.uploadsTable.querySelectorAll('.thumbnail-link').forEach(link => {
@@ -304,8 +364,18 @@ export class UploadsPage {
            </svg>
          </div>`;
 
+    const rowClass = this.selectedUploadUuids.has(upload.uuid)
+      ? 'uploads-table__row uploads-table__row--selected'
+      : 'uploads-table__row';
+
     return `
-      <tr class="uploads-table__row">
+      <tr class="${rowClass}">
+        <td class="uploads-table__cell uploads-table__cell--select" data-label="Select">
+          <label class="upload-select">
+            <input type="checkbox" class="upload-select__checkbox" data-uuid="${upload.uuid}" ${this.selectedUploadUuids.has(upload.uuid) ? 'checked' : ''}>
+            <span class="upload-select__checkmark" aria-hidden="true"></span>
+          </label>
+        </td>
         <td class="uploads-table__cell uploads-table__cell--thumbnail" data-label="Preview">
           <a href="${downloadUrl}" data-uuid="${upload.uuid}" class="thumbnail-link">${thumbnailHtml}</a>
         </td>
@@ -365,7 +435,7 @@ export class UploadsPage {
     // Clear table view and show empty state
     this.uploadsTable.innerHTML = `
       <tr>
-        <td colspan="10" class="uploads-table__empty">
+        <td colspan="11" class="uploads-table__empty">
           <div class="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -377,6 +447,7 @@ export class UploadsPage {
         </td>
       </tr>
     `;
+    this.updateBulkSelectionUI();
   }
 
   /**
@@ -441,9 +512,31 @@ export class UploadsPage {
    * @param {string} uuid - Upload UUID
    */
   confirmDelete(uuid) {
-    if (confirm('Are you sure you want to delete this upload? This action cannot be undone.')) {
-      this.deleteUpload(uuid);
-    }
+    this.openConfirmModal({
+      title: 'Delete Upload',
+      message: 'Are you sure you want to delete this upload? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: () => this.deleteUpload(uuid)
+    });
+  }
+
+  /**
+   * Confirm bulk delete action
+   */
+  confirmBulkDelete() {
+    const selected = Array.from(this.selectedUploadUuids);
+    if (selected.length === 0) return;
+
+    const message = selected.length === 1
+      ? 'Delete this upload? This action cannot be undone.'
+      : `Delete ${selected.length} uploads? This action cannot be undone.`;
+
+    this.openConfirmModal({
+      title: 'Delete Uploads',
+      message,
+      confirmLabel: 'Delete',
+      onConfirm: () => this.bulkDeleteUploads(selected)
+    });
   }
 
   /**
@@ -480,6 +573,134 @@ export class UploadsPage {
       console.error('Error deleting upload:', error);
       this.showToast('Failed to delete upload', 'error');
     }
+  }
+
+  /**
+   * Bulk delete uploads
+   * @param {string[]} uuids - Upload UUIDs
+   */
+  async bulkDeleteUploads(uuids) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/uploads/bulk-delete`, {
+        method: 'POST',
+        headers: getCsrfHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({ upload_uuids: uuids })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete uploads');
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        this.showToast('Uploads deleted successfully', 'success');
+
+        if (this.uploads.length <= uuids.length && this.currentPage > 1) {
+          this.currentPage--;
+        }
+
+        await this.loadUploads();
+      } else {
+        throw new Error(data.message || 'Failed to delete uploads');
+      }
+    } catch (error) {
+      console.error('Error deleting uploads:', error);
+      this.showToast('Failed to delete uploads', 'error');
+    }
+  }
+
+  /**
+   * Toggle upload selection state
+   * @param {string} uuid - Upload UUID
+   * @param {boolean} isSelected - Selection state
+   */
+  toggleUploadSelection(uuid, isSelected) {
+    if (!uuid) return;
+
+    if (isSelected) {
+      this.selectedUploadUuids.add(uuid);
+    } else {
+      this.selectedUploadUuids.delete(uuid);
+    }
+
+    this.updateBulkSelectionUI();
+  }
+
+  /**
+   * Handle select all uploads
+   */
+  handleSelectAllUploads() {
+    const shouldSelectAll = this.selectAllUploadsCheckbox?.checked;
+    const uuids = this.uploads.map((upload) => upload.uuid);
+
+    this.selectedUploadUuids = new Set(shouldSelectAll ? uuids : []);
+
+    document.querySelectorAll('.upload-select__checkbox, .asset-card__checkbox').forEach((checkbox) => {
+      checkbox.checked = shouldSelectAll;
+      const card = checkbox.closest('.asset-card');
+      if (card) {
+        card.classList.toggle('asset-card--selected', shouldSelectAll);
+      }
+    });
+
+    this.updateBulkSelectionUI();
+  }
+
+  /**
+   * Update bulk selection UI
+   */
+  updateBulkSelectionUI() {
+    const selectedCount = this.selectedUploadUuids.size;
+    const totalCount = this.uploads.length;
+
+    if (this.selectedUploadsCount) {
+      this.selectedUploadsCount.textContent = `${selectedCount} selected`;
+    }
+
+    if (this.selectAllUploadsCheckbox) {
+      this.selectAllUploadsCheckbox.disabled = totalCount === 0;
+      this.selectAllUploadsCheckbox.checked = selectedCount > 0 && selectedCount === totalCount;
+      this.selectAllUploadsCheckbox.indeterminate =
+        selectedCount > 0 && selectedCount < totalCount;
+    }
+
+    if (this.bulkDeleteUploadsBtn) {
+      this.bulkDeleteUploadsBtn.disabled = selectedCount === 0;
+      this.bulkDeleteUploadsBtn.classList.toggle('btn--hidden', selectedCount === 0);
+    }
+  }
+
+  /**
+   * Open confirm modal
+   * @param {Object} options
+   */
+  openConfirmModal(options) {
+    if (!this.confirmModal || !this.confirmTitle || !this.confirmMessage || !this.confirmButton) {
+      return;
+    }
+
+    this.confirmTitle.textContent = options.title || 'Confirm action';
+    this.confirmMessage.textContent = options.message || 'Are you sure?';
+    this.confirmButton.textContent = options.confirmLabel || 'Confirm';
+    this.pendingAction = options.onConfirm || null;
+
+    this.confirmModal.classList.add('confirm-modal--visible');
+    this.confirmModal.setAttribute('aria-hidden', 'false');
+  }
+
+  /**
+   * Close confirm modal
+   */
+  closeConfirmModal() {
+    if (!this.confirmModal) {
+      return;
+    }
+
+    this.confirmModal.classList.remove('confirm-modal--visible');
+    this.confirmModal.setAttribute('aria-hidden', 'true');
+    this.pendingAction = null;
   }
 
   /**

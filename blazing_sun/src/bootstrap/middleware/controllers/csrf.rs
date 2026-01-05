@@ -34,15 +34,9 @@ fn is_excluded_path(path: &str) -> bool {
         return true;
     }
 
-    // Exclude OAuth authorization endpoints (external apps won't have CSRF token)
-    // OAuth security is handled by state parameter, PKCE, and redirect URI validation
-    if path.starts_with("/oauth/authorize") || path.starts_with("/api/v1/oauth/authorize") {
-        return true;
-    }
-
-    // Exclude OAuth token endpoints (uses client credentials for auth)
-    if path == "/oauth/token" || path == "/api/v1/oauth/token" ||
-       path == "/oauth/revoke" || path == "/api/v1/oauth/revoke" {
+    // Exclude all OAuth endpoints (external apps won't have CSRF token)
+    // OAuth security is handled by state parameter, PKCE, and access tokens
+    if path.starts_with("/oauth/") || path.starts_with("/api/v1/oauth/") {
         return true;
     }
 

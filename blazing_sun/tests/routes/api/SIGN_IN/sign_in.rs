@@ -17,6 +17,8 @@ use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::{Deserialize, Serialize};
 use tabled::{settings::Style, Table, Tabled};
+use crate::routes::api::helpers::ensure_test_user;
+use uuid::Uuid;
 
 #[derive(Serialize)]
 struct SignInRequest {
@@ -96,12 +98,14 @@ async fn test_sign_in() {
     println!();
 
     let app_state = state().await;
+    let test_email = format!("sign_in_test_{}@example.com", Uuid::new_v4());
+    ensure_test_user(&app_state, &test_email, "asdqwE123~~").await;
     let app = test::init_service(App::new().app_data(app_state).configure(configure_api)).await;
 
     let req = test::TestRequest::post()
         .uri("/api/v1/auth/sign-in")
         .set_json(SignInRequest {
-            email: "djmyle@gmail.com".to_string(),
+            email: test_email.clone(),
             password: "asdqwE123~~".to_string(),
         })
         .to_request();
@@ -180,10 +184,10 @@ async fn test_sign_in() {
     ));
 
     // Email matches
-    let email_pass = response.user.email == "djmyle@gmail.com";
+    let email_pass = response.user.email == test_email;
     results.push(TestResult::new(
         "Email Match",
-        "djmyle@gmail.com",
+        &test_email,
         &response.user.email,
         email_pass,
     ));

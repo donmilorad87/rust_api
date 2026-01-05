@@ -212,6 +212,31 @@ pub async fn exists(db: &Pool<Postgres>, picture_id: i64) -> bool {
     .unwrap_or(false)
 }
 
+/// Get picture IDs that belong to a gallery from a provided list
+pub async fn get_ids_by_gallery_and_ids(
+    db: &Pool<Postgres>,
+    gallery_id: i64,
+    picture_ids: &[i64],
+) -> Result<Vec<i64>, sqlx::Error> {
+    if picture_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let rows = sqlx::query!(
+        r#"
+        SELECT id
+        FROM pictures
+        WHERE gallery_id = $1 AND id = ANY($2)
+        "#,
+        gallery_id,
+        picture_ids
+    )
+    .fetch_all(db)
+    .await?;
+
+    Ok(rows.into_iter().map(|row| row.id).collect())
+}
+
 /// Check if upload is already in gallery (prevent duplicates)
 pub async fn upload_exists_in_gallery(
     db: &Pool<Postgres>,

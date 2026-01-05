@@ -12,8 +12,11 @@ export default class OAuthApplicationsPage {
     constructor() {
         this.currentClientId = null;
         this.currentClientName = null;
+        this.currentClientType = null;
         this.redirectUris = [];
         this.grantedScopes = [];
+        this.pkceVerifier = null;
+        this.pkceChallenge = null;
         // Pending API operation tracking (for modals)
         this.pendingApiProductId = null;
         this.pendingApiName = null;
@@ -136,6 +139,19 @@ export default class OAuthApplicationsPage {
             this.copyToClipboard('ssoUrlDisplay');
         });
 
+        // PKCE buttons
+        document.getElementById('regeneratePkceBtn')?.addEventListener('click', () => {
+            void this.generatePkcePair();
+        });
+
+        document.getElementById('copyPkceVerifierBtn')?.addEventListener('click', () => {
+            this.copyToClipboard('pkceVerifierDisplay');
+        });
+
+        document.getElementById('copyPkceChallengeBtn')?.addEventListener('click', () => {
+            this.copyToClipboard('pkceChallengeDisplay');
+        });
+
         // Enable API Modal
         document.getElementById('enableApiCloseBtn')?.addEventListener('click', () => {
             this.hideEnableApiModal();
@@ -247,7 +263,7 @@ export default class OAuthApplicationsPage {
         const ssoRedirectUriSelect = document.getElementById('ssoRedirectUriSelect');
         if (ssoRedirectUriSelect) {
             ssoRedirectUriSelect.addEventListener('change', () => {
-                this.updateSsoUrl();
+                void this.updateSsoUrl();
             });
         }
 
@@ -312,14 +328,14 @@ export default class OAuthApplicationsPage {
         const authorizedAppsContent = document.getElementById('authorizedAppsContent');
 
         if (tabName === 'my-apps') {
-            myAppsContent.style.display = 'block';
+            this.showElement(myAppsContent);
             myAppsContent.classList.add('oauth-tab-content--active');
-            authorizedAppsContent.style.display = 'none';
+            this.hideElement(authorizedAppsContent);
             authorizedAppsContent.classList.remove('oauth-tab-content--active');
         } else {
-            myAppsContent.style.display = 'none';
+            this.hideElement(myAppsContent);
             myAppsContent.classList.remove('oauth-tab-content--active');
-            authorizedAppsContent.style.display = 'block';
+            this.showElement(authorizedAppsContent);
             authorizedAppsContent.classList.add('oauth-tab-content--active');
 
             // Load authorized apps if not already loaded
@@ -340,6 +356,16 @@ export default class OAuthApplicationsPage {
         return meta ? meta.getAttribute('content') : '';
     }
 
+    showElement(element) {
+        if (!element) return;
+        element.classList.remove('hidden');
+    }
+
+    hideElement(element) {
+        if (!element) return;
+        element.classList.add('hidden');
+    }
+
     /**
      * Show success toast notification
      */
@@ -350,7 +376,7 @@ export default class OAuthApplicationsPage {
             gravity: "top",
             position: "right",
             style: {
-                background: "linear-gradient(to right, #00b09b, #96c93d)",
+                background: "var(--color-success, #10b981)",
             }
         }).showToast();
     }
@@ -365,7 +391,7 @@ export default class OAuthApplicationsPage {
             gravity: "top",
             position: "right",
             style: {
-                background: "linear-gradient(to right, #ff5f6d, #ffc371)",
+                background: "var(--color-error, #ef4444)",
             }
         }).showToast();
     }
@@ -377,10 +403,10 @@ export default class OAuthApplicationsPage {
         const container = document.getElementById('appsListContainer');
 
         // Show loading, hide everything else
-        if (loadingState) loadingState.style.display = 'block';
-        if (emptyState) emptyState.style.display = 'none';
-        if (errorState) errorState.style.display = 'none';
-        if (container) container.style.display = 'none';
+        this.showElement(loadingState);
+        this.hideElement(emptyState);
+        this.hideElement(errorState);
+        this.hideElement(container);
 
         try {
             const response = await fetch('/api/v1/oauth/clients', {
@@ -392,8 +418,8 @@ export default class OAuthApplicationsPage {
 
             // If authentication required or no apps, show empty state
             if (response.status === 401 || response.status === 403) {
-                if (loadingState) loadingState.style.display = 'none';
-                if (emptyState) emptyState.style.display = 'block';
+                this.hideElement(loadingState);
+                this.showElement(emptyState);
                 return;
             }
 
@@ -405,16 +431,16 @@ export default class OAuthApplicationsPage {
             const apps = data.clients || [];
 
             // Hide loading
-            if (loadingState) loadingState.style.display = 'none';
+            this.hideElement(loadingState);
 
             if (apps.length === 0) {
                 // Show empty state
-                if (emptyState) emptyState.style.display = 'block';
+                this.showElement(emptyState);
             } else {
                 // Show apps list
                 if (container) {
                     container.innerHTML = apps.map(app => this.renderAppCard(app)).join('');
-                    container.style.display = 'block';
+                    this.showElement(container);
 
                     // Add click handlers for each app card
                     apps.forEach(app => {
@@ -429,9 +455,9 @@ export default class OAuthApplicationsPage {
             console.error('Error loading applications:', error);
 
             // Hide loading, show error
-            if (loadingState) loadingState.style.display = 'none';
+            this.hideElement(loadingState);
             if (errorState) {
-                errorState.style.display = 'block';
+                this.showElement(errorState);
                 const errorMessage = errorState.querySelector('.error-state__message');
                 if (errorMessage) {
                     errorMessage.textContent = error.message || 'An unexpected error occurred';
@@ -449,7 +475,7 @@ export default class OAuthApplicationsPage {
                 <div class="app-card__header">
                     <div>
                         <h3 class="app-card__title">${this.escapeHtml(app.client_name)}</h3>
-                        ${app.description ? `<p style="color: #6b7280; margin-top: 0.25rem;">${this.escapeHtml(app.description)}</p>` : ''}
+                        ${app.description ? `<p class="app-card__desc">${this.escapeHtml(app.description)}</p>` : ''}
                     </div>
                     <span class="app-card__type">${app.client_type === 'confidential' ? 'Confidential' : 'Public'}</span>
                 </div>
@@ -565,6 +591,7 @@ export default class OAuthApplicationsPage {
         modal.setAttribute('aria-hidden', 'true');
         this.currentClientId = null;
         this.currentClientName = null;
+        this.currentClientType = null;
     }
 
     /**
@@ -629,13 +656,14 @@ export default class OAuthApplicationsPage {
             const data = await response.json();
 
             document.getElementById('detailClientId').textContent = data.client_id;
+            this.currentClientType = data.client_type || null;
 
             // Show client secret if available (for confidential clients)
             if (data.secrets && data.secrets.length > 0) {
-                document.getElementById('clientSecretSection').style.display = 'block';
+                this.showElement(document.getElementById('clientSecretSection'));
                 document.getElementById('detailClientSecret').textContent = data.secrets[0].secret_value || '(already hashed - not shown)';
             } else {
-                document.getElementById('clientSecretSection').style.display = 'none';
+                this.hideElement(document.getElementById('clientSecretSection'));
             }
 
         } catch (error) {
@@ -660,7 +688,7 @@ export default class OAuthApplicationsPage {
             const uris = data.redirect_uris || [];
 
             if (uris.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280;">No redirect URIs configured yet.</p>';
+                container.innerHTML = '<p class="oauth-text oauth-text--muted">No redirect URIs configured yet.</p>';
             } else {
                 container.innerHTML = uris.map(uri => `
                     <div class="uri-item">
@@ -672,7 +700,7 @@ export default class OAuthApplicationsPage {
 
         } catch (error) {
             console.error('Error loading redirect URIs:', error);
-            container.innerHTML = '<p style="color: #dc2626;">Failed to load redirect URIs.</p>';
+            container.innerHTML = '<p class="oauth-text oauth-text--danger">Failed to load redirect URIs.</p>';
         }
     }
 
@@ -693,7 +721,7 @@ export default class OAuthApplicationsPage {
             const origins = data.authorized_domains || [];
 
             if (origins.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280;">No authorized origins configured yet.</p>';
+                container.innerHTML = '<p class="oauth-text oauth-text--muted">No authorized origins configured yet.</p>';
             } else {
                 container.innerHTML = origins.map(origin => `
                     <div class="origin-item">
@@ -705,7 +733,7 @@ export default class OAuthApplicationsPage {
 
         } catch (error) {
             console.error('Error loading authorized origins:', error);
-            container.innerHTML = '<p style="color: #dc2626;">Failed to load authorized origins.</p>';
+            container.innerHTML = '<p class="oauth-text oauth-text--danger">Failed to load authorized origins.</p>';
         }
     }
 
@@ -753,7 +781,7 @@ export default class OAuthApplicationsPage {
 
             // Render all APIs
             if (allApis.length === 0) {
-                container.innerHTML = '<p style="color: #6b7280;">No APIs available yet.</p>';
+                container.innerHTML = '<p class="oauth-text oauth-text--muted">No APIs available yet.</p>';
             } else {
                 container.innerHTML = allApis.map(api => {
                     const apiId = parseInt(api.id, 10);
@@ -768,7 +796,7 @@ export default class OAuthApplicationsPage {
 
         } catch (error) {
             console.error('Error loading APIs:', error);
-            container.innerHTML = '<p style="color: #dc2626;">Failed to load APIs.</p>';
+            container.innerHTML = '<p class="oauth-text oauth-text--danger">Failed to load APIs.</p>';
         }
     }
 
@@ -1487,6 +1515,8 @@ export default class OAuthApplicationsPage {
             return;
         }
 
+        await this.generatePkcePair();
+
         // Load redirect URIs if not already loaded
         await this.loadRedirectUrisForModal(this.currentClientId);
 
@@ -1496,6 +1526,8 @@ export default class OAuthApplicationsPage {
         // Show modal
         const modal = document.getElementById('ssoUrlModal');
         modal.setAttribute('aria-hidden', 'false');
+
+        this.updatePkceRequirementNote();
 
         // Clear previous URL
         document.getElementById('ssoUrlDisplay').textContent = 'Select a redirect URI to generate the URL';
@@ -1512,6 +1544,10 @@ export default class OAuthApplicationsPage {
         // Clear dropdown
         const select = document.getElementById('ssoRedirectUriSelect');
         select.innerHTML = '<option value="">-- Select a redirect URI --</option>';
+
+        this.pkceVerifier = null;
+        this.pkceChallenge = null;
+        this.updatePkceDisplay();
     }
 
     /**
@@ -1580,7 +1616,7 @@ export default class OAuthApplicationsPage {
     /**
      * Update SSO URL when redirect URI is selected
      */
-    updateSsoUrl() {
+    async updateSsoUrl() {
         const select = document.getElementById('ssoRedirectUriSelect');
         const redirectUri = select.value;
         const display = document.getElementById('ssoUrlDisplay');
@@ -1590,6 +1626,10 @@ export default class OAuthApplicationsPage {
             display.textContent = 'Select a redirect URI to generate the URL';
             copyBtn.disabled = true;
             return;
+        }
+
+        if (!this.pkceVerifier || !this.pkceChallenge) {
+            await this.generatePkcePair();
         }
 
         // Construct OAuth authorization URL
@@ -1608,9 +1648,69 @@ export default class OAuthApplicationsPage {
         // Optional: Add state parameter placeholder (user should replace with actual CSRF token)
         authUrl.searchParams.set('state', 'YOUR_STATE_TOKEN_HERE');
 
+        if (this.pkceChallenge) {
+            authUrl.searchParams.set('code_challenge', this.pkceChallenge);
+            authUrl.searchParams.set('code_challenge_method', 'S256');
+        }
+
         // Display URL
         display.textContent = authUrl.toString();
         copyBtn.disabled = false;
+    }
+
+    updatePkceRequirementNote() {
+        const note = document.getElementById('pkceRequirementNote');
+        if (!note) return;
+
+        note.textContent = 'PKCE is required for all clients. Use the verifier below when exchanging the code.';
+    }
+
+    updatePkceDisplay() {
+        const verifierEl = document.getElementById('pkceVerifierDisplay');
+        const challengeEl = document.getElementById('pkceChallengeDisplay');
+        const copyVerifierBtn = document.getElementById('copyPkceVerifierBtn');
+        const copyChallengeBtn = document.getElementById('copyPkceChallengeBtn');
+
+        if (verifierEl) {
+            verifierEl.textContent = this.pkceVerifier || 'Generate a PKCE verifier to continue';
+        }
+
+        if (challengeEl) {
+            challengeEl.textContent = this.pkceChallenge || 'Generate a PKCE challenge to continue';
+        }
+
+        if (copyVerifierBtn) {
+            copyVerifierBtn.disabled = !this.pkceVerifier;
+        }
+
+        if (copyChallengeBtn) {
+            copyChallengeBtn.disabled = !this.pkceChallenge;
+        }
+    }
+
+    base64UrlEncode(bytes) {
+        let binary = '';
+        bytes.forEach((byte) => {
+            binary += String.fromCharCode(byte);
+        });
+
+        return btoa(binary)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/g, '');
+    }
+
+    async generatePkcePair() {
+        const randomBytes = new Uint8Array(32);
+        crypto.getRandomValues(randomBytes);
+        this.pkceVerifier = this.base64UrlEncode(randomBytes);
+
+        const encoded = new TextEncoder().encode(this.pkceVerifier);
+        const digest = await crypto.subtle.digest('SHA-256', encoded);
+        this.pkceChallenge = this.base64UrlEncode(new Uint8Array(digest));
+
+        this.updatePkceDisplay();
+        await this.updateSsoUrl();
     }
 
     /**
@@ -1662,13 +1762,13 @@ export default class OAuthApplicationsPage {
         const badge = document.getElementById('authorizedAppsBadge');
 
         // Show loading, hide everything else
-        if (loadingState) loadingState.style.display = 'block';
-        if (emptyState) emptyState.style.display = 'none';
-        if (errorState) errorState.style.display = 'none';
-        if (container) container.style.display = 'none';
+        this.showElement(loadingState);
+        this.hideElement(emptyState);
+        this.hideElement(errorState);
+        this.hideElement(container);
 
         try {
-            const response = await fetch('/api/v1/oauth/authorized-apps', {
+            const response = await fetch('/oauth/authorized-apps', {
                 credentials: 'include',
                 headers: {
                     'X-CSRF-Token': this.getCsrfToken()
@@ -1677,8 +1777,8 @@ export default class OAuthApplicationsPage {
 
             // If authentication required, show empty state
             if (response.status === 401 || response.status === 403) {
-                if (loadingState) loadingState.style.display = 'none';
-                if (emptyState) emptyState.style.display = 'block';
+                this.hideElement(loadingState);
+                this.showElement(emptyState);
                 return;
             }
 
@@ -1694,23 +1794,23 @@ export default class OAuthApplicationsPage {
             if (badge) {
                 if (this.authorizedApps.length > 0) {
                     badge.textContent = this.authorizedApps.length;
-                    badge.style.display = 'inline-flex';
+                    badge.classList.remove('hidden');
                 } else {
-                    badge.style.display = 'none';
+                    badge.classList.add('hidden');
                 }
             }
 
             // Hide loading
-            if (loadingState) loadingState.style.display = 'none';
+            this.hideElement(loadingState);
 
             if (this.authorizedApps.length === 0) {
                 // Show empty state
-                if (emptyState) emptyState.style.display = 'block';
+                this.showElement(emptyState);
             } else {
                 // Show authorized apps list
                 if (container) {
                     container.innerHTML = this.authorizedApps.map(app => this.renderAuthorizedAppCard(app)).join('');
-                    container.style.display = 'block';
+                    this.showElement(container);
 
                     // Add click handlers for revoke buttons
                     this.authorizedApps.forEach(app => {
@@ -1726,9 +1826,9 @@ export default class OAuthApplicationsPage {
             console.error('Error loading authorized apps:', error);
 
             // Hide loading, show error
-            if (loadingState) loadingState.style.display = 'none';
+            this.hideElement(loadingState);
             if (errorState) {
-                errorState.style.display = 'block';
+                this.showElement(errorState);
                 const errorMessage = errorState.querySelector('.error-state__message');
                 if (errorMessage) {
                     errorMessage.textContent = error.message || 'An unexpected error occurred';
@@ -1829,7 +1929,7 @@ export default class OAuthApplicationsPage {
         }
 
         try {
-            const response = await fetch('/api/v1/oauth/authorized-apps/revoke', {
+            const response = await fetch('/oauth/authorized-apps/revoke', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

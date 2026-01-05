@@ -7,7 +7,7 @@
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 9100;
   display: none;
   align-items: center;
   justify-content: center;
@@ -32,7 +32,7 @@
   &__overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: color-mix(in srgb, var(--text-primary) 60%, transparent);
     backdrop-filter: blur(2px);
     animation: fadeIn 0.2s ease;
     cursor: pointer;
@@ -49,7 +49,7 @@
     display: flex;
     flex-direction: column;
     animation: slideUp 0.3s ease;
-    z-index: 1;
+    z-index: 9101;
   }
 
   &__header {
@@ -396,7 +396,11 @@
     left: 0;
     right: 0;
     padding: 0.5rem;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--text-primary) 70%, transparent),
+      transparent
+    );
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -404,7 +408,7 @@
 
   &__name {
     font-size: 0.75rem;
-    color: #ffffff;
+    color: var(--text-on-dark, #ffffff);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -413,7 +417,7 @@
 
   &__size {
     font-size: 0.625rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: color-mix(in srgb, var(--text-on-dark, #ffffff) 80%, transparent);
   }
 
   &__remove {
@@ -494,12 +498,12 @@
 .image-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 9200;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.9);
+  background: color-mix(in srgb, var(--text-primary) 90%, transparent);
   backdrop-filter: blur(4px);
 
   &--open {
@@ -524,7 +528,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #000000;
+    background: var(--bottom-bar-bg, #111827);
     position: relative;
     min-width: 0;
   }
@@ -542,7 +546,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
+    background: color-mix(in srgb, var(--card-bg, #ffffff) 90%, transparent);
     border: none;
     color: var(--text-primary);
     cursor: pointer;
@@ -553,7 +557,7 @@
     z-index: 10;
 
     &:hover {
-      background: #ffffff;
+      background: var(--card-bg, #ffffff);
       transform: translateY(-50%) scale(1.1);
     }
 

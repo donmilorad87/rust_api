@@ -1,7 +1,25 @@
 pub mod create_user;
+pub mod bulk_user_action;
+pub mod bulk_delete_pictures;
+pub mod bulk_delete_uploads;
+pub mod delete_user;
+pub mod delete_upload;
 pub mod email;
+pub mod oauth_delete_gallery;
+pub mod oauth_delete_picture;
+pub mod oauth_list_galleries;
+pub mod oauth_list_gallery_images;
 pub mod resize_image;
 
 pub use create_user::CreateUserParams;
+pub use bulk_user_action::BulkUserActionParams;
+pub use bulk_delete_pictures::BulkDeletePicturesParams;
+pub use bulk_delete_uploads::BulkDeleteUploadsParams;
+pub use delete_user::DeleteUserParams;
+pub use delete_upload::DeleteUploadParams;
 pub use email::{EmailTemplate, SendEmailParams};
+pub use oauth_delete_gallery::DeleteGalleryParams;
+pub use oauth_delete_picture::DeletePictureParams;
+pub use oauth_list_galleries::ListGalleriesParams;
+pub use oauth_list_gallery_images::ListGalleryImagesParams;
 pub use resize_image::ResizeImageParams;

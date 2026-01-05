@@ -6,7 +6,7 @@ use tracing::{error, info};
 pub async fn process(
     _mq: &MessageQueue,
     job: &QueuedJob,
-) -> Result<JobResult<()>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<JobResult<serde_json::Value>, Box<dyn std::error::Error + Send + Sync>> {
     info!("Processing send_email job: {}", job.id);
 
     // Deserialize the payload
@@ -22,7 +22,7 @@ pub async fn process(
     match email::execute(&params).await {
         Ok(true) => {
             info!("send_email job {} completed successfully", job.id);
-            Ok(JobResult::Success(()))
+            Ok(JobResult::Success(serde_json::Value::Null))
         }
         Ok(false) => {
             Ok(JobResult::Retry("Email sending returned false".to_string()))

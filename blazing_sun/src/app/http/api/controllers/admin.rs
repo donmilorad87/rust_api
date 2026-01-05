@@ -6,10 +6,14 @@
 //! - GET /api/v1/admin/users - List all users (Super Admin: permission >= 100)
 //! - DELETE /api/v1/admin/users/{id}/avatar - Delete user's avatar (Admin+)
 
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::app::http::api::controllers::responses::BaseResponse;
+use crate::app::mq::jobs::bulk_delete_uploads::BulkDeleteUploadsParams;
+use crate::app::mq::jobs::bulk_user_action::BulkUserActionParams;
+use crate::app::mq::jobs::delete_user::DeleteUserParams;
+use crate::bootstrap::middleware::controllers::permission::levels;
 use crate::bootstrap::includes::controllers::uploads;
 use crate::database::mutations::asset as db_asset_mutations;
 use crate::database::mutations::user as db_user_mutations;
@@ -17,6 +21,8 @@ use crate::database::read::asset as db_asset_read;
 use crate::database::read::upload as db_upload_read;
 use crate::database::read::user as db_user_read;
 use crate::database::AppState;
+use crate::mq::{self, JobOptions, JobStatus};
+use uuid::Uuid;
 
 /// Admin Controller
 pub struct AdminController;
@@ -315,6 +321,122 @@ impl AdminController {
         }
     }
 
+    /// POST /api/v1/admin/users/bulk - Bulk user actions (Super Admin only)
+    pub async fn bulk_user_actions(
+        req: HttpRequest,
+        state: web::Data<AppState>,
+        body: web::Json<BulkUserActionRequest>,
+    ) -> HttpResponse {
+        let permissions = match req.extensions().get::<i16>().copied() {
+            Some(value) => value,
+            None => {
+                return HttpResponse::Forbidden()
+                    .json(BaseResponse::error("Insufficient permissions"));
+            }
+        };
+
+        if permissions != levels::SUPER_ADMIN {
+            return HttpResponse::Forbidden().json(BaseResponse::error("Insufficient permissions"));
+        }
+
+        let payload = body.into_inner();
+        if payload.user_ids.is_empty() {
+            return HttpResponse::BadRequest()
+                .json(BaseResponse::error("No users selected"));
+        }
+
+        if payload.action == "set_permissions" {
+            if let Some(value) = payload.permissions {
+                if ![1, 10, 50, 100].contains(&value) {
+                    return HttpResponse::BadRequest()
+                        .json(BaseResponse::error("Invalid permission level. Must be 1, 10, 50, or 100"));
+                }
+            } else {
+                return HttpResponse::BadRequest()
+                    .json(BaseResponse::error("Missing permissions value"));
+            }
+        } else if payload.action != "delete" {
+            return HttpResponse::BadRequest()
+                .json(BaseResponse::error("Invalid bulk action"));
+        }
+
+        let Some(ref mq) = state.mq else {
+            return HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Message queue not available"));
+        };
+
+        let params = BulkUserActionParams {
+            action: payload.action,
+            user_ids: payload.user_ids,
+            permissions: payload.permissions,
+        };
+        let options = JobOptions::new().priority(0).fault_tolerance(3);
+
+        match mq::enqueue_and_wait_dyn(mq, "bulk_user_action", &params, options, 30000).await {
+            Ok(JobStatus::Completed) => {
+                HttpResponse::Ok().json(BaseResponse::success("Bulk action completed"))
+            }
+            Ok(JobStatus::Failed) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Bulk action failed")),
+            Ok(_) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Unexpected job status")),
+            Err(e) => {
+                tracing::error!("Bulk user action job error: {}", e);
+                HttpResponse::InternalServerError()
+                    .json(BaseResponse::error("Bulk action failed"))
+            }
+        }
+    }
+
+    /// DELETE /api/v1/admin/users/{id} - Delete a user (Super Admin only)
+    pub async fn delete_user(
+        req: HttpRequest,
+        state: web::Data<AppState>,
+        path: web::Path<i64>,
+    ) -> HttpResponse {
+        let permissions = match req.extensions().get::<i16>().copied() {
+            Some(value) => value,
+            None => {
+                return HttpResponse::Forbidden()
+                    .json(BaseResponse::error("Insufficient permissions"));
+            }
+        };
+
+        if permissions != levels::SUPER_ADMIN {
+            return HttpResponse::Forbidden().json(BaseResponse::error("Insufficient permissions"));
+        }
+
+        let user_id = path.into_inner();
+
+        let db = state.db.lock().await;
+        if db_user_read::get_by_id(&db, user_id).await.is_err() {
+            return HttpResponse::NotFound().json(BaseResponse::error("User not found"));
+        }
+
+        let Some(ref mq) = state.mq else {
+            return HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Message queue not available"));
+        };
+
+        let params = DeleteUserParams { user_id };
+        let options = JobOptions::new().priority(0).fault_tolerance(3);
+
+        match mq::enqueue_and_wait_dyn(mq, "delete_user", &params, options, 30000).await {
+            Ok(JobStatus::Completed) => {
+                HttpResponse::Ok().json(BaseResponse::success("User deleted successfully"))
+            }
+            Ok(JobStatus::Failed) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Failed to delete user")),
+            Ok(_) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Unexpected job status")),
+            Err(e) => {
+                tracing::error!("Delete user job error: {}", e);
+                HttpResponse::InternalServerError()
+                    .json(BaseResponse::error("Failed to delete user"))
+            }
+        }
+    }
+
     /// PATCH /api/v1/admin/uploads/{uuid}/metadata - Update upload metadata (Admin+)
     pub async fn update_upload_metadata(
         state: web::Data<AppState>,
@@ -570,12 +692,68 @@ impl AdminController {
             }
         }
     }
+
+    /// POST /api/v1/admin/uploads/bulk-delete - Bulk delete uploads (Admin only)
+    pub async fn bulk_delete_uploads(
+        state: web::Data<AppState>,
+        body: web::Json<BulkDeleteUploadsRequest>,
+    ) -> HttpResponse {
+        let mut upload_uuids = body.upload_uuids.clone();
+
+        if upload_uuids.is_empty() {
+            return HttpResponse::BadRequest().json(BaseResponse::error("No uploads selected"));
+        }
+
+        upload_uuids.sort();
+        upload_uuids.dedup();
+
+        for uuid in &upload_uuids {
+            if Uuid::parse_str(uuid).is_err() {
+                return HttpResponse::BadRequest().json(BaseResponse::error("Invalid UUID format"));
+            }
+        }
+
+        let Some(ref mq) = state.mq else {
+            return HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Message queue not available"));
+        };
+
+        let params = BulkDeleteUploadsParams { upload_uuids };
+        let options = JobOptions::new().priority(0).fault_tolerance(3);
+
+        match mq::enqueue_and_wait_dyn(mq, "bulk_delete_uploads", &params, options, 30000).await {
+            Ok(JobStatus::Completed) => {
+                HttpResponse::Ok().json(BaseResponse::success("Uploads deleted successfully"))
+            }
+            Ok(JobStatus::Failed) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Failed to delete uploads")),
+            Ok(_) => HttpResponse::InternalServerError()
+                .json(BaseResponse::error("Unexpected job status")),
+            Err(e) => {
+                tracing::error!("Bulk delete uploads job error: {}", e);
+                HttpResponse::InternalServerError()
+                    .json(BaseResponse::error("Failed to delete uploads"))
+            }
+        }
+    }
 }
 
 /// Request to update user permissions
 #[derive(Deserialize)]
 pub struct UpdatePermissionsRequest {
     pub permissions: i16,
+}
+
+#[derive(Deserialize)]
+pub struct BulkUserActionRequest {
+    pub action: String,
+    pub user_ids: Vec<i64>,
+    pub permissions: Option<i16>,
+}
+
+#[derive(Deserialize)]
+pub struct BulkDeleteUploadsRequest {
+    pub upload_uuids: Vec<String>,
 }
 
 /// Request to update upload metadata

@@ -6,7 +6,7 @@
 //! - /oauth/revoke (Token revocation)
 
 use actix_session::Session;
-use actix_web::{web, HttpRequest, HttpResponse, HttpMessage};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -14,6 +14,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 
 use crate::app::db_query::{mutations, read};
 use crate::app::http::web::controllers::{render_oauth_consent, ConsentScopeInfo, OAuthConsentData};
+use crate::config::OAuthConfig;
 use crate::database::AppState;
 
 // ============================================================================
@@ -42,6 +43,17 @@ pub struct TokenRequest {
     pub client_secret: Option<String>,
     pub code_verifier: Option<String>, // PKCE
     pub refresh_token: Option<String>,
+}
+
+/// OAuth Callback Exchange Request
+#[derive(Debug, Deserialize)]
+pub struct CallbackExchangeRequest {
+    pub code: String,
+    pub redirect_uri: String,
+    pub client_id: String,
+    pub client_secret: Option<String>,
+    pub code_verifier: String,
+    pub state: Option<String>,
 }
 
 /// OAuth Token Response
@@ -102,6 +114,143 @@ fn hash_sha256(input: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
     format!("{:x}", hasher.finalize())
+}
+
+fn is_valid_pkce_method(method: &str) -> bool {
+    matches!(method, "S256" | "plain")
+}
+
+/// Normalize and validate redirect_uri scheme and host.
+fn normalize_redirect_uri(redirect_uri: &str) -> Result<String, String> {
+    let uri: actix_web::http::Uri = redirect_uri
+        .parse()
+        .map_err(|_| "Invalid redirect_uri format".to_string())?;
+
+    let scheme = uri
+        .scheme_str()
+        .ok_or_else(|| "Invalid redirect_uri: missing scheme".to_string())?;
+
+    let normalized = if scheme.eq_ignore_ascii_case("httos") {
+        if let Some(separator) = redirect_uri.find("://") {
+            format!("https{}", &redirect_uri[separator..])
+        } else {
+            return Err("Invalid redirect_uri format".to_string());
+        }
+    } else {
+        redirect_uri.to_string()
+    };
+
+    let normalized_uri: actix_web::http::Uri = normalized
+        .parse()
+        .map_err(|_| "Invalid redirect_uri format".to_string())?;
+
+    let normalized_scheme = normalized_uri
+        .scheme_str()
+        .ok_or_else(|| "Invalid redirect_uri: missing scheme".to_string())?;
+
+    let host = normalized_uri
+        .host()
+        .ok_or_else(|| "Invalid redirect_uri: missing host".to_string())?;
+
+    if normalized_scheme.eq_ignore_ascii_case("https") {
+        return Ok(normalized);
+    }
+
+    if normalized_scheme.eq_ignore_ascii_case("http") {
+        if OAuthConfig::allow_http_localhost_redirect()
+            && matches!(host, "localhost" | "127.0.0.1" | "::1")
+        {
+            return Ok(normalized);
+        }
+
+        return Err(format!(
+            "Invalid redirect_uri host for http scheme: '{}'. Only localhost is allowed.",
+            host
+        ));
+    }
+
+    Err(format!(
+        "Invalid redirect_uri scheme '{}'. Use https or http for localhost.",
+        normalized_scheme
+    ))
+}
+
+fn validate_pkce_requirements(
+    _client_type: &str,
+    code_challenge: Option<&str>,
+    code_challenge_method: Option<&str>,
+    redirect_uri: Option<&str>,
+    state: Option<&str>,
+) -> Option<HttpResponse> {
+    let requires_pkce = OAuthConfig::require_pkce_for_public_clients();
+
+    if requires_pkce {
+        let challenge = match code_challenge {
+            Some(value) if !value.is_empty() => value,
+            _ => {
+                return Some(oauth_error(
+                    "invalid_request",
+                    Some("PKCE code_challenge is required"),
+                    redirect_uri,
+                    state,
+                ));
+            }
+        };
+
+        let method = match code_challenge_method {
+            Some(value) => value,
+            None => {
+                return Some(oauth_error(
+                    "invalid_request",
+                    Some("Missing code_challenge_method"),
+                    redirect_uri,
+                    state,
+                ));
+            }
+        };
+
+        if method != "S256" {
+            return Some(oauth_error(
+                "invalid_request",
+                Some("code_challenge_method must be S256"),
+                redirect_uri,
+                state,
+            ));
+        }
+
+        if challenge.is_empty() {
+            return Some(oauth_error(
+                "invalid_request",
+                Some("Missing code_challenge"),
+                redirect_uri,
+                state,
+            ));
+        }
+
+        return None;
+    }
+
+    if code_challenge_method.is_some() && code_challenge.is_none() {
+        return Some(oauth_error(
+            "invalid_request",
+            Some("Missing code_challenge"),
+            redirect_uri,
+            state,
+        ));
+    }
+
+    if let Some(method) = code_challenge_method {
+        if !is_valid_pkce_method(method) {
+            return Some(oauth_error(
+                "invalid_request",
+                Some("Invalid code_challenge_method"),
+                redirect_uri,
+                state,
+            ));
+        }
+    }
+
+    None
 }
 
 /// Verify client secret against stored hash
@@ -238,6 +387,18 @@ pub async fn authorize_get(
         );
     }
 
+    let redirect_uri = match normalize_redirect_uri(&query.redirect_uri) {
+        Ok(value) => value,
+        Err(message) => {
+            return oauth_error(
+                "invalid_request",
+                Some(&message),
+                None,
+                query.state.as_deref(),
+            );
+        }
+    };
+
     // Validate redirect_uri
     let redirect_uris = match read::oauth_client::get_redirect_uris_by_client(&db, client.id).await {
         Ok(uris) => uris,
@@ -252,13 +413,23 @@ pub async fn authorize_get(
         }
     };
 
-    if !redirect_uris.iter().any(|uri| uri.redirect_uri == query.redirect_uri) {
+    if !redirect_uris.iter().any(|uri| uri.redirect_uri == redirect_uri) {
         return oauth_error(
             "invalid_request",
             Some("Invalid redirect_uri"),
             None,
             query.state.as_deref(),
         );
+    }
+
+    if let Some(response) = validate_pkce_requirements(
+        &client.client_type,
+        query.code_challenge.as_deref(),
+        query.code_challenge_method.as_deref(),
+        Some(&redirect_uri),
+        query.state.as_deref(),
+    ) {
+        return response;
     }
 
     // Parse and validate scopes
@@ -272,7 +443,7 @@ pub async fn authorize_get(
         return oauth_error(
             "invalid_scope",
             Some("At least one scope must be requested"),
-            Some(&query.redirect_uri),
+            Some(&redirect_uri),
             query.state.as_deref(),
         );
     }
@@ -292,7 +463,7 @@ pub async fn authorize_get(
                 return oauth_error(
                     "server_error",
                     Some("Internal server error"),
-                    Some(&query.redirect_uri),
+                    Some(&redirect_uri),
                     query.state.as_deref(),
                 );
             }
@@ -341,7 +512,7 @@ pub async fn authorize_get(
                 &state,
                 client_db_id,
                 uid,
-                &query.redirect_uri,
+                &redirect_uri,
                 &requested_scopes,
                 query.state.as_deref(),
                 query.code_challenge.as_deref(),
@@ -361,7 +532,7 @@ pub async fn authorize_get(
             return oauth_error(
                 "server_error",
                 Some("Internal server error"),
-                Some(&query.redirect_uri),
+                Some(&redirect_uri),
                 query.state.as_deref(),
             );
         }
@@ -386,7 +557,7 @@ pub async fn authorize_get(
         privacy_policy_url: client.privacy_policy_url,
         terms_of_service_url: client.terms_of_service_url,
         scopes: consent_scopes,
-        redirect_uri: query.redirect_uri.clone(),
+        redirect_uri: redirect_uri.clone(),
         scope_string: requested_scopes,
         state: query.state.clone(),
         code_challenge: query.code_challenge.clone(),
@@ -418,56 +589,82 @@ pub async fn authorize_post(
         }
     };
 
-    // If user denied consent
-    if !decision.approved {
-        return oauth_error(
-            "access_denied",
-            Some("User denied authorization"),
-            Some(&decision.redirect_uri),
-            decision.state.as_deref(),
-        );
-    }
-
-    // Lock database
-    let db = state.db.lock().await;
-
-    // Get client
-    let client = match read::oauth_client::get_by_client_id(&db, &decision.client_id).await {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::error!("Database error fetching OAuth client: {}", e);
+    let redirect_uri = match normalize_redirect_uri(&decision.redirect_uri) {
+        Ok(value) => value,
+        Err(message) => {
             return oauth_error(
-                "server_error",
-                Some("Internal server error"),
+                "invalid_request",
+                Some(&message),
                 None,
                 decision.state.as_deref(),
             );
         }
     };
 
-    // Save consent grant
-    let consent_params = mutations::oauth_authorization::CreateConsentGrantParams {
-        user_id,
-        client_id: client.id,
-        granted_scopes: decision.scope.split_whitespace().map(|s| s.to_string()).collect(),
-    };
-
-    if let Err(e) = mutations::oauth_authorization::upsert_consent_grant(&db, &consent_params).await {
-        tracing::error!("Database error saving consent grant: {}", e);
+    // If user denied consent
+    if !decision.approved {
         return oauth_error(
-            "server_error",
-            Some("Internal server error"),
-            Some(&decision.redirect_uri),
+            "access_denied",
+            Some("User denied authorization"),
+            Some(&redirect_uri),
             decision.state.as_deref(),
         );
     }
+
+    // Lock database for client lookup + consent save, then release before generating auth code.
+    let client = {
+        let db = state.db.lock().await;
+
+        let client = match read::oauth_client::get_by_client_id(&db, &decision.client_id).await {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("Database error fetching OAuth client: {}", e);
+                return oauth_error(
+                    "server_error",
+                    Some("Internal server error"),
+                    None,
+                    decision.state.as_deref(),
+                );
+            }
+        };
+
+        if let Some(response) = validate_pkce_requirements(
+            &client.client_type,
+            decision.code_challenge.as_deref(),
+            decision.code_challenge_method.as_deref(),
+            Some(&redirect_uri),
+            decision.state.as_deref(),
+        ) {
+            return response;
+        }
+
+        let consent_params = mutations::oauth_authorization::CreateConsentGrantParams {
+            user_id,
+            client_id: client.id,
+            granted_scopes: decision.scope.split_whitespace().map(|s| s.to_string()).collect(),
+        };
+
+        if let Err(e) =
+            mutations::oauth_authorization::upsert_consent_grant(&db, &consent_params).await
+        {
+            tracing::error!("Database error saving consent grant: {}", e);
+            return oauth_error(
+                "server_error",
+                Some("Internal server error"),
+                Some(&redirect_uri),
+                decision.state.as_deref(),
+            );
+        }
+
+        client
+    };
 
     // Approve and generate authorization code
     approve_authorization(
         &state,
         client.id,
         user_id,
-        &decision.redirect_uri,
+        &redirect_uri,
         &decision.scope,
         decision.state.as_deref(),
         decision.code_challenge.as_deref(),
@@ -566,6 +763,25 @@ pub async fn token_post(
     }
 }
 
+/// POST /oauth/callback/exchange - Exchange authorization code for tokens (callback helper)
+pub async fn callback_exchange_post(
+    callback_req: web::Form<CallbackExchangeRequest>,
+    state: web::Data<AppState>,
+) -> HttpResponse {
+    let callback_req = callback_req.into_inner();
+    let token_req = TokenRequest {
+        grant_type: "authorization_code".to_string(),
+        code: Some(callback_req.code),
+        redirect_uri: Some(callback_req.redirect_uri),
+        client_id: callback_req.client_id,
+        client_secret: callback_req.client_secret,
+        code_verifier: Some(callback_req.code_verifier),
+        refresh_token: None,
+    };
+
+    handle_authorization_code_grant(token_req, &state).await
+}
+
 /// Handle authorization_code grant
 async fn handle_authorization_code_grant(
     token_req: TokenRequest,
@@ -613,6 +829,9 @@ async fn handle_authorization_code_grant(
     // Get client
     let client = match read::oauth_client::get_by_client_id(&db, &token_req.client_id).await {
         Ok(c) => c,
+        Err(sqlx::Error::RowNotFound) => {
+            return oauth_error("invalid_client", Some("OAuth client not found"), None, None);
+        }
         Err(e) => {
             tracing::error!("Database error fetching OAuth client: {}", e);
             return oauth_error("server_error", Some("Internal server error"), None, None);
@@ -622,6 +841,26 @@ async fn handle_authorization_code_grant(
     // Verify client_id matches
     if client.id != auth_code.client_id {
         return oauth_error("invalid_grant", Some("client_id mismatch"), None, None);
+    }
+
+    if OAuthConfig::require_pkce_for_public_clients() {
+        if auth_code.code_challenge.is_none() {
+            return oauth_error(
+                "invalid_grant",
+                Some("PKCE is required"),
+                None,
+                None,
+            );
+        }
+
+        if auth_code.code_challenge_method.as_deref() != Some("S256") {
+            return oauth_error(
+                "invalid_grant",
+                Some("Invalid code_challenge_method"),
+                None,
+                None,
+            );
+        }
     }
 
     // Verify client secret for confidential clients
@@ -774,6 +1013,9 @@ async fn handle_refresh_token_grant(
     // Get client
     let client = match read::oauth_client::get_by_client_id(&db, &token_req.client_id).await {
         Ok(c) => c,
+        Err(sqlx::Error::RowNotFound) => {
+            return oauth_error("invalid_client", Some("OAuth client not found"), None, None);
+        }
         Err(e) => {
             tracing::error!("Database error fetching OAuth client: {}", e);
             return oauth_error("server_error", Some("Internal server error"), None, None);

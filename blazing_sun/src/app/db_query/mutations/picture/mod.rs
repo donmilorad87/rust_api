@@ -133,6 +133,30 @@ pub async fn remove_from_gallery(
     Ok(result.rows_affected())
 }
 
+/// Remove multiple pictures from a gallery
+pub async fn remove_from_gallery_bulk(
+    db: &Pool<Postgres>,
+    gallery_id: i64,
+    picture_ids: &[i64],
+) -> Result<u64, sqlx::Error> {
+    if picture_ids.is_empty() {
+        return Ok(0);
+    }
+
+    let result = sqlx::query!(
+        r#"
+        DELETE FROM pictures
+        WHERE gallery_id = $1 AND id = ANY($2)
+        "#,
+        gallery_id,
+        picture_ids
+    )
+    .execute(db)
+    .await?;
+
+    Ok(result.rows_affected())
+}
+
 /// Remove all pictures from a gallery
 pub async fn remove_all_from_gallery(
     db: &Pool<Postgres>,

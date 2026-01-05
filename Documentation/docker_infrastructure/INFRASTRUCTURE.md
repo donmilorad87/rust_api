@@ -19,7 +19,7 @@ This document provides comprehensive documentation of the Blazing Sun Docker inf
 
 ## Overview
 
-Blazing Sun uses a Docker Compose orchestration with **12 services** running on a private bridge network (`devnet` - 172.28.0.0/16).
+Blazing Sun uses a Docker Compose orchestration with **13 services** running on a private bridge network (`devnet` - 172.28.0.0/16).
 
 ### Architecture Diagram
 
@@ -108,6 +108,7 @@ Blazing Sun uses a Docker Compose orchestration with **12 services** running on 
 | pgadmin | 172.28.0.19 | 5050 |
 | mongo | 172.28.0.20 | 27017 |
 | mongo-express | 172.28.0.21 | 8081 |
+| php-oauth | 172.28.0.22 | 443 (host 8889) |
 
 ---
 
@@ -127,6 +128,7 @@ Blazing Sun uses a Docker Compose orchestration with **12 services** running on 
 | **pgadmin** | PostgreSQL admin panel | None | unless-stopped |
 | **mongo** | Document database for flexible schemas | `mongosh --eval db.adminCommand('ping')` | unless-stopped |
 | **mongo-express** | MongoDB admin web UI | None | unless-stopped |
+| **php-oauth** | OAuth callback test service | None | unless-stopped |
 
 ---
 
@@ -172,6 +174,13 @@ BUILD_ENV=dev                    # dev or prod
 
 # Application
 APP_PORT=9999                    # Internal application port
+
+# php-oauth (callback test service)
+OAUTH_CLIENT_ID=client_...        # OAuth client ID
+OAUTH_CLIENT_SECRET=...           # OAuth client secret
+OAUTH_CODE_VERIFIER=...           # PKCE code_verifier used to build code_challenge
+OAUTH_TOKEN_URL=https://172.28.0.12/oauth/callback/exchange
+OAUTH_REDIRECT_URI=https://local.fotobook.com:8889/callback.php
 
 # PostgreSQL
 POSTGRES_IP=172.28.0.11
@@ -441,6 +450,7 @@ mongosh --eval "db.adminCommand('ping')" --quiet
 | Kafka UI | `http://localhost:8080/kafka` | admin / kafka_ui_secret_password |
 | pgAdmin | `http://localhost:5050/pgadmin` | admin@blazingsun.app / pgadmin_secret_password |
 | Mongo Express | `http://localhost:8081/mongo/` | admin / mongo_express_password |
+| PHP OAuth Test | `https://localhost:8889` | - |
 | Grafana | `https://localhost/grafana/` | admin / admin |
 | Prometheus | `http://localhost:9090` | - |
 

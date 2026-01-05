@@ -120,6 +120,77 @@ pub async fn get_by_user_with_counts(
     .await
 }
 
+/// Get all galleries with picture counts
+pub async fn get_all_with_counts(
+    db: &Pool<Postgres>,
+) -> Result<Vec<GalleryWithCount>, sqlx::Error> {
+    sqlx::query_as!(
+        GalleryWithCount,
+        r#"
+        SELECT
+            g.id,
+            g.user_id,
+            g.name,
+            g.description,
+            g.is_public,
+            g.display_order,
+            g.cover_image_id,
+            g.cover_image_uuid,
+            g.created_at,
+            g.updated_at,
+            COUNT(p.id) as "picture_count!"
+        FROM galleries g
+        LEFT JOIN pictures p ON g.id = p.gallery_id
+        GROUP BY g.id
+        ORDER BY g.display_order ASC, g.created_at DESC
+        "#
+    )
+    .fetch_all(db)
+    .await
+}
+
+/// Get all galleries with picture counts using pagination
+pub async fn get_all_with_counts_paginated(
+    db: &Pool<Postgres>,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<GalleryWithCount>, sqlx::Error> {
+    sqlx::query_as!(
+        GalleryWithCount,
+        r#"
+        SELECT
+            g.id,
+            g.user_id,
+            g.name,
+            g.description,
+            g.is_public,
+            g.display_order,
+            g.cover_image_id,
+            g.cover_image_uuid,
+            g.created_at,
+            g.updated_at,
+            COUNT(p.id) as "picture_count!"
+        FROM galleries g
+        LEFT JOIN pictures p ON g.id = p.gallery_id
+        GROUP BY g.id
+        ORDER BY g.display_order ASC, g.created_at DESC
+        LIMIT $1 OFFSET $2
+        "#,
+        limit,
+        offset
+    )
+    .fetch_all(db)
+    .await
+}
+
+/// Count total galleries
+pub async fn count_all(db: &Pool<Postgres>) -> Result<i64, sqlx::Error> {
+    let result = sqlx::query_scalar!(r#"SELECT COUNT(*) as "count!" FROM galleries"#)
+        .fetch_one(db)
+        .await?;
+    Ok(result)
+}
+
 /// Get all public galleries (for browsing)
 pub async fn get_public(
     db: &Pool<Postgres>,

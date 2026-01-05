@@ -15,13 +15,13 @@
   --gallery-card-aspect-ratio: 4 / 3;
 
   // Colors
-  --gallery-card-bg: var(--color-surface, #ffffff);
-  --gallery-card-border: var(--color-border, #e5e7eb);
-  --gallery-card-hover-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  --gallery-card-bg: var(--card-bg, #ffffff);
+  --gallery-card-border: var(--card-border, #e5e7eb);
+  --gallery-card-hover-shadow: var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.1));
 
   // Overlay
-  --gallery-overlay-bg: rgba(0, 0, 0, 0.6);
-  --gallery-overlay-hover-bg: rgba(0, 0, 0, 0.8);
+  --gallery-overlay-bg: color-mix(in srgb, var(--text-primary) 60%, transparent);
+  --gallery-overlay-hover-bg: color-mix(in srgb, var(--text-primary) 80%, transparent);
 
   // Transitions
   --gallery-transition-fast: 150ms ease;
@@ -34,7 +34,7 @@
 // Dark mode adjustments
 @media (prefers-color-scheme: dark) {
   :root {
-    --gallery-card-bg: var(--color-surface-dark, #1f2937);
-    --gallery-card-border: var(--color-border-dark, #374151);
+    --gallery-card-bg: var(--card-bg, #1f2937);
+    --gallery-card-border: var(--card-border, #374151);
   }
 }

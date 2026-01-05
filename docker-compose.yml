@@ -52,6 +52,7 @@ services:
       - SESSION_SAMESITE=${SESSION_SAMESITE}
       - SESSION_COOKIE_PATH=${SESSION_COOKIE_PATH}
       - SESSION_KEY_PREFIX=${SESSION_KEY_PREFIX}
+      - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
     volumes:
       - ./blazing_sun:/home/rust/blazing_sun
       - cargo-cache:/usr/local/cargo/registry
@@ -97,6 +98,28 @@ services:
     networks:
       devnet:
         ipv4_address: 172.28.0.12
+
+  php-oauth:
+    build:
+      context: ./php-oauth
+      dockerfile: Dockerfile
+    image: php-oauth-test
+    ports:
+      - "0.0.0.0:8889:443"
+    environment:
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
+      - OAUTH_CODE_VERIFIER=${OAUTH_CODE_VERIFIER}
+      - OAUTH_TOKEN_URL=${OAUTH_TOKEN_URL}
+      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI}
+    volumes:
+      - ./php-oauth/src:/var/www/html
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    networks:
+      devnet:
+        ipv4_address: 172.28.0.22
 
   postgres:
     build:

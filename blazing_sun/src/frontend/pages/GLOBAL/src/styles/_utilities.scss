@@ -569,8 +569,8 @@
 .z-sticky { z-index: $z-sticky; }
 .z-fixed { z-index: $z-fixed; }
 .z-navbar { z-index: $z-navbar; }
-.z-modal-backdrop { z-index: $z-modal-backdrop; }
-.z-modal { z-index: $z-modal; }
+.z-modal-backdrop { z-index: 9000; }
+.z-modal { z-index: 9100; }
 .z-popover { z-index: $z-popover; }
 .z-tooltip { z-index: $z-tooltip; }
 .z-toast { z-index: $z-toast; }

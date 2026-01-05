@@ -9,6 +9,7 @@ use lapin::{
     Consumer,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -409,6 +410,50 @@ pub async fn enqueue_and_wait_dyn<T: serde::Serialize>(
             Ok(JobStatus::Failed)
         }
         Err(_) => Err("Job timeout".into()),
+    }
+}
+
+/// Enqueue a job and wait for completion, returning the worker payload
+pub async fn enqueue_and_wait_result_dyn<T: serde::Serialize>(
+    queue: &DynMq,
+    worker_name: &str,
+    params: &T,
+    options: JobOptions,
+    timeout_ms: u64,
+) -> Result<JobResult<Value>, Box<dyn std::error::Error + Send + Sync>> {
+    let payload = serde_json::to_string(params)?;
+    let job = QueuedJob::new(worker_name, payload, options.clone());
+
+    let guard = queue.lock().await;
+    let mq = guard
+        .downcast_ref::<MessageQueue>()
+        .ok_or("Failed to downcast message queue")?;
+
+    let result = tokio::time::timeout(
+        std::time::Duration::from_millis(timeout_ms),
+        crate::app::mq::workers::process(mq, &job),
+    )
+    .await;
+
+    match result {
+        Ok(Ok(JobResult::Success(value))) => Ok(JobResult::Success(value)),
+        Ok(Ok(JobResult::Failed(reason))) => Ok(JobResult::Failed(reason)),
+        Ok(Ok(JobResult::Retry(reason))) => {
+            let mut retry_job = job.clone();
+            retry_job.attempts += 1;
+            if retry_job.attempts < options.fault_tolerance {
+                mq.enqueue(retry_job).await?;
+                Ok(JobResult::Retry(reason))
+            } else {
+                warn!("Job failed after retries: {}", reason);
+                Ok(JobResult::Failed(reason))
+            }
+        }
+        Ok(Err(e)) => {
+            error!("Job execution error: {}", e);
+            Ok(JobResult::Failed(e.to_string()))
+        }
+        Err(_) => Ok(JobResult::Failed("Job timeout".to_string())),
     }
 }
 

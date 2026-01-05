@@ -12,6 +12,22 @@
         <header class="users-page__header">
             <h1 class="users-page__title">Registered Users</h1>
             <div class="users-page__controls">
+                <div class="bulk-actions">
+                    <label class="bulk-actions__label" for="bulkActionSelect">Bulk Actions</label>
+                    <select id="bulkActionSelect" class="bulk-actions__select" aria-label="Bulk actions">
+                        <option value="">Select action</option>
+                        <option value="delete">Delete selected</option>
+                        <option value="set_permissions">Change permissions</option>
+                    </select>
+                    <select id="bulkPermissionSelect" class="bulk-actions__select bulk-actions__select--hidden" aria-label="Bulk permission">
+                        <option value="">Select permission</option>
+                        <option value="1">Basic</option>
+                        <option value="10">Admin</option>
+                        <option value="50">Affiliate</option>
+                        <option value="100">Super Admin</option>
+                    </select>
+                    <button type="button" id="bulkApplyBtn" class="btn btn--primary btn--hidden" disabled>Apply</button>
+                </div>
                 <div class="search-input">
                     <svg class="search-input__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -43,6 +59,9 @@
             <table class="users-table" role="grid" aria-label="Users table">
                 <thead class="users-table__head">
                     <tr>
+                        <th class="users-table__header users-table__header--center" scope="col">
+                            <input type="checkbox" id="selectAllUsers" class="table-checkbox" aria-label="Select all users">
+                        </th>
                         <th class="users-table__header" scope="col">ID</th>
                         <th class="users-table__header" scope="col">Email</th>
                         <th class="users-table__header" scope="col">Name</th>
@@ -56,7 +75,7 @@
                 <tbody id="usersTable" class="users-table__body">
                     {# Populated by JavaScript #}
                     <tr>
-                        <td colspan="8" class="users-table__empty">
+                        <td colspan="9" class="users-table__empty">
                             <div class="empty-state">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                                     <circle cx="12" cy="12" r="10"></circle>
@@ -74,6 +93,25 @@
         <div id="pagination" class="pagination-container"></div>
     </div>
 </main>
+
+<div id="confirmModal" class="confirm-modal" aria-hidden="true">
+    <div class="confirm-modal__backdrop z-modal-backdrop" data-action="close-modal"></div>
+    <div class="confirm-modal__dialog z-modal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+        <header class="confirm-modal__header">
+            <h2 id="confirmModalTitle" class="confirm-modal__title">Confirm action</h2>
+            <button type="button" class="confirm-modal__close" data-action="close-modal" aria-label="Close">
+                x
+            </button>
+        </header>
+        <div class="confirm-modal__body">
+            <p id="confirmModalMessage" class="confirm-modal__message">Are you sure?</p>
+        </div>
+        <div class="confirm-modal__actions">
+            <button type="button" class="btn btn--ghost" data-action="cancel-modal">Cancel</button>
+            <button type="button" class="btn btn--danger" data-action="confirm-modal">Confirm</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

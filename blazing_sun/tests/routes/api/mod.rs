@@ -22,3 +22,32 @@ pub mod verify_hash;
 
 #[path = "RESET_PASSWORD/mod.rs"]
 pub mod reset_password;
+
+#[path = "OAUTH_AUTHORIZED_APPS/mod.rs"]
+pub mod oauth_authorized_apps;
+
+#[path = "OAUTH_AUTHORIZE/mod.rs"]
+pub mod oauth_authorize;
+
+#[path = "OAUTH_CALLBACK/mod.rs"]
+pub mod oauth_callback;
+
+#[path = "OAUTH_GALLERIES/mod.rs"]
+pub mod oauth_galleries;
+
+#[path = "OAUTH_API_PRODUCT/mod.rs"]
+pub mod oauth_api_product;
+
+#[path = "OAUTH_PICTURES/mod.rs"]
+pub mod oauth_pictures;
+
+#[path = "SUPERADMIN_USERS/mod.rs"]
+pub mod superadmin_users;
+
+#[path = "UPLOADS/mod.rs"]
+pub mod uploads;
+#[path = "GALLERIES/mod.rs"]
+pub mod galleries;
+
+#[path = "helpers/mod.rs"]
+pub mod helpers;

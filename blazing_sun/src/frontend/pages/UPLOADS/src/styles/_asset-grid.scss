@@ -41,6 +41,11 @@
     box-shadow: var(--shadow-md);
   }
 
+  &--selected {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
   // Preview section (image, video, or icon)
   &__preview {
     position: relative;
@@ -48,6 +53,43 @@
     aspect-ratio: 4/3;
     background: var(--input-bg);
     overflow: hidden;
+  }
+
+  &__select {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--card-bg) 85%, transparent);
+    border: 1px solid var(--border-color-light);
+  }
+
+  &__checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  &__checkmark {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    transition: all 0.2s ease;
+  }
+
+  &__checkbox:checked + &__checkmark {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    box-shadow: inset 0 0 0 2px var(--card-bg);
   }
 
   &__image,
@@ -67,7 +109,7 @@
     color: var(--color-text-muted);
 
     &--pdf {
-      color: #e74c3c;
+      color: var(--color-error, #ef4444);
     }
 
     &--file {
@@ -89,7 +131,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    background: color-mix(in srgb, var(--text-primary) 70%, transparent);
     opacity: 0;
     transition: opacity 0.2s;
     display: flex;
@@ -170,7 +212,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: color-mix(in srgb, var(--text-primary) 50%, transparent);
     backdrop-filter: blur(4px);
   }
 
@@ -189,7 +231,7 @@
 
   &__header {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -338,7 +380,7 @@
   &--secondary {
     background: var(--btn-secondary-bg);
     color: var(--btn-secondary-text);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color-light);
 
     &:hover {
       background: var(--btn-secondary-hover-bg);
@@ -356,7 +398,7 @@
 
   &--icon {
     padding: 0.5rem;
-    background: rgba(255, 255, 255, 0.9);
+    background: color-mix(in srgb, var(--card-bg, #ffffff) 90%, transparent);
     border-radius: var(--radius-md);
     display: inline-flex;
     align-items: center;
@@ -366,22 +408,22 @@
     min-height: 36px;
 
     &:hover {
-      background: white;
+      background: var(--card-bg, #ffffff);
       transform: scale(1.05);
     }
 
     // Touch device active state
     &:active {
       transform: scale(0.95);
-      background: rgba(255, 255, 255, 1);
+      background: var(--card-bg, #ffffff);
     }
 
     &.btn--edit {
-      color: #3498db;
+      color: var(--color-accent, #667eea);
     }
 
     &.btn--delete {
-      color: #e74c3c;
+      color: var(--color-error, #ef4444);
     }
 
     // Larger touch targets on mobile

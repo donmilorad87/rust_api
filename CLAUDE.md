@@ -46,6 +46,7 @@ See **[README.md](README.md)** for comprehensive infrastructure documentation (1
 | **pgadmin** | 172.28.0.19 | 5050 | http://localhost:5050/pgadmin | PostgreSQL admin |
 | **mongo** | 172.28.0.20 | 27017 | - | MongoDB database |
 | **mongo-express** | 172.28.0.21 | 8081 | http://localhost:8081/mongo/ | MongoDB admin |
+| **php-oauth** | 172.28.0.22 | 8889 | https://localhost:8889 | OAuth callback test service |
 
 See [06-web-uis.md](CLAUDE_partials/06-web-uis.md) for admin credentials.
 
