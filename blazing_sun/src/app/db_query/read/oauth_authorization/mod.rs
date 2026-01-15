@@ -229,10 +229,7 @@ pub async fn get_token_family(
 }
 
 /// Check for refresh token reuse (parent token has been used to create a child)
-pub async fn is_token_reused(
-    db: &Pool<Postgres>,
-    token_id: i64,
-) -> Result<bool, sqlx::Error> {
+pub async fn is_token_reused(db: &Pool<Postgres>, token_id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query!(
         r#"
         SELECT EXISTS(

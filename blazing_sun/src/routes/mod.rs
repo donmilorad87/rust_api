@@ -26,14 +26,7 @@ pub mod web;
 
 // Re-export commonly used items from bootstrap for convenience
 pub use crate::bootstrap::routes::controller::api::{
-    register_route,
-    register_route_with_lang,
-    route,
-    route_url,
-    route_with_lang,
-    route_url_lang,
-    get_route_languages,
-    route_exists,
-    DEFAULT_LANG,
+    get_route_languages, register_route, register_route_with_lang, route, route_exists, route_url,
+    route_url_lang, route_with_lang, DEFAULT_LANG,
 };
 pub use crate::bootstrap::routes::controller::crons::{schedules, Schedule};

@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO page_hreflangs (page_seo_id, lang_code, url, is_default)\n        VALUES ($1, $2, $3, $4)\n        ON CONFLICT (page_seo_id, lang_code)\n        DO UPDATE\n        SET url = EXCLUDED.url,\n            is_default = EXCLUDED.is_default,\n            updated_at = NOW()\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Varchar",
+        "Varchar",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "57d97d1ad24a52284916d32a60fdfa859190a074d522aa34a271db8bcfc622ff"
+}

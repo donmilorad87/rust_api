@@ -22,22 +22,17 @@ pub static EMAIL: Lazy<EmailConfig> = Lazy::new(|| {
     });
 
     EmailConfig {
-        mailer: std::env::var("MAIL_MAILER")
-            .unwrap_or_else(|_| "smtp".to_string()),
-        host: std::env::var("MAIL_HOST")
-            .expect("MAIL_HOST must be set"),
+        mailer: std::env::var("MAIL_MAILER").unwrap_or_else(|_| "smtp".to_string()),
+        host: std::env::var("MAIL_HOST").expect("MAIL_HOST must be set"),
         port: std::env::var("MAIL_PORT")
             .unwrap_or_else(|_| "587".to_string())
             .parse()
             .expect("MAIL_PORT must be a valid number"),
-        username: std::env::var("MAIL_USERNAME")
-            .expect("MAIL_USERNAME must be set"),
-        password: std::env::var("MAIL_PASSWORD")
-            .expect("MAIL_PASSWORD must be set"),
+        username: std::env::var("MAIL_USERNAME").expect("MAIL_USERNAME must be set"),
+        password: std::env::var("MAIL_PASSWORD").expect("MAIL_PASSWORD must be set"),
         from_address: std::env::var("MAIL_FROM_ADDRESS")
             .unwrap_or_else(|_| "noreply@example.com".to_string()),
-        from_name: std::env::var("MAIL_FROM_NAME")
-            .unwrap_or_else(|_| "App".to_string()),
+        from_name: std::env::var("MAIL_FROM_NAME").unwrap_or_else(|_| "App".to_string()),
         template_dir,
     }
 });

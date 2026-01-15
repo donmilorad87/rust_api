@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM game_player_disconnects\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5760455206d8a5d1a1ec952583dec50915ce8c5ad728c96b425b0b4f11b43da9"
+}

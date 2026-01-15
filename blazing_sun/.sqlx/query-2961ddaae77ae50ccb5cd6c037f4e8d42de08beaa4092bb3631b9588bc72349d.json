@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            i.id,\n            i.place_id,\n            i.upload_id,\n            u.uuid as \"upload_uuid!\",\n            i.title,\n            i.description,\n            i.tag,\n            i.latitude,\n            i.longitude,\n            i.created_by,\n            i.created_at,\n            i.updated_at\n        FROM geo_place_images i\n        JOIN uploads u ON u.id = i.upload_id\n        WHERE i.place_id = $1\n        ORDER BY i.created_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "place_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "upload_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "upload_uuid!",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "tag",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "latitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 8,
+        "name": "longitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_by",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "2961ddaae77ae50ccb5cd6c037f4e8d42de08beaa4092bb3631b9588bc72349d"
+}

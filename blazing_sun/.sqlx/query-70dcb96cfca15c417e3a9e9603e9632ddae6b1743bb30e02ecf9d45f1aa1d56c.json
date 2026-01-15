@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM gallery_likes WHERE gallery_id = $1 AND user_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "70dcb96cfca15c417e3a9e9603e9632ddae6b1743bb30e02ecf9d45f1aa1d56c"
+}

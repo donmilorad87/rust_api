@@ -28,7 +28,16 @@ create_topics() {
 
     echo "Creating application topics..."
 
+    # Core application topics
     TOPICS="user.events auth.events transaction.events category.events system.events events.dead_letter"
+
+    # Checkout topics (includes new checkout/checkout_finished topics)
+    CHECKOUT_TOPICS="checkout.commands checkout.events checkout checkout_finished"
+
+    # WebSocket Gateway topics (chat and games)
+    WS_TOPICS="chat.commands chat.events games.commands games.events gateway.presence"
+
+    TOPICS="$TOPICS $CHECKOUT_TOPICS $WS_TOPICS"
 
     for TOPIC in $TOPICS; do
         echo "Creating topic: $TOPIC"

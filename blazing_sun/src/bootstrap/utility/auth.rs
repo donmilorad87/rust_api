@@ -39,7 +39,9 @@ impl AuthInfo {
 
     /// Check if user has admin permissions (level = 10 or 100)
     pub fn is_admin(&self) -> bool {
-        self.permissions.map(|p| p == 10 || p == 100).unwrap_or(false)
+        self.permissions
+            .map(|p| p == 10 || p == 100)
+            .unwrap_or(false)
     }
 
     /// Check if user has super admin permissions (level = 100)
@@ -49,12 +51,16 @@ impl AuthInfo {
 
     /// Check if user has affiliate permissions (level = 50 or 100)
     pub fn is_affiliate(&self) -> bool {
-        self.permissions.map(|p| p == 50 || p == 100).unwrap_or(false)
+        self.permissions
+            .map(|p| p == 50 || p == 100)
+            .unwrap_or(false)
     }
 
     /// Check if user has the exact permission level or is super admin
     pub fn has_permission(&self, level: i16) -> bool {
-        self.permissions.map(|p| p == level || p == 100).unwrap_or(false)
+        self.permissions
+            .map(|p| p == level || p == 100)
+            .unwrap_or(false)
     }
 }
 

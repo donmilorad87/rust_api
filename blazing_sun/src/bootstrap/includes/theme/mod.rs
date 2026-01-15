@@ -8,7 +8,7 @@ pub mod parser;
 pub mod updater;
 pub mod versioner;
 
-pub use builder::{BuilderError, BuildResult};
+pub use builder::{BuildResult, BuilderError};
 pub use parser::ParserError;
 pub use updater::{Backup, UpdaterError};
 pub use versioner::VersionerError;
@@ -149,11 +149,7 @@ impl ThemeService {
         // 2. Create backups
         tracing::info!("Step 2: Creating backups...");
         let mut backup = Backup::new(backup_path);
-        backup.create(
-            Some(variables_path),
-            Some(theme_path),
-            Some(env_path),
-        )?;
+        backup.create(Some(variables_path), Some(theme_path), Some(env_path))?;
         tracing::info!("Backups created successfully");
 
         // 3. Update SCSS variables if provided
@@ -176,8 +172,14 @@ impl ThemeService {
         tracing::info!("theme_dark.is_some(): {}", theme_dark.is_some());
 
         if theme_light.is_some() || theme_dark.is_some() {
-            let light = theme_light.as_ref().map(parser::json_to_variables).unwrap_or_default();
-            let dark = theme_dark.as_ref().map(parser::json_to_variables).unwrap_or_default();
+            let light = theme_light
+                .as_ref()
+                .map(parser::json_to_variables)
+                .unwrap_or_default();
+            let dark = theme_dark
+                .as_ref()
+                .map(parser::json_to_variables)
+                .unwrap_or_default();
 
             tracing::info!("Updating theme file: {:?}", theme_path);
             tracing::info!("Light theme vars ({} entries): {:?}", light.len(), light);

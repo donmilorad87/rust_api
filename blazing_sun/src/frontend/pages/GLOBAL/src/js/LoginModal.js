@@ -125,9 +125,9 @@ export class LoginModal {
                     </form>
 
                     <footer class="login-modal__footer">
-                        <a href="/forgot-password" class="link">Forgot password?</a>
+                        <a href="/forgot_password" class="link">Forgot password?</a>
                         <span class="login-modal__divider">|</span>
-                        <a href="/sign-up" class="link">Create account</a>
+                        <a href="/sign_up" class="link">Create account</a>
                     </footer>
                 </div>
             </div>

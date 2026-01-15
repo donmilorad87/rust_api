@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            lk.key,\n            lk.context,\n            lt.singular,\n            lt.plural\n        FROM localization_translations lt\n        INNER JOIN localization_keys lk ON lk.id = lt.localization_key_id\n        INNER JOIN locales l ON l.id = lt.locale_id\n        WHERE l.locale_code = $1\n        ORDER BY lk.key ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "context",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "singular",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "plural",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "6e17f63dcc98c331d761a1c7dd9ed8cd4b7f2b43c5e7f95377999b7d37c297eb"
+}

@@ -8,9 +8,12 @@ use serde::{Deserialize, Serialize};
 use crate::app::db_query::{mutations as db_mutations, read as db_read};
 use crate::bootstrap::database::database::AppState;
 
+const GALLERY_TYPE_REGULAR: &str = "regular_galleries";
+const GALLERY_TYPE_GEO: &str = "geo_galleries";
+
 // OAuth imports (for OAuth-protected handlers)
 #[allow(unused_imports)]
-use crate::bootstrap::middleware::oauth_auth::{extract_oauth_claims, enforce_scopes};
+use crate::bootstrap::middleware::oauth_auth::{enforce_scopes, extract_oauth_claims};
 
 /// Request body for creating a gallery
 #[derive(Debug, Deserialize)]
@@ -18,6 +21,11 @@ pub struct CreateGalleryRequest {
     pub name: String,
     pub description: Option<String>,
     pub is_public: Option<bool>,
+    pub gallery_type: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_id: Option<i64>,
 }
 
 /// Request body for updating a gallery
@@ -26,6 +34,11 @@ pub struct UpdateGalleryRequest {
     pub name: Option<String>,
     pub description: Option<String>,
     pub is_public: Option<bool>,
+    pub gallery_type: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_id: Option<i64>,
 }
 
 /// Request body for reordering galleries
@@ -42,26 +55,77 @@ pub struct GalleryResponse {
     pub name: String,
     pub description: Option<String>,
     pub is_public: bool,
+    pub gallery_type: String,
     pub display_order: i32,
     pub picture_count: i64,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_id: Option<i64>,
     pub cover_image_url: String,
     pub created_at: String,
     pub updated_at: String,
 }
 
+/// Geo gallery map item response
+#[derive(Debug, Serialize)]
+pub struct GeoGalleryMapItem {
+    pub id: i64,
+    pub gallery_uuid: uuid::Uuid,
+    pub title: String,
+    pub description: Option<String>,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_url: String,
+    pub picture_count: i64,
+}
+
+/// Geo gallery detail response
+#[derive(Debug, Serialize)]
+pub struct GeoGalleryDetailResponse {
+    pub id: i64,
+    pub gallery_uuid: uuid::Uuid,
+    pub user_id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub is_public: bool,
+    pub gallery_type: String,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_url: String,
+    pub picture_count: i64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub is_owner: bool,
+}
+
 /// Build cover image URL for a gallery
-fn build_cover_image_url(cover_image_uuid: Option<uuid::Uuid>) -> String {
-    match cover_image_uuid {
+fn build_cover_image_url(
+    cover_image_uuid: Option<uuid::Uuid>,
+    fallback_uuid: Option<uuid::Uuid>,
+) -> String {
+    let uuid = cover_image_uuid.or(fallback_uuid);
+    match uuid {
         Some(uuid) => format!("/api/v1/upload/download/public/{}", uuid),
         None => "/assets/img/gallery-placeholder.svg".to_string(),
     }
 }
 
+fn parse_gallery_type(value: Option<&str>) -> Result<Option<&'static str>, HttpResponse> {
+    match value {
+        Some(GALLERY_TYPE_GEO) => Ok(Some(GALLERY_TYPE_GEO)),
+        Some(GALLERY_TYPE_REGULAR) => Ok(Some(GALLERY_TYPE_REGULAR)),
+        Some(_) => Err(HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Invalid gallery type. Use regular_galleries or geo_galleries."
+        }))),
+        None => Ok(None),
+    }
+}
+
 /// Get all galleries for the authenticated user
-pub async fn get_user_galleries(
-    req: HttpRequest,
-    state: web::Data<AppState>,
-) -> HttpResponse {
+pub async fn get_user_galleries(req: HttpRequest, state: web::Data<AppState>) -> HttpResponse {
     // Get authenticated user ID from JWT (set by auth middleware)
     let user_id = match req.extensions().get::<i64>() {
         Some(id) => *id,
@@ -91,9 +155,14 @@ pub async fn get_user_galleries(
                     name: g.name,
                     description: g.description,
                     is_public: g.is_public,
+                    gallery_type: g.gallery_type.clone(),
                     display_order: g.display_order,
                     picture_count: g.picture_count,
-                    cover_image_url: build_cover_image_url(first_picture_uuid),
+                    latitude: g.latitude,
+                    longitude: g.longitude,
+                    tags: g.tags.clone(),
+                    cover_image_id: g.cover_image_id,
+                    cover_image_url: build_cover_image_url(g.cover_image_uuid, first_picture_uuid),
                     created_at: g.created_at.to_rfc3339(),
                     updated_at: g.updated_at.to_rfc3339(),
                 });
@@ -161,9 +230,14 @@ pub async fn get_gallery(
                 name: gallery.name,
                 description: gallery.description,
                 is_public: gallery.is_public,
+                gallery_type: gallery.gallery_type.clone(),
                 display_order: gallery.display_order,
                 picture_count,
-                cover_image_url: build_cover_image_url(first_picture_uuid),
+                latitude: gallery.latitude,
+                longitude: gallery.longitude,
+                tags: gallery.tags.clone(),
+                cover_image_id: gallery.cover_image_id,
+                cover_image_url: build_cover_image_url(gallery.cover_image_uuid, first_picture_uuid),
                 created_at: gallery.created_at.to_rfc3339(),
                 updated_at: gallery.updated_at.to_rfc3339(),
             };
@@ -180,6 +254,132 @@ pub async fn get_gallery(
         Err(e) => {
             drop(db);
             eprintln!("Failed to fetch gallery: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch gallery"
+            }))
+        }
+    }
+}
+
+/// Get geo galleries for map (public + own)
+pub async fn get_geo_galleries(req: HttpRequest, state: web::Data<AppState>) -> HttpResponse {
+    if req.extensions().get::<i64>().is_none() {
+        return HttpResponse::Unauthorized().json(serde_json::json!({
+            "error": "Unauthorized"
+        }));
+    }
+
+    let db = state.db.lock().await;
+
+    match db_read::gallery::get_geo_for_map(&db).await {
+        Ok(galleries) => {
+            let mut response: Vec<GeoGalleryMapItem> = Vec::new();
+
+            for g in galleries {
+                let first_picture_uuid = db_read::picture::get_first_picture_uuid(&db, g.id)
+                    .await
+                    .unwrap_or(None);
+
+                let cover_image_url = build_cover_image_url(g.cover_image_uuid, first_picture_uuid);
+
+                if let (Some(latitude), Some(longitude)) = (g.latitude, g.longitude) {
+                    response.push(GeoGalleryMapItem {
+                        id: g.id,
+                        gallery_uuid: g.gallery_uuid,
+                        title: g.name,
+                        description: g.description,
+                        latitude,
+                        longitude,
+                        tags: g.tags,
+                        cover_image_url,
+                        picture_count: g.picture_count,
+                    });
+                }
+            }
+
+            drop(db);
+            HttpResponse::Ok().json(serde_json::json!({
+                "galleries": response
+            }))
+        }
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to fetch geo galleries: {:?}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch geo galleries"
+            }))
+        }
+    }
+}
+
+/// Get a geo gallery by UUID
+pub async fn get_geo_gallery(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+    path: web::Path<uuid::Uuid>,
+) -> HttpResponse {
+    let gallery_uuid = path.into_inner();
+
+    let user_id = match req.extensions().get::<i64>() {
+        Some(id) => *id,
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Unauthorized"
+            }));
+        }
+    };
+
+    let db = state.db.lock().await;
+
+    match db_read::gallery::get_by_uuid(&db, gallery_uuid).await {
+        Ok(gallery) => {
+            if gallery.gallery_type != GALLERY_TYPE_GEO {
+                drop(db);
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Gallery not found"
+                }));
+            }
+
+            let is_owner = gallery.user_id == user_id;
+
+            let picture_count = db_read::picture::count_by_gallery(&db, gallery.id)
+                .await
+                .unwrap_or(0);
+
+            let first_picture_uuid = db_read::picture::get_first_picture_uuid(&db, gallery.id)
+                .await
+                .unwrap_or(None);
+
+            let response = GeoGalleryDetailResponse {
+                id: gallery.id,
+                gallery_uuid,
+                user_id: gallery.user_id,
+                name: gallery.name,
+                description: gallery.description,
+                is_public: gallery.is_public,
+                gallery_type: gallery.gallery_type,
+                latitude: gallery.latitude,
+                longitude: gallery.longitude,
+                tags: gallery.tags,
+                cover_image_url: build_cover_image_url(gallery.cover_image_uuid, first_picture_uuid),
+                picture_count,
+                created_at: gallery.created_at.to_rfc3339(),
+                updated_at: gallery.updated_at.to_rfc3339(),
+                is_owner,
+            };
+
+            drop(db);
+            HttpResponse::Ok().json(response)
+        }
+        Err(sqlx::Error::RowNotFound) => {
+            drop(db);
+            HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Gallery not found"
+            }))
+        }
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to fetch geo gallery: {:?}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to fetch gallery"
             }))
@@ -225,13 +425,90 @@ pub async fn create_gallery(
         .await
         .unwrap_or(0);
 
+    let mut latitude = body.latitude;
+    let mut longitude = body.longitude;
+
+    if latitude.is_some() ^ longitude.is_some() {
+        drop(db);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Latitude and longitude must be provided together"
+        }));
+    }
+
+    let requested_type = match parse_gallery_type(body.gallery_type.as_deref()) {
+        Ok(value) => value,
+        Err(response) => {
+            drop(db);
+            return response;
+        }
+    };
+
+    let has_coords = latitude.is_some() && longitude.is_some();
+    let gallery_type = requested_type.unwrap_or(if has_coords {
+        GALLERY_TYPE_GEO
+    } else {
+        GALLERY_TYPE_REGULAR
+    });
+
+    let is_geo = gallery_type == GALLERY_TYPE_GEO;
+
+    if is_geo && !has_coords {
+        drop(db);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Latitude and longitude are required for geo galleries"
+        }));
+    }
+
+    if !is_geo {
+        latitude = None;
+        longitude = None;
+    }
+
+    let mut cover_image_uuid = None;
+    if let Some(cover_image_id) = body.cover_image_id {
+        match db_read::upload::get_by_id(&db, cover_image_id).await {
+            Ok(upload) => {
+                if upload.storage_type != "public" {
+                    drop(db);
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "Cover image must be a public upload"
+                    }));
+                }
+                if upload.user_id != Some(user_id) {
+                    drop(db);
+                    return HttpResponse::Forbidden().json(serde_json::json!({
+                        "error": "Cover image must belong to the gallery owner"
+                    }));
+                }
+                cover_image_uuid = Some(upload.uuid);
+            }
+            Err(_) => {
+                drop(db);
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Cover image upload not found"
+                }));
+            }
+        }
+    } else if is_geo {
+        drop(db);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Cover image is required for geo galleries"
+        }));
+    }
+
     // Create gallery
     let params = db_mutations::gallery::CreateGalleryParams {
         user_id,
         name: body.name.clone(),
         description: body.description.clone(),
         is_public: body.is_public.unwrap_or(false),
+        gallery_type: gallery_type.to_string(),
         display_order: gallery_count as i32,
+        latitude,
+        longitude,
+        tags: body.tags.clone(),
+        cover_image_id: body.cover_image_id,
+        cover_image_uuid,
     };
 
     match db_mutations::gallery::create(&db, &params).await {
@@ -240,9 +517,10 @@ pub async fn create_gallery(
             match db_read::gallery::get_by_id(&db, gallery_id).await {
                 Ok(gallery) => {
                     // Get first picture UUID for cover image (will be None for new gallery)
-                    let first_picture_uuid = db_read::picture::get_first_picture_uuid(&db, gallery_id)
-                        .await
-                        .unwrap_or(None);
+                    let first_picture_uuid =
+                        db_read::picture::get_first_picture_uuid(&db, gallery_id)
+                            .await
+                            .unwrap_or(None);
 
                     let response = GalleryResponse {
                         id: gallery.id,
@@ -250,9 +528,17 @@ pub async fn create_gallery(
                         name: gallery.name,
                         description: gallery.description,
                         is_public: gallery.is_public,
+                        gallery_type: gallery.gallery_type.clone(),
                         display_order: gallery.display_order,
                         picture_count: 0,
-                        cover_image_url: build_cover_image_url(first_picture_uuid),
+                        latitude: gallery.latitude,
+                        longitude: gallery.longitude,
+                        tags: gallery.tags.clone(),
+                        cover_image_id: gallery.cover_image_id,
+                        cover_image_url: build_cover_image_url(
+                            gallery.cover_image_uuid,
+                            first_picture_uuid,
+                        ),
                         created_at: gallery.created_at.to_rfc3339(),
                         updated_at: gallery.updated_at.to_rfc3339(),
                     };
@@ -326,12 +612,123 @@ pub async fn update_gallery(
         }
     }
 
+    let existing_gallery = match db_read::gallery::get_by_id(&db, gallery_id).await {
+        Ok(gallery) => gallery,
+        Err(sqlx::Error::RowNotFound) => {
+            drop(db);
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Gallery not found"
+            }));
+        }
+        Err(e) => {
+            drop(db);
+            eprintln!("Failed to fetch gallery: {:?}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch gallery"
+            }));
+        }
+    };
+
+    let mut latitude = body.latitude;
+    let mut longitude = body.longitude;
+
+    if latitude.is_some() ^ longitude.is_some() {
+        drop(db);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Latitude and longitude must be provided together"
+        }));
+    }
+
+    let requested_type = match parse_gallery_type(body.gallery_type.as_deref()) {
+        Ok(value) => value,
+        Err(response) => {
+            drop(db);
+            return response;
+        }
+    };
+
+    let has_coords = latitude.is_some() && longitude.is_some();
+    let effective_type = if let Some(requested_type) = requested_type {
+        requested_type
+    } else if has_coords {
+        GALLERY_TYPE_GEO
+    } else {
+        existing_gallery.gallery_type.as_str()
+    };
+
+    let is_geo = effective_type == GALLERY_TYPE_GEO;
+
+    if is_geo && !has_coords {
+        let has_existing_coords =
+            existing_gallery.latitude.is_some() && existing_gallery.longitude.is_some();
+        if !has_existing_coords {
+            drop(db);
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Latitude and longitude are required for geo galleries"
+            }));
+        }
+    }
+
+    if !is_geo {
+        latitude = None;
+        longitude = None;
+    }
+
+    let mut cover_image_uuid = None;
+    if let Some(cover_image_id) = body.cover_image_id {
+        match db_read::upload::get_by_id(&db, cover_image_id).await {
+            Ok(upload) => {
+                if upload.storage_type != "public" {
+                    drop(db);
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "Cover image must be a public upload"
+                    }));
+                }
+                if upload.user_id != Some(user_id) {
+                    drop(db);
+                    return HttpResponse::Forbidden().json(serde_json::json!({
+                        "error": "Cover image must belong to the gallery owner"
+                    }));
+                }
+                cover_image_uuid = Some(upload.uuid);
+            }
+            Err(_) => {
+                drop(db);
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Cover image upload not found"
+                }));
+            }
+        }
+    } else if is_geo && existing_gallery.cover_image_id.is_none() {
+        drop(db);
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Cover image is required for geo galleries"
+        }));
+    }
+
     // Update gallery
+    let gallery_type_update = match requested_type {
+        Some(requested_type) => Some(requested_type.to_string()),
+        None => {
+            if has_coords {
+                Some(GALLERY_TYPE_GEO.to_string())
+            } else {
+                None
+            }
+        }
+    };
+
     let params = db_mutations::gallery::UpdateGalleryParams {
         name: body.name.clone(),
         description: body.description.clone(),
         is_public: body.is_public,
+        gallery_type: gallery_type_update,
         display_order: None, // Don't update display_order here (use reorder endpoint)
+        latitude,
+        longitude,
+        tags: body.tags.clone(),
+        cover_image_id: body.cover_image_id,
+        cover_image_uuid,
     };
 
     match db_mutations::gallery::update(&db, gallery_id, &params).await {
@@ -344,9 +741,10 @@ pub async fn update_gallery(
                         .unwrap_or(0);
 
                     // Get first picture UUID for cover image
-                    let first_picture_uuid = db_read::picture::get_first_picture_uuid(&db, gallery_id)
-                        .await
-                        .unwrap_or(None);
+                    let first_picture_uuid =
+                        db_read::picture::get_first_picture_uuid(&db, gallery_id)
+                            .await
+                            .unwrap_or(None);
 
                     let response = GalleryResponse {
                         id: gallery.id,
@@ -354,9 +752,17 @@ pub async fn update_gallery(
                         name: gallery.name,
                         description: gallery.description,
                         is_public: gallery.is_public,
+                        gallery_type: gallery.gallery_type.clone(),
                         display_order: gallery.display_order,
                         picture_count,
-                        cover_image_url: build_cover_image_url(first_picture_uuid),
+                        latitude: gallery.latitude,
+                        longitude: gallery.longitude,
+                        tags: gallery.tags.clone(),
+                        cover_image_id: gallery.cover_image_id,
+                        cover_image_url: build_cover_image_url(
+                            gallery.cover_image_uuid,
+                            first_picture_uuid,
+                        ),
                         created_at: gallery.created_at.to_rfc3339(),
                         updated_at: gallery.updated_at.to_rfc3339(),
                     };
@@ -465,8 +871,13 @@ pub async fn reorder_galleries(
 
     // Update display_order for each gallery
     for (index, gallery_id) in body.gallery_ids.iter().enumerate() {
-        if let Err(e) = db_mutations::gallery::update_display_order(&db, *gallery_id, index as i32).await {
-            eprintln!("Failed to update display order for gallery {}: {:?}", gallery_id, e);
+        if let Err(e) =
+            db_mutations::gallery::update_display_order(&db, *gallery_id, index as i32).await
+        {
+            eprintln!(
+                "Failed to update display order for gallery {}: {:?}",
+                gallery_id, e
+            );
             drop(db);
             return HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to reorder galleries"

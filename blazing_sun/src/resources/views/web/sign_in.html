@@ -60,10 +60,10 @@
             <button type="submit" class="btn btn--primary btn--full" id="signinBtn">Sign In</button>
         </form>
         <p class="text-center mt-1">
-            <a href="/forgot-password" class="link">Forgot password?</a>
+            <a href="{{ route(name='web.forgot_password', lang=language) | default(value='/forgot_password') }}" class="link">Forgot password?</a>
         </p>
         <p class="text-center mt-1">
-            Don't have an account? <a href="/sign-up" class="link">Sign Up</a>
+            Don't have an account? <a href="{{ route(name='web.sign_up', lang=language) | default(value='/sign_up') }}" class="link">Sign Up</a>
         </p>
     </article>
 </main>

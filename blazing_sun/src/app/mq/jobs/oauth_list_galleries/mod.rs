@@ -32,20 +32,27 @@ fn build_cover_image_url(base_url: &str, cover_image_uuid: Option<uuid::Uuid>) -
             base_url.trim_end_matches('/'),
             uuid
         ),
-        None => format!("{}/assets/img/gallery-placeholder.svg", base_url.trim_end_matches('/')),
+        None => format!(
+            "{}/assets/img/gallery-placeholder.svg",
+            base_url.trim_end_matches('/')
+        ),
     }
 }
 
-pub async fn execute(db: &Pool<Postgres>, params: &ListGalleriesParams) -> Result<serde_json::Value, String> {
+pub async fn execute(
+    db: &Pool<Postgres>,
+    params: &ListGalleriesParams,
+) -> Result<serde_json::Value, String> {
     let base_url = AppConfig::app_url();
 
     let total = db_read::gallery::count_all(db)
         .await
         .map_err(|e| format!("Failed to count galleries: {}", e))?;
 
-    let galleries = db_read::gallery::get_all_with_counts_paginated(db, params.limit, params.offset)
-        .await
-        .map_err(|e| format!("Failed to fetch galleries: {}", e))?;
+    let galleries =
+        db_read::gallery::get_all_with_counts_paginated(db, params.limit, params.offset)
+            .await
+            .map_err(|e| format!("Failed to fetch galleries: {}", e))?;
 
     let mut items = Vec::new();
     for gallery in galleries {

@@ -61,7 +61,10 @@ impl EventConsumer {
         let consumer: StreamConsumer = ClientConfig::new()
             .set("bootstrap.servers", KafkaConfig::bootstrap_servers())
             .set("group.id", group_id)
-            .set("client.id", format!("{}-consumer", KafkaConfig::client_id()))
+            .set(
+                "client.id",
+                format!("{}-consumer", KafkaConfig::client_id()),
+            )
             .set("auto.offset.reset", KafkaConfig::auto_offset_reset())
             .set(
                 "enable.auto.commit",
@@ -128,10 +131,7 @@ impl EventConsumer {
 
     /// Start consuming events
     pub async fn start(&self) {
-        info!(
-            "Starting event consumer for group: {}",
-            self.group_id
-        );
+        info!("Starting event consumer for group: {}", self.group_id);
 
         let mut shutdown_rx = self.shutdown_tx.subscribe();
 
@@ -170,35 +170,97 @@ impl EventConsumer {
     }
 
     /// Process a single message
-    async fn process_message(&self, msg: &BorrowedMessage<'_>) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_message(
+        &self,
+        msg: &BorrowedMessage<'_>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let payload = msg.payload().ok_or("Empty message payload")?;
+        let topic = msg.topic();
 
-        // Parse the event
-        let event = match DomainEvent::from_bytes(payload) {
-            Ok(e) => e,
-            Err(e) => {
-                error!(
-                    topic = %msg.topic(),
-                    partition = %msg.partition(),
-                    offset = %msg.offset(),
-                    error = %e,
-                    "Failed to deserialize event"
-                );
-                // Commit to avoid reprocessing invalid messages
-                self.consumer.commit_message(msg, CommitMode::Async)?;
-                return Err(e.into());
+        // Topics using raw JSON format (not DomainEvent)
+        let is_gateway_topic = topic == super::topics::topic::GAMES_COMMANDS
+            || topic == super::topics::topic::CHAT_COMMANDS
+            || topic == super::topics::topic::GATEWAY_PRESENCE
+            || topic == super::topics::topic::CHECKOUT_EVENTS
+            || topic == super::topics::topic::CHECKOUT_FINISHED;
+
+        let event = if is_gateway_topic {
+            // For gateway topics, wrap the raw payload in a synthetic DomainEvent
+            let raw_payload: serde_json::Value = serde_json::from_slice(payload)
+                .map_err(|e| {
+                    error!(
+                        topic = %topic,
+                        partition = %msg.partition(),
+                        offset = %msg.offset(),
+                        error = %e,
+                        "Failed to parse gateway message as JSON"
+                    );
+                    e
+                })?;
+
+            // Extract event_id from payload if present
+            let event_id = raw_payload
+                .get("event_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("gateway-event")
+                .to_string();
+
+            // Extract event_type string from payload
+            let event_type_str = raw_payload
+                .get("event_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+
+            info!(
+                event_id = %event_id,
+                event_type = %event_type_str,
+                topic = %topic,
+                partition = %msg.partition(),
+                offset = %msg.offset(),
+                "Processing gateway message"
+            );
+
+            // Create synthetic DomainEvent with raw payload
+            DomainEvent {
+                id: event_id,
+                event_type: super::types::EventType::System(super::types::SystemEventType::HealthCheck), // Placeholder
+                entity_type: "gateway".to_string(),
+                entity_id: "0".to_string(),
+                payload: raw_payload,
+                metadata: super::types::EventMetadata::default(),
+                timestamp: chrono::Utc::now().timestamp_millis(),
+                version: 1,
+            }
+        } else {
+            // Parse as standard DomainEvent
+            match DomainEvent::from_bytes(payload) {
+                Ok(e) => e,
+                Err(e) => {
+                    error!(
+                        topic = %topic,
+                        partition = %msg.partition(),
+                        offset = %msg.offset(),
+                        error = %e,
+                        "Failed to deserialize event"
+                    );
+                    // Commit to avoid reprocessing invalid messages
+                    self.consumer.commit_message(msg, CommitMode::Async)?;
+                    return Err(e.into());
+                }
             }
         };
 
-        info!(
-            event_id = %event.id,
-            event_type = %event.event_type,
-            entity_id = %event.entity_id,
-            topic = %msg.topic(),
-            partition = %msg.partition(),
-            offset = %msg.offset(),
-            "Processing event"
-        );
+        if !is_gateway_topic {
+            info!(
+                event_id = %event.id,
+                event_type = %event.event_type,
+                entity_id = %event.entity_id,
+                topic = %topic,
+                partition = %msg.partition(),
+                offset = %msg.offset(),
+                "Processing event"
+            );
+        }
 
         // Find and invoke matching handlers
         let mut handled = false;
@@ -283,28 +345,26 @@ pub fn start_consumer(consumer: SharedConsumer) {
 
 /// Extract correlation ID from message headers
 pub fn get_correlation_id(msg: &BorrowedMessage<'_>) -> Option<String> {
-    msg.headers()
-        .and_then(|headers| {
-            for header in headers.iter() {
-                if header.key == "correlation_id" {
-                    return header.value.map(|v| String::from_utf8_lossy(v).to_string());
-                }
+    msg.headers().and_then(|headers| {
+        for header in headers.iter() {
+            if header.key == "correlation_id" {
+                return header.value.map(|v| String::from_utf8_lossy(v).to_string());
             }
-            None
-        })
+        }
+        None
+    })
 }
 
 /// Extract actor ID from message headers
 pub fn get_actor_id(msg: &BorrowedMessage<'_>) -> Option<i64> {
-    msg.headers()
-        .and_then(|headers| {
-            for header in headers.iter() {
-                if header.key == "actor_id" {
-                    return header.value.and_then(|v| {
-                        String::from_utf8_lossy(v).parse().ok()
-                    });
-                }
+    msg.headers().and_then(|headers| {
+        for header in headers.iter() {
+            if header.key == "actor_id" {
+                return header
+                    .value
+                    .and_then(|v| String::from_utf8_lossy(v).parse().ok());
             }
-            None
-        })
+        }
+        None
+    })
 }

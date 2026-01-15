@@ -3,7 +3,7 @@
 //! Database write operations for session refresh tokens.
 //! Used for "Keep me logged in" functionality.
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use sha2::{Digest, Sha256};
 use sqlx::{Pool, Postgres};
 

@@ -17,8 +17,8 @@ pub struct DeleteUploadParams {
 }
 
 pub async fn execute(db: &Pool<Postgres>, params: &DeleteUploadParams) -> Result<bool, String> {
-    let uuid = Uuid::parse_str(&params.upload_uuid)
-        .map_err(|_| "Invalid UUID format".to_string())?;
+    let uuid =
+        Uuid::parse_str(&params.upload_uuid).map_err(|_| "Invalid UUID format".to_string())?;
 
     let upload = db_upload_read::get_by_uuid(db, &uuid)
         .await

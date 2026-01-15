@@ -3,6 +3,7 @@ name: frontend
 description: HTML/CSS/JavaScript and Tera template development. Use for web pages, styling, and frontend functionality.
 tools: Read, Glob, Grep, Edit, Bash, Write
 model: inherit
+skills: fontend
 color: pink
 ---
 
@@ -646,23 +647,34 @@ After saving and restarting Docker:
 
 ## Folder Structure
 
-All Vite projects will live under: blazing_sun/src/frontend
+All Vite projects live under: `blazing_sun/src/frontend/`
 
-
-Create the following structure:
+```
 blazing_sun/src/frontend/
-  pages/
-    SIGN_UP/
+├── pages/           ← Standard web pages (SIGN_UP, PROFILE, etc.)
+│   ├── GLOBAL/      ← Shared theme, utilities, navbar styles
+│   ├── SIGN_UP/
+│   ├── PROFILE/
+│   └── ...
+└── games/           ← Game components (BIGGER_DICE, etc.)
+    └── BIGGER_DICE/
+```
 
-The `SIGN_UP` folder represents the Vite project for the **SIGN_UP** page.
+### Pages vs Games
 
-This pattern will repeat for every page (many Vite projects), ensuring:
+| Type | Location | Output Path | URL Path |
+|------|----------|-------------|----------|
+| **Pages** | `frontend/pages/{NAME}/` | `resources/css/{NAME}/` + `resources/js/{NAME}/` | `/assets/css/{NAME}/`, `/assets/js/{NAME}/` |
+| **Games** | `frontend/games/{NAME}/` | `resources/css/games/{NAME}/` + `resources/js/games/{NAME}/` | `/assets/css/games/{NAME}/`, `/assets/js/games/{NAME}/` |
 
-- Only page-specific CSS is shipped
-- Only page-specific JavaScript is shipped
-- No large shared bundle with unused code
+### Why Separate Pages and Games?
 
-Because the output files are static assets, the browser will cache them after the first load, making subsequent visits faster.
+- **Different concerns**: Games often use WebSocket, real-time state, custom web components
+- **Clear organization**: Easy to find game-specific code
+- **Build isolation**: Games can have different dependencies without affecting pages
+- **Routing alignment**: Games are served under `/games/*` routes
+
+This pattern ensures each page/game loads only the JavaScript and CSS it actually needs.
 
 ---
 
@@ -1022,44 +1034,107 @@ showToast('Item saved successfully!', 'success');
 
 Now proceed with the frontend task. Remember to prefix all responses with [FE].
 
-## Build Assets and Version Increment
+## Build Commands
 
-**CRITICAL**: After every Vite build, you MUST increment `ASSETS_VERSION` in `blazing_sun/.env`.
+### Build Helper Script (Recommended)
 
-### Build Process (MANDATORY STEPS)
+A build helper script is available at: `blazing_sun/src/frontend/build-frontend.sh`
 
-1. **Build the assets**:
-   ```bash
-   cd /home/milner/Desktop/rust/blazing_sun/src/frontend/pages/{PAGE_NAME}
-   npm run build
-   ```
-
-2. **Increment ASSETS_VERSION** in `/home/milner/Desktop/rust/blazing_sun/.env`:
-   - Use format: `1.0.XXX` where XXX is a sequential number
-   - Example: `1.0.001` → `1.0.002` → `1.0.003`
-   - This ensures browser cache is busted for new assets
-
-### Version Increment Rules
-
-| Current Version | Next Version |
-|-----------------|--------------|
-| `1.0.001` | `1.0.002` |
-| `1.0.002` | `1.0.003` |
-| `1.0.099` | `1.0.100` |
-
-### Example
-
+**Build everything (pages + games):**
 ```bash
-# After building SIGN_IN page
-cd /home/milner/Desktop/rust/blazing_sun/src/frontend/pages/SIGN_IN
-npm run build
-
-# Then update blazing_sun/.env
-# Change: ASSETS_VERSION=1.0.001
-# To:     ASSETS_VERSION=1.0.002
+./blazing_sun/src/frontend/build-frontend.sh all prod
 ```
 
-**WARNING**: Forgetting to increment the version will cause users to see cached (old) assets!
+**Build all pages only:**
+```bash
+./blazing_sun/src/frontend/build-frontend.sh pages prod
+```
+
+**Build all games only:**
+```bash
+./blazing_sun/src/frontend/build-frontend.sh games prod
+```
+
+**Build specific page:**
+```bash
+./blazing_sun/src/frontend/build-frontend.sh PROFILE prod
+```
+
+**Build specific game:**
+```bash
+./blazing_sun/src/frontend/build-frontend.sh game:BIGGER_DICE prod
+```
+
+**Development mode (any target):**
+```bash
+./blazing_sun/src/frontend/build-frontend.sh all dev
+./blazing_sun/src/frontend/build-frontend.sh game:BIGGER_DICE dev
+```
+
+### Available Targets
+
+| Type | Names |
+|------|-------|
+| **Pages** | FORGOT_PASSWORD, GALLERIES, GAMES, GLOBAL, OAUTH_APPLICATIONS, OAUTH_CONSENT, PROFILE, REGISTERED_USERS, SIGN_IN, SIGN_UP, THEME, UPLOADS |
+| **Games** | BIGGER_DICE |
+
+**What the script does:**
+- Updates npm dependencies (npm-check-updates)
+- Runs npm install
+- Runs npm builds inside Docker container (avoids sandbox issues)
+- Supports dev and prod build modes
+- **Automatically increments `ASSETS_VERSION`** after successful builds
+- Reminds you to restart Docker to apply changes
+
+### Manual Build (Alternative)
+
+If you need to build manually:
+
+```bash
+cd /home/milner/Desktop/rust/blazing_sun/src/frontend/pages/{PAGE_NAME}
+npm install
+npm run build       # or npm run build:prod
+```
+
+---
+
+## ASSETS_VERSION Management
+
+**The build script now automatically increments `ASSETS_VERSION`** after successful builds.
+
+### Automatic Versioning
+
+When you run `./build-frontend.sh`, the script:
+1. Builds the specified target(s)
+2. Reads current `ASSETS_VERSION` from `blazing_sun/.env`
+3. Increments the patch version (e.g., `1.0.120` → `1.0.121`)
+4. Writes the new version back to `.env`
+5. Reminds you to restart Docker
+
+### After Building
+
+```bash
+# The script will remind you:
+docker compose restart rust
+```
+
+### Manual Override (if needed)
+
+```env
+# In blazing_sun/.env
+ASSETS_VERSION=1.0.121
+IMAGES_ASSETS_VERSION=1.0.0
+```
+
+### When to Increment Manually
+
+| Scenario | Action |
+|----------|--------|
+| CSS/JS via build script | **Automatic** |
+| Images/media changed | Manually increment `IMAGES_ASSETS_VERSION` |
+| Major deployment | Increment both versions |
+
+**WARNING**: Docker must be restarted for new versions to take effect!
 
 ---
 
@@ -1106,6 +1181,108 @@ Every page template should follow this pattern:
 ### Template Location
 
 Templates are in: `blazing_sun/src/resources/views/web/{page_name}.html`
+
+---
+
+## Games Development
+
+Games are a special category of frontend projects that typically use:
+- **WebSocket connections** for real-time multiplayer
+- **Web Components** for encapsulated game UI
+- **Custom state management** for game logic
+
+### Game Folder Structure
+
+```
+blazing_sun/src/frontend/games/BIGGER_DICE/
+├── package.json
+├── package-lock.json
+├── vite.config.js
+├── .gitignore
+└── src/
+    ├── main.js              ← Entry point
+    ├── BiggerDice.js        ← Main web component
+    └── styles/
+        ├── main.scss        ← Entry SCSS
+        └── _game.scss       ← Game-specific styles
+```
+
+### Game Vite Config
+
+Games output to a different path than pages:
+
+```javascript
+// vite.config.js for a game
+export default defineConfig(({ mode }) => ({
+  build: {
+    outDir: resolve(__dirname, '../../../resources'),
+    emptyOutDir: false,
+    rollupOptions: {
+      input: { app: resolve(__dirname, 'src/main.js') },
+      output: {
+        format: 'iife',
+        // NOTE: Output to games/ subdirectory
+        entryFileNames: 'js/games/GAME_NAME/app.js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name?.endsWith('.css')) {
+            return 'css/games/GAME_NAME/style.css';
+          }
+          return 'assets/games/GAME_NAME/[name].[ext]';
+        },
+      },
+    },
+  },
+  css: {
+    preprocessorOptions: {
+      scss: { api: 'modern-compiler', charset: false },
+    },
+  },
+}));
+```
+
+### Game Template Pattern
+
+Game templates reference assets from the `/games/` subdirectory:
+
+```html
+{% extends "base.html" %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/games/GAME_NAME/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="game-page">
+    <game-component
+        data-ws-url="{{ ws_url }}"
+        data-room-id="{{ room_id }}"
+        data-user-id="{{ user_id }}"
+    ></game-component>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/games/GAME_NAME/app.js?v={{ assets_version }}"></script>
+{% endblock %}
+```
+
+### Creating a New Game
+
+1. **Create folder**: `blazing_sun/src/frontend/games/{GAME_NAME}/`
+2. **Copy structure** from existing game (e.g., BIGGER_DICE)
+3. **Update vite.config.js** with new game name in output paths
+4. **Create web component** in `src/{GameName}.js`
+5. **Create Tera template** in `resources/views/web/{game_name}.html`
+6. **Add routes** in `src/routes/web.rs`
+7. **Add controller methods** in `src/app/http/web/controllers/pages.rs`
+8. **Build**: `./build-frontend.sh game:{GAME_NAME} prod`
+9. **Restart Docker**: `docker compose restart rust`
+
+### Current Games
+
+| Game | Route | Description |
+|------|-------|-------------|
+| BIGGER_DICE | `/games/bigger-dice` | Multiplayer dice game with lobby/room system |
 
 ---
 

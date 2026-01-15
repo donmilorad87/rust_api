@@ -244,7 +244,7 @@ export class ForgotPassword {
       this.setButtonLoading(this.resetBtn, false, 'Redirecting...');
 
       setTimeout(() => {
-        window.location.href = '/sign-in';
+        window.location.href = '/sign_in';
       }, 2000);
     } else {
       this.setButtonLoading(this.resetBtn, false, 'Reset Password');

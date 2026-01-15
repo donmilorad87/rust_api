@@ -1,0 +1,113 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            translations.lang_code,\n            translations.title,\n            translations.description,\n            translations.keywords,\n            translations.og_title,\n            translations.og_description,\n            translations.og_image_uuid,\n            translations.og_type,\n            translations.twitter_card,\n            translations.twitter_title,\n            translations.twitter_description,\n            translations.twitter_image_uuid,\n            translations.canonical_url,\n            translations.robots,\n            translations.structured_data,\n            translations.custom_meta\n        FROM page_seo\n        LEFT JOIN page_seo_translations translations\n            ON translations.page_seo_id = page_seo.id\n        WHERE page_seo.route_name = $1 AND translations.lang_code = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "lang_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "keywords",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "og_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "og_description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "og_image_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "og_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "twitter_card",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "twitter_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "twitter_description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "twitter_image_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "canonical_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "robots",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 14,
+        "name": "structured_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "custom_meta",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "eaa500c90c9f6c46a45e4ae3d420422a24c673bd97e0efad2533f73dc783a453"
+}

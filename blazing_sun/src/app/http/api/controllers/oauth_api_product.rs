@@ -6,7 +6,7 @@
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
-use crate::app::db_query::{read as db_read, mutations as db_mutations};
+use crate::app::db_query::{mutations as db_mutations, read as db_read};
 use crate::bootstrap::database::database::AppState;
 
 // ============================================================================
@@ -236,34 +236,34 @@ pub async fn list_enabled_apis(
     };
 
     // Get client's actually granted scopes (from oauth_client_allowed_scopes)
-    let granted_scopes = match db_read::oauth_scope::get_client_allowed_scopes(&db, client.id).await {
+    let granted_scopes = match db_read::oauth_scope::get_client_allowed_scopes(&db, client.id).await
+    {
         Ok(scopes) => scopes,
         Err(_) => Vec::new(),
     };
 
     // Create a set of granted scope IDs for efficient lookup
-    let granted_scope_ids: std::collections::HashSet<i64> = granted_scopes
-        .iter()
-        .map(|s| s.scope_id)
-        .collect();
+    let granted_scope_ids: std::collections::HashSet<i64> =
+        granted_scopes.iter().map(|s| s.scope_id).collect();
 
     // Get scopes for each enabled API, but only include actually granted scopes
     let mut result = Vec::new();
     for api in enabled_apis {
         // Get all scopes for this API product, then filter to only granted ones
-        let scopes = match db_read::oauth_scope::get_scopes_by_api_product(&db, api.api_product_id).await {
-            Ok(scopes) => scopes
-                .into_iter()
-                .filter(|s| granted_scope_ids.contains(&s.id))  // Only include granted scopes
-                .map(|s| ScopeInfo {
-                    id: s.id,
-                    scope_name: s.scope_name,
-                    scope_description: s.scope_description,
-                    sensitive: s.sensitive,
-                })
-                .collect(),
-            Err(_) => Vec::new(),
-        };
+        let scopes =
+            match db_read::oauth_scope::get_scopes_by_api_product(&db, api.api_product_id).await {
+                Ok(scopes) => scopes
+                    .into_iter()
+                    .filter(|s| granted_scope_ids.contains(&s.id)) // Only include granted scopes
+                    .map(|s| ScopeInfo {
+                        id: s.id,
+                        scope_name: s.scope_name,
+                        scope_description: s.scope_description,
+                        sensitive: s.sensitive,
+                    })
+                    .collect(),
+                Err(_) => Vec::new(),
+            };
 
         result.push(ApiProductWithScopes {
             id: api.api_product_id,
@@ -327,26 +327,30 @@ pub async fn enable_api(
     }
 
     // Verify API product exists
-    let api_product = match db_read::oauth_scope::get_api_product_by_id(&db, body.api_product_id).await {
-        Ok(Some(p)) => p,
-        Ok(None) | Err(_) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "error": "api_product_not_found",
-                "message": "API product not found"
-            }));
-        }
-    };
+    let api_product =
+        match db_read::oauth_scope::get_api_product_by_id(&db, body.api_product_id).await {
+            Ok(Some(p)) => p,
+            Ok(None) | Err(_) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "api_product_not_found",
+                    "message": "API product not found"
+                }));
+            }
+        };
 
     // Check if API is already enabled
-    let already_enabled = match db_read::oauth_scope::client_has_api_product(&db, client.id, body.api_product_id).await {
-        Ok(has) => has,
-        Err(_) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "database_error",
-                "message": "Failed to check API status"
-            }));
-        }
-    };
+    let already_enabled =
+        match db_read::oauth_scope::client_has_api_product(&db, client.id, body.api_product_id)
+            .await
+        {
+            Ok(has) => has,
+            Err(_) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "database_error",
+                    "message": "Failed to check API status"
+                }));
+            }
+        };
 
     if already_enabled {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -356,20 +360,24 @@ pub async fn enable_api(
     }
 
     // Get all scopes for this API product
-    let scopes = match db_read::oauth_scope::get_scopes_by_api_product(&db, body.api_product_id).await {
-        Ok(scopes) => scopes,
-        Err(_) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "database_error",
-                "message": "Failed to retrieve API product scopes"
-            }));
-        }
-    };
+    let scopes =
+        match db_read::oauth_scope::get_scopes_by_api_product(&db, body.api_product_id).await {
+            Ok(scopes) => scopes,
+            Err(_) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "database_error",
+                    "message": "Failed to retrieve API product scopes"
+                }));
+            }
+        };
 
     let scope_names: Vec<String> = scopes.iter().map(|s| s.scope_name.clone()).collect();
 
     // Enable the API product (auto-grant all scopes for the API product)
-    if let Err(_) = db_mutations::oauth_scope::enable_client_api_product(&db, client.id, body.api_product_id).await {
+    if let Err(_) =
+        db_mutations::oauth_scope::enable_client_api_product(&db, client.id, body.api_product_id)
+            .await
+    {
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "database_error",
             "message": "Failed to enable API product"
@@ -377,7 +385,9 @@ pub async fn enable_api(
     }
 
     let scope_ids: Vec<i64> = scopes.iter().map(|s| s.id).collect();
-    if let Err(_) = db_mutations::oauth_scope::add_client_scopes_batch(&db, client.id, &scope_ids).await {
+    if let Err(_) =
+        db_mutations::oauth_scope::add_client_scopes_batch(&db, client.id, &scope_ids).await
+    {
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "database_error",
             "message": "Failed to grant API product scopes"
@@ -435,15 +445,16 @@ pub async fn disable_api(
     }
 
     // Verify API product exists and is enabled
-    let is_enabled = match db_read::oauth_scope::client_has_api_product(&db, client.id, api_product_id).await {
-        Ok(has) => has,
-        Err(_) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "database_error",
-                "message": "Failed to check API status"
-            }));
-        }
-    };
+    let is_enabled =
+        match db_read::oauth_scope::client_has_api_product(&db, client.id, api_product_id).await {
+            Ok(has) => has,
+            Err(_) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "database_error",
+                    "message": "Failed to check API status"
+                }));
+            }
+        };
 
     if !is_enabled {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -470,7 +481,9 @@ pub async fn disable_api(
         .unzip();
 
     // Disable the API product
-    if let Err(_) = db_mutations::oauth_scope::disable_client_api_product(&db, client.id, api_product_id).await {
+    if let Err(_) =
+        db_mutations::oauth_scope::disable_client_api_product(&db, client.id, api_product_id).await
+    {
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "database_error",
             "message": "Failed to disable API product"
@@ -557,15 +570,16 @@ pub async fn grant_scope(
     };
 
     // Verify the scope's API product is enabled for this client
-    let api_enabled = match db_read::oauth_scope::client_has_api_product(&db, client.id, api_product_id).await {
-        Ok(has) => has,
-        Err(_) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "database_error",
-                "message": "Failed to check API status"
-            }));
-        }
-    };
+    let api_enabled =
+        match db_read::oauth_scope::client_has_api_product(&db, client.id, api_product_id).await {
+            Ok(has) => has,
+            Err(_) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "database_error",
+                    "message": "Failed to check API status"
+                }));
+            }
+        };
 
     if !api_enabled {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -575,15 +589,16 @@ pub async fn grant_scope(
     }
 
     // Check if scope is already granted
-    let already_granted = match db_read::oauth_scope::client_has_scope(&db, client.id, body.scope_id).await {
-        Ok(has) => has,
-        Err(_) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "database_error",
-                "message": "Failed to check scope status"
-            }));
-        }
-    };
+    let already_granted =
+        match db_read::oauth_scope::client_has_scope(&db, client.id, body.scope_id).await {
+            Ok(has) => has,
+            Err(_) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "database_error",
+                    "message": "Failed to check scope status"
+                }));
+            }
+        };
 
     if already_granted {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -593,7 +608,8 @@ pub async fn grant_scope(
     }
 
     // Grant the scope
-    if let Err(_) = db_mutations::oauth_scope::add_client_scope(&db, client.id, body.scope_id).await {
+    if let Err(_) = db_mutations::oauth_scope::add_client_scope(&db, client.id, body.scope_id).await
+    {
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "database_error",
             "message": "Failed to grant scope"

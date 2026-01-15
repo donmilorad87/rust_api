@@ -1,0 +1,7 @@
+{
+  "SIGN_UP": {
+    "singular": "Registracija",
+    "plural": "Registracije",
+    "context": "Button label for sign up/registration"
+  }
+}

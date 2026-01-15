@@ -1,6 +1,6 @@
 ---
 name: update_readme_and_claude_mds
-description: Scans and documents the entire project infrastructure, updating README.md and CLAUDE.md files.
+description: Scans and documents the entire project infrastructure, updating Documentation (/home/milner/Desktop/rust/Documentation) and CLAUDE.md files.
 ---
 
 # Document Infrastructure Command
@@ -36,7 +36,7 @@ You will perform a comprehensive documentation update for this project. Follow t
 
 ### Phase 2: Update Root Documentation
 
-5. **Update README.md** (for humans):
+5. **Update /home/milner/Desktop/rust/Documentation (for humans):
    - Write a clear project overview
    - Include a visual architecture diagram (ASCII)
    - Document all services with their IPs, ports, and purposes
@@ -54,7 +54,7 @@ You will perform a comprehensive documentation update for this project. Follow t
    - Include common issues and solutions
    - Document file locations and purposes
    - Be very detailed so future AI sessions understand the infrastructure
-   - Note: For blazing_sun folder, just write 2-3 sentences saying it contains the application code and has its own README.md and CLAUDE.md
+   - Note: For blazing_sun folder, just write 2-3 sentences saying it contains the application code and has its own Documentation inside of /home/milner/Desktop/rust/Documentation and CLAUDE.md
 
 ### Phase 3: Application Documentation (blazing_sun/)
 
@@ -66,7 +66,7 @@ You will perform a comprehensive documentation update for this project. Follow t
    - Understand the database layer
    - Analyze event system (Kafka) and job system (RabbitMQ)
 
-8. **Update blazing_sun/README.md** (for humans):
+8. **Update /home/milner/Desktop/rust/Documentation (for humans):
    - Write project overview
    - Document tech stack with crate names
    - Include complete folder/file tree structure

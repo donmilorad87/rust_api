@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE competitions\n        SET winner_gallery_id = $1, winner_user_id = $2, awarded_at = NOW()\n        WHERE id = $3\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aa533b4004799a74cc12ead5869d0195e88fbef38c6805be1bade17f4110c99e"
+}

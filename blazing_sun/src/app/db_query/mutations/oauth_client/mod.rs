@@ -248,12 +248,9 @@ pub async fn activate(db: &Pool<Postgres>, client_db_id: i64) -> Result<(), sqlx
 
 /// Delete OAuth client (hard delete)
 pub async fn delete(db: &Pool<Postgres>, client_db_id: i64) -> Result<(), sqlx::Error> {
-    sqlx::query!(
-        r#"DELETE FROM oauth_clients WHERE id = $1"#,
-        client_db_id
-    )
-    .execute(db)
-    .await?;
+    sqlx::query!(r#"DELETE FROM oauth_clients WHERE id = $1"#, client_db_id)
+        .execute(db)
+        .await?;
 
     Ok(())
 }

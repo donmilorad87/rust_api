@@ -59,11 +59,7 @@ impl AuthEventHandler {
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
 
-        let ip_address = event
-            .metadata
-            .ip_address
-            .as_deref()
-            .unwrap_or("unknown");
+        let ip_address = event.metadata.ip_address.as_deref().unwrap_or("unknown");
 
         info!(
             event_id = %event.id,
@@ -94,11 +90,7 @@ impl AuthEventHandler {
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
 
-        let ip_address = event
-            .metadata
-            .ip_address
-            .as_deref()
-            .unwrap_or("unknown");
+        let ip_address = event.metadata.ip_address.as_deref().unwrap_or("unknown");
 
         warn!(
             event_id = %event.id,
@@ -242,11 +234,7 @@ impl EventHandler for SecurityMonitorHandler {
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown");
 
-            let ip_address = event
-                .metadata
-                .ip_address
-                .as_deref()
-                .unwrap_or("unknown");
+            let ip_address = event.metadata.ip_address.as_deref().unwrap_or("unknown");
 
             // In a real implementation:
             // 1. Increment failed attempt counter in Redis

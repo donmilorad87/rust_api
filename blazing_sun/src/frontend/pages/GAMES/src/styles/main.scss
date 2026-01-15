@@ -1,0 +1,14 @@
+/**
+ * GAMES Page Main Stylesheet
+ *
+ * Entry point for all GAMES page styles
+ */
+
+// Import partials
+@use 'variables';
+@use 'games';
+
+// Global resets and base styles specific to games page
+* {
+  box-sizing: border-box;
+}

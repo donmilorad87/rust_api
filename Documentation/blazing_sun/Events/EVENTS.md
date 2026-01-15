@@ -135,6 +135,8 @@ impl KafkaConfig {
 | `category.events` | Category management | created, updated, deleted |
 | `system.events` | System-level events | health_check, error, warning |
 | `events.dead_letter` | Failed events | All types (for reprocessing) |
+| `checkout.commands` | Checkout commands (raw JSON) | create_session |
+| `checkout.events` | Checkout events (raw JSON) | session_created, session_failed, payment_succeeded |
 
 ### Topics Module (`bootstrap/events/topics.rs`)
 
@@ -146,6 +148,8 @@ pub mod topic {
     pub const CATEGORY_EVENTS: &str = "category.events";
     pub const SYSTEM_EVENTS: &str = "system.events";
     pub const DEAD_LETTER: &str = "events.dead_letter";
+    pub const CHECKOUT_COMMANDS: &str = "checkout.commands";
+    pub const CHECKOUT_EVENTS: &str = "checkout.events";
 }
 
 pub mod consumer_groups {

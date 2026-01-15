@@ -143,7 +143,8 @@ impl StorageDriver for LocalStorageDriver {
         visibility: Visibility,
     ) -> Result<StoredFile, StorageError> {
         // Delegate to put_with_subfolder with empty subfolder
-        self.put_with_subfolder(data, filename, visibility, "").await
+        self.put_with_subfolder(data, filename, visibility, "")
+            .await
     }
 
     async fn put_with_subfolder(
@@ -202,7 +203,10 @@ impl StorageDriver for LocalStorageDriver {
 
         info!(
             "File stored (local): {} -> {} ({} bytes, {})",
-            filename, storage_path, data.len(), mime_type
+            filename,
+            storage_path,
+            data.len(),
+            mime_type
         );
 
         Ok(StoredFile {

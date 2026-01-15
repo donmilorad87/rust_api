@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM schema_entities\n        WHERE lang_code = $1 AND schema_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "507bdfacea53f2d7fe4ab3d0bc0bb4ceaed46e2361af3b35ad0dc1a870420146"
+}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Competitions - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/COMPETITIONS/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main id="competitionsPage" class="competitions-page" data-is-admin="{{ is_admin }}" data-is-logged="{{ is_logged }}">
+    <section class="competitions-hero">
+        <div>
+            <h1 class="competitions-hero__title">Competitions</h1>
+            <p class="competitions-hero__description">
+                Submit your geo galleries, earn likes from the community, and receive professional votes from admins.
+                Winners take home 100 EUR in credits.
+            </p>
+        </div>
+        {% if is_admin %}
+        <div class="competition-create">
+            <form id="competitionCreateForm" class="competition-create__form">
+                <h3>Create a competition</h3>
+                <label>
+                    Title
+                    <input type="text" name="title" required maxlength="255">
+                </label>
+                <label>
+                    Description
+                    <textarea name="description" rows="3" required></textarea>
+                </label>
+                <label>
+                    Start date
+                    <input type="datetime-local" name="start_date" required>
+                </label>
+                <label>
+                    End date
+                    <input type="datetime-local" name="end_date" required>
+                </label>
+                <label>
+                    Rules
+                    <textarea name="rules" rows="3" required></textarea>
+                </label>
+                <button type="submit">Create competition</button>
+            </form>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="competitions-grid" id="competitionsList"></section>
+
+    <div id="competitionsEmptyState">
+        No competitions yet. Check back soon for new challenges.
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/COMPETITIONS/app.js?v={{ assets_version }}"></script>
+{% endblock %}

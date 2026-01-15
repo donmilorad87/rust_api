@@ -2,7 +2,7 @@
 {# Include this in any page with: {% include "partials/_navbar.html" %} #}
 
 <nav class="navbar" role="navigation" aria-label="Main navigation">
-    <a href="/" class="navbar__logo" aria-label="{{ site_name | default(value='Blazing Sun') }} - Go to homepage">
+    <a href="{{ route(name='web.home', lang=language) | default(value='/') }}" class="navbar__logo" aria-label="{{ site_name | default(value='Blazing Sun') }} - Go to homepage">
         {% if logo_url %}
         <img src="{{ logo_url }}" alt="{{ site_name | default(value='Blazing Sun') }} logo" class="navbar__logo-image">
         {% else %}
@@ -26,21 +26,28 @@
     <div class="navbar__right">
         <div class="navbar__links">
             {% if is_logged %}
-            <a href="{{ route(name='web.profile') | default(value='/profile') }}" class="navbar__link">Profile</a>
-            <a href="{{ route(name='web.galleries') | default(value='/galleries') }}" class="navbar__link">Galleries</a>
+            <a href="{{ route(name='web.geo_galleries', lang=language) | default(value='/geo_galleries') }}" class="navbar__link">Geo Galleries</a>
+            <a href="{{ route(name='web.competitions', lang=language) | default(value='/competitions') }}" class="navbar__link">Competitions</a>
+            <a href="{{ route(name='web.profile', lang=language) | default(value='/profile') }}" class="navbar__link">Profile</a>
+            <a href="{{ route(name='web.balance', lang=language) | default(value='/balance') }}" class="navbar__link">Balance</a>
+            <a href="{{ route(name='web.galleries', lang=language) | default(value='/galleries') }}" class="navbar__link">Galleries</a>
+            <a href="{{ route(name='web.games', lang=language) | default(value='/games') }}" class="navbar__link">Games</a>
             {% if is_admin %}
-            <a href="{{ route(name='admin.uploads') | default(value='/admin/uploads') }}" class="navbar__link">Uploads</a>
-            <a href="{{ route(name='admin.theme') | default(value='/admin/theme') }}" class="navbar__link">Theme</a>
+            <a href="{{ route(name='admin.uploads', lang=language) | default(value='/admin/uploads') }}" class="navbar__link">Uploads</a>
+            <a href="{{ route(name='admin.theme', lang=language) | default(value='/admin/theme') }}" class="navbar__link">Theme</a>
             {% endif %}
             {% if is_super_admin %}
-            <a href="{{ route(name='superadmin.users') | default(value='/superadmin/users') }}" class="navbar__link">Users</a>
+            <a href="{{ route(name='superadmin.users', lang=language) | default(value='/superadmin/users') }}" class="navbar__link">Users</a>
             {% endif %}
-            <a href="{{ route(name='web.logout') | default(value='/logout') }}" class="navbar__link">Sign Out</a>
+            <a href="{{ route(name='web.logout', lang=language) | default(value='/logout') }}" class="navbar__link">Sign Out</a>
             {% else %}
-            <a href="{{ route(name='web.sign_up') | default(value='/sign-up') }}" class="navbar__link">Sign Up</a>
-            <a href="{{ route(name='web.sign_in') | default(value='/sign-in') }}" class="navbar__link">Sign In</a>
+            <a href="{{ route(name='web.sign_up', lang=language) | default(value='/sign_up') }}" class="navbar__link">Sign Up</a>
+            <a href="{{ route(name='web.sign_in', lang=language) | default(value='/sign_in') }}" class="navbar__link">Sign In</a>
             {% endif %}
         </div>
+
+        {# Language Dropdown #}
+        <div id="languageDropdown" class="language-dropdown language-dropdown--compact"></div>
 
         <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle dark/light mode">
             {# Sliding indicator - moves to active icon #}

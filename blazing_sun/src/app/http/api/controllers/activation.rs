@@ -10,7 +10,7 @@
 //! - POST /change-password: Request password change (authenticated)
 //! - POST /verify-password-change: Verify and complete password change (authenticated)
 
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use validator::Validate;
@@ -163,8 +163,9 @@ impl ActivationController {
         let raw = body.into_inner();
 
         let Some(code) = raw.code else {
-            return HttpResponse::BadRequest()
-                .json(MissingFieldsResponse::new(vec!["code is required".to_string()]));
+            return HttpResponse::BadRequest().json(MissingFieldsResponse::new(vec![
+                "code is required".to_string(),
+            ]));
         };
 
         if code.len() != 20 {
@@ -185,14 +186,14 @@ impl ActivationController {
 
         // Validate the hash
         if !db_activation_hash::is_valid(&hash_record) {
-            return HttpResponse::BadRequest()
-                .json(BaseResponse::error("Activation code has expired or already been used"));
+            return HttpResponse::BadRequest().json(BaseResponse::error(
+                "Activation code has expired or already been used",
+            ));
         }
 
         // Check hash type
         if hash_record.hash_type != "activation" {
-            return HttpResponse::BadRequest()
-                .json(BaseResponse::error("Invalid activation code"));
+            return HttpResponse::BadRequest().json(BaseResponse::error("Invalid activation code"));
         }
 
         // Activate the user
@@ -249,8 +250,9 @@ impl ActivationController {
         let return_code_for_testing = raw.return_code_for_testing;
 
         let Some(email) = raw.email else {
-            return HttpResponse::BadRequest()
-                .json(MissingFieldsResponse::new(vec!["email is required".to_string()]));
+            return HttpResponse::BadRequest().json(MissingFieldsResponse::new(vec![
+                "email is required".to_string(),
+            ]));
         };
 
         let db = state.db.lock().await;
@@ -260,8 +262,9 @@ impl ActivationController {
             Ok(user) => user,
             Err(_) => {
                 // Don't reveal if email exists
-                return HttpResponse::Ok()
-                    .json(BaseResponse::success("If the email exists, a reset code has been sent"));
+                return HttpResponse::Ok().json(BaseResponse::success(
+                    "If the email exists, a reset code has been sent",
+                ));
             }
         };
 
@@ -303,8 +306,9 @@ impl ActivationController {
             });
         }
 
-        HttpResponse::Ok()
-            .json(BaseResponse::success("If the email exists, a reset code has been sent"))
+        HttpResponse::Ok().json(BaseResponse::success(
+            "If the email exists, a reset code has been sent",
+        ))
     }
 
     /// POST /verify-hash - Verify hash code and get temporary token
@@ -325,8 +329,9 @@ impl ActivationController {
         let raw = body.into_inner();
 
         let Some(code) = raw.code else {
-            return HttpResponse::BadRequest()
-                .json(MissingFieldsResponse::new(vec!["code is required".to_string()]));
+            return HttpResponse::BadRequest().json(MissingFieldsResponse::new(vec![
+                "code is required".to_string(),
+            ]));
         };
 
         if code.len() != 20 {
@@ -522,15 +527,19 @@ impl ActivationController {
         let db = state.db.lock().await;
 
         // Find the hash by hash and user_id
-        let hash_record =
-            match db_activation_hash::find_by_hash_and_user(&db, &params.hash, params.user_id).await
-            {
-                Ok(record) => record,
-                Err(_) => {
-                    return HttpResponse::NotFound()
-                        .json(BaseResponse::error("Invalid or expired link"));
-                }
-            };
+        let hash_record = match db_activation_hash::find_by_hash_and_user(
+            &db,
+            &params.hash,
+            params.user_id,
+        )
+        .await
+        {
+            Ok(record) => record,
+            Err(_) => {
+                return HttpResponse::NotFound()
+                    .json(BaseResponse::error("Invalid or expired link"));
+            }
+        };
 
         // Validate the hash
         if !db_activation_hash::is_valid(&hash_record) {
@@ -737,7 +746,9 @@ impl ActivationController {
             }
         }
 
-        HttpResponse::Ok().json(BaseResponse::success("Password change code sent to your email"))
+        HttpResponse::Ok().json(BaseResponse::success(
+            "Password change code sent to your email",
+        ))
     }
 
     /// POST /change-password - Direct password change for logged-in user
@@ -949,14 +960,14 @@ impl ActivationController {
         let db = state.db.lock().await;
 
         // Find the hash by hash and user_id
-        let hash_record =
-            match db_activation_hash::find_by_hash_and_user(&db, &code, user_id).await {
-                Ok(record) => record,
-                Err(_) => {
-                    return HttpResponse::NotFound()
-                        .json(BaseResponse::error("Invalid or expired code"));
-                }
-            };
+        let hash_record = match db_activation_hash::find_by_hash_and_user(&db, &code, user_id).await
+        {
+            Ok(record) => record,
+            Err(_) => {
+                return HttpResponse::NotFound()
+                    .json(BaseResponse::error("Invalid or expired code"));
+            }
+        };
 
         // Validate the hash
         if !db_activation_hash::is_valid(&hash_record) {

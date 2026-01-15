@@ -186,7 +186,7 @@ export class SignUp {
       this.setButtonLoading(submitBtn, false, 'Activated!');
 
       setTimeout(() => {
-        window.location.href = '/sign-in';
+        window.location.href = '/sign_in';
       }, 2000);
     } else {
       this.setButtonLoading(submitBtn, false, 'Activate Account');

@@ -71,9 +71,18 @@ pub struct UploadResult {
 /// Upload error types
 #[derive(Debug)]
 pub enum UploadError {
-    FileTooLarge { max_size: u64, actual_size: u64 },
-    InvalidExtension { extension: String, allowed: Vec<String> },
-    TooManyFiles { max_files: usize, actual_files: usize },
+    FileTooLarge {
+        max_size: u64,
+        actual_size: u64,
+    },
+    InvalidExtension {
+        extension: String,
+        allowed: Vec<String>,
+    },
+    TooManyFiles {
+        max_files: usize,
+        actual_files: usize,
+    },
     IoError(std::io::Error),
     InvalidFileName,
     StoragePathError,
@@ -82,7 +91,10 @@ pub enum UploadError {
 impl std::fmt::Display for UploadError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UploadError::FileTooLarge { max_size, actual_size } => {
+            UploadError::FileTooLarge {
+                max_size,
+                actual_size,
+            } => {
                 let max_mb = *max_size as f64 / 1024.0 / 1024.0;
                 let actual_mb = *actual_size as f64 / 1024.0 / 1024.0;
                 write!(
@@ -99,12 +111,11 @@ impl std::fmt::Display for UploadError {
                     allowed.join(", ")
                 )
             }
-            UploadError::TooManyFiles { max_files, actual_files } => {
-                write!(
-                    f,
-                    "Too many files: {} (max: {})",
-                    actual_files, max_files
-                )
+            UploadError::TooManyFiles {
+                max_files,
+                actual_files,
+            } => {
+                write!(f, "Too many files: {} (max: {})", actual_files, max_files)
             }
             UploadError::IoError(e) => write!(f, "IO error: {}", e),
             UploadError::InvalidFileName => write!(f, "Invalid file name"),
@@ -273,7 +284,9 @@ pub async fn save_file_with_subfolder(
 
     // Build relative storage path (include subfolder)
     let relative_path = match subfolder {
-        Some(sub) if !sub.is_empty() => format!("{}/{}/{}", storage_type.as_str(), sub, stored_name),
+        Some(sub) if !sub.is_empty() => {
+            format!("{}/{}/{}", storage_type.as_str(), sub, stored_name)
+        }
         _ => format!("{}/{}", storage_type.as_str(), stored_name),
     };
 
@@ -329,7 +342,10 @@ pub async fn delete_file(storage_path: &str) -> Result<bool, UploadError> {
             let alt_full_path = config.base_path.join(&alt_path);
             if alt_full_path.exists() {
                 fs::remove_file(&alt_full_path).await?;
-                info!("File deleted from alternative location: {} (original path was {})", alt_path, storage_path);
+                info!(
+                    "File deleted from alternative location: {} (original path was {})",
+                    alt_path, storage_path
+                );
                 return Ok(true);
             }
         }
@@ -376,7 +392,10 @@ pub async fn read_file(storage_path: &str) -> Result<Vec<u8>, UploadError> {
 
             let alt_full_path = config.base_path.join(&alt_path);
             if alt_full_path.exists() {
-                info!("File read from alternative location: {} (original path was {})", alt_path, storage_path);
+                info!(
+                    "File read from alternative location: {} (original path was {})",
+                    alt_path, storage_path
+                );
                 let data = fs::read(&alt_full_path).await?;
                 return Ok(data);
             }
@@ -471,7 +490,11 @@ pub mod chunked {
     }
 
     /// Add a chunk to an upload session
-    pub async fn add_chunk(session_uuid: &Uuid, chunk_index: u32, data: Vec<u8>) -> Result<bool, String> {
+    pub async fn add_chunk(
+        session_uuid: &Uuid,
+        chunk_index: u32,
+        data: Vec<u8>,
+    ) -> Result<bool, String> {
         let mut sessions = CHUNKED_SESSIONS.write().await;
 
         let session = sessions
@@ -522,9 +545,14 @@ pub mod chunked {
         }
 
         // Save the combined file
-        save_file(&combined_data, &session.original_name, session.storage_type, None)
-            .await
-            .map_err(|e| e.to_string())
+        save_file(
+            &combined_data,
+            &session.original_name,
+            session.storage_type,
+            None,
+        )
+        .await
+        .map_err(|e| e.to_string())
     }
 
     /// Cancel a chunked upload session

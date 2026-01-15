@@ -7,6 +7,9 @@ import { ThemeConfig } from './ThemeConfig.js';
 import { ColorPicker } from './components/ColorPicker.js';
 import { SizePicker } from './components/SizePicker.js';
 import { ImageSelector } from './components/ImageSelector.js';
+import { SchemaSelector } from './components/SchemaSelector.js';
+import { SchemaFormBuilder } from './components/SchemaFormBuilder.js';
+import { PageSchemaAssignment } from './components/PageSchemaAssignment.js';
 import SchemaDefinitions from './SchemaDefinitions.js';
 
 /**
@@ -52,7 +55,7 @@ function getAuthToken() {
 /**
  * Initialize all theme configuration components
  */
-function initThemePage() {
+async function initThemePage() {
   const baseUrl = window.BASE_URL || '';
 
   // Initialize ThemeConfig (main controller)
@@ -109,9 +112,13 @@ function initThemePage() {
     // Schema editor modal
     schemaModal: document.getElementById('schemaModal'),
     schemaModalTitle: document.getElementById('schemaModalTitle'),
-    schemaTypeSelect: document.getElementById('schemaTypeSelect'),
-    schemaTypeDescription: document.getElementById('schemaTypeDescription'),
-    schemaFields: document.getElementById('schemaFields'),
+    schemaModalTabs: document.getElementById('schemaModalTabs'),
+    schemaCreatePanel: document.getElementById('schemaCreatePanel'),
+    schemaAssignPanel: document.getElementById('schemaAssignPanel'),
+    schemaAssignmentContainer: document.getElementById('schemaAssignmentContainer'),
+    schemaSelectorContainer: document.getElementById('schemaSelectorContainer'),
+    schemaFormContainer: document.getElementById('schemaFormContainer'),
+    schemaFormBuilderContainer: document.getElementById('schemaFormBuilderContainer'),
     schemaPreview: document.getElementById('schemaPreview'),
     schemaPreviewCode: document.getElementById('schemaPreviewCode'),
     saveSchemaBtn: document.getElementById('saveSchemaBtn'),
@@ -119,13 +126,55 @@ function initThemePage() {
     addSchemaBtn: document.getElementById('addSchemaBtn'),
     schemasList: document.getElementById('schemasList'),
     schemasEmpty: document.getElementById('schemasEmpty'),
+    assignedSchemasList: document.getElementById('assignedSchemasList'),
+    assignedSchemasEmpty: document.getElementById('assignedSchemasEmpty'),
+
+    // Localization management
+    languageForm: document.getElementById('languageForm'),
+    languageResetBtn: document.getElementById('languageResetBtn'),
+    languageIconFile: document.getElementById('languageIconFile'),
+    languageIconPreview: document.getElementById('languageIconPreview'),
+    languageIconClear: document.getElementById('languageIconClear'),
+    languagesTableBody: document.getElementById('languagesTableBody'),
+    localeForm: document.getElementById('localeForm'),
+    localeResetBtn: document.getElementById('localeResetBtn'),
+    localeLanguageSelect: document.getElementById('localeLanguageSelect'),
+    localesTableBody: document.getElementById('localesTableBody'),
+    localizationForm: document.getElementById('localizationForm'),
+    localizationResetBtn: document.getElementById('localizationResetBtn'),
+    localizationNewBtn: document.getElementById('localizationNewBtn'),
+    localizationKeysTableBody: document.getElementById('localizationKeysTableBody'),
+    translationInputs: document.getElementById('translationInputs'),
+    localizationModal: document.getElementById('localizationModal'),
+    localizationModalTitle: document.getElementById('localizationModalTitle'),
+    localizationLocaleTabs: document.getElementById('localizationLocaleTabs'),
+    localizationCancelBtn: document.getElementById('localizationCancelBtn'),
+    seoLanguageTabs: document.getElementById('seoLanguageTabs'),
+    seoAddPageBtn: document.getElementById('seoAddPageBtn'),
+    seoPageModal: document.getElementById('seoPageModal'),
+    seoPageModalTitle: document.getElementById('seoPageModalTitle'),
+    seoPageForm: document.getElementById('seoPageForm'),
+    seoPageRouteName: document.getElementById('seoPageRouteName'),
+    seoPageLabel: document.getElementById('seoPageLabel'),
+    seoPageSaveBtn: document.getElementById('seoPageSaveBtn'),
+    seoPageCancelBtn: document.getElementById('seoPageCancelBtn'),
+    hreflangForm: document.getElementById('hreflangForm'),
+    hreflangIdInput: document.getElementById('hreflangId'),
+    hreflangCodeInput: document.getElementById('hreflangCode'),
+    hreflangUrlInput: document.getElementById('hreflangUrl'),
+    hreflangDefaultInput: document.getElementById('hreflangDefault'),
+    hreflangCancelBtn: document.getElementById('hreflangCancelBtn'),
+    hreflangTableBody: document.getElementById('hreflangTableBody'),
 
     // Component factories
     ColorPicker,
     SizePicker,
     ImageSelector,
+    SchemaSelector,
+    SchemaFormBuilder,
+    PageSchemaAssignment,
 
-    // Schema definitions
+    // Schema definitions (fallback)
     SchemaDefinitions
   });
 
@@ -135,7 +184,9 @@ function initThemePage() {
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initThemePage);
+  document.addEventListener('DOMContentLoaded', () => {
+    initThemePage();
+  });
 } else {
   initThemePage();
 }

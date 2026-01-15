@@ -350,10 +350,7 @@ pub async fn deactivate_api_product(
 }
 
 /// Activate an API product (admin only)
-pub async fn activate_api_product(
-    db: &Pool<Postgres>,
-    product_id: i64,
-) -> Result<(), sqlx::Error> {
+pub async fn activate_api_product(db: &Pool<Postgres>, product_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         UPDATE oauth_api_products

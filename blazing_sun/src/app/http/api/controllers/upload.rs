@@ -19,20 +19,20 @@ use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::app::db_query::read::image_variant;
 use crate::app::http::api::controllers::auth::Claims;
 use crate::app::http::api::controllers::responses::BaseResponse;
 use crate::app::mq::jobs::delete_upload::DeleteUploadParams;
 use crate::app::mq::jobs::resize_image::ResizeImageParams;
-use crate::app::db_query::read::image_variant;
 use crate::bootstrap::includes::controllers::uploads::{self, chunked, StorageType};
 use crate::bootstrap::includes::image::is_supported_image;
 use crate::bootstrap::middleware::controllers::permission::is_admin;
 use crate::bootstrap::mq::{self, JobOptions, JobStatus};
+use crate::config::upload::UploadConfig;
 use crate::database::mutations::upload as db_upload_mutations;
 use crate::database::mutations::user as db_user_mutations;
 use crate::database::read::upload as db_upload_read;
 use crate::database::AppState;
-use crate::config::upload::UploadConfig;
 
 /// Upload Controller
 pub struct UploadController;
@@ -76,19 +76,18 @@ fn error_response(message: String) -> serde_json::Value {
 
 /// Helper to get user_id from request (returns error response if not authenticated)
 fn get_user_id(req: &HttpRequest) -> Result<i64, HttpResponse> {
-    req.extensions()
-        .get::<i64>()
-        .copied()
-        .ok_or_else(|| {
-            HttpResponse::Unauthorized()
-                .json(BaseResponse::error("Authentication required"))
-        })
+    req.extensions().get::<i64>().copied().ok_or_else(|| {
+        HttpResponse::Unauthorized().json(BaseResponse::error("Authentication required"))
+    })
 }
 
 /// Helper to get user_id from request extensions OR auth_token cookie
 /// This is used for endpoints that need to work with both API calls (JWT header)
 /// and browser requests (cookie, e.g., <img src="...">)
-fn get_user_id_with_cookie_fallback(req: &HttpRequest, state: &web::Data<AppState>) -> Result<i64, HttpResponse> {
+fn get_user_id_with_cookie_fallback(
+    req: &HttpRequest,
+    state: &web::Data<AppState>,
+) -> Result<i64, HttpResponse> {
     // First, try to get from request extensions (set by JWT middleware)
     if let Some(user_id) = req.extensions().get::<i64>().copied() {
         return Ok(user_id);
@@ -104,8 +103,7 @@ fn get_user_id_with_cookie_fallback(req: &HttpRequest, state: &web::Data<AppStat
         }
     }
 
-    Err(HttpResponse::Unauthorized()
-        .json(BaseResponse::error("Authentication required")))
+    Err(HttpResponse::Unauthorized().json(BaseResponse::error("Authentication required")))
 }
 
 impl UploadController {
@@ -189,14 +187,16 @@ impl UploadController {
         let data = match file_data {
             Some(d) if !d.is_empty() => d,
             _ => {
-                return HttpResponse::BadRequest().json(BaseResponse::error("No file data received"));
+                return HttpResponse::BadRequest()
+                    .json(BaseResponse::error("No file data received"));
             }
         };
 
         let original_name = match filename {
             Some(n) if !n.is_empty() => n,
             _ => {
-                return HttpResponse::BadRequest().json(BaseResponse::error("No filename provided"));
+                return HttpResponse::BadRequest()
+                    .json(BaseResponse::error("No filename provided"));
             }
         };
 
@@ -204,8 +204,7 @@ impl UploadController {
         let result = match uploads::save_file(&data, &original_name, storage_type, None).await {
             Ok(r) => r,
             Err(e) => {
-                return HttpResponse::BadRequest()
-                    .json(error_response(format!("{}", e)));
+                return HttpResponse::BadRequest().json(error_response(format!("{}", e)));
             }
         };
 
@@ -244,8 +243,12 @@ impl UploadController {
                 let storage_base = UploadConfig::storage_path();
                 let full_file_path = format!("{}/{}", storage_base, result.storage_path);
 
-                tracing::info!("Enqueueing resize job: storage_base={}, storage_path={}, full_file_path={}",
-                    storage_base, result.storage_path, full_file_path);
+                tracing::info!(
+                    "Enqueueing resize job: storage_base={}, storage_path={}, full_file_path={}",
+                    storage_base,
+                    result.storage_path,
+                    full_file_path
+                );
 
                 let resize_params = ResizeImageParams {
                     upload_id,
@@ -256,17 +259,10 @@ impl UploadController {
                     file_path: full_file_path,
                 };
 
-                let options = JobOptions::new()
-                    .priority(5)
-                    .fault_tolerance(3);
+                let options = JobOptions::new().priority(5).fault_tolerance(3);
 
-                if let Err(e) = mq::enqueue_job_dyn(
-                    mq,
-                    "resize_image",
-                    &resize_params,
-                    options,
-                )
-                .await
+                if let Err(e) =
+                    mq::enqueue_job_dyn(mq, "resize_image", &resize_params, options).await
                 {
                     tracing::warn!(
                         "Failed to enqueue resize job for upload {}: {}",
@@ -413,7 +409,8 @@ impl UploadController {
                                             // storage_path in DB is relative (e.g., "public/filename.jpg")
                                             // UPLOAD_STORAGE_PATH contains full path (e.g., "src/storage/app")
                                             let storage_base = UploadConfig::storage_path();
-                                            let full_file_path = format!("{}/{}", storage_base, result.storage_path);
+                                            let full_file_path =
+                                                format!("{}/{}", storage_base, result.storage_path);
 
                                             tracing::info!("Enqueueing resize job (multiple): storage_base={}, storage_path={}, full_file_path={}",
                                                 storage_base, result.storage_path, full_file_path);
@@ -427,9 +424,8 @@ impl UploadController {
                                                 file_path: full_file_path,
                                             };
 
-                                            let options = JobOptions::new()
-                                                .priority(5)
-                                                .fault_tolerance(3);
+                                            let options =
+                                                JobOptions::new().priority(5).fault_tolerance(3);
 
                                             if let Err(e) = mq::enqueue_job_dyn(
                                                 mq,
@@ -526,7 +522,10 @@ impl UploadController {
                     // Extract full path by replacing the original filename with variant filename
                     let original_path = std::path::Path::new(&upload.storage_path);
                     if let Some(parent) = original_path.parent() {
-                        parent.join(&variant.stored_name).to_string_lossy().to_string()
+                        parent
+                            .join(&variant.stored_name)
+                            .to_string_lossy()
+                            .to_string()
                     } else {
                         variant.storage_path
                     }
@@ -550,7 +549,10 @@ impl UploadController {
             Ok(d) => d,
             Err(_) => {
                 // If original file doesn't exist, try to serve a variant (e.g., _medium)
-                tracing::warn!("Original file not found at {}, trying variant", storage_path);
+                tracing::warn!(
+                    "Original file not found at {}, trying variant",
+                    storage_path
+                );
 
                 // Try common variants in order of preference: medium, large, small, thumb
                 let variants_to_try = vec!["_medium", "_large", "_small", "_thumb"];
@@ -559,7 +561,12 @@ impl UploadController {
                 for variant_suffix in variants_to_try {
                     // Insert variant suffix before file extension
                     let path_with_variant = if let Some(dot_pos) = storage_path.rfind('.') {
-                        format!("{}{}{}", &storage_path[..dot_pos], variant_suffix, &storage_path[dot_pos..])
+                        format!(
+                            "{}{}{}",
+                            &storage_path[..dot_pos],
+                            variant_suffix,
+                            &storage_path[dot_pos..]
+                        )
                     } else {
                         format!("{}{}", storage_path, variant_suffix)
                     };
@@ -635,7 +642,10 @@ impl UploadController {
                     // Extract full path by replacing the original filename with variant filename
                     let original_path = std::path::Path::new(&upload.storage_path);
                     if let Some(parent) = original_path.parent() {
-                        parent.join(&variant.stored_name).to_string_lossy().to_string()
+                        parent
+                            .join(&variant.stored_name)
+                            .to_string_lossy()
+                            .to_string()
                     } else {
                         variant.storage_path
                     }
@@ -711,8 +721,9 @@ impl UploadController {
 
         // Check ownership (admins can delete any upload)
         if upload.user_id != Some(user_id) && !can_admin_delete {
-            return HttpResponse::Forbidden()
-                .json(BaseResponse::error("You don't have permission to delete this file"));
+            return HttpResponse::Forbidden().json(BaseResponse::error(
+                "You don't have permission to delete this file",
+            ));
         }
 
         let Some(ref mq) = state.mq else {
@@ -757,8 +768,9 @@ impl UploadController {
         let storage_type = match StorageType::from_str(&request.storage_type) {
             Some(t) => t,
             None => {
-                return HttpResponse::BadRequest()
-                    .json(BaseResponse::error("Invalid storage type (use 'public' or 'private')"));
+                return HttpResponse::BadRequest().json(BaseResponse::error(
+                    "Invalid storage type (use 'public' or 'private')",
+                ));
             }
         };
 
@@ -772,8 +784,7 @@ impl UploadController {
         {
             Ok(uuid) => uuid,
             Err(e) => {
-                return HttpResponse::BadRequest()
-                    .json(error_response(format!("{}", e)));
+                return HttpResponse::BadRequest().json(error_response(format!("{}", e)));
             }
         };
 
@@ -894,10 +905,7 @@ impl UploadController {
     }
 
     /// DELETE /upload/chunked/{uuid} - Cancel chunked upload (requires auth)
-    pub async fn cancel_chunked_upload(
-        req: HttpRequest,
-        path: web::Path<String>,
-    ) -> HttpResponse {
+    pub async fn cancel_chunked_upload(req: HttpRequest, path: web::Path<String>) -> HttpResponse {
         if get_user_id(&req).is_err() {
             return HttpResponse::Unauthorized()
                 .json(BaseResponse::error("Authentication required"));
@@ -919,10 +927,7 @@ impl UploadController {
     }
 
     /// GET /upload/user - Get all uploads for current user (requires auth)
-    pub async fn get_user_uploads(
-        state: web::Data<AppState>,
-        req: HttpRequest,
-    ) -> HttpResponse {
+    pub async fn get_user_uploads(state: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
         let user_id = match get_user_id(&req) {
             Ok(id) => id,
             Err(response) => return response,
@@ -1021,14 +1026,16 @@ impl UploadController {
         let data = match file_data {
             Some(d) if !d.is_empty() => d,
             _ => {
-                return HttpResponse::BadRequest().json(BaseResponse::error("No file data received"));
+                return HttpResponse::BadRequest()
+                    .json(BaseResponse::error("No file data received"));
             }
         };
 
         let original_name = match filename {
             Some(n) if !n.is_empty() => n,
             _ => {
-                return HttpResponse::BadRequest().json(BaseResponse::error("No filename provided"));
+                return HttpResponse::BadRequest()
+                    .json(BaseResponse::error("No filename provided"));
             }
         };
 
@@ -1037,8 +1044,9 @@ impl UploadController {
             .first_or_octet_stream()
             .to_string();
         if !mime_type.starts_with("image/") {
-            return HttpResponse::BadRequest()
-                .json(BaseResponse::error("Only image files are allowed for profile pictures"));
+            return HttpResponse::BadRequest().json(BaseResponse::error(
+                "Only image files are allowed for profile pictures",
+            ));
         }
 
         // Save file to profile-pictures subfolder (private visibility)
@@ -1053,8 +1061,7 @@ impl UploadController {
         {
             Ok(r) => r,
             Err(e) => {
-                return HttpResponse::BadRequest()
-                    .json(error_response(format!("{}", e)));
+                return HttpResponse::BadRequest().json(error_response(format!("{}", e)));
             }
         };
 
@@ -1107,14 +1114,18 @@ impl UploadController {
                 };
 
                 let options = JobOptions::new().priority(1).fault_tolerance(3);
-                if let Err(e) = mq::enqueue_job_dyn(mq, "resize_image", &resize_params, options).await {
+                if let Err(e) =
+                    mq::enqueue_job_dyn(mq, "resize_image", &resize_params, options).await
+                {
                     tracing::warn!("Failed to enqueue resize_image job for avatar: {}", e);
                 }
             }
         }
 
         // Update user's avatar (both UUID and ID)
-        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, Some(result.uuid), Some(upload_id)).await {
+        if let Err(e) =
+            db_user_mutations::update_avatar(&db, user_id, Some(result.uuid), Some(upload_id)).await
+        {
             tracing::warn!("Failed to update user avatar: {}", e);
             // Don't fail the request - upload was created successfully
         }
@@ -1138,10 +1149,7 @@ impl UploadController {
     }
 
     /// DELETE /upload/avatar - Delete current user's profile picture (requires auth)
-    pub async fn delete_avatar(
-        state: web::Data<AppState>,
-        req: HttpRequest,
-    ) -> HttpResponse {
+    pub async fn delete_avatar(state: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
         let user_id = match get_user_id(&req) {
             Ok(id) => id,
             Err(response) => return response,
@@ -1189,7 +1197,9 @@ impl UploadController {
             }
 
             if site_config.favicon_uuid == Some(avatar_uuid) {
-                tracing::info!("Clearing favicon reference from site_config (avatar being deleted)");
+                tracing::info!(
+                    "Clearing favicon reference from site_config (avatar being deleted)"
+                );
                 if let Err(e) = site_config_mutations::update_favicon(&db, None).await {
                     tracing::warn!("Failed to clear favicon reference: {}", e);
                 }
@@ -1226,7 +1236,9 @@ impl UploadController {
             tracing::warn!("Failed to clear user avatar: {}", e);
         }
 
-        HttpResponse::Ok().json(BaseResponse::success("Profile picture deleted successfully"))
+        HttpResponse::Ok().json(BaseResponse::success(
+            "Profile picture deleted successfully",
+        ))
     }
 
     /// GET /api/v1/avatar/{uuid} - Get profile picture from uploads table (auth required)
@@ -1270,8 +1282,7 @@ impl UploadController {
 
         // Check ownership - user can only access their own avatar
         if upload.user_id != Some(user_id) {
-            return HttpResponse::Forbidden()
-                .json(BaseResponse::error("Access denied"));
+            return HttpResponse::Forbidden().json(BaseResponse::error("Access denied"));
         }
 
         // Check if a variant is requested (e.g., ?variant=thumb)
@@ -1301,7 +1312,10 @@ impl UploadController {
             Ok(d) => d,
             Err(_) => {
                 // If original file doesn't exist, try to serve a variant (e.g., _medium)
-                tracing::warn!("Original avatar file not found at {}, trying variant", storage_path);
+                tracing::warn!(
+                    "Original avatar file not found at {}, trying variant",
+                    storage_path
+                );
 
                 // Try common variants in order of preference: medium, large, small, thumb
                 let variants_to_try = vec!["_medium", "_large", "_small", "_thumb"];
@@ -1310,7 +1324,12 @@ impl UploadController {
                 for variant_suffix in variants_to_try {
                     // Insert variant suffix before file extension
                     let path_with_variant = if let Some(dot_pos) = storage_path.rfind('.') {
-                        format!("{}{}{}", &storage_path[..dot_pos], variant_suffix, &storage_path[dot_pos..])
+                        format!(
+                            "{}{}{}",
+                            &storage_path[..dot_pos],
+                            variant_suffix,
+                            &storage_path[dot_pos..]
+                        )
                     } else {
                         format!("{}{}", storage_path, variant_suffix)
                     };

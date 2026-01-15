@@ -1,0 +1,7 @@
+{
+  "SIGN_UP": {
+    "singular": "Prijava",
+    "plural": "Prijave",
+    "context": "Button label for sign up/registration"
+  }
+}

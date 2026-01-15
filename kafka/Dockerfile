@@ -49,8 +49,9 @@ ENV KAFKA_SOCKET_SEND_BUFFER_BYTES=102400
 ENV KAFKA_SOCKET_RECEIVE_BUFFER_BYTES=102400
 ENV KAFKA_SOCKET_REQUEST_MAX_BYTES=104857600
 
-# Copy entrypoint script
+# Copy entrypoint and healthcheck scripts
 COPY --chmod=755 entrypoint.sh /custom-entrypoint.sh
+COPY --chmod=755 healthcheck.sh /usr/local/bin/kafka-healthcheck.sh
 
 VOLUME /var/lib/kafka/data
 

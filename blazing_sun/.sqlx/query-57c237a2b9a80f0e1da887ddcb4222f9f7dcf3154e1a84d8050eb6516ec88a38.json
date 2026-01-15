@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET banned_users = array_append(banned_users, $2),\n            updated_at = NOW()\n        WHERE room_id = $1\n        AND NOT ($2 = ANY(banned_users))\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "57c237a2b9a80f0e1da887ddcb4222f9f7dcf3154e1a84d8050eb6516ec88a38"
+}

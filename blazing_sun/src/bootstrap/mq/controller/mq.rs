@@ -287,10 +287,7 @@ impl MessageQueue {
             .await?
             .await?;
 
-        error!(
-            "Job {} moved to failed queue: {}",
-            failed_job.id, error
-        );
+        error!("Job {} moved to failed queue: {}", failed_job.id, error);
         Ok(())
     }
 

@@ -3,8 +3,8 @@
 //! REST API endpoints for OAuth client management (Developer Console).
 
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
-use serde::{Deserialize, Serialize};
 use rand::{distributions::Alphanumeric, Rng};
+use serde::{Deserialize, Serialize};
 
 use crate::app::db_query::{mutations as db_mutations, read as db_read};
 use crate::bootstrap::database::database::AppState;
@@ -114,10 +114,7 @@ fn generate_client_secret() -> String {
 // ============================================================================
 
 /// Get all OAuth clients for the authenticated user
-pub async fn get_user_clients(
-    req: HttpRequest,
-    state: web::Data<AppState>,
-) -> HttpResponse {
+pub async fn get_user_clients(req: HttpRequest, state: web::Data<AppState>) -> HttpResponse {
     // Get authenticated user ID from JWT (set by auth middleware)
     let user_id = match req.extensions().get::<i64>() {
         Some(id) => *id,
@@ -347,7 +344,8 @@ pub async fn create_client(
     // Include client secret in response (only shown once)
     if let Some(secret) = client_secret {
         response["client_secret"] = serde_json::json!(secret);
-        response["warning"] = serde_json::json!("Store this secret securely. It will not be shown again.");
+        response["warning"] =
+            serde_json::json!("Store this secret securely. It will not be shown again.");
     }
 
     HttpResponse::Created().json(response)

@@ -1,9 +1,9 @@
-pub mod create_user;
-pub mod bulk_user_action;
 pub mod bulk_delete_pictures;
 pub mod bulk_delete_uploads;
-pub mod delete_user;
+pub mod bulk_user_action;
+pub mod create_user;
 pub mod delete_upload;
+pub mod delete_user;
 pub mod email;
 pub mod oauth_delete_gallery;
 pub mod oauth_delete_picture;
@@ -33,7 +33,10 @@ pub async fn process(
         "resize_image" => resize_image::process(mq, job).await,
         _ => {
             tracing::error!("Unknown worker: {}", job.worker_name);
-            Ok(JobResult::Failed(format!("Unknown worker: {}", job.worker_name)))
+            Ok(JobResult::Failed(format!(
+                "Unknown worker: {}",
+                job.worker_name
+            )))
         }
     }
 }

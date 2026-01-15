@@ -10,6 +10,4 @@ pub mod middlewares;
 pub mod validators;
 
 // Re-export common response types for convenience
-pub use controllers::responses::{
-    BaseResponse, MissingFieldsResponse, ValidationErrorResponse,
-};
+pub use controllers::responses::{BaseResponse, MissingFieldsResponse, ValidationErrorResponse};

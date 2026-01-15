@@ -29,7 +29,6 @@ struct BulkDeleteRequest {
     picture_ids: Vec<i64>,
 }
 
-
 fn create_jwt(user_id: i64, permissions: i16) -> String {
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     let claims = Claims {
@@ -62,6 +61,11 @@ async fn seed_gallery_with_pictures(
             description: None,
             is_public: false,
             display_order: 0,
+            latitude: None,
+            longitude: None,
+            tags: None,
+            cover_image_id: None,
+            cover_image_uuid: None,
         },
     )
     .await
@@ -97,6 +101,8 @@ async fn seed_gallery_with_pictures(
                 upload_id,
                 title: None,
                 description: None,
+                latitude: None,
+                longitude: None,
                 display_order: index as i32,
             },
         )
@@ -123,16 +129,26 @@ async fn test_bulk_delete_pictures_success() {
 
     let (gallery_id, picture_ids) = seed_gallery_with_pictures(&app_state, user_id, 3).await;
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api))
-        .await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let payload = BulkDeleteRequest {
         picture_ids: vec![picture_ids[0], picture_ids[1]],
     };
 
     let req = test::TestRequest::post()
-        .uri(&format!("/api/v1/galleries/{}/pictures/bulk-delete", gallery_id))
-        .insert_header(("Authorization", format!("Bearer {}", create_jwt(user_id, 1))))
+        .uri(&format!(
+            "/api/v1/galleries/{}/pictures/bulk-delete",
+            gallery_id
+        ))
+        .insert_header((
+            "Authorization",
+            format!("Bearer {}", create_jwt(user_id, 1)),
+        ))
         .set_json(&payload)
         .to_request();
 
@@ -164,16 +180,26 @@ async fn test_bulk_delete_rejects_invalid_picture_ids() {
     let (_other_gallery_id, other_picture_ids) =
         seed_gallery_with_pictures(&app_state, user_id, 1).await;
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api))
-        .await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let payload = BulkDeleteRequest {
         picture_ids: vec![picture_ids[0], other_picture_ids[0]],
     };
 
     let req = test::TestRequest::post()
-        .uri(&format!("/api/v1/galleries/{}/pictures/bulk-delete", gallery_id))
-        .insert_header(("Authorization", format!("Bearer {}", create_jwt(user_id, 1))))
+        .uri(&format!(
+            "/api/v1/galleries/{}/pictures/bulk-delete",
+            gallery_id
+        ))
+        .insert_header((
+            "Authorization",
+            format!("Bearer {}", create_jwt(user_id, 1)),
+        ))
         .set_json(&payload)
         .to_request();
 

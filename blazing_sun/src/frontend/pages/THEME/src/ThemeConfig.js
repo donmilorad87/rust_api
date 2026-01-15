@@ -1,5 +1,22 @@
 import { getCsrfHeaders, getCsrfToken } from '../../GLOBAL/src/js/csrf.js';
 
+const MAX_ENTITY_DEPTH = 2;
+const ENTITY_MODE_INLINE = 'inline';
+const ENTITY_MODE_REFERENCE = 'reference';
+const SCHEMA_CATEGORY_WHITELIST = new Set([
+  'Action',
+  'BioChemEntity',
+  'CreativeWork',
+  'Event',
+  'Intangible',
+  'MedicalEntity',
+  'Organization',
+  'Person',
+  'Place',
+  'Product',
+  'Taxon'
+]);
+
 /**
  * ThemeConfig - Main controller for theme configuration page
  * Coordinates color pickers, size pickers, and image selectors
@@ -60,9 +77,13 @@ export class ThemeConfig {
     // Schema modal elements
     this.schemaModal = config.schemaModal;
     this.schemaModalTitle = config.schemaModalTitle;
-    this.schemaTypeSelect = config.schemaTypeSelect;
-    this.schemaTypeDescription = config.schemaTypeDescription;
-    this.schemaFields = config.schemaFields;
+    this.schemaModalTabs = config.schemaModalTabs;
+    this.schemaCreatePanel = config.schemaCreatePanel;
+    this.schemaAssignPanel = config.schemaAssignPanel;
+    this.schemaAssignmentContainer = config.schemaAssignmentContainer;
+    this.schemaSelectorContainer = config.schemaSelectorContainer;
+    this.schemaFormContainer = config.schemaFormContainer;
+    this.schemaFormBuilderContainer = config.schemaFormBuilderContainer;
     this.schemaPreview = config.schemaPreview;
     this.schemaPreviewCode = config.schemaPreviewCode;
     this.saveSchemaBtn = config.saveSchemaBtn;
@@ -70,12 +91,54 @@ export class ThemeConfig {
     this.addSchemaBtn = config.addSchemaBtn;
     this.schemasList = config.schemasList;
     this.schemasEmpty = config.schemasEmpty;
+    this.assignedSchemasList = config.assignedSchemasList;
+    this.assignedSchemasEmpty = config.assignedSchemasEmpty;
+
+    // Localization DOM elements
+    this.languageForm = config.languageForm;
+    this.languageResetBtn = config.languageResetBtn;
+    this.languageIconFile = config.languageIconFile;
+    this.languageIconPreview = config.languageIconPreview;
+    this.languageIconClear = config.languageIconClear;
+    this.languagesTableBody = config.languagesTableBody;
+    this.localeForm = config.localeForm;
+    this.localeResetBtn = config.localeResetBtn;
+    this.localeLanguageSelect = config.localeLanguageSelect;
+    this.localesTableBody = config.localesTableBody;
+    this.localizationForm = config.localizationForm;
+    this.localizationResetBtn = config.localizationResetBtn;
+    this.localizationNewBtn = config.localizationNewBtn;
+    this.localizationKeysTableBody = config.localizationKeysTableBody;
+    this.translationInputs = config.translationInputs;
+    this.localizationModal = config.localizationModal;
+    this.localizationModalTitle = config.localizationModalTitle;
+    this.localizationLocaleTabs = config.localizationLocaleTabs;
+    this.localizationCancelBtn = config.localizationCancelBtn;
+    this.seoLanguageTabs = config.seoLanguageTabs;
+    this.seoAddPageBtn = config.seoAddPageBtn;
+    this.seoPageModal = config.seoPageModal;
+    this.seoPageModalTitle = config.seoPageModalTitle;
+    this.seoPageForm = config.seoPageForm;
+    this.seoPageRouteName = config.seoPageRouteName;
+    this.seoPageLabel = config.seoPageLabel;
+    this.seoPageSaveBtn = config.seoPageSaveBtn;
+    this.seoPageCancelBtn = config.seoPageCancelBtn;
+    this.hreflangForm = config.hreflangForm;
+    this.hreflangIdInput = config.hreflangIdInput;
+    this.hreflangCodeInput = config.hreflangCodeInput;
+    this.hreflangUrlInput = config.hreflangUrlInput;
+    this.hreflangDefaultInput = config.hreflangDefaultInput;
+    this.hreflangCancelBtn = config.hreflangCancelBtn;
+    this.hreflangTableBody = config.hreflangTableBody;
 
     // Component factories
     this.ColorPicker = config.ColorPicker;
     this.SizePicker = config.SizePicker;
+    this.SchemaSelector = config.SchemaSelector;
+    this.SchemaFormBuilder = config.SchemaFormBuilder;
+    this.PageSchemaAssignment = config.PageSchemaAssignment;
 
-    // Schema definitions
+    // Schema definitions (fallback for offline mode)
     this.SchemaDefinitions = config.SchemaDefinitions;
 
     // State
@@ -98,8 +161,33 @@ export class ThemeConfig {
 
     // Schema State
     this.currentSchemaType = null;
+    this.currentSchemaPath = [];
     this.editingSchemaId = null;
-    this.pageSchemas = [];
+    this.editingSchemaEntityId = null; // For editing schema entities
+    this.pageSchemas = []; // Schemas assigned to current page
+    this.availableSchemas = []; // All schemas from schema_entities table
+    this.schemaSelectorInstance = null;
+    this.schemaFormBuilderInstance = null;
+    this.pageSchemaAssignmentInstance = null;
+    this.schemaModalMode = 'create'; // 'create' or 'assign'
+    this.schemaDefinitionCache = new Map(); // Cache for schema definitions
+
+    // Localization state
+    this.languages = [];
+    this.locales = [];
+    this.localizationKeys = [];
+    this.editingLanguageId = null;
+    this.editingLocaleId = null;
+    this.editingLocalizationKeyId = null;
+    this.localizationTranslations = {};
+    this.activeLocalizationLocale = null;
+
+    // SEO language state
+    this.seoLanguages = [];
+    this.activeSeoLanguage = 'en';
+    this.seoTranslations = {};
+    this.currentSeoTranslation = null;
+    this.hreflangEntries = [];
 
     // Identity State
     this.siteName = 'Blazing Sun';
@@ -161,6 +249,7 @@ export class ThemeConfig {
     this.setupIdentity();
     this.setupBeforeUnload();
     this.setupSEO();
+    this.setupLocalization();
     this.initializeDomColorPickers();
     this.initializeDomAnglePickers();
     this.initializeDomSizePickers();
@@ -168,6 +257,7 @@ export class ThemeConfig {
     // Load current configuration from API
     console.log('Loading config...');
     await this.loadConfig();
+    await this.loadLocalizationData();
     console.log('ThemeConfig.init() completed');
   }
 
@@ -311,7 +401,7 @@ export class ThemeConfig {
   }
 
   /**
-   * Setup schema editor modal
+   * Setup schema editor modal with SchemaSelector and SchemaFormBuilder components
    */
   setupSchemaModal() {
     if (!this.schemaModal) return;
@@ -323,15 +413,40 @@ export class ThemeConfig {
       }
     });
 
-    // Populate schema type select with grouped options
-    if (this.schemaTypeSelect && this.SchemaDefinitions) {
-      this.populateSchemaTypeSelect();
+    // Initialize SchemaSelector component
+    if (this.schemaSelectorContainer && this.SchemaSelector) {
+      this.schemaSelectorInstance = new this.SchemaSelector({
+        container: this.schemaSelectorContainer,
+        baseUrl: this.baseUrl,
+        csrfHeaders: {},
+        onSelect: (typeName, path, confirmed) => {
+          this.currentSchemaType = typeName;
+          this.currentSchemaPath = path.map(p => p.type || p);
+          if (typeName) {
+            this.onSchemaTypeSelected(typeName, confirmed);
+          } else {
+            this.hideSchemaForm();
+          }
+        },
+        onPathChange: (path) => {
+          this.currentSchemaPath = path.map(p => p.type || p);
+        }
+      });
     }
 
-    // Handle schema type change
-    if (this.schemaTypeSelect) {
-      this.schemaTypeSelect.addEventListener('change', (e) => {
-        this.onSchemaTypeChange(e.target.value);
+    // Initialize SchemaFormBuilder component
+    if (this.schemaFormBuilderContainer && this.SchemaFormBuilder) {
+      this.schemaFormBuilderInstance = new this.SchemaFormBuilder({
+        container: this.schemaFormBuilderContainer,
+        baseUrl: this.baseUrl,
+        csrfHeaders: {},
+        maxDepth: 2,
+        onChange: () => {
+          this.updateSchemaPreview();
+          if (this.saveSchemaBtn) {
+            this.saveSchemaBtn.disabled = false;
+          }
+        }
       });
     }
 
@@ -347,59 +462,286 @@ export class ThemeConfig {
 
     // Handle add schema button (in schemas list)
     if (this.addSchemaBtn) {
-      this.addSchemaBtn.addEventListener('click', () => this.openSchemaModal());
+      this.addSchemaBtn.addEventListener('click', () => void this.openSchemaModal());
+    }
+
+    // Setup schema modal tabs (Create New / Use Existing)
+    this.setupSchemaModalTabs();
+  }
+
+  /**
+   * Handle schema type selection from SchemaSelector
+   * @param {string} typeName - Selected schema type
+   * @param {boolean} confirmed - Whether user clicked "Use this schema"
+   */
+  async onSchemaTypeSelected(typeName, confirmed = false) {
+    if (!typeName) {
+      this.hideSchemaForm();
+      return;
+    }
+
+    // Load the schema in the form builder
+    if (this.schemaFormBuilderInstance) {
+      await this.schemaFormBuilderInstance.loadSchema(typeName);
+    }
+
+    // Show the form container
+    this.showSchemaForm();
+
+    // Update preview
+    this.updateSchemaPreview();
+
+    // Enable save button
+    if (this.saveSchemaBtn) {
+      this.saveSchemaBtn.disabled = false;
     }
   }
 
   /**
-   * Populate schema type select with grouped options
+   * Show the schema form container
    */
-  populateSchemaTypeSelect() {
-    if (!this.schemaTypeSelect || !this.SchemaDefinitions) return;
-
-    const { SCHEMA_CATEGORIES, SCHEMA_TYPES } = this.SchemaDefinitions;
-
-    // Clear existing options except first placeholder
-    while (this.schemaTypeSelect.options.length > 1) {
-      this.schemaTypeSelect.remove(1);
+  showSchemaForm() {
+    if (this.schemaFormContainer) {
+      this.schemaFormContainer.classList.remove('hidden');
     }
+    if (this.schemaPreview) {
+      this.schemaPreview.classList.remove('hidden');
+    }
+  }
 
-    // Group schemas by category
-    const grouped = {};
-    SCHEMA_TYPES.forEach(schema => {
-      if (!grouped[schema.category]) {
-        grouped[schema.category] = [];
+  /**
+   * Hide the schema form container
+   */
+  hideSchemaForm() {
+    if (this.schemaFormContainer) {
+      this.schemaFormContainer.classList.add('hidden');
+    }
+    if (this.schemaPreview) {
+      this.schemaPreview.classList.add('hidden');
+    }
+    if (this.saveSchemaBtn) {
+      this.saveSchemaBtn.disabled = true;
+    }
+  }
+
+  /**
+   * Setup localization modal
+   */
+  setupLocalizationModal() {
+    if (!this.localizationModal) return;
+
+    this.localizationModal.addEventListener('click', (e) => {
+      if (e.target === this.localizationModal || e.target.closest('[data-action="close"]')) {
+        this.closeLocalizationModal();
       }
-      grouped[schema.category].push(schema);
     });
 
-    // Create optgroups
-    Object.entries(SCHEMA_CATEGORIES).forEach(([catKey, catInfo]) => {
-      const schemas = grouped[catKey];
-      if (!schemas || schemas.length === 0) return;
+    if (this.localizationCancelBtn) {
+      this.localizationCancelBtn.addEventListener('click', () => this.closeLocalizationModal());
+    }
+  }
 
-      const optgroup = document.createElement('optgroup');
-      optgroup.label = catInfo.label;
+  openLocalizationModal(localizationKey = null) {
+    if (!this.localizationModal) return;
 
-      schemas.forEach(schema => {
-        const option = document.createElement('option');
-        option.value = schema.type;
-        option.textContent = schema.label;
-        option.dataset.description = schema.description;
-        optgroup.appendChild(option);
+    if (localizationKey) {
+      this.populateLocalizationForm(localizationKey);
+      if (this.localizationModalTitle) {
+        this.localizationModalTitle.textContent = 'Edit Localization Key';
+      }
+    } else {
+      this.resetLocalizationForm();
+      if (this.localizationModalTitle) {
+        this.localizationModalTitle.textContent = 'New Localization Key';
+      }
+    }
+
+    this.localizationModal.classList.remove('hidden');
+  }
+
+  closeLocalizationModal() {
+    if (!this.localizationModal) return;
+    this.localizationModal.classList.add('hidden');
+    this.resetLocalizationForm();
+  }
+
+  async loadSchemaCategories() {
+    if (!this.schemaCategorySelect || this.schemaCategoryPopulated) return;
+
+    let categoriesLoaded = false;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/schemas/categories`, {
+        credentials: 'include'
       });
+      if (!response.ok) {
+        throw new Error('Failed to load schema categories');
+      }
+      const payload = await response.json();
+      this.schemaCategories = payload.categories || [];
+      categoriesLoaded = Array.isArray(this.schemaCategories) && this.schemaCategories.length > 0;
+    } catch (error) {
+      console.error('Failed to load schema categories', error);
+    }
 
-      this.schemaTypeSelect.appendChild(optgroup);
+    if (!categoriesLoaded && this.applySchemaCategoryFallback()) {
+      this.showToast('Using offline schema catalog for categories', 'warning');
+    }
+
+    if (!this.schemaCategories.length) {
+      this.showToast('Failed to load schema categories', 'error');
+      return;
+    }
+
+    this.renderSchemaCategorySelect();
+    this.schemaCategoryPopulated = true;
+  }
+
+  applySchemaCategoryFallback() {
+    if (!this.SchemaDefinitions || !this.SchemaDefinitions.SCHEMA_CATEGORIES) return false;
+
+    const categories = Object.keys(this.SchemaDefinitions.SCHEMA_CATEGORIES)
+      .filter((type) => SCHEMA_CATEGORY_WHITELIST.has(type))
+      .map((type) => {
+        const entry = this.SchemaDefinitions.SCHEMA_CATEGORIES[type] || {};
+        const hasChildren =
+          typeof this.SchemaDefinitions.hasSchemaChildren === 'function'
+            ? this.SchemaDefinitions.hasSchemaChildren(type)
+            : false;
+        return {
+          type,
+          label: entry.label || type,
+          description: entry.description || '',
+          has_children: hasChildren
+        };
+      })
+      .filter((category) => category.label);
+
+    if (!categories.length) {
+      return false;
+    }
+
+    this.schemaCategories = categories;
+    return true;
+  }
+
+  renderSchemaCategorySelect() {
+    if (!this.schemaCategorySelect) return;
+    while (this.schemaCategorySelect.options.length > 1) {
+      this.schemaCategorySelect.remove(1);
+    }
+
+    const fragment = document.createDocumentFragment();
+    this.schemaCategories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category.type;
+      option.textContent = category.label || category.type;
+      fragment.appendChild(option);
+    });
+    this.schemaCategorySelect.appendChild(fragment);
+  }
+
+  async loadSchemaChildren(typeName) {
+    if (!typeName) return [];
+    if (this.schemaChildrenCache.has(typeName)) {
+      return this.schemaChildrenCache.get(typeName);
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/schemas/children/${encodeURIComponent(typeName)}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to load schema children for ${typeName}`);
+      }
+      const payload = await response.json();
+      const children = payload.children || [];
+      this.schemaChildrenCache.set(typeName, children);
+      return children;
+    } catch (error) {
+      console.error(`Failed to load schema children for ${typeName}`, error);
+      const fallbackChildren = this.getSchemaChildrenFallback(typeName);
+      if (fallbackChildren.length) {
+        this.schemaChildrenCache.set(typeName, fallbackChildren);
+        return fallbackChildren;
+      }
+      throw error;
+    }
+  }
+
+  getSchemaChildrenFallback(typeName) {
+    if (!typeName || !this.SchemaDefinitions || typeof this.SchemaDefinitions.getSchemaChildren !== 'function') {
+      return [];
+    }
+    return this.SchemaDefinitions.getSchemaChildren(typeName);
+  }
+
+  clearSchemaHierarchy() {
+    if (this.schemaHierarchyContainer) {
+      this.schemaHierarchyContainer.innerHTML = '';
+    }
+  }
+
+  async renderSchemaLevel(parentType, depth, selectedType = '') {
+    if (!this.schemaHierarchyContainer) return;
+    let children = [];
+    try {
+      children = await this.loadSchemaChildren(parentType);
+    } catch (error) {
+      this.showToast('Failed to load schema children', 'error');
+      console.error(error);
+      return;
+    }
+
+    if (!children.length) {
+      await this.onSchemaTypeChange(parentType);
+      return;
+    }
+
+    const select = document.createElement('select');
+    select.className = 'form-select schema-hierarchy__select';
+    select.dataset.depth = String(depth);
+    select.dataset.parent = parentType;
+    select.innerHTML = '<option value=\"\">-- Select a schema type --</option>';
+
+    children.forEach(child => {
+      const option = document.createElement('option');
+      option.value = child.type;
+      option.textContent = child.label || child.type;
+      select.appendChild(option);
+    });
+
+    select.addEventListener('change', (event) => {
+      const value = event.target.value;
+      this.trimSchemaHierarchy(depth);
+      if (value) {
+        void this.renderSchemaLevel(value, depth + 1);
+      } else {
+        void this.onSchemaTypeChange('');
+      }
+    });
+
+    this.schemaHierarchyContainer.appendChild(select);
+    if (selectedType) {
+      select.value = selectedType;
+      if (selectedType) {
+        void this.renderSchemaLevel(selectedType, depth + 1);
+      }
+    }
+  }
+
+  trimSchemaHierarchy(depth) {
+    if (!this.schemaHierarchyContainer) return;
+    const selects = Array.from(this.schemaHierarchyContainer.querySelectorAll('.schema-hierarchy__select'));
+    selects.forEach(select => {
+      const selectDepth = parseInt(select.dataset.depth || '0', 10);
+      if (selectDepth > depth) {
+        select.remove();
+      }
     });
   }
 
-  /**
-   * Handle schema type selection change
-   * @param {string} schemaType - Selected schema type
-   */
-  onSchemaTypeChange(schemaType) {
+  async onSchemaTypeChange(schemaType) {
     if (!schemaType) {
-      // Reset state
       this.currentSchemaType = null;
       if (this.schemaFields) this.schemaFields.classList.add('hidden');
       if (this.schemaPreview) this.schemaPreview.classList.add('hidden');
@@ -410,29 +752,41 @@ export class ThemeConfig {
       return;
     }
 
-    const schemaDef = this.SchemaDefinitions.getSchemaType(schemaType);
-    if (!schemaDef) {
+    let schemaDef;
+    try {
+      schemaDef = await this.fetchSchemaDefinition(schemaType);
+    } catch (error) {
       this.showToast('Schema type not found', 'error');
+      console.error(error);
       return;
     }
 
     this.currentSchemaType = schemaType;
 
-    // Update description
     if (this.schemaTypeDescription) {
-      this.schemaTypeDescription.textContent = schemaDef.description;
+      this.schemaTypeDescription.textContent = schemaDef.description || 'Schema definition loaded.';
     }
 
-    // Generate and show form fields
-    this.generateSchemaFields(schemaDef);
+    const fieldDefs = this.buildFieldsFromSchemaDefinition(schemaDef);
+    this.generateSchemaFields({ type: schemaType, fields: fieldDefs });
     if (this.schemaFields) this.schemaFields.classList.remove('hidden');
 
-    // Show preview
     if (this.schemaPreview) this.schemaPreview.classList.remove('hidden');
     this.updateSchemaPreview();
 
-    // Enable save button
     if (this.saveSchemaBtn) this.saveSchemaBtn.disabled = false;
+  }
+
+  /**
+   * Build the default schema @id value (URN format)
+   * @param {string} schemaType - Schema.org @type value
+   * @returns {string} Default schema @id
+   */
+  buildSchemaIdDefault(schemaType) {
+    const lang = (this.activeSeoLanguage || 'en').toLowerCase();
+    const type = (schemaType || 'entity').toLowerCase();
+    const uuid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36);
+    return `urn:${lang}:entity:${type}:${uuid}`;
   }
 
   /**
@@ -444,10 +798,22 @@ export class ThemeConfig {
 
     this.schemaFields.innerHTML = '';
 
-    schemaDef.fields.forEach(field => {
+    const schemaIdField = {
+      name: '@id',
+      type: 'text',
+      label: '@id',
+      help: 'Defaults to urn:language:entity:type:uuid (editable).',
+      value: this.buildSchemaIdDefault(schemaDef.type)
+    };
+
+    const schemaFields = schemaDef.fields.some(field => field.name === '@id')
+      ? schemaDef.fields
+      : [schemaIdField, ...schemaDef.fields];
+
+    schemaFields.forEach(field => {
       if (field.type === 'hidden') return; // Skip hidden fields
 
-      const fieldHtml = this.generateFieldHtml(field);
+      const fieldHtml = this.generateFieldHtml(field, '', 0);
       this.schemaFields.insertAdjacentHTML('beforeend', fieldHtml);
     });
 
@@ -461,11 +827,14 @@ export class ThemeConfig {
    * @param {string} prefix - Optional prefix for nested fields
    * @returns {string} HTML string
    */
-  generateFieldHtml(field, prefix = '') {
+  generateFieldHtml(field, prefix = '', depth = 0) {
     const fieldId = prefix ? `${prefix}_${field.name}` : `schema_${field.name}`;
     const isRequired = field.required ? 'form-group--required' : '';
     const placeholder = field.placeholder || '';
     const helpText = field.help || '';
+    const defaultValue = field.value === undefined || field.value === null ? '' : String(field.value);
+    const safeValue = this.escapeHtml(defaultValue);
+    const valueAttr = safeValue ? ` value="${safeValue}"` : '';
 
     let inputHtml = '';
 
@@ -475,27 +844,27 @@ export class ThemeConfig {
       case 'email':
       case 'tel':
         inputHtml = `<input type="${field.type}" id="${fieldId}" class="form-input schema-field"
-          data-field="${field.name}" placeholder="${placeholder}">`;
+          data-field="${field.name}" placeholder="${placeholder}"${valueAttr}>`;
         break;
 
       case 'number':
         inputHtml = `<input type="number" id="${fieldId}" class="form-input schema-field"
-          data-field="${field.name}" placeholder="${placeholder}" step="any">`;
+          data-field="${field.name}" placeholder="${placeholder}" step="any"${valueAttr}>`;
         break;
 
       case 'date':
         inputHtml = `<input type="date" id="${fieldId}" class="form-input schema-field"
-          data-field="${field.name}">`;
+          data-field="${field.name}"${valueAttr}>`;
         break;
 
       case 'datetime':
         inputHtml = `<input type="datetime-local" id="${fieldId}" class="form-input schema-field"
-          data-field="${field.name}">`;
+          data-field="${field.name}"${valueAttr}>`;
         break;
 
       case 'textarea':
         inputHtml = `<textarea id="${fieldId}" class="form-textarea schema-field"
-          data-field="${field.name}" rows="3" placeholder="${placeholder}"></textarea>`;
+          data-field="${field.name}" rows="3" placeholder="${placeholder}">${safeValue}</textarea>`;
         break;
 
       case 'select':
@@ -522,7 +891,15 @@ export class ThemeConfig {
         break;
 
       case 'nested':
-        inputHtml = this.generateNestedFieldHtml(field, fieldId);
+        inputHtml = this.generateNestedFieldHtml(field, fieldId, depth);
+        break;
+
+      case 'entity':
+        inputHtml = this.generateEntityFieldHtml(field, fieldId, depth);
+        break;
+
+      case 'mixed':
+        inputHtml = this.generateMixedFieldHtml(field, fieldId, depth);
         break;
 
       default:
@@ -576,11 +953,11 @@ export class ThemeConfig {
    * @param {string} fieldId - Field ID
    * @returns {string} HTML string
    */
-  generateNestedFieldHtml(field, fieldId) {
+  generateNestedFieldHtml(field, fieldId, depth = 0) {
     const nestedFields = field.fields || [];
     const fieldsHtml = nestedFields
       .filter(f => f.type !== 'hidden')
-      .map(f => this.generateFieldHtml(f, fieldId))
+      .map(f => this.generateFieldHtml(f, fieldId, depth + 1))
       .join('');
 
     return `
@@ -595,11 +972,227 @@ export class ThemeConfig {
     `;
   }
 
+  getDataInputType(dataTypes, fieldName) {
+    const types = new Set(dataTypes || []);
+    if (types.has('Boolean')) return 'boolean';
+    if (types.has('DateTime')) return 'datetime';
+    if (types.has('Date')) return 'date';
+    if (types.has('Number') || types.has('Float') || types.has('Integer')) return 'number';
+    if (types.has('URL')) return 'url';
+    if (fieldName.toLowerCase().includes('description')) return 'textarea';
+    return 'text';
+  }
+
+  mapDataTypeToFieldType(dataType, fieldName) {
+    const inputType = this.getDataInputType([dataType], fieldName);
+    if (inputType === 'textarea') return 'textarea';
+    if (inputType === 'datetime') return 'datetime';
+    if (inputType === 'date') return 'date';
+    if (inputType === 'number') return 'number';
+    if (inputType === 'boolean') return 'boolean';
+    if (inputType === 'url') return 'url';
+    return 'text';
+  }
+
+  async fetchSchemaDefinition(typeName) {
+    if (!typeName) {
+      throw new Error('Schema type is required');
+    }
+    if (this.schemaDefinitionCache.has(typeName)) {
+      return this.schemaDefinitionCache.get(typeName);
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/v1/schemas/${encodeURIComponent(typeName)}`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      throw new Error(`Schema type ${typeName} not found`);
+    }
+    const payload = await response.json();
+    const schema = payload.schema || payload;
+    this.schemaDefinitionCache.set(typeName, schema);
+    return schema;
+  }
+
+  buildFieldsFromSchemaDefinition(schemaDef) {
+    const properties = schemaDef?.properties || [];
+    return properties.map(prop => {
+      const expected = prop.expected_types || [];
+      const dataTypes = expected.filter(item => item.kind === 'data_type').map(item => item.type);
+      const entityTypes = expected.filter(item => item.kind !== 'data_type').map(item => item.type);
+      const field = {
+        name: prop.name,
+        label: prop.label || prop.name,
+        help: prop.description || '',
+        dataTypes,
+        entityTypes
+      };
+
+      if (entityTypes.length && dataTypes.length) {
+        return { ...field, type: 'mixed' };
+      }
+      if (entityTypes.length) {
+        return { ...field, type: 'entity' };
+      }
+      if (dataTypes.length > 1) {
+        return { ...field, type: 'mixed' };
+      }
+      if (dataTypes.length === 1) {
+        return { ...field, type: this.mapDataTypeToFieldType(dataTypes[0], prop.name) };
+      }
+      return { ...field, type: 'text' };
+    });
+  }
+
+  buildInlineEntityFields(schemaType, prefix, depth) {
+    const schemaDef = this.schemaDefinitionCache.get(schemaType);
+    if (!schemaDef) {
+      return `<p class="form-help">Schema type not available yet.</p>`;
+    }
+
+    const schemaIdField = {
+      name: '@id',
+      type: 'text',
+      label: '@id',
+      help: 'Defaults to urn:language:entity:type:uuid (editable).',
+      value: this.buildSchemaIdDefault(schemaType)
+    };
+
+    const baseFields = this.buildFieldsFromSchemaDefinition(schemaDef);
+    const fields = baseFields.some(field => field.name === '@id')
+      ? baseFields
+      : [schemaIdField, ...baseFields];
+
+    return fields
+      .filter(field => field.type !== 'hidden')
+      .map(field => this.generateFieldHtml(field, prefix, depth))
+      .join('');
+  }
+
+  generateEntityFieldHtml(field, fieldId, depth = 0) {
+    const entityTypes = field.entityTypes || [];
+    const defaultType = entityTypes[0] || 'Thing';
+    const allowInline = depth < MAX_ENTITY_DEPTH;
+    const defaultMode = ENTITY_MODE_REFERENCE;
+    const typeLabel = entityTypes.length ? entityTypes.join(' or ') : 'entity';
+    const inlineFields = allowInline
+      ? this.buildInlineEntityFields(defaultType, fieldId, depth + 1)
+      : '<p class="form-help">Inline editing is disabled at this depth. Use @id reference.</p>';
+    const typeOptions = entityTypes.map((type, index) => `
+        <label class="schema-radio">
+          <input type="radio" class="schema-entity__type-radio" name="${fieldId}_type"
+            value="${type}"${index === 0 ? ' checked' : ''}>
+          <span>${type}</span>
+        </label>
+      `).join('');
+
+    return `
+      <div class="schema-entity" data-field="${field.name}" data-mode="${defaultMode}" data-prefix="${fieldId}" data-depth="${depth}">
+        <div class="schema-entity__header">
+          <span class="schema-entity__title">${field.label}</span>
+          ${allowInline ? `
+            <label class="schema-entity__toggle">
+              <input type="checkbox" class="schema-entity__toggle-input" data-action="inline-toggle">
+              Enter manually
+            </label>
+          ` : ''}
+        </div>
+        ${entityTypes.length > 1 ? `
+          <div class="schema-entity__types">
+            ${typeOptions}
+          </div>
+        ` : entityTypes.length === 1 ? `
+          <div class="schema-entity__types">
+            ${typeOptions}
+          </div>
+        ` : ''}
+        <div class="schema-entity__reference${defaultMode === ENTITY_MODE_REFERENCE ? '' : ' hidden'}">
+          <input type="text" class="form-input schema-entity__ref" placeholder="urn:language:entity:type:uuid">
+          <p class="form-help">Use @id to reference existing ${typeLabel}, or enable manual entry.</p>
+        </div>
+        <div class="schema-entity__inline${defaultMode === ENTITY_MODE_INLINE ? '' : ' hidden'}">
+          <div class="schema-entity__inline-fields">
+            ${inlineFields}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  generateMixedFieldHtml(field, fieldId, depth = 0) {
+    const dataTypes = field.dataTypes || [];
+    const entityTypes = field.entityTypes || [];
+    const defaultDataType = dataTypes[0] || 'Text';
+    const defaultEntityType = entityTypes[0] || 'Thing';
+    const allowInline = depth < MAX_ENTITY_DEPTH;
+    const inputType = this.getDataInputType(dataTypes, field.name);
+
+    const inlineFields = allowInline
+      ? this.buildInlineEntityFields(defaultEntityType, fieldId, depth + 1)
+      : '<p class="form-help">Inline editing is disabled at this depth. Use reference.</p>';
+
+    const dataTypeOptions = dataTypes.map((type, index) => `
+        <label class="schema-radio">
+          <input type="radio" class="schema-mixed__type-radio" name="${fieldId}_expected_type"
+            data-kind="data" value="${type}"${index === 0 && !entityTypes.length ? ' checked' : ''}>
+          <span>${type}</span>
+        </label>
+      `).join('');
+    const entityTypeOptions = entityTypes.map((type, index) => `
+        <label class="schema-radio">
+          <input type="radio" class="schema-mixed__type-radio" name="${fieldId}_expected_type"
+            data-kind="entity" value="${type}"${index === 0 && !dataTypes.length ? ' checked' : ''}>
+          <span>${type}</span>
+        </label>
+      `).join('');
+
+    const hasMixedTypes = dataTypes.length && entityTypes.length;
+
+    return `
+      <div class="schema-mixed" data-field="${field.name}" data-prefix="${fieldId}" data-depth="${depth}">
+        <div class="schema-mixed__header">
+          <span class="schema-mixed__title">${field.label}</span>
+        </div>
+        <div class="schema-mixed__types">
+          ${dataTypeOptions}
+          ${entityTypeOptions}
+        </div>
+        <div class="schema-mixed__data${entityTypes.length && !dataTypes.length ? ' hidden' : ''}${hasMixedTypes ? ' hidden' : ''}">
+          ${inputType === 'textarea'
+            ? `<textarea class="form-textarea schema-mixed__data-input" rows="3" placeholder="Enter value..."></textarea>`
+            : `<input type="${inputType}" class="form-input schema-mixed__data-input" placeholder="Enter value...">`}
+        </div>
+        <div class="schema-mixed__entity schema-entity${dataTypes.length ? ' hidden' : ''}${hasMixedTypes ? ' hidden' : ''}" data-mode="${ENTITY_MODE_REFERENCE}" data-prefix="${fieldId}" data-depth="${depth}">
+          <div class="schema-entity__header">
+            <span class="schema-entity__title">Entity</span>
+            ${allowInline ? `
+              <label class="schema-entity__toggle">
+                <input type="checkbox" class="schema-entity__toggle-input" data-action="inline-toggle">
+                Enter manually
+              </label>
+            ` : ''}
+          </div>
+          <div class="schema-entity__reference">
+            <input type="text" class="form-input schema-entity__ref" placeholder="urn:language:entity:type:uuid">
+            <p class="form-help">Use @id to reference an entity, or enable manual entry.</p>
+          </div>
+          <div class="schema-entity__inline hidden">
+            <div class="schema-entity__inline-fields">
+              ${inlineFields}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   /**
    * Setup event listeners for dynamically generated schema fields
    */
   setupSchemaFieldListeners() {
     if (!this.schemaFields) return;
+    if (this.schemaFieldListenersBound) return;
+    this.schemaFieldListenersBound = true;
 
     // Listen for input changes to update preview
     this.schemaFields.addEventListener('input', () => {
@@ -610,13 +1203,124 @@ export class ThemeConfig {
       this.updateSchemaPreview();
     });
 
-    // Handle array add buttons
-    this.schemaFields.querySelectorAll('.schema-array__add').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const arrayId = btn.dataset.array;
+    this.schemaFields.addEventListener('click', (event) => {
+      const addButton = event.target.closest('.schema-array__add');
+      if (addButton) {
+        const arrayId = addButton.dataset.array;
         this.addArrayItem(arrayId);
-      });
+        return;
+      }
+
+      const toggleInput = event.target.closest('.schema-entity__toggle-input');
+      if (toggleInput) {
+        const container = toggleInput.closest('.schema-entity');
+        if (!container) return;
+        const mode = toggleInput.checked ? ENTITY_MODE_INLINE : ENTITY_MODE_REFERENCE;
+        this.setEntityMode(container, mode);
+      }
     });
+
+    this.schemaFields.addEventListener('change', (event) => {
+      const entityTypeRadio = event.target.closest('.schema-entity__type-radio');
+      if (entityTypeRadio) {
+        const container = entityTypeRadio.closest('.schema-entity');
+        if (!container) return;
+        void this.updateEntityInlineFields(container);
+        return;
+      }
+
+      const mixedTypeRadio = event.target.closest('.schema-mixed__type-radio');
+      if (mixedTypeRadio) {
+        const container = mixedTypeRadio.closest('.schema-mixed');
+        if (!container) return;
+        this.updateMixedField(container);
+      }
+    });
+  }
+
+  setEntityMode(container, mode) {
+    container.dataset.mode = mode;
+    const inline = container.querySelector('.schema-entity__inline');
+    const reference = container.querySelector('.schema-entity__reference');
+    const toggle = container.querySelector('.schema-entity__toggle-input');
+
+    if (inline) inline.classList.toggle('hidden', mode !== ENTITY_MODE_INLINE);
+    if (reference) reference.classList.toggle('hidden', mode !== ENTITY_MODE_REFERENCE);
+    if (toggle) toggle.checked = mode === ENTITY_MODE_INLINE;
+    if (mode === ENTITY_MODE_INLINE) {
+      void this.updateEntityInlineFields(container);
+    }
+    this.updateSchemaPreview();
+  }
+
+  async updateEntityInlineFields(container) {
+    const inlineFields = container.querySelector('.schema-entity__inline-fields');
+    if (!inlineFields) return;
+    if (container.dataset.mode !== ENTITY_MODE_INLINE) return;
+
+    const typeRadio = container.querySelector('.schema-entity__type-radio:checked');
+    let schemaType = typeRadio?.value;
+    if (!schemaType) {
+      const mixedParent = container.closest('.schema-mixed');
+      const mixedRadio = mixedParent?.querySelector('.schema-mixed__type-radio[data-kind="entity"]:checked');
+      schemaType = mixedRadio?.value;
+    }
+    if (!schemaType) {
+      schemaType = 'Thing';
+    }
+    const fieldId = container.dataset.prefix || `${container.dataset.field}_entity`;
+    const depth = parseInt(container.dataset.depth || '0', 10) + 1;
+
+    try {
+      await this.fetchSchemaDefinition(schemaType);
+      inlineFields.innerHTML = this.buildInlineEntityFields(schemaType, fieldId, depth);
+    } catch (error) {
+      inlineFields.innerHTML = '<p class="form-help">Failed to load schema type.</p>';
+      console.error(error);
+    }
+    this.updateSchemaPreview();
+  }
+
+  updateMixedField(container) {
+    const typeRadio = container.querySelector('.schema-mixed__type-radio:checked');
+    if (!typeRadio) return;
+
+    const value = typeRadio.value || '';
+    const kind = typeRadio.dataset.kind || 'data';
+    const dataSection = container.querySelector('.schema-mixed__data');
+    const entitySection = container.querySelector('.schema-mixed__entity');
+
+    if (kind === 'entity') {
+      if (dataSection) dataSection.classList.add('hidden');
+      if (entitySection) entitySection.classList.remove('hidden');
+      if (entitySection) {
+        entitySection.dataset.selectedType = value;
+        this.setEntityMode(entitySection, ENTITY_MODE_REFERENCE);
+      }
+      return;
+    }
+
+    if (dataSection) dataSection.classList.remove('hidden');
+    if (entitySection) entitySection.classList.add('hidden');
+
+    if (dataSection) {
+      const dataType = value;
+      const fieldName = container.dataset.field || '';
+      const inputType = this.getDataInputType([dataType], fieldName);
+      const existingInput = dataSection.querySelector('.schema-mixed__data-input');
+      if (existingInput) {
+        if (inputType === 'textarea') {
+          if (existingInput.tagName.toLowerCase() !== 'textarea') {
+            dataSection.innerHTML = `<textarea class="form-textarea schema-mixed__data-input" rows="3" placeholder="Enter value..."></textarea>`;
+          }
+        } else {
+          if (existingInput.tagName.toLowerCase() !== 'input' || existingInput.type !== inputType) {
+            dataSection.innerHTML = `<input type="${inputType}" class="form-input schema-mixed__data-input" placeholder="Enter value...">`;
+          }
+        }
+      }
+    }
+    this.updateSchemaPreview();
   }
 
   /**
@@ -665,14 +1369,71 @@ export class ThemeConfig {
    * @returns {Object} Schema data object
    */
   collectSchemaData() {
-    if (!this.schemaFields || !this.currentSchemaType) return null;
+    if (!this.currentSchemaType) return null;
+
+    // Use SchemaFormBuilder's getData method if available
+    if (this.schemaFormBuilderInstance) {
+      return this.schemaFormBuilderInstance.getData();
+    }
+
+    // For entity edit form, collect from simple fields
+    if (this.editingSchemaEntityId && this.schemaFields) {
+      return this.collectEntityEditFormData();
+    }
+
+    return null;
+  }
+
+  /**
+   * Collect data from the entity edit form (simple key-value fields)
+   * @returns {Object} Schema data object
+   */
+  collectEntityEditFormData() {
+    if (!this.schemaFields) return {};
 
     const data = {};
 
-    // Collect simple fields
-    this.schemaFields.querySelectorAll('.schema-field').forEach(input => {
+    this.schemaFields.querySelectorAll('.schema-form__field-group').forEach(fieldGroup => {
+      const fieldName = fieldGroup.dataset.fieldName;
+      if (!fieldName) return;
+
+      const input = fieldGroup.querySelector('input, textarea');
+      if (!input) return;
+
+      let value = input.value;
+
+      // Parse JSON for object fields
+      if (input.dataset.type === 'object') {
+        try {
+          value = JSON.parse(value);
+        } catch (e) {
+          // Keep as string if invalid JSON
+        }
+      } else if (input.type === 'number') {
+        value = value ? parseFloat(value) : null;
+      } else {
+        value = value.trim();
+      }
+
+      // Only include non-empty values
+      if (value !== null && value !== '' && value !== undefined) {
+        data[fieldName] = value;
+      }
+    });
+
+    return data;
+  }
+
+  collectSchemaDataFromContainer(container) {
+    if (!container) return {};
+    const data = {};
+
+    container.querySelectorAll('.schema-field').forEach(input => {
       const fieldName = input.dataset.field;
       if (!fieldName) return;
+      if (input.closest('.schema-nested, .schema-entity, .schema-mixed') && input.closest('.schema-nested, .schema-entity, .schema-mixed') !== container) {
+        return;
+      }
 
       let value;
       if (input.type === 'checkbox') {
@@ -688,8 +1449,11 @@ export class ThemeConfig {
       }
     });
 
-    // Collect array fields
-    this.schemaFields.querySelectorAll('.schema-array').forEach(arrayEl => {
+    container.querySelectorAll('.schema-array').forEach(arrayEl => {
+      if (arrayEl.closest('.schema-nested, .schema-entity, .schema-mixed') && arrayEl.closest('.schema-nested, .schema-entity, .schema-mixed') !== container) {
+        return;
+      }
+
       const fieldName = arrayEl.dataset.field;
       if (!fieldName) return;
 
@@ -704,42 +1468,131 @@ export class ThemeConfig {
       }
     });
 
-    // Collect nested fields
-    this.schemaFields.querySelectorAll('.schema-nested').forEach(nestedEl => {
+    container.querySelectorAll('.schema-nested').forEach(nestedEl => {
+      if (nestedEl.closest('.schema-entity, .schema-mixed') && nestedEl.closest('.schema-entity, .schema-mixed') !== container) {
+        return;
+      }
+
       const fieldName = nestedEl.dataset.field;
       const schemaType = nestedEl.dataset.schema;
       if (!fieldName) return;
 
-      const nestedData = {};
+      const nestedData = this.collectSchemaDataFromContainer(nestedEl);
       if (schemaType) {
         nestedData['@type'] = schemaType;
       }
 
-      nestedEl.querySelectorAll('.schema-field').forEach(input => {
-        const nestedFieldName = input.dataset.field;
-        if (!nestedFieldName) return;
-
-        let value;
-        if (input.type === 'checkbox') {
-          value = input.checked;
-        } else if (input.type === 'number') {
-          value = input.value ? parseFloat(input.value) : null;
-        } else {
-          value = input.value.trim();
-        }
-
-        if (value !== null && value !== '' && value !== false) {
-          nestedData[nestedFieldName] = value;
-        }
-      });
-
-      // Only add nested object if it has data beyond @type
       if (Object.keys(nestedData).length > 1) {
         data[fieldName] = nestedData;
       }
     });
 
+    container.querySelectorAll('.schema-entity').forEach(entityEl => {
+      if (entityEl.closest('.schema-entity, .schema-mixed') && entityEl.closest('.schema-entity, .schema-mixed') !== container) {
+        return;
+      }
+
+      const fieldName = entityEl.dataset.field;
+      if (!fieldName) return;
+
+      const mode = entityEl.dataset.mode || ENTITY_MODE_INLINE;
+      if (mode === ENTITY_MODE_REFERENCE) {
+        const refInput = entityEl.querySelector('.schema-entity__ref');
+        const refValue = refInput?.value.trim();
+        if (refValue) {
+          data[fieldName] = { '@id': refValue };
+        }
+        return;
+      }
+
+      const typeRadio = entityEl.querySelector('.schema-entity__type-radio:checked');
+      const schemaType = typeRadio?.value;
+      const inlineContainer = entityEl.querySelector('.schema-entity__inline');
+      const inlineData = this.collectSchemaDataFromContainer(inlineContainer);
+      if (schemaType) {
+        inlineData['@type'] = schemaType;
+      }
+
+      if (Object.keys(inlineData).length > 1) {
+        data[fieldName] = inlineData;
+      }
+    });
+
+    container.querySelectorAll('.schema-mixed').forEach(mixedEl => {
+      if (mixedEl.closest('.schema-mixed') && mixedEl.closest('.schema-mixed') !== container) {
+        return;
+      }
+
+      const fieldName = mixedEl.dataset.field;
+      if (!fieldName) return;
+
+      const typeRadio = mixedEl.querySelector('.schema-mixed__type-radio:checked');
+      const selected = typeRadio?.value || '';
+      const kind = typeRadio?.dataset.kind || 'data';
+
+      if (kind === 'entity') {
+        const entityContainer = mixedEl.querySelector('.schema-mixed__entity');
+        if (!entityContainer) return;
+        const mode = entityContainer.dataset.mode || ENTITY_MODE_INLINE;
+
+        if (mode === ENTITY_MODE_REFERENCE) {
+          const refInput = entityContainer.querySelector('.schema-entity__ref');
+          const refValue = refInput?.value.trim();
+          if (refValue) {
+            data[fieldName] = { '@id': refValue };
+          }
+          return;
+        }
+
+        const schemaType = selected || entityContainer.dataset.selectedType;
+        const inlineContainer = entityContainer.querySelector('.schema-entity__inline');
+        const inlineData = this.collectSchemaDataFromContainer(inlineContainer);
+        if (schemaType) {
+          inlineData['@type'] = schemaType;
+        }
+        if (Object.keys(inlineData).length > 1) {
+          data[fieldName] = inlineData;
+        }
+        return;
+      }
+
+      const dataInput = mixedEl.querySelector('.schema-mixed__data-input');
+      if (!dataInput) return;
+
+      let value;
+      if (dataInput.type === 'checkbox') {
+        value = dataInput.checked;
+      } else if (dataInput.type === 'number') {
+        value = dataInput.value ? parseFloat(dataInput.value) : null;
+      } else {
+        value = dataInput.value.trim();
+      }
+
+      if (value !== null && value !== '' && value !== false) {
+        data[fieldName] = value;
+      }
+    });
+
     return data;
+  }
+
+  buildJsonLd(schemaType, data) {
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': schemaType,
+      ...data
+    };
+
+    Object.keys(jsonLd).forEach(key => {
+      if (jsonLd[key] === '' || jsonLd[key] === null || jsonLd[key] === undefined) {
+        delete jsonLd[key];
+      }
+      if (Array.isArray(jsonLd[key]) && jsonLd[key].length === 0) {
+        delete jsonLd[key];
+      }
+    });
+
+    return jsonLd;
   }
 
   /**
@@ -749,7 +1602,7 @@ export class ThemeConfig {
     if (!this.schemaPreviewCode || !this.currentSchemaType) return;
 
     const data = this.collectSchemaData();
-    const jsonLd = this.SchemaDefinitions.buildJsonLd(this.currentSchemaType, data || {});
+    const jsonLd = this.buildJsonLd(this.currentSchemaType, data || {});
 
     this.schemaPreviewCode.textContent = JSON.stringify(jsonLd, null, 2);
   }
@@ -789,29 +1642,154 @@ export class ThemeConfig {
    */
   resetSchemaModal() {
     this.currentSchemaType = null;
+    this.currentSchemaPath = [];
     this.editingSchemaId = null;
+    this.editingSchemaEntityId = null;
+    this.schemaModalMode = 'create';
 
-    if (this.schemaTypeSelect) {
-      this.schemaTypeSelect.value = '';
+    // Show tabs and reset to default state (Create New)
+    if (this.schemaModalTabs) {
+      this.schemaModalTabs.classList.remove('hidden');
     }
-    if (this.schemaFields) {
-      this.schemaFields.innerHTML = '';
-      this.schemaFields.classList.add('hidden');
+    this.switchSchemaModalTab('create');
+
+    // Reset SchemaSelector component
+    if (this.schemaSelectorInstance) {
+      void this.schemaSelectorInstance.reset();
     }
-    if (this.schemaPreview) {
-      this.schemaPreview.classList.add('hidden');
+
+    // Reset SchemaFormBuilder component
+    if (this.schemaFormBuilderInstance) {
+      this.schemaFormBuilderInstance.reset();
     }
+
+    // Hide form and preview containers
+    this.hideSchemaForm();
+
     if (this.schemaPreviewCode) {
       this.schemaPreviewCode.textContent = '{}';
     }
-    if (this.saveSchemaBtn) {
-      this.saveSchemaBtn.disabled = true;
-    }
-    if (this.schemaTypeDescription) {
-      this.schemaTypeDescription.textContent = 'Select a schema type to configure structured data';
-    }
+
     if (this.schemaModalTitle) {
       this.schemaModalTitle.textContent = 'Add Schema';
+    }
+  }
+
+  /**
+   * Switch between schema modal tabs (create / assign)
+   * @param {string} tabName - Tab name ('create' or 'assign')
+   */
+  switchSchemaModalTab(tabName) {
+    this.schemaModalMode = tabName;
+
+    // Update tab buttons
+    if (this.schemaModalTabs) {
+      this.schemaModalTabs.querySelectorAll('.schema-modal-tabs__tab').forEach(tab => {
+        if (tab.dataset.tab === tabName) {
+          tab.classList.add('schema-modal-tabs__tab--active');
+        } else {
+          tab.classList.remove('schema-modal-tabs__tab--active');
+        }
+      });
+    }
+
+    // Show/hide panels
+    if (this.schemaCreatePanel) {
+      this.schemaCreatePanel.classList.toggle('hidden', tabName !== 'create');
+    }
+    if (this.schemaAssignPanel) {
+      this.schemaAssignPanel.classList.toggle('hidden', tabName !== 'assign');
+    }
+
+    // Show/hide save button based on mode
+    if (this.saveSchemaBtn) {
+      this.saveSchemaBtn.classList.toggle('hidden', tabName === 'assign');
+    }
+
+    // Initialize assignment component when switching to assign tab
+    if (tabName === 'assign' && this.schemaAssignmentContainer) {
+      this.initPageSchemaAssignment();
+    }
+  }
+
+  /**
+   * Initialize PageSchemaAssignment component
+   */
+  initPageSchemaAssignment() {
+    // Only initialize once per session, or reinit with new language
+    if (!this.pageSchemaAssignmentInstance && this.PageSchemaAssignment) {
+      this.pageSchemaAssignmentInstance = new this.PageSchemaAssignment({
+        container: this.schemaAssignmentContainer,
+        baseUrl: this.baseUrl,
+        showToast: this.showToast,
+        csrfHeaders: getCsrfHeaders(),
+        langCode: this.activeSeoLanguage,
+        onAssign: (entityData) => this.handleEntityAssignment(entityData)
+      });
+      this.pageSchemaAssignmentInstance.init();
+    } else if (this.pageSchemaAssignmentInstance) {
+      // Update language code if changed
+      this.pageSchemaAssignmentInstance.setLangCode(this.activeSeoLanguage);
+    }
+  }
+
+  /**
+   * Handle entity assignment from PageSchemaAssignment component
+   * @param {Object} entityData - Entity data to assign
+   */
+  async handleEntityAssignment(entityData) {
+    if (!this.currentSeoPage) {
+      this.showToast('Please select a page first', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/admin/seo/page/${this.currentSeoPage.id}/schemas`,
+        {
+          method: 'POST',
+          headers: getCsrfHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({
+            lang_code: this.activeSeoLanguage,
+            schema_type: entityData.schema_type,
+            schema_data: entityData.schema_data,
+            is_active: true
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to assign schema');
+      }
+
+      const result = await response.json();
+      if (result.status === 'success') {
+        this.showToast('Schema assigned to page', 'success');
+        this.closeSchemaModal();
+        this.loadPageSchemas(this.currentSeoPage.id);
+      } else {
+        throw new Error(result.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Assign schema error:', error);
+      this.showToast(`Failed to assign schema: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Setup schema modal tab click handlers
+   */
+  setupSchemaModalTabs() {
+    if (this.schemaModalTabs) {
+      this.schemaModalTabs.querySelectorAll('.schema-modal-tabs__tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabName = tab.dataset.tab;
+          if (tabName) {
+            this.switchSchemaModalTab(tabName);
+          }
+        });
+      });
     }
   }
 
@@ -819,8 +1797,14 @@ export class ThemeConfig {
    * Save current schema
    */
   async saveCurrentSchema() {
-    if (!this.currentSchemaType || !this.currentSeoPage) {
-      this.showToast('Please select a schema type and SEO page first', 'error');
+    if (!this.currentSchemaType) {
+      this.showToast('Please select a schema type first', 'error');
+      return;
+    }
+
+    // For page schemas, we need a page selected
+    if (!this.editingSchemaEntityId && !this.currentSeoPage) {
+      this.showToast('Please select an SEO page first', 'error');
       return;
     }
 
@@ -830,37 +1814,75 @@ export class ThemeConfig {
       return;
     }
 
-    const jsonLd = this.SchemaDefinitions.buildJsonLd(this.currentSchemaType, data);
+    const jsonLd = this.buildJsonLd(this.currentSchemaType, data);
 
     try {
-      const endpoint = this.editingSchemaId
-        ? `${this.baseUrl}/api/v1/admin/seo/schema/${this.editingSchemaId}`
-        : `${this.baseUrl}/api/v1/admin/seo/page/${this.currentSeoPage.id}/schemas`;
+      // Check if we're editing a schema entity (from Available Schemas)
+      if (this.editingSchemaEntityId) {
+        // Update the schema entity
+        const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/entities`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getCsrfHeaders()
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            lang_code: this.activeSeoLanguage,
+            schema_id: this.editingSchemaEntityId,
+            schema_type: this.currentSchemaType,
+            schema_data: jsonLd
+          })
+        });
 
-      const method = this.editingSchemaId ? 'PUT' : 'POST';
+        if (!response.ok) {
+          throw new Error('Failed to update schema entity');
+        }
 
-      const response = await fetch(endpoint, {
-        method,
-        headers: getCsrfHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({
-          schema_type: this.currentSchemaType,
-          schema_data: jsonLd,
-          is_active: true
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save schema');
-      }
-
-      const result = await response.json();
-      if (result.status === 'success') {
-        this.showToast(this.editingSchemaId ? 'Schema updated' : 'Schema added', 'success');
-        this.closeSchemaModal();
-        this.loadPageSchemas(this.currentSeoPage.id);
+        const result = await response.json();
+        if (result.status === 'success') {
+          this.showToast('Schema entity updated', 'success');
+          this.closeSchemaModal();
+          // Reload available schemas to show updated data
+          await this.loadAvailableSchemas();
+        } else {
+          throw new Error(result.message || 'Unknown error');
+        }
       } else {
-        throw new Error(result.message || 'Unknown error');
+        // Creating/updating a page schema
+        const endpoint = this.editingSchemaId
+          ? `${this.baseUrl}/api/v1/admin/seo/schema/${this.editingSchemaId}`
+          : `${this.baseUrl}/api/v1/admin/seo/page/${this.currentSeoPage.id}/schemas`;
+
+        const method = this.editingSchemaId ? 'PUT' : 'POST';
+
+        const response = await fetch(endpoint, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...getCsrfHeaders()
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            lang_code: this.activeSeoLanguage,
+            schema_type: this.currentSchemaType,
+            schema_data: jsonLd,
+            is_active: true
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save schema');
+        }
+
+        const result = await response.json();
+        if (result.status === 'success') {
+          this.showToast(this.editingSchemaId ? 'Schema updated' : 'Schema added', 'success');
+          this.closeSchemaModal();
+          this.loadPageSchemas(this.currentSeoPage.id);
+        } else {
+          throw new Error(result.message || 'Unknown error');
+        }
       }
     } catch (error) {
       console.error('Save schema error:', error);
@@ -873,52 +1895,99 @@ export class ThemeConfig {
    * @param {number} pageId - Page SEO ID
    */
   async loadPageSchemas(pageId) {
+    console.log('[loadPageSchemas] Loading schemas for page:', pageId, 'lang:', this.activeSeoLanguage);
     try {
-      const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/page/${pageId}/schemas`, {
+      const url = `${this.baseUrl}/api/v1/admin/seo/page/${pageId}/schemas?lang_code=${encodeURIComponent(this.activeSeoLanguage)}`;
+      console.log('[loadPageSchemas] Fetching:', url);
+
+      const response = await fetch(url, {
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+
+      console.log('[loadPageSchemas] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[loadPageSchemas] Error response:', errorText);
+        throw new Error('Failed to load schemas');
+      }
+
+      const result = await response.json();
+      console.log('[loadPageSchemas] Result:', result);
+
+      if (result.status === 'success') {
+        this.pageSchemas = result.schemas || [];
+        console.log('[loadPageSchemas] Loaded schemas:', this.pageSchemas.length, this.pageSchemas);
+        this.renderAssignedSchemasList();
+      }
+    } catch (error) {
+      console.error('[loadPageSchemas] Load schemas error:', error);
+      // Don't show error toast - schemas might not exist yet
+      this.pageSchemas = [];
+      this.renderAssignedSchemasList();
+    }
+
+    // Also load available schemas
+    await this.loadAvailableSchemas();
+  }
+
+  /**
+   * Load all available schemas from schema_entities table
+   */
+  async loadAvailableSchemas() {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/entities?lang_code=${encodeURIComponent(this.activeSeoLanguage)}&limit=200`, {
         headers: getCsrfHeaders(),
         credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load schemas');
+        throw new Error('Failed to load available schemas');
       }
 
       const result = await response.json();
       if (result.status === 'success') {
-        this.pageSchemas = result.schemas || [];
-        this.renderSchemasList();
+        this.availableSchemas = result.entities || [];
+        this.renderAvailableSchemasList();
       }
     } catch (error) {
-      console.error('Load schemas error:', error);
-      // Don't show error toast - schemas might not exist yet
-      this.pageSchemas = [];
-      this.renderSchemasList();
+      console.error('Load available schemas error:', error);
+      this.availableSchemas = [];
+      this.renderAvailableSchemasList();
     }
   }
 
   /**
-   * Render schemas list in the SEO panel
+   * Render available schemas list (left panel - all schemas from database)
    */
-  renderSchemasList() {
+  renderAvailableSchemasList() {
     if (!this.schemasList) return;
 
     // Clear existing cards (keep empty state element)
     this.schemasList.querySelectorAll('.schema-card').forEach(card => card.remove());
 
-    if (this.pageSchemas.length === 0) {
+    if (this.availableSchemas.length === 0) {
       if (this.schemasEmpty) this.schemasEmpty.classList.remove('hidden');
       return;
     }
 
     if (this.schemasEmpty) this.schemasEmpty.classList.add('hidden');
 
-    this.pageSchemas.forEach(schema => {
-      const schemaDef = this.SchemaDefinitions?.getSchemaType(schema.schema_type);
-      const label = schemaDef?.label || schema.schema_type;
-      const description = schema.schema_data?.name || schema.schema_data?.title || schemaDef?.description || '';
+    this.availableSchemas.forEach(schema => {
+      // Check if this schema is already assigned to the current page
+      // Compare by @id in schema_data since pageSchemas stores copied data
+      const isAssigned = this.pageSchemas.some(ps => {
+        const psId = ps.schema_data?.['@id'];
+        return psId && psId === schema.schema_id;
+      });
+
+      const label = schema.schema_type || 'Unknown';
+      const schemaData = schema.schema_data || {};
+      const description = schemaData.name || schemaData.title || schemaData['@id'] || schema.schema_id || '';
 
       const cardHtml = `
-        <div class="schema-card ${schema.is_active ? '' : 'schema-card--inactive'}" data-schema-id="${schema.id}">
+        <div class="schema-card ${isAssigned ? 'schema-card--assigned' : ''}" data-schema-id="${this.escapeHtml(schema.schema_id)}" data-entity-id="${schema.id}">
           <div class="schema-card__icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="16 18 22 12 16 6"></polyline>
@@ -926,20 +1995,23 @@ export class ThemeConfig {
             </svg>
           </div>
           <div class="schema-card__content">
-            <div class="schema-card__type">${label}</div>
-            <div class="schema-card__description">${description}</div>
+            <div class="schema-card__type">${this.escapeHtml(label)}</div>
+            <div class="schema-card__description">${this.escapeHtml(description)}</div>
           </div>
           <div class="schema-card__actions">
-            <button type="button" class="schema-card__btn" data-action="edit" title="Edit schema">
+            <button type="button" class="schema-card__btn schema-card__btn--assign ${isAssigned ? 'hidden' : ''}" data-action="assign" title="Add to this page">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </button>
-            <button type="button" class="schema-card__btn schema-card__btn--danger" data-action="delete" title="Delete schema">
+            <span class="schema-card__assigned-badge ${isAssigned ? '' : 'hidden'}">Assigned</span>
+            <button type="button" class="schema-card__btn schema-card__btn--delete" data-action="delete" title="Delete schema">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
               </svg>
             </button>
           </div>
@@ -953,12 +2025,448 @@ export class ThemeConfig {
     this.schemasList.querySelectorAll('.schema-card').forEach(card => {
       const schemaId = card.dataset.schemaId;
 
-      card.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
-        this.editSchema(schemaId);
+      // Click on card to edit
+      card.addEventListener('click', (e) => {
+        // Don't trigger if clicking on action buttons
+        if (e.target.closest('.schema-card__actions')) return;
+        this.openSchemaEntityForEdit(schemaId);
       });
 
-      card.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
-        this.deleteSchema(schemaId);
+      // Add cursor pointer style
+      card.style.cursor = 'pointer';
+
+      card.querySelector('[data-action="assign"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.assignSchemaToCurrentPage(schemaId);
+      });
+
+      card.querySelector('[data-action="delete"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteSchemaEntity(schemaId);
+      });
+    });
+  }
+
+  /**
+   * Delete a schema entity from the database
+   * This will also cascade delete all page_schemas that reference it
+   * @param {string} schemaId - The schema_id from schema_entities table
+   */
+  async deleteSchemaEntity(schemaId) {
+    const schemaEntity = this.availableSchemas.find(s => s.schema_id === schemaId);
+    const label = schemaEntity?.schema_type || 'this schema';
+
+    if (!confirm(`Delete "${label}"?\n\nThis will also remove it from all pages where it is assigned.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/admin/seo/entities/${encodeURIComponent(schemaId)}?lang_code=${encodeURIComponent(this.activeSeoLanguage)}`,
+        {
+          method: 'DELETE',
+          headers: getCsrfHeaders(),
+          credentials: 'include'
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete schema');
+      }
+
+      const result = await response.json();
+      if (result.status === 'success') {
+        this.showToast('Schema deleted', 'success');
+        // Reload both lists to reflect changes
+        await this.loadAvailableSchemas();
+        if (this.currentSeoPage) {
+          await this.loadPageSchemas(this.currentSeoPage.id);
+        }
+      } else {
+        throw new Error(result.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Delete schema error:', error);
+      this.showToast(`Failed to delete schema: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Assign a schema entity to the current page
+   * @param {string} schemaId - The schema_id from schema_entities table
+   */
+  async assignSchemaToCurrentPage(schemaId) {
+    if (!this.currentSeoPage) {
+      this.showToast('Please select a page first', 'error');
+      return;
+    }
+
+    try {
+      // First, find the schema entity in our cached list
+      const schemaEntity = this.availableSchemas.find(s => s.schema_id === schemaId);
+      if (!schemaEntity) {
+        throw new Error('Schema entity not found');
+      }
+
+      // Create page schema using the entity's data
+      const response = await fetch(
+        `${this.baseUrl}/api/v1/admin/seo/page/${this.currentSeoPage.id}/schemas`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getCsrfHeaders()
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            lang_code: this.activeSeoLanguage,
+            schema_type: schemaEntity.schema_type,
+            schema_data: schemaEntity.schema_data,
+            is_active: true
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to assign schema');
+      }
+
+      const result = await response.json();
+      if (result.status === 'success') {
+        this.showToast('Schema assigned to page', 'success');
+        // Reload both lists
+        await this.loadPageSchemas(this.currentSeoPage.id);
+        this.renderAvailableSchemasList(); // Re-render to update assigned state
+      } else {
+        throw new Error(result.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Assign schema error:', error);
+      this.showToast(`Failed to assign schema: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Open schema entity for editing in modal
+   * @param {string} schemaId - The schema_id from schema_entities table
+   */
+  async openSchemaEntityForEdit(schemaId) {
+    // Find the schema entity in our cached list
+    const schemaEntity = this.availableSchemas.find(s => s.schema_id === schemaId);
+    if (!schemaEntity) {
+      this.showToast('Schema entity not found', 'error');
+      return;
+    }
+
+    // Set editing state
+    this.editingSchemaEntityId = schemaId;
+    this.editingSchemaId = null; // Not editing a page schema
+
+    // Open simpler edit modal for schema entities
+    await this.openSchemaEntityEditModal(schemaEntity);
+  }
+
+  /**
+   * Open a simpler modal for editing schema entities (direct JSON-LD editing)
+   * @param {Object} schemaEntity - The schema entity object
+   */
+  async openSchemaEntityEditModal(schemaEntity) {
+    if (!this.schemaModal) {
+      this.showToast('Schema modal not available', 'error');
+      return;
+    }
+
+    // Reset modal state
+    this.currentSchemaType = schemaEntity.schema_type;
+    this.schemaModalMode = 'edit';
+
+    // Update modal title
+    if (this.schemaModalTitle) {
+      this.schemaModalTitle.textContent = `Edit Schema: ${schemaEntity.schema_type}`;
+    }
+
+    // Hide tabs when editing
+    if (this.schemaModalTabs) {
+      this.schemaModalTabs.classList.add('hidden');
+    }
+
+    // Show create panel (where form will be)
+    if (this.schemaCreatePanel) {
+      this.schemaCreatePanel.classList.remove('hidden');
+    }
+    if (this.schemaAssignPanel) {
+      this.schemaAssignPanel.classList.add('hidden');
+    }
+
+    // Build form directly from schema data
+    this.buildSchemaEntityEditForm(schemaEntity);
+
+    // Show modal
+    this.schemaModal.classList.remove('hidden');
+  }
+
+  /**
+   * Build edit form directly from schema entity data
+   * @param {Object} schemaEntity - The schema entity with schema_type and schema_data
+   */
+  buildSchemaEntityEditForm(schemaEntity) {
+    if (!this.schemaFormBuilderContainer) return;
+
+    const schemaData = schemaEntity.schema_data || {};
+    const schemaType = schemaEntity.schema_type || 'Thing';
+
+    // Clear existing form
+    this.schemaFormBuilderContainer.innerHTML = '';
+
+    // Create form container
+    const formHtml = `
+      <div class="schema-form schema-form--entity-edit">
+        <div class="schema-form__header">
+          <div class="schema-form__type-badge">${this.escapeHtml(schemaType)}</div>
+          <p class="schema-form__hint">Edit the JSON-LD properties below</p>
+        </div>
+        <div class="schema-form__fields" id="schemaEntityFields"></div>
+      </div>
+    `;
+    this.schemaFormBuilderContainer.innerHTML = formHtml;
+
+    const fieldsContainer = document.getElementById('schemaEntityFields');
+    if (!fieldsContainer) return;
+
+    // Build fields from existing data
+    this.buildFieldsFromJsonLd(fieldsContainer, schemaData, schemaType);
+
+    // Store reference for collecting data later
+    this.schemaFields = fieldsContainer;
+
+    // Show preview and save button
+    if (this.schemaPreview) this.schemaPreview.classList.remove('hidden');
+    if (this.saveSchemaBtn) this.saveSchemaBtn.disabled = false;
+
+    // Update preview
+    this.updateSchemaPreview();
+  }
+
+  /**
+   * Build form fields from existing JSON-LD data
+   * @param {HTMLElement} container - Container to add fields to
+   * @param {Object} data - JSON-LD data object
+   * @param {string} schemaType - The schema type
+   */
+  buildFieldsFromJsonLd(container, data, schemaType) {
+    if (!container || !data) return;
+
+    // Standard fields to skip (handled separately or internal)
+    const skipFields = new Set(['@context', '@type']);
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (skipFields.has(key)) return;
+
+      const fieldHtml = this.createFieldFromValue(key, value);
+      container.insertAdjacentHTML('beforeend', fieldHtml);
+    });
+
+    // Add button to add new field
+    const addFieldHtml = `
+      <div class="schema-form__add-field">
+        <button type="button" class="schema-form__add-field-btn" id="addSchemaFieldBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add Field
+        </button>
+      </div>
+    `;
+    container.insertAdjacentHTML('beforeend', addFieldHtml);
+
+    // Setup add field button
+    document.getElementById('addSchemaFieldBtn')?.addEventListener('click', () => {
+      this.addNewSchemaField(container);
+    });
+
+    // Setup remove buttons
+    container.querySelectorAll('.schema-form__remove-field-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const fieldGroup = e.target.closest('.schema-form__field-group');
+        if (fieldGroup) {
+          fieldGroup.remove();
+          this.updateSchemaPreview();
+        }
+      });
+    });
+
+    // Setup value change listeners
+    container.querySelectorAll('input, textarea').forEach(input => {
+      input.addEventListener('input', () => this.updateSchemaPreview());
+    });
+  }
+
+  /**
+   * Create a form field from a JSON-LD value
+   * @param {string} key - The property name
+   * @param {*} value - The property value
+   * @returns {string} HTML string for the field
+   */
+  createFieldFromValue(key, value) {
+    const isUrl = typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'));
+    const isMultiline = typeof value === 'string' && value.length > 100;
+    const inputType = isUrl ? 'url' : (typeof value === 'number' ? 'number' : 'text');
+
+    let inputHtml;
+    if (typeof value === 'object' && value !== null) {
+      // For objects, show as JSON textarea
+      inputHtml = `<textarea class="schema-form__input schema-form__textarea" data-field="${this.escapeHtml(key)}" data-type="object" rows="4">${this.escapeHtml(JSON.stringify(value, null, 2))}</textarea>`;
+    } else if (isMultiline) {
+      inputHtml = `<textarea class="schema-form__input schema-form__textarea" data-field="${this.escapeHtml(key)}" rows="3">${this.escapeHtml(String(value || ''))}</textarea>`;
+    } else {
+      inputHtml = `<input type="${inputType}" class="schema-form__input" data-field="${this.escapeHtml(key)}" value="${this.escapeHtml(String(value || ''))}">`;
+    }
+
+    return `
+      <div class="schema-form__field-group" data-field-name="${this.escapeHtml(key)}">
+        <div class="schema-form__field-header">
+          <label class="schema-form__label">${this.escapeHtml(key)}</label>
+          <button type="button" class="schema-form__remove-field-btn" title="Remove field">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        ${inputHtml}
+      </div>
+    `;
+  }
+
+  /**
+   * Add a new field to the schema form
+   * @param {HTMLElement} container - The fields container
+   */
+  addNewSchemaField(container) {
+    const fieldName = prompt('Enter field name (e.g., "name", "description", "url"):');
+    if (!fieldName || !fieldName.trim()) return;
+
+    const cleanName = fieldName.trim();
+
+    // Check if field already exists
+    if (container.querySelector(`[data-field-name="${cleanName}"]`)) {
+      this.showToast('Field already exists', 'warning');
+      return;
+    }
+
+    const fieldHtml = this.createFieldFromValue(cleanName, '');
+    const addFieldBtn = container.querySelector('.schema-form__add-field');
+    if (addFieldBtn) {
+      addFieldBtn.insertAdjacentHTML('beforebegin', fieldHtml);
+    } else {
+      container.insertAdjacentHTML('beforeend', fieldHtml);
+    }
+
+    // Setup new field's remove button and input listener
+    const newField = container.querySelector(`[data-field-name="${cleanName}"]`);
+    if (newField) {
+      newField.querySelector('.schema-form__remove-field-btn')?.addEventListener('click', () => {
+        newField.remove();
+        this.updateSchemaPreview();
+      });
+      newField.querySelector('input, textarea')?.addEventListener('input', () => this.updateSchemaPreview());
+    }
+
+    this.updateSchemaPreview();
+  }
+
+  /**
+   * Unassign a schema from the current page
+   * @param {number} pageSchemaId - The ID from page_schemas table
+   */
+  async unassignSchemaFromPage(pageSchemaId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/schema/${pageSchemaId}`, {
+        method: 'DELETE',
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove schema');
+      }
+
+      this.showToast('Schema removed from page', 'success');
+      // Reload both lists
+      await this.loadPageSchemas(this.currentSeoPage.id);
+      this.renderAvailableSchemasList(); // Re-render to update assigned state
+    } catch (error) {
+      console.error('Unassign schema error:', error);
+      this.showToast(`Failed to remove schema: ${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * Render assigned schemas list (right panel - schemas assigned to current page)
+   */
+  renderAssignedSchemasList() {
+    console.log('[renderAssignedSchemasList] Called, element exists:', !!this.assignedSchemasList);
+    console.log('[renderAssignedSchemasList] pageSchemas:', this.pageSchemas);
+
+    if (!this.assignedSchemasList) {
+      console.warn('[renderAssignedSchemasList] assignedSchemasList element not found');
+      return;
+    }
+
+    // Clear existing cards (keep empty state element)
+    this.assignedSchemasList.querySelectorAll('.schema-card').forEach(card => card.remove());
+
+    if (!this.pageSchemas || this.pageSchemas.length === 0) {
+      console.log('[renderAssignedSchemasList] No schemas, showing empty state');
+      if (this.assignedSchemasEmpty) this.assignedSchemasEmpty.classList.remove('hidden');
+      return;
+    }
+
+    console.log('[renderAssignedSchemasList] Rendering', this.pageSchemas.length, 'schemas');
+    if (this.assignedSchemasEmpty) this.assignedSchemasEmpty.classList.add('hidden');
+
+    this.pageSchemas.forEach(schema => {
+      // Use cached schema definition if available, otherwise use schema_type directly
+      const schemaDef = this.schemaDefinitionCache?.get(schema.schema_type);
+      const label = schemaDef?.label || schema.schema_type || 'Unknown';
+      const schemaId = schema.schema_data?.['@id'] || schema.entity_schema_id || '';
+      const description = schema.schema_data?.name || schema.schema_data?.title || schemaId || '';
+
+      const cardHtml = `
+        <div class="schema-card" data-page-schema-id="${schema.id}" data-schema-id="${this.escapeHtml(schemaId)}">
+          <div class="schema-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+          </div>
+          <div class="schema-card__content">
+            <div class="schema-card__type">${this.escapeHtml(label)}</div>
+            <div class="schema-card__description">${this.escapeHtml(description)}</div>
+          </div>
+          <div class="schema-card__actions">
+            <button type="button" class="schema-card__btn schema-card__btn--danger" data-action="remove" title="Remove from this page">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+
+      this.assignedSchemasList.insertAdjacentHTML('beforeend', cardHtml);
+    });
+
+    // Setup card action handlers
+    this.assignedSchemasList.querySelectorAll('.schema-card').forEach(card => {
+      const pageSchemaId = card.dataset.pageSchemaId;
+
+      card.querySelector('[data-action="remove"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.unassignSchemaFromPage(pageSchemaId);
       });
     });
   }
@@ -975,7 +2483,7 @@ export class ThemeConfig {
     }
 
     this.editingSchemaId = schemaId;
-    this.openSchemaModal(schema);
+    void this.openSchemaModal(schema);
   }
 
   /**
@@ -1545,9 +3053,9 @@ export class ThemeConfig {
     } else if (target === 'favicon') {
       currentUuid = this.faviconUuid;
     } else if (target === 'og_image') {
-      currentUuid = this.currentSeoPage?.og_image_uuid;
+      currentUuid = this.currentSeoTranslation?.og_image_uuid;
     } else if (target === 'twitter_image') {
-      currentUuid = this.currentSeoPage?.twitter_image_uuid;
+      currentUuid = this.currentSeoTranslation?.twitter_image_uuid;
     }
 
     if (this.removeImageBtn) {
@@ -1657,15 +3165,15 @@ export class ThemeConfig {
       this.updateImagePreview('favicon', uuid, storage_type);
       this.markUnsaved();
     } else if (this.currentImageTarget === 'og_image') {
-      if (this.currentSeoPage) {
-        this.currentSeoPage.og_image_uuid = uuid;
-        this.currentSeoPage.og_image_storage_type = storage_type;
+      if (this.currentSeoTranslation) {
+        this.currentSeoTranslation.og_image_uuid = uuid;
+        this.currentSeoTranslation.og_image_storage_type = storage_type;
         this.updateSeoImagePreview('og_image', uuid, storage_type);
       }
     } else if (this.currentImageTarget === 'twitter_image') {
-      if (this.currentSeoPage) {
-        this.currentSeoPage.twitter_image_uuid = uuid;
-        this.currentSeoPage.twitter_image_storage_type = storage_type;
+      if (this.currentSeoTranslation) {
+        this.currentSeoTranslation.twitter_image_uuid = uuid;
+        this.currentSeoTranslation.twitter_image_storage_type = storage_type;
         this.updateSeoImagePreview('twitter_image', uuid, storage_type);
       }
     }
@@ -1739,13 +3247,13 @@ export class ThemeConfig {
       this.updateImagePreview('favicon', null);
       this.markUnsaved();
     } else if (this.currentImageTarget === 'og_image') {
-      if (this.currentSeoPage) {
-        this.currentSeoPage.og_image_uuid = null;
+      if (this.currentSeoTranslation) {
+        this.currentSeoTranslation.og_image_uuid = null;
         this.updateSeoImagePreview('og_image', null);
       }
     } else if (this.currentImageTarget === 'twitter_image') {
-      if (this.currentSeoPage) {
-        this.currentSeoPage.twitter_image_uuid = null;
+      if (this.currentSeoTranslation) {
+        this.currentSeoTranslation.twitter_image_uuid = null;
         this.updateSeoImagePreview('twitter_image', null);
       }
     }
@@ -2421,6 +3929,7 @@ export class ThemeConfig {
       pageName: document.getElementById('seoPageName'),
       pagePath: document.getElementById('seoPagePath'),
       routeName: document.getElementById('seoRouteName'),
+      languageTabs: document.getElementById('seoLanguageTabs'),
       // Sub-tabs
       subtabs: document.querySelectorAll('.seo-subtab'),
       subpanels: {
@@ -2431,6 +3940,8 @@ export class ThemeConfig {
       // Schemas section
       schemasList: document.getElementById('schemasList'),
       schemasEmpty: document.getElementById('schemasEmpty'),
+      assignedSchemasList: document.getElementById('assignedSchemasList'),
+      assignedSchemasEmpty: document.getElementById('assignedSchemasEmpty'),
       addSchemaBtn: document.getElementById('addSchemaBtn'),
       // Basic SEO
       title: document.getElementById('seoTitle'),
@@ -2476,6 +3987,11 @@ export class ThemeConfig {
     // Setup SEO image selectors
     this.setupSeoImageSelectors();
 
+    this.setupSeoPageModal();
+    this.setupHreflangForm();
+
+    this.loadSeoLanguages();
+
     // Load SEO pages
     this.loadSeoPages();
   }
@@ -2497,9 +4013,85 @@ export class ThemeConfig {
     // Setup Add Schema button
     if (f.addSchemaBtn) {
       f.addSchemaBtn.addEventListener('click', () => {
-        this.openSchemaModal();
+        void this.openSchemaModal();
       });
     }
+  }
+
+  async loadSeoLanguages() {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/localizations/languages`, {
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.seoLanguages = (result.languages || []).map(lang => ({
+          code: (lang.iso2 || '').toLowerCase(),
+          label: lang.native_name || lang.iso2
+        })).filter(lang => lang.code);
+      } else {
+        this.seoLanguages = [];
+      }
+    } catch (error) {
+      console.error('Failed to load SEO languages:', error);
+      this.seoLanguages = [];
+    }
+
+    if (!this.seoLanguages.find(lang => lang.code === 'en')) {
+      this.seoLanguages.unshift({ code: 'en', label: 'English' });
+    }
+    if (!this.seoLanguages.find(lang => lang.code === 'sr')) {
+      this.seoLanguages.push({ code: 'sr', label: 'Srpski' });
+    }
+
+    this.renderSeoLanguageTabs();
+  }
+
+  renderSeoLanguageTabs() {
+    const tabsContainer = this.seoFormElements?.languageTabs || this.seoLanguageTabs;
+    if (!tabsContainer) return;
+
+    tabsContainer.innerHTML = '';
+    this.seoLanguages.forEach(lang => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'seo-language-tab';
+      if (lang.code === this.activeSeoLanguage) {
+        button.classList.add('is-active');
+      }
+      button.textContent = `${lang.label} (${lang.code.toUpperCase()})`;
+      button.addEventListener('click', () => {
+        this.setActiveSeoLanguage(lang.code);
+      });
+      tabsContainer.appendChild(button);
+    });
+  }
+
+  setActiveSeoLanguage(langCode) {
+    this.activeSeoLanguage = langCode;
+    this.renderSeoLanguageTabs();
+    if (this.currentSeoPage) {
+      this.populateSeoForm(this.currentSeoPage);
+      if (this.currentSeoPage.id) {
+        this.loadPageSchemas(this.currentSeoPage.id);
+      }
+    }
+  }
+
+  normalizeSeoTranslations(translations = []) {
+    const map = {};
+    translations.forEach(entry => {
+      if (!entry.lang_code) return;
+      map[entry.lang_code.toLowerCase()] = { ...entry };
+    });
+    return map;
+  }
+
+  getSeoTranslation(langCode) {
+    if (!this.seoTranslations) return {};
+    return this.seoTranslations[langCode] || this.seoTranslations.en || {};
   }
 
   /**
@@ -2528,36 +4120,71 @@ export class ThemeConfig {
    * Open the schema selection/edit modal
    * @param {Object} existingSchema - Optional existing schema to edit
    */
-  openSchemaModal(existingSchema = null) {
+  async openSchemaModal(existingSchema = null) {
     if (!this.schemaModal) {
       this.showToast('Schema modal not available', 'error');
       return;
     }
 
-    if (!this.currentSeoPage) {
+    // Allow editing schema entities without a page selected
+    // But require page for creating/editing page schemas
+    const isEditingSchemaEntity = this.editingSchemaEntityId !== null;
+    if (!isEditingSchemaEntity && !this.currentSeoPage) {
       this.showToast('Please select a page first', 'error');
       return;
     }
 
+    // Preserve editingSchemaEntityId before reset if set
+    const preservedEntityId = this.editingSchemaEntityId;
+
     // Reset modal first
     this.resetSchemaModal();
 
-    // If editing existing schema, populate the form
+    // Restore editingSchemaEntityId if we're editing an entity
+    if (preservedEntityId) {
+      this.editingSchemaEntityId = preservedEntityId;
+    }
+
+    await this.loadSchemaCategories();
+
+    // If editing existing schema, populate the form and hide tabs
     if (existingSchema) {
-      this.editingSchemaId = existingSchema.id;
+      // Only set editingSchemaId for page schemas (has numeric id)
+      if (existingSchema.id && typeof existingSchema.id === 'number') {
+        this.editingSchemaId = existingSchema.id;
+      }
       if (this.schemaModalTitle) {
-        this.schemaModalTitle.textContent = 'Edit Schema';
+        // Different title for schema entities vs page schemas
+        this.schemaModalTitle.textContent = this.editingSchemaEntityId ? 'Edit Schema Entity' : 'Edit Schema';
+      }
+      // Hide tabs when editing (only show create panel)
+      if (this.schemaModalTabs) {
+        this.schemaModalTabs.classList.add('hidden');
       }
 
-      // Set schema type and trigger change
-      if (this.schemaTypeSelect && existingSchema.schema_type) {
-        this.schemaTypeSelect.value = existingSchema.schema_type;
-        this.onSchemaTypeChange(existingSchema.schema_type);
+      if (existingSchema.schema_type) {
+        try {
+          const schemaDef = await this.fetchSchemaDefinition(existingSchema.schema_type);
+          const path = schemaDef.path || [existingSchema.schema_type];
+          const normalizedPath = path[0] === 'Thing' ? path.slice(1) : path;
+          const category = normalizedPath[0] || '';
 
-        // Populate form fields with existing data
-        setTimeout(() => {
-          this.populateSchemaFields(existingSchema.schema_data);
-        }, 50);
+          if (this.schemaCategorySelect) {
+            this.schemaCategorySelect.value = category;
+          }
+          this.clearSchemaHierarchy();
+          if (category) {
+            await this.renderSchemaLevel(category, 0, normalizedPath[1] || '');
+          }
+
+          await this.onSchemaTypeChange(existingSchema.schema_type);
+          setTimeout(() => {
+            this.populateSchemaFields(existingSchema.schema_data);
+          }, 50);
+        } catch (error) {
+          this.showToast('Failed to load schema definition', 'error');
+          console.error(error);
+        }
       }
     }
 
@@ -2572,23 +4199,25 @@ export class ThemeConfig {
   populateSchemaFields(schemaData) {
     if (!schemaData || !this.schemaFields) return;
 
-    // Populate simple fields
-    Object.entries(schemaData).forEach(([key, value]) => {
-      if (key.startsWith('@')) return; // Skip @context, @type
-      if (typeof value === 'object' && !Array.isArray(value)) return; // Skip nested objects for now
+    this.populateFieldsFromData(this.schemaFields, schemaData);
 
-      const input = this.schemaFields.querySelector(`[data-field="${key}"]`);
-      if (!input) return;
+    // Update preview with populated data
+    this.updateSchemaPreview();
+  }
 
-      if (input.type === 'checkbox') {
-        input.checked = Boolean(value);
-      } else if (Array.isArray(value)) {
-        // Handle array fields
-        const arrayContainer = input.closest('.schema-array');
+  populateFieldsFromData(container, data) {
+    if (!container || !data || typeof data !== 'object') return;
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (key.startsWith('@')) return;
+
+      if (Array.isArray(value)) {
+        const arrayContainer = container.querySelector(`.schema-array[data-field="${key}"]`);
         if (arrayContainer) {
           const arrayId = arrayContainer.querySelector('.schema-array__add')?.dataset.array;
           if (arrayId) {
             value.forEach(item => {
+              if (item && typeof item === 'object') return;
               this.addArrayItem(arrayId);
               const items = document.getElementById(`${arrayId}_items`);
               const lastInput = items?.querySelector('.schema-array__item:last-child input');
@@ -2596,35 +4225,105 @@ export class ThemeConfig {
             });
           }
         }
+        return;
+      }
+
+      if (value && typeof value === 'object') {
+        const entityContainer = container.querySelector(`.schema-entity[data-field="${key}"]`);
+        if (entityContainer) {
+          this.populateEntityContainer(entityContainer, value);
+          return;
+        }
+
+        const mixedContainer = container.querySelector(`.schema-mixed[data-field="${key}"]`);
+        if (mixedContainer) {
+          this.populateMixedContainer(mixedContainer, value);
+          return;
+        }
+
+        const nestedContainer = container.querySelector(`.schema-nested[data-field="${key}"]`);
+        if (nestedContainer) {
+          this.populateFieldsFromData(nestedContainer, value);
+        }
+        return;
+      }
+
+      const input = container.querySelector(`[data-field="${key}"]`);
+      if (!input) return;
+
+      if (input.type === 'checkbox') {
+        input.checked = Boolean(value);
       } else {
         input.value = value;
       }
     });
+  }
 
-    // Populate nested fields
-    Object.entries(schemaData).forEach(([key, value]) => {
-      if (key.startsWith('@')) return;
-      if (typeof value !== 'object' || Array.isArray(value)) return;
+  populateEntityContainer(container, value) {
+    if (!container || !value || typeof value !== 'object') return;
 
-      const nestedContainer = this.schemaFields.querySelector(`.schema-nested[data-field="${key}"]`);
-      if (!nestedContainer) return;
+    const keys = Object.keys(value);
+    const hasOnlyId = keys.length === 1 && value['@id'];
+    if (hasOnlyId) {
+      this.setEntityMode(container, ENTITY_MODE_REFERENCE);
+      const refInput = container.querySelector('.schema-entity__ref');
+      if (refInput) refInput.value = value['@id'];
+      return;
+    }
 
-      Object.entries(value).forEach(([nestedKey, nestedValue]) => {
-        if (nestedKey.startsWith('@')) return;
+    this.setEntityMode(container, ENTITY_MODE_INLINE);
+    const typeRadio = container.querySelector(`.schema-entity__type-radio[value="${value['@type']}"]`);
+    const fallbackRadio = container.querySelector('.schema-entity__type-radio');
+    if (typeRadio && value['@type']) {
+      typeRadio.checked = true;
+      void this.updateEntityInlineFields(container);
+    } else if (fallbackRadio) {
+      fallbackRadio.checked = true;
+      void this.updateEntityInlineFields(container);
+    }
 
-        const input = nestedContainer.querySelector(`[data-field="${nestedKey}"]`);
-        if (!input) return;
+    const inlineContainer = container.querySelector('.schema-entity__inline');
+    if (!inlineContainer) return;
+    const copy = { ...value };
+    delete copy['@type'];
+    this.populateFieldsFromData(inlineContainer, copy);
+  }
 
-        if (input.type === 'checkbox') {
-          input.checked = Boolean(nestedValue);
-        } else {
-          input.value = nestedValue;
-        }
-      });
-    });
+  populateMixedContainer(container, value) {
+    if (!container) return;
 
-    // Update preview with populated data
-    this.updateSchemaPreview();
+    const dataSection = container.querySelector('.schema-mixed__data');
+    const entitySection = container.querySelector('.schema-mixed__entity');
+
+    if (value && typeof value === 'object') {
+      const hasOnlyId = Object.keys(value).length === 1 && value['@id'];
+      const radio = container.querySelector(`.schema-mixed__type-radio[data-kind="entity"][value="${value['@type']}"]`);
+      const fallbackRadio = container.querySelector('.schema-mixed__type-radio[data-kind="entity"]');
+      if (radio) {
+        radio.checked = true;
+      } else if (fallbackRadio) {
+        fallbackRadio.checked = true;
+      }
+      this.updateMixedField(container);
+      if (entitySection) {
+        this.populateEntityContainer(entitySection, value);
+      }
+      if (hasOnlyId && entitySection) {
+        const refInput = entitySection.querySelector('.schema-entity__ref');
+        if (refInput) refInput.value = value['@id'];
+      }
+      return;
+    }
+
+    const defaultRadio = container.querySelector('.schema-mixed__type-radio[data-kind="data"]');
+    if (defaultRadio) {
+      defaultRadio.checked = true;
+    }
+    if (dataSection) dataSection.classList.remove('hidden');
+    if (entitySection) entitySection.classList.add('hidden');
+
+    const dataInput = container.querySelector('.schema-mixed__data-input');
+    if (dataInput) dataInput.value = value ?? '';
   }
 
   /**
@@ -2682,6 +4381,252 @@ export class ThemeConfig {
           this.openImageModal('twitter_image');
         }
       });
+    }
+  }
+
+  /**
+   * Setup SEO page modal actions
+   */
+  setupSeoPageModal() {
+    if (this.seoAddPageBtn) {
+      this.seoAddPageBtn.addEventListener('click', () => this.openSeoPageModal());
+    }
+
+    if (this.seoPageModal) {
+      this.seoPageModal.addEventListener('click', event => {
+        if (event.target === this.seoPageModal || event.target.closest('[data-action="close"]')) {
+          this.closeSeoPageModal();
+        }
+      });
+    }
+
+    if (this.seoPageForm) {
+      this.seoPageForm.addEventListener('submit', event => {
+        event.preventDefault();
+        this.createSeoPage();
+      });
+    }
+
+    if (this.seoPageCancelBtn) {
+      this.seoPageCancelBtn.addEventListener('click', () => this.closeSeoPageModal());
+    }
+  }
+
+  openSeoPageModal() {
+    this.resetSeoPageModalForm();
+    if (this.seoPageModalTitle) {
+      this.seoPageModalTitle.textContent = 'Add SEO Page';
+    }
+    this.seoPageModal?.classList.remove('hidden');
+    this.seoPageRouteName?.focus();
+  }
+
+  closeSeoPageModal() {
+    this.seoPageModal?.classList.add('hidden');
+    this.resetSeoPageModalForm();
+  }
+
+  resetSeoPageModalForm() {
+    if (this.seoPageForm) {
+      this.seoPageForm.reset();
+    }
+  }
+
+  async createSeoPage() {
+    if (!this.seoPageRouteName) return;
+    const routeName = this.seoPageRouteName.value.trim();
+    const pageLabel = this.seoPageLabel?.value.trim();
+
+    if (!routeName) {
+      this.showToast('Route name is required', 'error');
+      return;
+    }
+
+    try {
+      this.setButtonLoading(this.seoPageSaveBtn, true, 'Saving...');
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/seo`, {
+        method: 'POST',
+        headers: getCsrfHeaders(),
+        body: JSON.stringify({
+          route_name: routeName,
+          page_label: pageLabel || null
+        }),
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+      if (response.ok && result.status === 'success') {
+        this.showToast('SEO page created', 'success');
+        this.closeSeoPageModal();
+        await this.loadSeoPages();
+        this.selectSeoPage(routeName);
+      } else {
+        this.showToast(result.message || 'Failed to create SEO page', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to create SEO page:', error);
+      this.showToast('Network error while creating SEO page', 'error');
+    } finally {
+      this.setButtonLoading(this.seoPageSaveBtn, false);
+    }
+  }
+
+  /**
+   * Setup hreflang form actions
+   */
+  setupHreflangForm() {
+    if (this.hreflangForm) {
+      this.hreflangForm.addEventListener('submit', event => {
+        event.preventDefault();
+        this.saveHreflangEntry();
+      });
+    }
+
+    if (this.hreflangCancelBtn) {
+      this.hreflangCancelBtn.addEventListener('click', () => this.resetHreflangForm());
+    }
+  }
+
+  resetHreflangForm() {
+    if (this.hreflangForm) {
+      this.hreflangForm.reset();
+    }
+    if (this.hreflangIdInput) {
+      this.hreflangIdInput.value = '';
+    }
+  }
+
+  async loadHreflangEntries(pageId) {
+    if (!pageId) return;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/page/${pageId}/hreflang`, {
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+      if (response.ok && result.status === 'success') {
+        this.hreflangEntries = result.entries || [];
+        this.renderHreflangTable();
+      } else {
+        this.hreflangEntries = [];
+        this.renderHreflangTable();
+      }
+    } catch (error) {
+      console.error('Failed to load hreflang entries:', error);
+      this.hreflangEntries = [];
+      this.renderHreflangTable();
+    }
+  }
+
+  renderHreflangTable() {
+    if (!this.hreflangTableBody) return;
+    this.hreflangTableBody.innerHTML = '';
+
+    if (!this.hreflangEntries.length) {
+      const row = document.createElement('tr');
+      row.innerHTML = '<td colspan="4" class="hreflang-table__empty">No hreflang entries yet.</td>';
+      this.hreflangTableBody.appendChild(row);
+      return;
+    }
+
+    this.hreflangEntries.forEach(entry => {
+      const row = document.createElement('tr');
+      row.className = 'hreflang-row';
+      row.innerHTML = `
+        <td>${this.escapeHtml(entry.lang_code || '')}</td>
+        <td>${this.escapeHtml(entry.href || '')}</td>
+        <td>${entry.is_default ? 'Yes' : 'No'}</td>
+        <td class="hreflang-actions">
+          <button type="button" class="btn btn--secondary btn--xs" data-action="edit" data-id="${entry.id}">Edit</button>
+          <button type="button" class="btn btn--danger btn--xs" data-action="delete" data-id="${entry.id}">Delete</button>
+        </td>
+      `;
+
+      row.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.action;
+          if (action === 'edit') {
+            this.populateHreflangForm(entry);
+          } else if (action === 'delete') {
+            this.deleteHreflangEntry(entry.id);
+          }
+        });
+      });
+
+      this.hreflangTableBody.appendChild(row);
+    });
+  }
+
+  populateHreflangForm(entry) {
+    if (!entry) return;
+    if (this.hreflangIdInput) this.hreflangIdInput.value = entry.id || '';
+    if (this.hreflangCodeInput) this.hreflangCodeInput.value = entry.lang_code || '';
+    if (this.hreflangUrlInput) this.hreflangUrlInput.value = entry.href || '';
+    if (this.hreflangDefaultInput) this.hreflangDefaultInput.checked = !!entry.is_default;
+  }
+
+  async saveHreflangEntry() {
+    if (!this.currentSeoPage?.id) {
+      this.showToast('Select a page first', 'error');
+      return;
+    }
+
+    const langCode = this.hreflangCodeInput?.value.trim();
+    const href = this.hreflangUrlInput?.value.trim();
+    const id = this.hreflangIdInput?.value.trim();
+    const isDefault = !!this.hreflangDefaultInput?.checked;
+
+    if (!langCode || !href) {
+      this.showToast('Language code and URL are required', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/page/${this.currentSeoPage.id}/hreflang`, {
+        method: 'POST',
+        headers: getCsrfHeaders(),
+        body: JSON.stringify({
+          id: id || null,
+          lang_code: langCode,
+          href,
+          is_default: isDefault
+        }),
+        credentials: 'include'
+      });
+      const result = await response.json();
+      if (response.ok && result.status === 'success') {
+        this.showToast('Hreflang entry saved', 'success');
+        this.resetHreflangForm();
+        await this.loadHreflangEntries(this.currentSeoPage.id);
+      } else {
+        this.showToast(result.message || 'Failed to save hreflang entry', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to save hreflang entry:', error);
+      this.showToast('Network error while saving hreflang entry', 'error');
+    }
+  }
+
+  async deleteHreflangEntry(entryId) {
+    if (!entryId) return;
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/seo/hreflang/${entryId}`, {
+        method: 'DELETE',
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+      if (response.ok && result.status === 'success') {
+        this.showToast('Hreflang entry deleted', 'success');
+        if (this.currentSeoPage?.id) {
+          await this.loadHreflangEntries(this.currentSeoPage.id);
+        }
+      } else {
+        this.showToast(result.message || 'Failed to delete hreflang entry', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete hreflang entry:', error);
+      this.showToast('Network error while deleting hreflang entry', 'error');
     }
   }
 
@@ -2766,7 +4711,14 @@ export class ThemeConfig {
       const result = await response.json();
       if (result.status === 'success' && result.seo) {
         this.currentSeoPage = result.seo;
+        this.seoTranslations = this.normalizeSeoTranslations(result.seo.translations || []);
+        if (!this.seoTranslations[this.activeSeoLanguage]) {
+          this.activeSeoLanguage = this.seoTranslations.en ? 'en' : Object.keys(this.seoTranslations)[0] || 'en';
+        }
+        this.renderSeoLanguageTabs();
         this.populateSeoForm(result.seo);
+        this.resetHreflangForm();
+        this.loadHreflangEntries(result.seo.id);
       } else {
         throw new Error(result.message || 'Unknown error');
       }
@@ -2796,30 +4748,33 @@ export class ThemeConfig {
     if (f.pagePath) f.pagePath.textContent = seo.page_path || '';
     if (f.routeName) f.routeName.value = seo.route_name || '';
 
+    const translation = this.getSeoTranslation(this.activeSeoLanguage);
+    this.currentSeoTranslation = { ...translation };
+
     // Basic SEO
-    if (f.title) f.title.value = seo.title || '';
-    if (f.description) f.description.value = seo.description || '';
-    if (f.keywords) f.keywords.value = seo.keywords || '';
-    if (f.robots) f.robots.value = seo.robots || 'index, follow';
-    if (f.canonical) f.canonical.value = seo.canonical_url || '';
+    if (f.title) f.title.value = translation.title || '';
+    if (f.description) f.description.value = translation.description || '';
+    if (f.keywords) f.keywords.value = translation.keywords || '';
+    if (f.robots) f.robots.value = translation.robots || 'index, follow';
+    if (f.canonical) f.canonical.value = translation.canonical_url || '';
 
     // Open Graph
-    if (f.ogTitle) f.ogTitle.value = seo.og_title || '';
-    if (f.ogDescription) f.ogDescription.value = seo.og_description || '';
-    if (f.ogType) f.ogType.value = seo.og_type || 'website';
+    if (f.ogTitle) f.ogTitle.value = translation.og_title || '';
+    if (f.ogDescription) f.ogDescription.value = translation.og_description || '';
+    if (f.ogType) f.ogType.value = translation.og_type || 'website';
 
     // OG Image
-    this.currentSeoPage.og_image_uuid = seo.og_image_uuid;
-    this.updateSeoImagePreview('og_image', seo.og_image_uuid);
+    this.currentSeoTranslation.og_image_uuid = translation.og_image_uuid || null;
+    this.updateSeoImagePreview('og_image', translation.og_image_uuid || null);
 
     // Twitter
-    if (f.twitterCard) f.twitterCard.value = seo.twitter_card || 'summary';
-    if (f.twitterTitle) f.twitterTitle.value = seo.twitter_title || '';
-    if (f.twitterDescription) f.twitterDescription.value = seo.twitter_description || '';
+    if (f.twitterCard) f.twitterCard.value = translation.twitter_card || 'summary';
+    if (f.twitterTitle) f.twitterTitle.value = translation.twitter_title || '';
+    if (f.twitterDescription) f.twitterDescription.value = translation.twitter_description || '';
 
     // Twitter Image
-    this.currentSeoPage.twitter_image_uuid = seo.twitter_image_uuid;
-    this.updateSeoImagePreview('twitter_image', seo.twitter_image_uuid);
+    this.currentSeoTranslation.twitter_image_uuid = translation.twitter_image_uuid || null;
+    this.updateSeoImagePreview('twitter_image', translation.twitter_image_uuid || null);
 
     // Status
     if (f.isActive) f.isActive.checked = seo.is_active !== false;
@@ -2883,6 +4838,15 @@ export class ThemeConfig {
     if (hiddenInput) {
       hiddenInput.value = uuid || '';
     }
+
+    if (this.currentSeoTranslation) {
+      if (target === 'og_image') {
+        this.currentSeoTranslation.og_image_uuid = uuid || null;
+      } else {
+        this.currentSeoTranslation.twitter_image_uuid = uuid || null;
+      }
+      this.seoTranslations[this.activeSeoLanguage] = { ...this.currentSeoTranslation };
+    }
   }
 
   /**
@@ -2896,6 +4860,7 @@ export class ThemeConfig {
     if (!routeName) return;
 
     const seoData = {
+      lang_code: this.activeSeoLanguage,
       title: f.title?.value || null,
       description: f.description?.value || null,
       keywords: f.keywords?.value || null,
@@ -2904,11 +4869,11 @@ export class ThemeConfig {
       og_title: f.ogTitle?.value || null,
       og_description: f.ogDescription?.value || null,
       og_type: f.ogType?.value || null,
-      og_image_uuid: this.currentSeoPage.og_image_uuid || null,
+      og_image_uuid: this.currentSeoTranslation?.og_image_uuid || null,
       twitter_card: f.twitterCard?.value || null,
       twitter_title: f.twitterTitle?.value || null,
       twitter_description: f.twitterDescription?.value || null,
-      twitter_image_uuid: this.currentSeoPage.twitter_image_uuid || null,
+      twitter_image_uuid: this.currentSeoTranslation?.twitter_image_uuid || null,
       is_active: f.isActive?.checked ?? true
     };
 
@@ -2931,10 +4896,17 @@ export class ThemeConfig {
         const pageIdx = this.seoPages.findIndex(p => p.route_name === routeName);
         if (pageIdx !== -1) {
           this.seoPages[pageIdx].is_active = seoData.is_active;
-          this.seoPages[pageIdx].title = seoData.title;
-          this.seoPages[pageIdx].description = seoData.description;
+          if (this.activeSeoLanguage === 'en') {
+            this.seoPages[pageIdx].title = seoData.title;
+            this.seoPages[pageIdx].description = seoData.description;
+          }
         }
         this.renderSeoPageList();
+
+        this.seoTranslations[this.activeSeoLanguage] = {
+          ...this.currentSeoTranslation,
+          ...seoData
+        };
 
         // Re-select current page to show active state
         const item = this.seoFormElements.pageList?.querySelector(`[data-route-name="${routeName}"]`);
@@ -2947,6 +4919,654 @@ export class ThemeConfig {
       this.showToast('Network error while saving', 'error');
     } finally {
       this.setButtonLoading(f.saveBtn, false);
+    }
+  }
+
+  /**
+   * Setup localization management (languages + translations)
+   */
+  setupLocalization() {
+    this.setupLocalizationModal();
+
+    if (this.languageForm) {
+      this.languageForm.addEventListener('submit', event => {
+        event.preventDefault();
+        this.saveLanguage();
+      });
+    }
+
+    if (this.languageResetBtn) {
+      this.languageResetBtn.addEventListener('click', () => this.resetLanguageForm());
+    }
+
+    if (this.languageIconFile) {
+      this.languageIconFile.addEventListener('change', event => {
+        this.uploadLanguageIcon(event.target.files?.[0] || null);
+      });
+    }
+
+    if (this.languageIconClear) {
+      this.languageIconClear.addEventListener('click', () => {
+        this.setLanguageIcon(null);
+      });
+    }
+
+    if (this.localeForm) {
+      this.localeForm.addEventListener('submit', event => {
+        event.preventDefault();
+        this.saveLocale();
+      });
+    }
+
+    if (this.localeResetBtn) {
+      this.localeResetBtn.addEventListener('click', () => this.resetLocaleForm());
+    }
+
+    if (this.localizationForm) {
+      this.localizationForm.addEventListener('submit', event => {
+        event.preventDefault();
+        this.saveLocalizationKey();
+      });
+    }
+
+    if (this.localizationResetBtn) {
+      this.localizationResetBtn.addEventListener('click', () => this.openLocalizationModal());
+    }
+
+    if (this.localizationNewBtn) {
+      this.localizationNewBtn.addEventListener('click', () => this.openLocalizationModal());
+    }
+  }
+
+  /**
+   * Load localization data from API
+   */
+  async loadLocalizationData() {
+    await Promise.all([
+      this.loadLanguages(),
+      this.loadLocales(),
+      this.loadLocalizationKeys()
+    ]);
+  }
+
+  async loadLanguages() {
+    if (!this.languagesTableBody) return;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/localizations/languages`, {
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.languages = result.languages || [];
+        this.renderLanguages();
+      } else {
+        this.showToast(result.message || 'Failed to load languages', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to load languages:', error);
+      this.showToast('Failed to load languages', 'error');
+    }
+  }
+
+  async loadLocales() {
+    if (!this.localesTableBody) return;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/localizations/locales`, {
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.locales = result.locales || [];
+        this.renderLocales();
+        this.renderLocalizationTabs();
+        this.renderTranslationInputs();
+      } else {
+        this.showToast(result.message || 'Failed to load locales', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to load locales:', error);
+      this.showToast('Failed to load locales', 'error');
+    }
+  }
+
+  async loadLocalizationKeys() {
+    if (!this.localizationKeysTableBody) return;
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/localizations/keys`, {
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.localizationKeys = result.keys || [];
+        this.renderLocalizationKeys();
+      } else {
+        this.showToast(result.message || 'Failed to load localization keys', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to load localization keys:', error);
+      this.showToast('Failed to load localization keys', 'error');
+    }
+  }
+
+  renderLanguages() {
+    if (!this.languagesTableBody) return;
+
+    this.languagesTableBody.innerHTML = '';
+    this.languages.forEach(language => {
+      const row = document.createElement('tr');
+      const icon = language.icon_uuid
+        ? `<img src="/api/v1/upload/download/public/${this.escapeHtml(language.icon_uuid)}" alt="" class="language-icon__preview">`
+        : '-';
+
+      row.innerHTML = `
+        <td>${icon}</td>
+        <td>${this.escapeHtml(language.native_name)}</td>
+        <td>${this.escapeHtml(language.iso2)}</td>
+        <td>${this.escapeHtml(language.iso3)}</td>
+        <td>${(language.locales || []).map(value => this.escapeHtml(value)).join(', ') || '-'}</td>
+        <td>
+          <div class="localization-actions">
+            <button type="button" class="btn btn--ghost btn--xs" data-action="edit">Edit</button>
+            <button type="button" class="btn btn--ghost btn--xs btn--danger" data-action="delete">Delete</button>
+          </div>
+        </td>
+      `;
+
+      row.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
+        this.editLanguage(language);
+      });
+      row.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+        this.deleteLanguage(language.id);
+      });
+
+      this.languagesTableBody.appendChild(row);
+    });
+
+    this.populateLanguageSelect();
+  }
+
+  populateLanguageSelect() {
+    if (!this.localeLanguageSelect) return;
+    this.localeLanguageSelect.innerHTML = '';
+    this.languages.forEach(language => {
+      const option = document.createElement('option');
+      option.value = language.id;
+      option.textContent = `${language.native_name} (${language.iso2})`;
+      this.localeLanguageSelect.appendChild(option);
+    });
+  }
+
+  renderLocales() {
+    if (!this.localesTableBody) return;
+    this.localesTableBody.innerHTML = '';
+
+    this.locales.forEach(locale => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${this.escapeHtml(locale.locale_code)}</td>
+        <td>${this.escapeHtml(locale.language_iso2)}</td>
+        <td>
+          <div class="localization-actions">
+            <button type="button" class="btn btn--ghost btn--xs" data-action="edit">Edit</button>
+            <button type="button" class="btn btn--ghost btn--xs btn--danger" data-action="delete">Delete</button>
+          </div>
+        </td>
+      `;
+
+      row.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
+        this.editLocale(locale);
+      });
+      row.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+        this.deleteLocale(locale.id);
+      });
+
+      this.localesTableBody.appendChild(row);
+    });
+  }
+
+  renderLocalizationKeys() {
+    if (!this.localizationKeysTableBody) return;
+    this.localizationKeysTableBody.innerHTML = '';
+
+    this.localizationKeys.forEach(key => {
+      const localesCount = key.translations ? key.translations.length : 0;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${this.escapeHtml(key.key)}</td>
+        <td>${this.escapeHtml(key.context || '')}</td>
+        <td>${localesCount}</td>
+        <td>
+          <div class="localization-actions">
+            <button type="button" class="btn btn--ghost btn--xs" data-action="edit">Edit</button>
+            <button type="button" class="btn btn--ghost btn--xs btn--danger" data-action="delete">Delete</button>
+          </div>
+        </td>
+      `;
+
+      row.querySelector('[data-action="edit"]')?.addEventListener('click', () => {
+        this.openLocalizationModal(key);
+      });
+      row.querySelector('[data-action="delete"]')?.addEventListener('click', () => {
+        this.deleteLocalizationKey(key.id);
+      });
+
+      this.localizationKeysTableBody.appendChild(row);
+    });
+  }
+
+  initializeLocalizationTranslations(translations = []) {
+    this.localizationTranslations = {};
+    this.activeLocalizationLocale = this.locales[0]?.locale_code || null;
+
+    this.locales.forEach(locale => {
+      const existing = translations.find(item => item.locale_code === locale.locale_code);
+      this.localizationTranslations[locale.locale_code] = {
+        singular: existing?.singular || '',
+        plural: existing?.plural || ''
+      };
+    });
+  }
+
+  renderLocalizationTabs() {
+    if (!this.localizationLocaleTabs) return;
+    this.localizationLocaleTabs.innerHTML = '';
+
+    if (!this.locales.length) {
+      this.localizationLocaleTabs.innerHTML = '<p class="form-help">Add locales to start translating.</p>';
+      return;
+    }
+
+    this.locales.forEach(locale => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'localization-locale-tab';
+      if (locale.locale_code === this.activeLocalizationLocale) {
+        tab.classList.add('is-active');
+      }
+      tab.textContent = locale.locale_code;
+      tab.addEventListener('click', () => {
+        this.activeLocalizationLocale = locale.locale_code;
+        this.renderLocalizationTabs();
+        this.renderTranslationInputs();
+      });
+      this.localizationLocaleTabs.appendChild(tab);
+    });
+  }
+
+  renderTranslationInputs() {
+    if (!this.translationInputs) return;
+
+    this.translationInputs.innerHTML = '';
+    if (!this.locales.length) {
+      this.translationInputs.innerHTML = '<p class="form-help">Add locales to start translating.</p>';
+      return;
+    }
+
+    if (!this.activeLocalizationLocale) {
+      this.activeLocalizationLocale = this.locales[0]?.locale_code || null;
+    }
+
+    const locale = this.activeLocalizationLocale;
+    const translation = this.localizationTranslations[locale] || { singular: '', plural: '' };
+    this.localizationTranslations[locale] = translation;
+
+    const row = document.createElement('div');
+    row.className = 'translation-row translation-row--single';
+    row.innerHTML = `
+      <div class="translation-row__header">${this.escapeHtml(locale)}</div>
+      <div class="translation-row__fields">
+        <div class="form-group">
+          <label class="form-label">Singular</label>
+          <input type="text" class="form-input" data-field="singular" value="${this.escapeHtml(translation.singular || '')}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Plural</label>
+          <input type="text" class="form-input" data-field="plural" value="${this.escapeHtml(translation.plural || '')}" required>
+        </div>
+      </div>
+    `;
+
+    this.translationInputs.appendChild(row);
+    row.querySelectorAll('input[data-field]').forEach(input => {
+      input.addEventListener('input', () => {
+        const field = input.dataset.field;
+        this.localizationTranslations[locale][field] = input.value;
+      });
+    });
+  }
+
+  editLanguage(language) {
+    this.editingLanguageId = language.id;
+    const nameInput = document.getElementById('languageNativeName');
+    const iso2Input = document.getElementById('languageIso2');
+    const iso3Input = document.getElementById('languageIso3');
+    const idInput = document.getElementById('languageId');
+
+    if (nameInput) nameInput.value = language.native_name;
+    if (iso2Input) iso2Input.value = language.iso2;
+    if (iso3Input) iso3Input.value = language.iso3;
+    if (idInput) idInput.value = language.id;
+    this.setLanguageIcon(language.icon_uuid);
+  }
+
+  resetLanguageForm() {
+    this.editingLanguageId = null;
+    this.languageForm?.reset();
+    const idInput = document.getElementById('languageId');
+    if (idInput) idInput.value = '';
+    this.setLanguageIcon(null);
+  }
+
+  setLanguageIcon(iconUuid) {
+    const iconInput = document.getElementById('languageIconUuid');
+    if (iconInput) iconInput.value = iconUuid || '';
+    if (this.languageIconPreview) {
+      if (iconUuid) {
+        this.languageIconPreview.src = `/api/v1/upload/download/public/${iconUuid}`;
+        this.languageIconPreview.classList.remove('hidden');
+      } else {
+        this.languageIconPreview.classList.add('hidden');
+      }
+    }
+  }
+
+  async uploadLanguageIcon(file) {
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const csrfToken = getCsrfToken();
+      const response = await fetch(`${this.baseUrl}/api/v1/upload/public`, {
+        method: 'POST',
+        headers: csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {},
+        body: formData,
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+      if (response.ok && result.status === 'success' && result.upload?.uuid) {
+        this.setLanguageIcon(result.upload.uuid);
+        this.showToast('Icon uploaded', 'success');
+      } else {
+        this.showToast(result.message || 'Failed to upload icon', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to upload icon:', error);
+      this.showToast('Failed to upload icon', 'error');
+    } finally {
+      if (this.languageIconFile) this.languageIconFile.value = '';
+    }
+  }
+
+  async saveLanguage() {
+    const nameInput = document.getElementById('languageNativeName');
+    const iso2Input = document.getElementById('languageIso2');
+    const iso3Input = document.getElementById('languageIso3');
+    const iconInput = document.getElementById('languageIconUuid');
+
+    if (!nameInput || !iso2Input || !iso3Input) return;
+    const payload = {
+      native_name: nameInput.value.trim(),
+      iso2: iso2Input.value.trim(),
+      iso3: iso3Input.value.trim(),
+      icon_uuid: iconInput?.value || null
+    };
+
+    if (!payload.native_name || !payload.iso2 || !payload.iso3) {
+      this.showToast('Please fill in all required fields', 'error');
+      return;
+    }
+
+    const method = this.editingLanguageId ? 'PUT' : 'POST';
+    const url = this.editingLanguageId
+      ? `${this.baseUrl}/api/v1/admin/localizations/languages/${this.editingLanguageId}`
+      : `${this.baseUrl}/api/v1/admin/localizations/languages`;
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: getCsrfHeaders(),
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.showToast(result.message || 'Language saved', 'success');
+        this.resetLanguageForm();
+        await this.loadLanguages();
+      } else {
+        this.showToast(result.message || 'Failed to save language', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to save language:', error);
+      this.showToast('Failed to save language', 'error');
+    }
+  }
+
+  async deleteLanguage(languageId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/localizations/languages/${languageId}`, {
+        method: 'DELETE',
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.showToast('Language deleted', 'success');
+        await this.loadLanguages();
+        await this.loadLocales();
+        await this.loadLocalizationKeys();
+      } else {
+        this.showToast(result.message || 'Failed to delete language', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete language:', error);
+      this.showToast('Failed to delete language', 'error');
+    }
+  }
+
+  editLocale(locale) {
+    this.editingLocaleId = locale.id;
+    const localeIdInput = document.getElementById('localeId');
+    const localeCodeInput = document.getElementById('localeCode');
+    if (localeIdInput) localeIdInput.value = locale.id;
+    if (localeCodeInput) localeCodeInput.value = locale.locale_code;
+    if (this.localeLanguageSelect) this.localeLanguageSelect.value = locale.language_id;
+  }
+
+  resetLocaleForm() {
+    this.editingLocaleId = null;
+    this.localeForm?.reset();
+    const localeIdInput = document.getElementById('localeId');
+    if (localeIdInput) localeIdInput.value = '';
+  }
+
+  async saveLocale() {
+    if (!this.localeLanguageSelect) return;
+    const localeCodeInput = document.getElementById('localeCode');
+    if (!localeCodeInput) return;
+
+    const payload = {
+      language_id: parseInt(this.localeLanguageSelect.value, 10),
+      locale_code: localeCodeInput.value.trim()
+    };
+
+    if (!payload.language_id || !payload.locale_code) {
+      this.showToast('Language and locale code are required', 'error');
+      return;
+    }
+
+    const method = this.editingLocaleId ? 'PUT' : 'POST';
+    const url = this.editingLocaleId
+      ? `${this.baseUrl}/api/v1/admin/localizations/locales/${this.editingLocaleId}`
+      : `${this.baseUrl}/api/v1/admin/localizations/locales`;
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: getCsrfHeaders(),
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.showToast(result.message || 'Locale saved', 'success');
+        this.resetLocaleForm();
+        await this.loadLocales();
+      } else {
+        this.showToast(result.message || 'Failed to save locale', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to save locale:', error);
+      this.showToast('Failed to save locale', 'error');
+    }
+  }
+
+  async deleteLocale(localeId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/localizations/locales/${localeId}`, {
+        method: 'DELETE',
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.showToast('Locale deleted', 'success');
+        await this.loadLocales();
+        await this.loadLocalizationKeys();
+      } else {
+        this.showToast(result.message || 'Failed to delete locale', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete locale:', error);
+      this.showToast('Failed to delete locale', 'error');
+    }
+  }
+
+  populateLocalizationForm(key) {
+    this.editingLocalizationKeyId = key.id;
+    const keyInput = document.getElementById('localizationKeyName');
+    const contextInput = document.getElementById('localizationKeyContext');
+    const idInput = document.getElementById('localizationKeyId');
+
+    if (keyInput) keyInput.value = key.key;
+    if (contextInput) contextInput.value = key.context || '';
+    if (idInput) idInput.value = key.id;
+    this.initializeLocalizationTranslations(key.translations || []);
+    this.renderLocalizationTabs();
+    this.renderTranslationInputs();
+  }
+
+  resetLocalizationForm() {
+    this.editingLocalizationKeyId = null;
+    this.localizationForm?.reset();
+    const idInput = document.getElementById('localizationKeyId');
+    if (idInput) idInput.value = '';
+    this.initializeLocalizationTranslations();
+    this.renderLocalizationTabs();
+    this.renderTranslationInputs();
+  }
+
+  collectTranslations() {
+    if (!this.locales.length) return [];
+    return this.locales.map(locale => {
+      const translation = this.localizationTranslations[locale.locale_code] || { singular: '', plural: '' };
+      return {
+        locale_code: locale.locale_code,
+        singular: (translation.singular || '').trim(),
+        plural: (translation.plural || '').trim()
+      };
+    });
+  }
+
+  async saveLocalizationKey() {
+    const keyInput = document.getElementById('localizationKeyName');
+    if (!keyInput) return;
+    const contextInput = document.getElementById('localizationKeyContext');
+
+    if (!this.locales.length) {
+      this.showToast('Add at least one locale before creating keys', 'error');
+      return;
+    }
+
+    const translations = this.collectTranslations();
+    const missing = translations.find(item => !item.singular || !item.plural);
+    if (missing) {
+      this.showToast('Singular and plural values are required for all locales', 'error');
+      return;
+    }
+
+    const payload = {
+      key: keyInput.value.trim(),
+      context: contextInput?.value.trim() || null,
+      translations
+    };
+
+    if (!payload.key) {
+      this.showToast('Key is required', 'error');
+      return;
+    }
+
+    const method = this.editingLocalizationKeyId ? 'PUT' : 'POST';
+    const url = this.editingLocalizationKeyId
+      ? `${this.baseUrl}/api/v1/admin/localizations/keys/${this.editingLocalizationKeyId}`
+      : `${this.baseUrl}/api/v1/admin/localizations/keys`;
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: getCsrfHeaders(),
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.showToast(result.message || 'Localization key saved', 'success');
+        this.resetLocalizationForm();
+        this.closeLocalizationModal();
+        await this.loadLocalizationKeys();
+      } else {
+        this.showToast(result.message || 'Failed to save localization key', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to save localization key:', error);
+      this.showToast('Failed to save localization key', 'error');
+    }
+  }
+
+  async deleteLocalizationKey(keyId) {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/admin/localizations/keys/${keyId}`, {
+        method: 'DELETE',
+        headers: getCsrfHeaders(),
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (response.ok && result.status === 'success') {
+        this.showToast('Localization key deleted', 'success');
+        await this.loadLocalizationKeys();
+      } else {
+        this.showToast(result.message || 'Failed to delete localization key', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to delete localization key:', error);
+      this.showToast('Failed to delete localization key', 'error');
     }
   }
 

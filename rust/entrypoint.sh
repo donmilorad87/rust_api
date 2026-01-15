@@ -145,18 +145,22 @@ if [ "$BUILD_ENV" = "dev" ]; then
     # Prepare SQLx offline queries
     echo "Preparing SQLx offline queries..."
     cargo sqlx prepare || true
-    
+
     echo "Starting with hot reload..."
-    exec cargo watch --poll -i ".sqlx" -i "*.json" -i "tests" -i "*.spec.ts" -i "test-results" -i "**/storage/**" -i "**/storage" -i "src/storage/*" -i "src/resources/css/*" -i "src/resources/js/*" -i "src/frontend/**" -i "node_modules" -x run
+    exec cargo watch --poll -i ".sqlx" -i "*.json" -i "tests" -i "*.spec.ts" -i "test-results" -i "**/storage/**" -i "**/storage" -i "src/storage/*" -i "src/resources/css/*" -i "src/resources/js/*" -i "src/frontend/**" -i "node_modules" -x "run --bin blazing_sun"
 else
     echo "Starting in PRODUCTION mode..."
-    
+
     # Run migrations if they exist
     if [ -d "migrations" ]; then
         echo "Running migrations..."
         sqlx migrate run || true
     fi
-    
-    cargo build --release
+
+    # NOTE: Schema.org catalog importer should be run manually when needed:
+    # cargo run --bin schema_importer -- --reset
+
+    # Build and run main application
+    cargo build --release --bin blazing_sun
     exec ./target/release/blazing_sun
 fi

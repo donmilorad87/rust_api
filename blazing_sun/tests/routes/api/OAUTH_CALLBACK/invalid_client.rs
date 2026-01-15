@@ -7,12 +7,12 @@
 //! # Test Coverage
 //! - [x] Invalid client_id returns invalid_client
 
+use crate::routes::api::helpers::{ensure_oauth_client, ensure_test_user};
 use actix_web::{http::StatusCode, test, App};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use blazing_sun::{configure_api, state};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
-use crate::routes::api::helpers::{ensure_oauth_client, ensure_test_user};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -115,5 +115,8 @@ async fn test_callback_exchange_invalid_client_returns_error() {
     let error: serde_json::Value =
         serde_json::from_slice(&body).expect("Failed to parse error JSON");
 
-    assert_eq!(error.get("error").and_then(|v| v.as_str()), Some("invalid_client"));
+    assert_eq!(
+        error.get("error").and_then(|v| v.as_str()),
+        Some("invalid_client")
+    );
 }

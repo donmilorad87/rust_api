@@ -80,6 +80,38 @@
 
                 <div class="form__group">
                     <label class="form__checkbox">
+                        <input type="checkbox" id="galleryIsGeo" name="is_geo" class="form__checkbox-input">
+                        <span class="form__checkbox-label">Enable Geo Gallery</span>
+                    </label>
+                    <p class="form__help">Add a primary location, tags, and cover image for map listings.</p>
+                </div>
+
+                <div class="form__group" data-geo-field hidden>
+                    <label class="form__label">Primary Location (Geo Gallery)</label>
+                    <div class="geo-fields">
+                        <input type="number" id="galleryLatitude" name="latitude" class="form__input" placeholder="Latitude" step="any">
+                        <input type="number" id="galleryLongitude" name="longitude" class="form__input" placeholder="Longitude" step="any">
+                        <button type="button" id="galleryUseLocationBtn" class="btn btn--secondary btn--small">Use my location</button>
+                    </div>
+                    <p class="form__help">Geo galleries require a cover image.</p>
+                    <span class="form__error" id="locationError"></span>
+                </div>
+
+                <div class="form__group">
+                    <label for="galleryTags" class="form__label">Tags</label>
+                    <input type="text" id="galleryTags" name="tags" class="form__input" placeholder="mountain, lake, forest">
+                    <p class="form__help">Comma-separated (optional)</p>
+                </div>
+
+                <div class="form__group">
+                    <label for="galleryCoverImage" class="form__label">Cover Image</label>
+                    <input type="file" id="galleryCoverImage" accept="image/*" class="form__input">
+                    <div id="galleryCoverPreview" class="cover-preview" aria-live="polite"></div>
+                    <span class="form__error" id="coverImageError"></span>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__checkbox">
                         <input type="checkbox" id="galleryIsPublic" name="is_public" class="form__checkbox-input">
                         <span class="form__checkbox-label">Make this gallery public</span>
                     </label>
@@ -144,6 +176,12 @@
                         </svg>
                         <p class="upload-drop-zone__text">Drag and drop images here or <button type="button" id="browseFilesBtn" class="btn-link">browse files</button></p>
                         <p class="upload-drop-zone__hint">Supports: JPG, PNG, GIF, WebP (max 10MB each)</p>
+                    </div>
+                    <div class="upload-options">
+                        <label class="form__checkbox">
+                            <input type="checkbox" id="exifLocationToggle" class="form__checkbox-input" checked>
+                            <span class="form__checkbox-label">Use EXIF location when available</span>
+                        </label>
                     </div>
                     <div id="uploadPreview" class="upload-preview" style="display: none;"></div>
                     <div class="upload-actions" style="display: none;">
@@ -266,6 +304,16 @@
                         <label for="lightboxDescription" class="form__label">Description</label>
                         <textarea id="lightboxDescription" name="description" class="form__textarea" rows="6" placeholder="Enter image description (optional)"></textarea>
                         <span class="form__error" id="lightboxDescriptionError"></span>
+                    </div>
+
+                    <div class="form__group">
+                        <label class="form__label">Location (optional)</label>
+                        <div class="geo-fields">
+                            <input type="number" id="lightboxLatitude" name="latitude" class="form__input" placeholder="Latitude" step="any">
+                            <input type="number" id="lightboxLongitude" name="longitude" class="form__input" placeholder="Longitude" step="any">
+                        </div>
+                        <p class="form__help" id="lightboxLocationSource"></p>
+                        <span class="form__error" id="lightboxLocationError"></span>
                     </div>
 
                     <input type="hidden" id="lightboxFileIndex" value="">

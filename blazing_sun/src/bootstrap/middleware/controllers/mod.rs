@@ -10,8 +10,7 @@ pub mod tracing_logger;
 
 pub use json_error::json_error_handler;
 pub use oauth_auth::{
+    enforce_any_scope, enforce_scopes, extract_oauth_claims, has_any_scope, has_scopes,
     OAuthClaimsExt, OAuthExtractor, RequireScopes,
-    extract_oauth_claims, has_scopes, has_any_scope,
-    enforce_scopes, enforce_any_scope
 };
-pub use permission::{require_permission, is_admin, is_super_admin, levels};
+pub use permission::{is_admin, is_super_admin, levels, require_permission};

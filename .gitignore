@@ -1,6 +1,7 @@
 .env
 blazing_sun/.env
 blazing_sun/target
+blazing_sun/**/node_modules/
 
 # Auto Claude data directory
 .auto-claude/

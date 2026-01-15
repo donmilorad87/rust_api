@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE page_schemas\n        SET\n            schema_type = COALESCE($1, schema_type),\n            entity_schema_id = COALESCE($2, entity_schema_id),\n            position = COALESCE($3, position),\n            is_active = COALESCE($4, is_active)\n        WHERE id = $5\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Text",
+        "Int4",
+        "Bool",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c82b9ad1ea435312b0114c35f4aa7c88b7bd5b80e262347eec554415dacd68c"
+}

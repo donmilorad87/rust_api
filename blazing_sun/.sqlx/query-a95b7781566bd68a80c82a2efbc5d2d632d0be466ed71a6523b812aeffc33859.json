@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_chat_config\n        SET profanity_word_list = profanity_word_list || $1,\n            updated_at = NOW()\n        WHERE id = 1\n        RETURNING TRUE as \"success!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "success!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "a95b7781566bd68a80c82a2efbc5d2d632d0be466ed71a6523b812aeffc33859"
+}

@@ -8,8 +8,7 @@ pub static CRON: Lazy<CronConfig> = Lazy::new(|| {
     dotenv::dotenv().ok();
 
     CronConfig {
-        user_counter: std::env::var("USER_COUNTER")
-            .unwrap_or_else(|_| "0 * * * * *".to_string()), // Default: every minute
+        user_counter: std::env::var("USER_COUNTER").unwrap_or_else(|_| "0 * * * * *".to_string()), // Default: every minute
     }
 });
 

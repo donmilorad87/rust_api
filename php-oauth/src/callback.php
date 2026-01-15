@@ -1,11 +1,15 @@
 <?php
 declare(strict_types=1);
 
+session_start();
+
 $code = $_GET['code'] ?? null;
 $state = $_GET['state'] ?? '';
+$codeChallenge = $_GET['code_challenge'] ?? null;
+$codeChallengeMethod = $_GET['code_challenge_method'] ?? null;
 $clientId = 'client_ifq65mv9tjlfpnhzkk5djue1vxf1ray7';
 $clientSecret =  'DPgSQGjwdORt7BqNVuhdR3wTNok4eaH8Yp8BIxQzqdRZ6trVDN6EtZKCLOzUrJBs';
-$codeVerifier = 'CTcbxx8nQqv8XjvvlnUw7K3d94mQt6OqfdI7JJBNkuE';
+$codeVerifier = $_GET['code_verifier'] ?? ($_SESSION['pkce_code_verifier'] ?? (getenv('OAUTH_CODE_VERIFIER') ?: ''));
 
 if (!$code) {
     http_response_code(400);
@@ -18,11 +22,6 @@ if ($decodedState === false) {
     exit('Invalid state encoding');
 }
 
-if ($decodedState !== 'fotobook_oauth_state_v1') {
-    http_response_code(400);
-    exit('Invalid state');
-}
-
 if (!$clientId || !$clientSecret) {
     http_response_code(500);
     exit('Missing OAUTH_CLIENT_ID or OAUTH_CLIENT_SECRET');
@@ -32,8 +31,15 @@ $tokenUrl = getenv('OAUTH_TOKEN_URL') ?: 'https://172.28.0.12/oauth/callback/exc
 $redirectUri = getenv('OAUTH_REDIRECT_URI') ?: 'https://local.fotobook.com:8889/callback.php';
 
 if (!$codeVerifier) {
-    http_response_code(400);
-    exit('Missing PKCE code_verifier (set OAUTH_CODE_VERIFIER)');
+    if ($codeChallenge && $codeChallengeMethod === 'plain') {
+        $codeVerifier = $codeChallenge;
+    } elseif ($codeChallenge && $codeChallengeMethod === 'S256') {
+        http_response_code(400);
+        exit('Missing PKCE code_verifier. Cannot derive code_verifier from S256 code_challenge; use the original verifier.');
+    } else {
+        http_response_code(400);
+        exit('Missing PKCE code_verifier (set OAUTH_CODE_VERIFIER or provide code_verifier)');
+    }
 }
 
 $payload = http_build_query([

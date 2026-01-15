@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT schema_id\n        FROM schema_entities\n        WHERE lang_code = $1 AND schema_type = $2 AND schema_hash = $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "schema_id",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "535d468cd304769320a3e43c2a047a63b52c4b92243364e3ede9949ff49520ea"
+}

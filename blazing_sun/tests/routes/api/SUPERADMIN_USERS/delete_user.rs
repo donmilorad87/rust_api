@@ -68,8 +68,12 @@ async fn test_superadmin_can_delete_user() {
         .expect("Failed to encode JWT")
     };
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api))
-        .await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let req = test::TestRequest::delete()
         .uri(&format!("/api/v1/admin/users/{}", target_id))

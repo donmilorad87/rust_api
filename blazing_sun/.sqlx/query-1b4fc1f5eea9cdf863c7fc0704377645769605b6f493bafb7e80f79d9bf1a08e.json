@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            page_seo.id,\n            page_seo.route_name,\n            page_seo.page_path,\n            page_seo.page_label,\n            translations.title,\n            translations.description,\n            COALESCE(translations.robots, page_seo.robots) AS \"robots?\",\n            page_seo.is_active\n        FROM page_seo\n        LEFT JOIN page_seo_translations translations\n            ON translations.page_seo_id = page_seo.id AND translations.lang_code = 'en'\n        ORDER BY page_label ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "route_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "page_path",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "page_label",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "robots?",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null,
+      true
+    ]
+  },
+  "hash": "1b4fc1f5eea9cdf863c7fc0704377645769605b6f493bafb7e80f79d9bf1a08e"
+}

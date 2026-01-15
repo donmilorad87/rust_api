@@ -93,10 +93,7 @@ pub fn require_permission(
                 None => {
                     // No permissions found - either JWT middleware didn't run
                     // or user doesn't have permissions set
-                    return Ok(forbidden_response(
-                        request,
-                        "Authentication required",
-                    ));
+                    return Ok(forbidden_response(request, "Authentication required"));
                 }
             };
 
@@ -106,16 +103,15 @@ pub fn require_permission(
             let has_access = match required {
                 levels::SUPER_ADMIN => permissions == levels::SUPER_ADMIN,
                 levels::ADMIN => permissions == levels::ADMIN || permissions == levels::SUPER_ADMIN,
-                levels::AFFILIATE => permissions == levels::AFFILIATE || permissions == levels::SUPER_ADMIN,
+                levels::AFFILIATE => {
+                    permissions == levels::AFFILIATE || permissions == levels::SUPER_ADMIN
+                }
                 levels::BASIC => true, // All authenticated users
                 _ => permissions == required || permissions == levels::SUPER_ADMIN,
             };
 
             if !has_access {
-                return Ok(forbidden_response(
-                    request,
-                    "Insufficient permissions",
-                ));
+                return Ok(forbidden_response(request, "Insufficient permissions"));
             }
 
             // User has sufficient permissions, proceed
@@ -158,7 +154,7 @@ mod tests {
     fn test_is_admin() {
         assert!(!is_admin(1));
         assert!(!is_admin(9));
-        assert!(is_admin(10));  // Admin
+        assert!(is_admin(10)); // Admin
         assert!(!is_admin(50)); // Affiliate is NOT admin
         assert!(is_admin(100)); // Super Admin
     }
@@ -177,7 +173,7 @@ mod tests {
     fn test_is_affiliate() {
         assert!(!is_affiliate(1));
         assert!(!is_affiliate(10));
-        assert!(is_affiliate(50));  // Affiliate
+        assert!(is_affiliate(50)); // Affiliate
         assert!(is_affiliate(100)); // Super Admin
     }
 

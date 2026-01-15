@@ -40,6 +40,14 @@
 - **Features**: Gallery CRUD, picture management, drag-and-drop, lightbox
 - **APIs**: Gallery API endpoints (`/api/v1/galleries`)
 
+### Games (`/games`)
+- **Route**: `web.games`
+- **Auth**: Yes (manual check, redirects to `/sign-in`)
+- **Frontend**: `/src/frontend/pages/GAMES/` (20KB JS, 17KB CSS)
+- **Features**: Real-time multiplayer games, Bigger Dice, spectator mode
+- **WebSocket**: `wss://localhost/ws/games`
+- **See**: [GamesPage Documentation](../../GamesPage/README.md)
+
 ### Logout (`/logout`)
 - **Route**: `web.logout`
 - **Auth**: No (clears auth cookie)
@@ -95,6 +103,7 @@
 | `/forgot-password` | ✓ (guest) | ✓ (guest) | ✓ (guest) | ✓ (guest) |
 | `/profile` | ✓ | ✓ | ✓ | ✓ |
 | `/galleries` | ✓ | ✓ | ✓ | ✓ |
+| `/games` | ✓ | ✓ | ✓ | ✓ |
 | `/admin/uploads` | ✗ | ✓ | ✓ | ✓ |
 | `/admin/theme` | ✗ | ✓ | ✓ | ✓ |
 | `/superadmin/users` | ✗ | ✗ | ✗ | ✓ |
@@ -111,6 +120,7 @@
 | FORGOT_PASSWORD | 15KB | 14KB | 29KB |
 | PROFILE | 27KB | 8.5KB | 35.5KB |
 | GALLERIES | 31KB | 16KB | 47KB |
+| GAMES | 20KB | 17KB | 37KB |
 | UPLOADS | 33KB | 20KB | 53KB |
 | REGISTERED_USERS | 13KB | 6.4KB | 19.4KB |
 | THEME | 97KB | 30KB | 127KB |

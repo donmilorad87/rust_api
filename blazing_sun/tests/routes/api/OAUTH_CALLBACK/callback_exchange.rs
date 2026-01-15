@@ -7,12 +7,12 @@
 //! # Test Coverage
 //! - [x] Happy path: Exchanges authorization code for tokens via callback endpoint
 
+use crate::routes::api::helpers::{ensure_oauth_client, ensure_test_user};
 use actix_web::{http::StatusCode, test, App};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use blazing_sun::{configure_api, state};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use crate::routes::api::helpers::{ensure_oauth_client, ensure_test_user};
 use uuid::Uuid;
 
 #[derive(Deserialize)]

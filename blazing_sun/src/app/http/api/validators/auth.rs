@@ -8,8 +8,7 @@ use std::sync::LazyLock;
 use validator::Validate;
 
 /// Regex for valid name characters (letters, spaces, hyphens, apostrophes)
-static NAME_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[a-zA-Z\s'-]+$").unwrap());
+static NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-zA-Z\s'-]+$").unwrap());
 
 /// Validate name field (first_name or last_name)
 ///

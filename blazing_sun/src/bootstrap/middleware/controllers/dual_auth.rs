@@ -34,8 +34,8 @@ pub async fn verify_jwt_or_session(
     }
 
     // Neither auth method worked
-    let response = HttpResponse::Unauthorized()
-        .json(BaseResponse::error("Authentication required"));
+    let response =
+        HttpResponse::Unauthorized().json(BaseResponse::error("Authentication required"));
     Ok(request.into_response(response).map_into_boxed_body())
 }
 

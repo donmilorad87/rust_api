@@ -75,6 +75,52 @@ services:
       devnet:
         ipv4_address: 172.28.0.10
 
+  checkout:
+    build:
+      context: ./checkout
+      dockerfile: Dockerfile
+      args:
+        BUILD_ENV: ${BUILD_ENV}
+    image: checkout-${BUILD_ENV}
+    env_file:
+      - .env
+      - ./checkout/.env
+    environment:
+      - BUILD_ENV=${BUILD_ENV}
+      - CHECKOUT_HOST=0.0.0.0
+      - CHECKOUT_PORT=${CHECKOUT_PORT:-9996}
+      - CHECKOUT_KAFKA_GROUP=checkout-service
+      - KAFKA_HOST=${KAFKA_HOST}
+      - KAFKA_PORT=${KAFKA_PORT}
+      - CHECKOUT_DB_HOST=${CHECKOUT_POSTGRES_HOST}
+      - CHECKOUT_DB_PORT=${CHECKOUT_POSTGRES_PORT}
+      - CHECKOUT_DB_USER=${CHECKOUT_POSTGRES_USER}
+      - CHECKOUT_DB_PASSWORD=${CHECKOUT_POSTGRES_PASSWORD}
+      - CHECKOUT_DB_NAME=${CHECKOUT_POSTGRES_DB}
+      - RUST_LOG=info,checkout=debug
+    volumes:
+      - ./checkout:/home/rust/checkout
+      - checkout-cargo-cache:/usr/local/cargo/registry
+      - checkout-target-cache:/home/rust/checkout/target
+    working_dir: /home/rust/checkout
+    ports:
+      - "${CHECKOUT_PORT:-9996}:${CHECKOUT_PORT:-9996}"
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      checkout-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${CHECKOUT_PORT:-9996}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      devnet:
+        ipv4_address: ${CHECKOUT_IP:-172.28.0.24}
+
   nginx:
     build:
       context: ./nginx
@@ -92,6 +138,8 @@ services:
       # Mount assets (CSS/JS) for templates
       - ./blazing_sun/src/resources/css:/var/www/assets/css:ro
       - ./blazing_sun/src/resources/js:/var/www/assets/js:ro
+      # Mount localization JSON files
+      - ./blazing_sun/src/resources/localization:/var/www/localizations:ro
     restart: unless-stopped
     depends_on:
       - rust
@@ -154,6 +202,40 @@ services:
     networks:
       devnet:
         ipv4_address: ${POSTGRES_IP}
+
+  checkout-postgres:
+    build:
+      context: ./postgres_checkout
+      dockerfile: Dockerfile
+      args:
+        POSTGRES_IP: ${CHECKOUT_POSTGRES_IP}
+        POSTGRES_PORT: ${CHECKOUT_POSTGRES_PORT}
+        POSTGRES_USER: ${CHECKOUT_POSTGRES_USER}
+        POSTGRES_PASSWORD: ${CHECKOUT_POSTGRES_PASSWORD}
+        POSTGRES_DB: ${CHECKOUT_POSTGRES_DB}
+    image: checkout-postgres-ssl
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_IP=${CHECKOUT_POSTGRES_IP}
+      - POSTGRES_PORT=${CHECKOUT_POSTGRES_PORT}
+      - POSTGRES_USER=${CHECKOUT_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${CHECKOUT_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${CHECKOUT_POSTGRES_DB}
+    volumes:
+      - checkout-pgdata:/var/lib/postgresql
+    ports:
+      - "${CHECKOUT_POSTGRES_PORT}:${CHECKOUT_POSTGRES_PORT}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CHECKOUT_POSTGRES_USER} -d ${CHECKOUT_POSTGRES_DB} -p ${CHECKOUT_POSTGRES_PORT}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      devnet:
+        ipv4_address: ${CHECKOUT_POSTGRES_IP}
 
   rabbitmq:
     build:
@@ -263,7 +345,7 @@ services:
       - "${KAFKA_PORT}:${KAFKA_PORT}"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:${KAFKA_PORT} && /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:${KAFKA_PORT} | grep -q 'user.events'"]
+      test: ["CMD-SHELL", "/usr/local/bin/kafka-healthcheck.sh"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -324,6 +406,35 @@ services:
     networks:
       devnet:
         ipv4_address: ${PGADMIN_IP}
+
+  pgadmin_checkout:
+    build:
+      context: ./pgadmin_checkout
+      dockerfile: Dockerfile
+      args:
+        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_CHECKOUT_DEFAULT_EMAIL}
+        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_CHECKOUT_DEFAULT_PASSWORD}
+    image: pgadmin-checkout-dashboard
+    pull_policy: build
+    hostname: pgadmin_checkout
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_CHECKOUT_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_CHECKOUT_DEFAULT_PASSWORD}
+      - SCRIPT_NAME=/pgadmin_checkout
+      - POSTGRES_HOST=${CHECKOUT_POSTGRES_HOST}
+      - POSTGRES_PORT=${CHECKOUT_POSTGRES_PORT}
+      - POSTGRES_USER=${CHECKOUT_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${CHECKOUT_POSTGRES_PASSWORD}
+    volumes:
+      - pgadmin-checkout-data:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_CHECKOUT_PORT}:80"
+    restart: unless-stopped
+    depends_on:
+      - checkout-postgres
+    networks:
+      devnet:
+        ipv4_address: ${PGADMIN_CHECKOUT_IP}
 
   prometheus:
     build:
@@ -426,8 +537,58 @@ services:
       devnet:
         ipv4_address: ${MONGO_EXPRESS_IP}
 
+  ws_gateway:
+    build:
+      context: ./ws_gateway
+      dockerfile: Dockerfile
+      args:
+        BUILD_ENV: ${BUILD_ENV}
+    image: ws-gateway-${BUILD_ENV}
+    env_file:
+      - .env
+    environment:
+      - BUILD_ENV=${BUILD_ENV}
+      - WS_HOST=0.0.0.0
+      - WS_PORT=${WS_GATEWAY_PORT:-9998}
+      - WS_HEALTH_PORT=${WS_GATEWAY_HEALTH_PORT:-9997}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}
+      - KAFKA_HOST=${KAFKA_HOST}
+      - KAFKA_PORT=${KAFKA_PORT}
+      - KAFKA_CONSUMER_GROUP=ws_gateway
+      - JWT_PUBLIC_KEY_PATH=/keys/jwt_public.pem
+      - RUST_LOG=info,ws_gateway=debug
+    volumes:
+      - ./ws_gateway:/home/rust/ws_gateway
+      - ./blazing_sun/keys:/keys:ro
+      - ws-gateway-cargo-cache:/usr/local/cargo/registry
+      - ws-gateway-target-cache:/home/rust/ws_gateway/target
+    working_dir: /home/rust/ws_gateway
+    ports:
+      - "${WS_GATEWAY_PORT:-9998}:${WS_GATEWAY_PORT:-9998}"
+      - "${WS_GATEWAY_HEALTH_PORT:-9997}:${WS_GATEWAY_HEALTH_PORT:-9997}"
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${WS_GATEWAY_HEALTH_PORT:-9997}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      devnet:
+        ipv4_address: ${WS_GATEWAY_IP:-172.28.0.23}
+
 volumes:
   pgdata:
+  checkout-pgdata:
   rabbitmqdata:
   redisdata:
   kafkadata:
@@ -436,7 +597,12 @@ volumes:
   prometheusdata:
   grafanadata:
   pgadmindata:
+  pgadmin-checkout-data:
   mongodata:
+  ws-gateway-cargo-cache:
+  ws-gateway-target-cache:
+  checkout-cargo-cache:
+  checkout-target-cache:
 
 networks:
   devnet:

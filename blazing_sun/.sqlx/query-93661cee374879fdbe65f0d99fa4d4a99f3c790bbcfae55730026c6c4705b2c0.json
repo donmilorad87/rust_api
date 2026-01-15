@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            CASE\n                WHEN $2 = ANY(recorded_players) THEN 'player'\n                WHEN $2 = ANY(recorded_spectators) THEN 'spectator'\n                ELSE NULL\n            END as \"role\"\n        FROM game_rooms\n        WHERE room_id = $1\n        AND status = 'in_progress'\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "role",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "93661cee374879fdbe65f0d99fa4d4a99f3c790bbcfae55730026c6c4705b2c0"
+}

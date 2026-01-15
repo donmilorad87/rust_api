@@ -307,7 +307,7 @@
                         <h2 class="profile-card__title">Developer Console</h2>
                     </div>
                     <p class="profile-card__description">Manage OAuth 2.0 applications that integrate with your account. Create API clients and manage their access to your data.</p>
-                    <a href="{{ route(name='oauth.applications') }}" class="btn btn--primary mt3">
+                    <a href="{{ route(name='oauth.applications', lang=language) | default(value='/oauth/applications') }}" class="btn btn--primary mt3">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
                         </svg>

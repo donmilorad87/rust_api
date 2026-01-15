@@ -10,7 +10,13 @@ pub struct CreateGalleryParams {
     pub name: String,
     pub description: Option<String>,
     pub is_public: bool,
+    pub gallery_type: String,
     pub display_order: i32,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_id: Option<i64>,
+    pub cover_image_uuid: Option<uuid::Uuid>,
 }
 
 /// Parameters for updating a gallery
@@ -18,25 +24,34 @@ pub struct UpdateGalleryParams {
     pub name: Option<String>,
     pub description: Option<String>,
     pub is_public: Option<bool>,
+    pub gallery_type: Option<String>,
     pub display_order: Option<i32>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_id: Option<i64>,
+    pub cover_image_uuid: Option<uuid::Uuid>,
 }
 
 /// Create a new gallery
-pub async fn create(
-    db: &Pool<Postgres>,
-    params: &CreateGalleryParams,
-) -> Result<i64, sqlx::Error> {
+pub async fn create(db: &Pool<Postgres>, params: &CreateGalleryParams) -> Result<i64, sqlx::Error> {
     let result = sqlx::query!(
         r#"
-        INSERT INTO galleries (user_id, name, description, is_public, display_order)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO galleries (user_id, name, description, is_public, gallery_type, display_order, latitude, longitude, tags, cover_image_id, cover_image_uuid)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id
         "#,
         params.user_id,
         params.name,
         params.description,
         params.is_public,
-        params.display_order
+        params.gallery_type,
+        params.display_order,
+        params.latitude,
+        params.longitude,
+        params.tags.as_deref(),
+        params.cover_image_id,
+        params.cover_image_uuid
     )
     .fetch_one(db)
     .await?;
@@ -87,6 +102,70 @@ pub async fn update_visibility(
     sqlx::query!(
         r#"UPDATE galleries SET is_public = $1 WHERE id = $2"#,
         is_public,
+        gallery_id
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}
+
+/// Update gallery type
+pub async fn update_gallery_type(
+    db: &Pool<Postgres>,
+    gallery_id: i64,
+    gallery_type: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"UPDATE galleries SET gallery_type = $1 WHERE id = $2"#,
+        gallery_type,
+        gallery_id
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}
+
+/// Update gallery primary location
+pub async fn update_location(
+    db: &Pool<Postgres>,
+    gallery_id: i64,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+) -> Result<(), sqlx::Error> {
+    if let Some(lat) = latitude {
+        sqlx::query!(
+            r#"UPDATE galleries SET latitude = $1 WHERE id = $2"#,
+            lat,
+            gallery_id
+        )
+        .execute(db)
+        .await?;
+    }
+
+    if let Some(lng) = longitude {
+        sqlx::query!(
+            r#"UPDATE galleries SET longitude = $1 WHERE id = $2"#,
+            lng,
+            gallery_id
+        )
+        .execute(db)
+        .await?;
+    }
+
+    Ok(())
+}
+
+/// Update gallery tags
+pub async fn update_tags(
+    db: &Pool<Postgres>,
+    gallery_id: i64,
+    tags: Option<&[String]>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"UPDATE galleries SET tags = $1 WHERE id = $2"#,
+        tags,
         gallery_id
     )
     .execute(db)
@@ -157,29 +236,49 @@ pub async fn update(
         update_display_order(db, gallery_id, display_order).await?;
     }
 
+    // Update gallery type if provided
+    if let Some(ref gallery_type) = params.gallery_type {
+        update_gallery_type(db, gallery_id, gallery_type).await?;
+    }
+
+    // Update location if provided
+    if params.latitude.is_some() || params.longitude.is_some() {
+        update_location(db, gallery_id, params.latitude, params.longitude).await?;
+    }
+
+    // Update tags if provided
+    if let Some(ref tags) = params.tags {
+        update_tags(db, gallery_id, Some(tags.as_slice())).await?;
+    }
+
+    // Update cover image if provided
+    if params.cover_image_id.is_some() || params.cover_image_uuid.is_some() {
+        update_cover_image(
+            db,
+            gallery_id,
+            params.cover_image_id,
+            params.cover_image_uuid,
+        )
+        .await?;
+    }
+
     Ok(())
 }
 
 /// Delete a gallery (cascade deletes all pictures in it)
 pub async fn delete(db: &Pool<Postgres>, gallery_id: i64) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query!(
-        r#"DELETE FROM galleries WHERE id = $1"#,
-        gallery_id
-    )
-    .execute(db)
-    .await?;
+    let result = sqlx::query!(r#"DELETE FROM galleries WHERE id = $1"#, gallery_id)
+        .execute(db)
+        .await?;
 
     Ok(result.rows_affected())
 }
 
 /// Delete all galleries for a user
 pub async fn delete_by_user(db: &Pool<Postgres>, user_id: i64) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query!(
-        r#"DELETE FROM galleries WHERE user_id = $1"#,
-        user_id
-    )
-    .execute(db)
-    .await?;
+    let result = sqlx::query!(r#"DELETE FROM galleries WHERE user_id = $1"#, user_id)
+        .execute(db)
+        .await?;
 
     Ok(result.rows_affected())
 }

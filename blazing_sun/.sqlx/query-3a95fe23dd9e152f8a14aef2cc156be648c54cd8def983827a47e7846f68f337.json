@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO localization_translations (localization_key_id, locale_id, singular, plural)\n        VALUES ($1, $2, $3, $4)\n        ON CONFLICT (localization_key_id, locale_id)\n        DO UPDATE SET singular = EXCLUDED.singular, plural = EXCLUDED.plural\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3a95fe23dd9e152f8a14aef2cc156be648c54cd8def983827a47e7846f68f337"
+}

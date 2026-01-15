@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            ce.id as entry_id,\n            ce.gallery_id,\n            ce.user_id,\n            COUNT(DISTINCT gl.id) as \"likes_count!\",\n            COUNT(DISTINCT cav.id) as \"admin_votes_count!\"\n        FROM competition_entries ce\n        LEFT JOIN gallery_likes gl ON gl.gallery_id = ce.gallery_id\n        LEFT JOIN competition_admin_votes cav\n            ON cav.gallery_id = ce.gallery_id AND cav.competition_id = ce.competition_id\n        WHERE ce.competition_id = $1\n        GROUP BY ce.id, ce.gallery_id, ce.user_id\n        ORDER BY ce.created_at ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "entry_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "gallery_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "likes_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "admin_votes_count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "cd727d65b84bb8e8622d297540790e5d7975649e35084660e594dd1dc053167c"
+}

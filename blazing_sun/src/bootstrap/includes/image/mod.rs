@@ -5,6 +5,6 @@
 pub mod processor;
 
 pub use processor::{
-    generate_variants, is_supported_image, format_from_extension, ImageError, VariantInfo,
+    format_from_extension, generate_variants, is_supported_image, ImageError, VariantInfo,
     BREAKPOINTS,
 };

@@ -12,6 +12,27 @@ description: HTML/CSS/JavaScript and Tera template development for Blazing Sun p
 - Use GLOBAL theme variables only; no page-level theme redefinition.
 - Never use native browser dialogs; use custom modals/toasts.
 
+## Build Commands
+
+### Build all frontend pages
+```bash
+./blazing_sun/src/frontend/build-frontend.sh all prod
+```
+
+### Build single page
+```bash
+./blazing_sun/src/frontend/build-frontend.sh <PAGE_NAME> prod
+```
+Pages: FORGOT_PASSWORD, GALLERIES, GLOBAL, OAUTH_APPLICATIONS, OAUTH_CONSENT, PROFILE, REGISTERED_USERS, SIGN_IN, SIGN_UP, THEME, UPLOADS
+
+### Dev mode (unminified)
+```bash
+./blazing_sun/src/frontend/build-frontend.sh <PAGE_NAME> dev
+```
+
+### After building
+Increment `ASSETS_VERSION` in `blazing_sun/.env` for cache busting.
+
 ## Read before work
 - `Documentation/blazing_sun/Templates/TEMPLATES.md`
 - `Documentation/blazing_sun/Routes/Web/WEB_ROUTES.md`

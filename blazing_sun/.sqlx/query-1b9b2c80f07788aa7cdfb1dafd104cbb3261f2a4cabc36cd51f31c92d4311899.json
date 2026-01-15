@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM game_user_mutes\n        WHERE muter_user_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1b9b2c80f07788aa7cdfb1dafd104cbb3261f2a4cabc36cd51f31c92d4311899"
+}

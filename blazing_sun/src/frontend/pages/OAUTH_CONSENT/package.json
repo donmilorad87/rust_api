@@ -4,11 +4,12 @@
   "type": "module",
   "scripts": {
     "build": "vite build --mode production",
+    "build:prod": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "watch": "vite build --watch --mode development"
   },
   "devDependencies": {
-    "sass": "^1.69.5",
-    "vite": "^5.0.2"
+    "sass-embedded": "^1.97.2",
+    "vite": "^7.3.1"
   }
 }

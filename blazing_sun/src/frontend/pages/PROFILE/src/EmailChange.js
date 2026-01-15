@@ -305,7 +305,7 @@ export class EmailChange {
 
       if (countdown <= 0) {
         clearInterval(interval);
-        window.location.href = '/sign-in';
+        window.location.href = '/sign_in';
       }
     }, 1000);
   }

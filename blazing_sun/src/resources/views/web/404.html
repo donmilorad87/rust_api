@@ -110,7 +110,7 @@
         </p>
 
         <div class="error-actions">
-            <a href="{{ route(name='web.home') }}" class="btn">Go Home</a>
+            <a href="{{ route(name='web.home', lang=language) | default(value='/') }}" class="btn">Go Home</a>
             <button onclick="history.back()" class="btn btn--outline">Go Back</button>
         </div>
     </div>

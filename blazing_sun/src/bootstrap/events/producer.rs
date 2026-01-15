@@ -40,7 +40,9 @@ impl EventProducer {
     pub async fn publish(&self, event: &DomainEvent) -> Result<(), EventPublishError> {
         let topic = event.topic();
         let key = event.partition_key();
-        let payload = event.to_bytes().map_err(|e| EventPublishError::Serialization(e.to_string()))?;
+        let payload = event
+            .to_bytes()
+            .map_err(|e| EventPublishError::Serialization(e.to_string()))?;
 
         let record = FutureRecord::to(topic)
             .key(key)
@@ -76,7 +78,10 @@ impl EventProducer {
     }
 
     /// Publish multiple events (batch)
-    pub async fn publish_batch(&self, events: &[DomainEvent]) -> Vec<Result<(), EventPublishError>> {
+    pub async fn publish_batch(
+        &self,
+        events: &[DomainEvent],
+    ) -> Vec<Result<(), EventPublishError>> {
         let futures: Vec<_> = events.iter().map(|event| self.publish(event)).collect();
         futures::future::join_all(futures).await
     }
@@ -161,6 +166,44 @@ impl EventProducer {
     /// Flush pending messages (useful before shutdown)
     pub fn flush(&self, timeout: Duration) {
         let _ = self.producer.flush(Timeout::After(timeout));
+    }
+
+    /// Send raw bytes to a topic (for WebSocket gateway events)
+    pub async fn send_raw(
+        &self,
+        topic: &str,
+        key: Option<&str>,
+        payload: &[u8],
+    ) -> Result<(), EventPublishError> {
+        let mut record = FutureRecord::to(topic).payload(payload);
+
+        if let Some(k) = key {
+            record = record.key(k);
+        }
+
+        match self
+            .producer
+            .send(record, Timeout::After(Duration::from_secs(5)))
+            .await
+        {
+            Ok((partition, offset)) => {
+                info!(
+                    topic = %topic,
+                    partition = %partition,
+                    offset = %offset,
+                    "Raw message published successfully"
+                );
+                Ok(())
+            }
+            Err((err, _)) => {
+                error!(
+                    topic = %topic,
+                    error = %err,
+                    "Failed to publish raw message"
+                );
+                Err(EventPublishError::Kafka(err.to_string()))
+            }
+        }
     }
 }
 

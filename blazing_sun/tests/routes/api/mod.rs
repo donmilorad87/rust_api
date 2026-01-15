@@ -44,10 +44,19 @@ pub mod oauth_pictures;
 #[path = "SUPERADMIN_USERS/mod.rs"]
 pub mod superadmin_users;
 
-#[path = "UPLOADS/mod.rs"]
-pub mod uploads;
 #[path = "GALLERIES/mod.rs"]
 pub mod galleries;
+#[path = "UPLOADS/mod.rs"]
+pub mod uploads;
+
+#[path = "SCHEMAS/mod.rs"]
+pub mod schemas;
+
+#[path = "GEO_GALLERIES/mod.rs"]
+pub mod geo_galleries;
+
+#[path = "COMPETITIONS/mod.rs"]
+pub mod competitions;
 
 #[path = "helpers/mod.rs"]
 pub mod helpers;

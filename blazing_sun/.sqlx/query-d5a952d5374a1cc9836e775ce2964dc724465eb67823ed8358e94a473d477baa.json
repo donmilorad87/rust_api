@@ -1,0 +1,190 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id,\n            room_id,\n            room_name,\n            game_type,\n            status,\n            host_id,\n            players,\n            lobby,\n            banned_users,\n            spectators,\n            current_turn,\n            turn_number,\n            winner_id,\n            is_password_protected,\n            password_hash,\n            is_active,\n            created_at,\n            started_at,\n            finished_at,\n            updated_at,\n            player_count,\n            allow_spectators,\n            max_spectators,\n            admin_spectator_id,\n            lobby_chat_enabled,\n            spectators_data,\n            recorded_players,\n            recorded_spectators,\n            selected_players\n        FROM game_rooms\n        WHERE status IN ('waiting', 'in_progress')\n        AND game_type = $1\n        AND is_active = TRUE\n        ORDER BY created_at DESC\n        LIMIT 50\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "room_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "room_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "game_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "host_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "players",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "lobby",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "banned_users",
+        "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 9,
+        "name": "spectators",
+        "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 10,
+        "name": "current_turn",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 11,
+        "name": "turn_number",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "winner_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 13,
+        "name": "is_password_protected",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
+        "name": "password_hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 15,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 16,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "started_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "finished_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 19,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 20,
+        "name": "player_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 21,
+        "name": "allow_spectators",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 22,
+        "name": "max_spectators",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 23,
+        "name": "admin_spectator_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 24,
+        "name": "lobby_chat_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 25,
+        "name": "spectators_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 26,
+        "name": "recorded_players",
+        "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 27,
+        "name": "recorded_spectators",
+        "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 28,
+        "name": "selected_players",
+        "type_info": "Int8Array"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d5a952d5374a1cc9836e775ce2964dc724465eb67823ed8358e94a473d477baa"
+}

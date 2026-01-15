@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, native_name, iso2, iso3, icon_uuid, created_at, updated_at\n        FROM languages\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "native_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "iso2",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "iso3",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "icon_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "3cd59c791beb05d80fc69a1528ad1f2d9cee32a2d451b65b891537e9ba56397f"
+}

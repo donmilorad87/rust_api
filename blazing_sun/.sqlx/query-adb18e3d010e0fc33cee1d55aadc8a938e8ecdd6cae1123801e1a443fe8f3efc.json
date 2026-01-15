@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                room_id,\n                room_name,\n                game_type,\n                status,\n                host_id,\n                players,\n                jsonb_array_length(players) as \"player_count!: i32\",\n                is_password_protected,\n                created_at\n            FROM game_rooms\n            WHERE status IN ('waiting', 'in_progress')\n            AND game_type = $1\n            AND is_active = TRUE\n            ORDER BY created_at DESC\n            LIMIT 50\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "room_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "room_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "game_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "host_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "players",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "player_count!: i32",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "is_password_protected",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "adb18e3d010e0fc33cee1d55aadc8a938e8ecdd6cae1123801e1a443fe8f3efc"
+}

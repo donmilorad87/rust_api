@@ -14,9 +14,13 @@ pub struct Gallery {
     pub name: String,
     pub description: Option<String>,
     pub is_public: bool,
+    pub gallery_type: String,
     pub display_order: i32,
     pub cover_image_id: Option<i64>,
     pub cover_image_uuid: Option<uuid::Uuid>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -29,11 +33,30 @@ pub struct GalleryWithCount {
     pub name: String,
     pub description: Option<String>,
     pub is_public: bool,
+    pub gallery_type: String,
     pub display_order: i32,
     pub cover_image_id: Option<i64>,
     pub cover_image_uuid: Option<uuid::Uuid>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub picture_count: i64,
+}
+
+/// Geo gallery map row with UUID
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeoGalleryMapRow {
+    pub id: i64,
+    pub gallery_uuid: uuid::Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub tags: Option<Vec<String>>,
+    pub cover_image_id: Option<i64>,
+    pub cover_image_uuid: Option<uuid::Uuid>,
     pub picture_count: i64,
 }
 
@@ -42,11 +65,29 @@ pub async fn get_by_id(db: &Pool<Postgres>, gallery_id: i64) -> Result<Gallery, 
     sqlx::query_as!(
         Gallery,
         r#"
-        SELECT id, user_id, name, description, is_public, display_order, cover_image_id, cover_image_uuid, created_at, updated_at
+        SELECT id, user_id, name, description, is_public, gallery_type, display_order, cover_image_id, cover_image_uuid, latitude, longitude, tags, created_at, updated_at
         FROM galleries
         WHERE id = $1
         "#,
         gallery_id
+    )
+    .fetch_one(db)
+    .await
+}
+
+/// Get gallery by UUID
+pub async fn get_by_uuid(
+    db: &Pool<Postgres>,
+    gallery_uuid: uuid::Uuid,
+) -> Result<Gallery, sqlx::Error> {
+    sqlx::query_as!(
+        Gallery,
+        r#"
+        SELECT id, user_id, name, description, is_public, gallery_type, display_order, cover_image_id, cover_image_uuid, latitude, longitude, tags, created_at, updated_at
+        FROM galleries
+        WHERE gallery_uuid = $1
+        "#,
+        gallery_uuid
     )
     .fetch_one(db)
     .await
@@ -61,7 +102,7 @@ pub async fn get_by_id_and_user(
     sqlx::query_as!(
         Gallery,
         r#"
-        SELECT id, user_id, name, description, is_public, display_order, cover_image_id, cover_image_uuid, created_at, updated_at
+        SELECT id, user_id, name, description, is_public, gallery_type, display_order, cover_image_id, cover_image_uuid, latitude, longitude, tags, created_at, updated_at
         FROM galleries
         WHERE id = $1 AND user_id = $2
         "#,
@@ -77,7 +118,7 @@ pub async fn get_by_user(db: &Pool<Postgres>, user_id: i64) -> Result<Vec<Galler
     sqlx::query_as!(
         Gallery,
         r#"
-        SELECT id, user_id, name, description, is_public, display_order, cover_image_id, cover_image_uuid, created_at, updated_at
+        SELECT id, user_id, name, description, is_public, gallery_type, display_order, cover_image_id, cover_image_uuid, latitude, longitude, tags, created_at, updated_at
         FROM galleries
         WHERE user_id = $1
         ORDER BY display_order ASC, created_at DESC
@@ -102,9 +143,13 @@ pub async fn get_by_user_with_counts(
             g.name,
             g.description,
             g.is_public,
+            g.gallery_type,
             g.display_order,
             g.cover_image_id,
             g.cover_image_uuid,
+            g.latitude,
+            g.longitude,
+            g.tags,
             g.created_at,
             g.updated_at,
             COUNT(p.id) as "picture_count!"
@@ -133,9 +178,13 @@ pub async fn get_all_with_counts(
             g.name,
             g.description,
             g.is_public,
+            g.gallery_type,
             g.display_order,
             g.cover_image_id,
             g.cover_image_uuid,
+            g.latitude,
+            g.longitude,
+            g.tags,
             g.created_at,
             g.updated_at,
             COUNT(p.id) as "picture_count!"
@@ -164,9 +213,13 @@ pub async fn get_all_with_counts_paginated(
             g.name,
             g.description,
             g.is_public,
+            g.gallery_type,
             g.display_order,
             g.cover_image_id,
             g.cover_image_uuid,
+            g.latitude,
+            g.longitude,
+            g.tags,
             g.created_at,
             g.updated_at,
             COUNT(p.id) as "picture_count!"
@@ -206,9 +259,13 @@ pub async fn get_public(
             g.name,
             g.description,
             g.is_public,
+            g.gallery_type,
             g.display_order,
             g.cover_image_id,
             g.cover_image_uuid,
+            g.latitude,
+            g.longitude,
+            g.tags,
             g.created_at,
             g.updated_at,
             COUNT(p.id) as "picture_count!"
@@ -221,6 +278,70 @@ pub async fn get_public(
         "#,
         limit,
         offset
+    )
+    .fetch_all(db)
+    .await
+}
+
+/// Get all public geo galleries (with primary coordinates)
+pub async fn get_public_geo(db: &Pool<Postgres>) -> Result<Vec<GalleryWithCount>, sqlx::Error> {
+    sqlx::query_as!(
+        GalleryWithCount,
+        r#"
+        SELECT
+            g.id,
+            g.user_id,
+            g.name,
+            g.description,
+            g.is_public,
+            g.gallery_type,
+            g.display_order,
+            g.cover_image_id,
+            g.cover_image_uuid,
+            g.latitude,
+            g.longitude,
+            g.tags,
+            g.created_at,
+            g.updated_at,
+            COUNT(p.id) as "picture_count!"
+        FROM galleries g
+        LEFT JOIN pictures p ON g.id = p.gallery_id
+        WHERE g.is_public = true
+            AND g.gallery_type = 'geo_galleries'
+            AND g.latitude IS NOT NULL
+            AND g.longitude IS NOT NULL
+        GROUP BY g.id
+        ORDER BY g.created_at DESC
+        "#
+    )
+    .fetch_all(db)
+    .await
+}
+
+/// Get geo galleries for map (public + own)
+pub async fn get_geo_for_map(db: &Pool<Postgres>) -> Result<Vec<GeoGalleryMapRow>, sqlx::Error> {
+    sqlx::query_as!(
+        GeoGalleryMapRow,
+        r#"
+        SELECT
+            g.id,
+            g.gallery_uuid,
+            g.name,
+            g.description,
+            g.latitude,
+            g.longitude,
+            g.tags,
+            g.cover_image_id,
+            g.cover_image_uuid,
+            COUNT(p.id) as "picture_count!"
+        FROM galleries g
+        LEFT JOIN pictures p ON g.id = p.gallery_id
+        WHERE g.gallery_type = 'geo_galleries'
+            AND g.latitude IS NOT NULL
+            AND g.longitude IS NOT NULL
+        GROUP BY g.id
+        ORDER BY g.created_at DESC
+        "#
     )
     .fetch_all(db)
     .await
@@ -240,11 +361,10 @@ pub async fn count_by_user(db: &Pool<Postgres>, user_id: i64) -> Result<i64, sql
 
 /// Count total public galleries
 pub async fn count_public(db: &Pool<Postgres>) -> Result<i64, sqlx::Error> {
-    let result = sqlx::query!(
-        r#"SELECT COUNT(*) as "count!" FROM galleries WHERE is_public = true"#
-    )
-    .fetch_one(db)
-    .await?;
+    let result =
+        sqlx::query!(r#"SELECT COUNT(*) as "count!" FROM galleries WHERE is_public = true"#)
+            .fetch_one(db)
+            .await?;
 
     Ok(result.count)
 }
@@ -262,11 +382,7 @@ pub async fn exists(db: &Pool<Postgres>, gallery_id: i64) -> bool {
 }
 
 /// Check if user owns gallery
-pub async fn user_owns_gallery(
-    db: &Pool<Postgres>,
-    gallery_id: i64,
-    user_id: i64,
-) -> bool {
+pub async fn user_owns_gallery(db: &Pool<Postgres>, gallery_id: i64, user_id: i64) -> bool {
     sqlx::query!(
         r#"SELECT EXISTS(SELECT 1 FROM galleries WHERE id = $1 AND user_id = $2) as "exists!""#,
         gallery_id,
@@ -279,11 +395,7 @@ pub async fn user_owns_gallery(
 }
 
 /// Check if gallery name exists for user (for validation)
-pub async fn name_exists_for_user(
-    db: &Pool<Postgres>,
-    user_id: i64,
-    name: &str,
-) -> bool {
+pub async fn name_exists_for_user(db: &Pool<Postgres>, user_id: i64, name: &str) -> bool {
     sqlx::query!(
         r#"SELECT EXISTS(SELECT 1 FROM galleries WHERE user_id = $1 AND name = $2) as "exists!""#,
         user_id,

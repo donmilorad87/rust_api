@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            allow_spectators\n            AND COALESCE(array_length(spectators, 1), 0) < max_spectators\n        as \"can_join!\"\n        FROM game_rooms\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "can_join!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "45394231ca9dae6f4ba2f0ecce6b93e12cdfd2b52da768722458a7db155cca8c"
+}

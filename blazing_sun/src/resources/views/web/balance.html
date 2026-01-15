@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Balance - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BALANCE/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="balance">
+    <section class="balance__hero">
+        <div class="balance__intro">
+            <p class="balance__eyebrow">Coin Wallet</p>
+            <h1 class="balance__title">Top up your coins</h1>
+            <p class="balance__lead">
+                1 coin = 1 euro. Balance is stored in cents, so 100 balance equals 1 coin.
+            </p>
+
+            <div class="balance__stats">
+                <div class="balance__stat">
+                    <span class="balance__stat-label">Current coins</span>
+                    <span class="balance__stat-value">{{ balance_coins | default(value=0) }}</span>
+                </div>
+                <div class="balance__stat">
+                    <span class="balance__stat-label">Balance cents</span>
+                    <span class="balance__stat-value">{{ balance_cents | default(value=0) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="balance__panel-group">
+            <div class="balance__tabs" role="tablist" aria-label="Balance sections">
+                <button
+                    type="button"
+                    class="balance__tab balance__tab--active"
+                    id="balanceWalletTab"
+                    role="tab"
+                    data-tab="wallet"
+                    aria-selected="true"
+                    aria-controls="balanceWalletPanel"
+                >
+                    Wallet
+                </button>
+                <button
+                    type="button"
+                    class="balance__tab"
+                    id="balanceTransactionsTab"
+                    role="tab"
+                    data-tab="transactions"
+                    aria-selected="false"
+                    aria-controls="balanceTransactionsPanel"
+                >
+                    Transactions
+                </button>
+            </div>
+
+            <div
+                class="balance__panel balance__panel--active"
+                id="balanceWalletPanel"
+                role="tabpanel"
+                aria-labelledby="balanceWalletTab"
+            >
+                <div class="balance__card">
+                    <h2 class="balance__card-title">Add coins</h2>
+                    <form id="balanceForm" class="balance__form" novalidate>
+                        <label class="balance__label" for="amount">Coins to add</label>
+                        <input
+                            id="amount"
+                            name="amount"
+                            type="number"
+                            min="1"
+                            step="1"
+                            inputmode="numeric"
+                            class="balance__input"
+                            placeholder="e.g. 10"
+                            required
+                        >
+                        <p class="balance__hint">You will be redirected to Stripe to finish payment.</p>
+                        <div id="amountSummary" class="balance__summary" aria-live="polite"></div>
+                        <button id="balanceSubmit" type="submit" class="balance__submit">
+                            Continue to Stripe
+                        </button>
+                    </form>
+                    <div id="balanceStatus" class="balance__status" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <div
+                class="balance__panel"
+                id="balanceTransactionsPanel"
+                role="tabpanel"
+                aria-labelledby="balanceTransactionsTab"
+                hidden
+            >
+                <div class="balance__card">
+                    <h2 class="balance__card-title">Transactions</h2>
+                    <p class="balance__hint">Latest top-ups and payment status.</p>
+                    <div class="balance__transactions">
+                        <div id="balanceTransactionsLoading" class="balance__transactions-state">
+                            Loading transactions...
+                        </div>
+                        <div
+                            id="balanceTransactionsEmpty"
+                            class="balance__transactions-state balance__transactions-state--hidden"
+                        >
+                            No transactions yet.
+                        </div>
+                        <div
+                            id="balanceTransactionsError"
+                            class="balance__transactions-state balance__transactions-state--hidden"
+                        ></div>
+                        <div
+                            id="balanceTransactionsList"
+                            class="balance__transactions-list balance__transactions-list--hidden"
+                            role="list"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/BALANCE/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

@@ -1,4 +1,5 @@
 import { getCsrfHeaders, getCsrfToken } from '../../GLOBAL/src/js/csrf.js';
+import exifr from 'exifr';
 
 /**
  * GalleriesPage Controller
@@ -24,6 +25,9 @@ export class GalleriesPage {
     this.selectedPictureIds = new Set();
     this.pendingPictureDeleteIds = [];
     this.currentPicturesList = [];
+    this.coverImageFile = null;
+    this.pendingOpenGalleryId = null;
+    this.exifEnabled = true;
 
     this.init();
   }
@@ -32,6 +36,15 @@ export class GalleriesPage {
    * Initialize the page
    */
   init() {
+    const params = new URLSearchParams(window.location.search);
+    const galleryIdParam = params.get('gallery_id');
+    if (galleryIdParam) {
+      const galleryId = parseInt(galleryIdParam, 10);
+      if (!Number.isNaN(galleryId)) {
+        this.pendingOpenGalleryId = galleryId;
+      }
+    }
+
     this.setupEventListeners();
     this.loadGalleries();
   }
@@ -64,6 +77,23 @@ export class GalleriesPage {
       galleryForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleGallerySubmit();
+      });
+    }
+
+    const galleryCoverInput = document.getElementById('galleryCoverImage');
+    if (galleryCoverInput) {
+      galleryCoverInput.addEventListener('change', (e) => this.handleCoverImageSelect(e));
+    }
+
+    const galleryUseLocationBtn = document.getElementById('galleryUseLocationBtn');
+    if (galleryUseLocationBtn) {
+      galleryUseLocationBtn.addEventListener('click', () => this.useCurrentGalleryLocation());
+    }
+
+    const galleryGeoToggle = document.getElementById('galleryIsGeo');
+    if (galleryGeoToggle) {
+      galleryGeoToggle.addEventListener('change', () => {
+        this.toggleGeoFields(galleryGeoToggle.checked);
       });
     }
 
@@ -120,6 +150,14 @@ export class GalleriesPage {
       uploadDropZone.addEventListener('dragover', (e) => this.handleDragOver(e));
       uploadDropZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
       uploadDropZone.addEventListener('drop', (e) => this.handleDrop(e));
+    }
+
+    const exifToggle = document.getElementById('exifLocationToggle');
+    if (exifToggle) {
+      this.exifEnabled = exifToggle.checked;
+      exifToggle.addEventListener('change', (e) => {
+        this.exifEnabled = e.target.checked;
+      });
     }
 
     const uploadFilesBtn = document.getElementById('uploadFilesBtn');
@@ -197,6 +235,16 @@ export class GalleriesPage {
       } else {
         this.renderGalleries();
         this.showContentState();
+
+        if (this.pendingOpenGalleryId) {
+          const targetGallery = this.galleries.find(
+            (gallery) => gallery.id === this.pendingOpenGalleryId
+          );
+          if (targetGallery) {
+            this.showPicturesModal(targetGallery);
+          }
+          this.pendingOpenGalleryId = null;
+        }
       }
     } catch (error) {
       console.error('Failed to load galleries:', error);
@@ -295,10 +343,17 @@ export class GalleriesPage {
     const title = document.getElementById('galleryModalTitle');
     const form = document.getElementById('galleryForm');
     const saveBtn = document.getElementById('saveGalleryBtn');
+    const latitudeInput = document.getElementById('galleryLatitude');
+    const longitudeInput = document.getElementById('galleryLongitude');
+    const tagsInput = document.getElementById('galleryTags');
+    const coverInput = document.getElementById('galleryCoverImage');
+    const coverPreview = document.getElementById('galleryCoverPreview');
+    const geoToggle = document.getElementById('galleryIsGeo');
 
     if (!modal || !form) return;
 
     this.currentGallery = gallery;
+    this.coverImageFile = null;
 
     // Update modal title and button
     if (gallery) {
@@ -310,6 +365,25 @@ export class GalleriesPage {
       document.getElementById('galleryDescription').value = gallery.description || '';
       document.getElementById('galleryIsPublic').checked = gallery.is_public || false;
       document.getElementById('galleryId').value = gallery.id;
+      if (latitudeInput) latitudeInput.value = gallery.latitude ?? '';
+      if (longitudeInput) longitudeInput.value = gallery.longitude ?? '';
+      if (tagsInput) tagsInput.value = Array.isArray(gallery.tags) ? gallery.tags.join(', ') : '';
+      if (coverInput) coverInput.value = '';
+      if (coverPreview) {
+        coverPreview.innerHTML = '';
+        if (gallery.cover_image_url) {
+          coverPreview.innerHTML = `
+            <img src="${gallery.cover_image_url}" alt="Cover image preview">
+            <span>Current cover image</span>
+          `;
+        }
+      }
+
+      const isGeoEnabled = this.isGeoGalleryEnabled(gallery);
+      if (geoToggle) {
+        geoToggle.checked = isGeoEnabled;
+      }
+      this.toggleGeoFields(isGeoEnabled);
     } else {
       title.textContent = 'Create Gallery';
       saveBtn.querySelector('.btn__text').textContent = 'Create Gallery';
@@ -317,6 +391,16 @@ export class GalleriesPage {
       // Reset form
       form.reset();
       document.getElementById('galleryId').value = '';
+      if (latitudeInput) latitudeInput.value = '';
+      if (longitudeInput) longitudeInput.value = '';
+      if (tagsInput) tagsInput.value = '';
+      if (coverInput) coverInput.value = '';
+      if (coverPreview) coverPreview.innerHTML = '';
+
+      if (geoToggle) {
+        geoToggle.checked = false;
+      }
+      this.toggleGeoFields(false);
     }
 
     // Clear errors
@@ -327,6 +411,99 @@ export class GalleriesPage {
   }
 
   /**
+   * Handle cover image selection for gallery
+   * @param {Event} e - Change event
+   */
+  handleCoverImageSelect(e) {
+    const file = e.target.files?.[0];
+    const coverPreview = document.getElementById('galleryCoverPreview');
+
+    this.coverImageFile = null;
+
+    if (!file) {
+      if (coverPreview) {
+        coverPreview.innerHTML = '';
+      }
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.showFieldError('coverImageError', 'Cover image must be a valid image file');
+      if (coverPreview) {
+        coverPreview.innerHTML = '';
+      }
+      return;
+    }
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.showFieldError('coverImageError', 'Cover image exceeds 10MB limit');
+      if (coverPreview) {
+        coverPreview.innerHTML = '';
+      }
+      return;
+    }
+
+    this.coverImageFile = file;
+    this.showFieldError('coverImageError', '');
+
+    if (coverPreview) {
+      coverPreview.innerHTML = '';
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        coverPreview.innerHTML = `
+          <img src="${event.target.result}" alt="Cover image preview">
+          <span>Selected cover image</span>
+        `;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  /**
+   * Use current location for gallery coordinates
+   */
+  useCurrentGalleryLocation() {
+    const latitudeInput = document.getElementById('galleryLatitude');
+    const longitudeInput = document.getElementById('galleryLongitude');
+
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      this.showFieldError(
+        'locationError',
+        'Location requires HTTPS or localhost. Enter coordinates manually.'
+      );
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      this.showFieldError('locationError', 'Geolocation is not supported by this browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (latitudeInput) latitudeInput.value = position.coords.latitude.toString();
+        if (longitudeInput) longitudeInput.value = position.coords.longitude.toString();
+        this.showFieldError('locationError', '');
+        this.showToast('Location added to gallery', 'success');
+      },
+      (error) => {
+        let message = 'Unable to retrieve your location';
+        if (error && error.code === 1) {
+          message = 'Location permission denied. Enable it in your browser settings.';
+        } else if (error && error.code === 2) {
+          message = 'Location unavailable. Try again or enter coordinates manually.';
+        } else if (error && error.code === 3) {
+          message = 'Location request timed out. Try again.';
+        }
+
+        this.showFieldError('locationError', message);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  /**
    * Handle gallery form submission
    */
   async handleGallerySubmit() {
@@ -334,10 +511,18 @@ export class GalleriesPage {
     const formData = new FormData(form);
     const galleryId = document.getElementById('galleryId').value;
 
+    const isGeoEnabled = formData.get('is_geo') === 'on';
+    const latitudeValue = isGeoEnabled ? parseFloat(formData.get('latitude')) : NaN;
+    const longitudeValue = isGeoEnabled ? parseFloat(formData.get('longitude')) : NaN;
+    const hasLatitude = Number.isFinite(latitudeValue);
+    const hasLongitude = Number.isFinite(longitudeValue);
+    const tags = this.parseTags(formData.get('tags'));
+
     const data = {
       name: formData.get('name'),
       description: formData.get('description') || null,
-      is_public: formData.get('is_public') === 'on'
+      is_public: formData.get('is_public') === 'on',
+      gallery_type: isGeoEnabled ? 'geo_galleries' : 'regular_galleries'
     };
 
     // Validate
@@ -347,10 +532,36 @@ export class GalleriesPage {
       return;
     }
 
+    if (isGeoEnabled && (!hasLatitude || !hasLongitude)) {
+      this.showFieldError('locationError', 'Latitude and longitude are required for geo galleries');
+      return;
+    }
+
+    if (isGeoEnabled) {
+      data.latitude = latitudeValue;
+      data.longitude = longitudeValue;
+    }
+
+    if (galleryId || tags.length > 0) {
+      data.tags = tags;
+    }
+
+    const isGeoGallery = isGeoEnabled;
+    const hasExistingCover = Boolean(this.currentGallery?.cover_image_id);
+
+    if (isGeoGallery && !this.coverImageFile && !hasExistingCover) {
+      this.showFieldError('coverImageError', 'Cover image is required for geo galleries');
+      return;
+    }
+
     const saveBtn = document.getElementById('saveGalleryBtn');
     saveBtn.disabled = true;
 
     try {
+      if (this.coverImageFile) {
+        data.cover_image_id = await this.uploadCoverImage(this.coverImageFile);
+      }
+
       if (galleryId) {
         // Update existing gallery
         await this.updateGallery(galleryId, data);
@@ -827,6 +1038,10 @@ export class GalleriesPage {
                 <div class="form__group">
                   <h4 class="lightbox__meta-title" style="margin: 0 0 0.5rem 0; color: var(--text-primary);"></h4>
                   <p class="lightbox__meta-description" style="margin: 0; color: var(--text-secondary);"></p>
+                  <div class="lightbox__meta-location" style="margin-top: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+                    <span class="lightbox__meta-label" style="font-weight: 600; color: var(--text-primary);">Location:</span>
+                    <span class="lightbox__meta-value"></span>
+                  </div>
                   ${pictures.length > 1 ? '<p class="lightbox__counter" style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-tertiary);"></p>' : ''}
                 </div>
               </div>
@@ -838,6 +1053,14 @@ export class GalleriesPage {
                 <div class="form__group">
                   <label class="form__label">Description</label>
                   <textarea class="form__textarea lightbox__description-input" placeholder="Enter description (optional)" rows="4"></textarea>
+                </div>
+                <div class="form__group">
+                  <label class="form__label">Location (optional)</label>
+                  <div class="geo-fields">
+                    <input type="number" class="form__input lightbox__latitude-input" placeholder="Latitude" step="any">
+                    <input type="number" class="form__input lightbox__longitude-input" placeholder="Longitude" step="any">
+                  </div>
+                  <span class="form__error lightbox__location-error"></span>
                 </div>
               </div>
             </div>
@@ -938,9 +1161,12 @@ export class GalleriesPage {
     const img = lightbox.querySelector('.image-lightbox__image');
     const metaTitle = lightbox.querySelector('.lightbox__meta-title');
     const metaDescription = lightbox.querySelector('.lightbox__meta-description');
+    const metaLocation = lightbox.querySelector('.lightbox__meta-value');
     const counter = lightbox.querySelector('.lightbox__counter');
     const titleInput = lightbox.querySelector('.lightbox__title-input');
     const descriptionInput = lightbox.querySelector('.lightbox__description-input');
+    const latitudeInput = lightbox.querySelector('.lightbox__latitude-input');
+    const longitudeInput = lightbox.querySelector('.lightbox__longitude-input');
 
     img.src = picture.urls.large;
     img.alt = picture.title || 'Picture';
@@ -948,6 +1174,9 @@ export class GalleriesPage {
     metaTitle.textContent = picture.title || 'Untitled';
     metaDescription.textContent = picture.description || '';
     metaDescription.style.display = picture.description ? 'block' : 'none';
+    if (metaLocation) {
+      metaLocation.textContent = this.formatCoordinates(picture.latitude, picture.longitude);
+    }
 
     if (counter && this.currentPictures.length > 1) {
       counter.textContent = `${this.currentPictureIndex + 1} / ${this.currentPictures.length}`;
@@ -956,6 +1185,8 @@ export class GalleriesPage {
     // Set input values
     titleInput.value = picture.title || '';
     descriptionInput.value = picture.description || '';
+    if (latitudeInput) latitudeInput.value = picture.latitude ?? '';
+    if (longitudeInput) longitudeInput.value = picture.longitude ?? '';
 
     if (editMode) {
       this.togglePictureEditMode(true);
@@ -990,8 +1221,12 @@ export class GalleriesPage {
       const picture = this.currentPictures[this.currentPictureIndex];
       const titleInput = lightbox.querySelector('.lightbox__title-input');
       const descriptionInput = lightbox.querySelector('.lightbox__description-input');
+      const latitudeInput = lightbox.querySelector('.lightbox__latitude-input');
+      const longitudeInput = lightbox.querySelector('.lightbox__longitude-input');
       titleInput.value = picture.title || '';
       descriptionInput.value = picture.description || '';
+      if (latitudeInput) latitudeInput.value = picture.latitude ?? '';
+      if (longitudeInput) longitudeInput.value = picture.longitude ?? '';
     }
   }
 
@@ -1004,20 +1239,45 @@ export class GalleriesPage {
 
     const titleInput = lightbox.querySelector('.lightbox__title-input');
     const descriptionInput = lightbox.querySelector('.lightbox__description-input');
+    const latitudeInput = lightbox.querySelector('.lightbox__latitude-input');
+    const longitudeInput = lightbox.querySelector('.lightbox__longitude-input');
+    const locationError = lightbox.querySelector('.lightbox__location-error');
     const picture = this.currentPictures[this.currentPictureIndex];
 
     const newTitle = titleInput.value.trim() || 'Untitled';
     const newDescription = descriptionInput.value.trim() || null;
+    const latitudeValue = latitudeInput ? parseFloat(latitudeInput.value) : NaN;
+    const longitudeValue = longitudeInput ? parseFloat(longitudeInput.value) : NaN;
+    const hasLatitude = Number.isFinite(latitudeValue);
+    const hasLongitude = Number.isFinite(longitudeValue);
+
+    if (locationError) {
+      locationError.textContent = '';
+    }
+
+    if (hasLatitude !== hasLongitude) {
+      if (locationError) {
+        locationError.textContent = 'Latitude and longitude must be provided together';
+      }
+      return;
+    }
+
+    const payload = {
+      title: newTitle,
+      description: newDescription
+    };
+
+    if (hasLatitude && hasLongitude) {
+      payload.latitude = latitudeValue;
+      payload.longitude = longitudeValue;
+    }
 
     try {
       const response = await fetch(`${this.baseUrl}/api/v1/galleries/${this.currentGalleryForPictures.id}/pictures/${picture.id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: getCsrfHeaders({ 'Accept': 'application/json' }),
-        body: JSON.stringify({
-          title: newTitle,
-          description: newDescription
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -1028,6 +1288,10 @@ export class GalleriesPage {
       // Update local data
       picture.title = newTitle;
       picture.description = newDescription;
+      if (hasLatitude && hasLongitude) {
+        picture.latitude = latitudeValue;
+        picture.longitude = longitudeValue;
+      }
 
       this.showToast('Picture updated successfully', 'success');
       this.togglePictureEditMode(false);
@@ -1154,7 +1418,7 @@ export class GalleriesPage {
    * Process selected files
    * @param {Array} files - Array of File objects
    */
-  processFiles(files) {
+  async processFiles(files) {
     // Filter only image files
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
@@ -1180,10 +1444,38 @@ export class GalleriesPage {
     // Initialize metadata for each file with default title (filename without extension)
     this.fileMetadata = validFiles.map(file => ({
       title: file.name.replace(/\.[^/.]+$/, ''),
-      description: ''
+      description: '',
+      latitude: null,
+      longitude: null,
+      locationSource: null
     }));
 
+    if (this.exifEnabled) {
+      await this.populateExifLocations(validFiles);
+    }
+
     this.showFilePreview();
+  }
+
+  /**
+   * Populate file metadata with EXIF GPS data when available
+   * @param {File[]} files
+   */
+  async populateExifLocations(files) {
+    const tasks = files.map(async (file, index) => {
+      try {
+        const gps = await exifr.gps(file);
+        if (gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number') {
+          this.fileMetadata[index].latitude = gps.latitude;
+          this.fileMetadata[index].longitude = gps.longitude;
+          this.fileMetadata[index].locationSource = 'exif';
+        }
+      } catch (error) {
+        console.warn(`Failed to parse EXIF data for ${file.name}`, error);
+      }
+    });
+
+    await Promise.all(tasks);
   }
 
   /**
@@ -1288,6 +1580,33 @@ export class GalleriesPage {
   }
 
   /**
+   * Parse tags input into array
+   * @param {string} value - Raw input value
+   * @returns {string[]}
+   */
+  parseTags(value) {
+    if (!value) return [];
+    return value
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+  }
+
+  /**
+   * Format latitude/longitude for display
+   * @param {number|null} latitude
+   * @param {number|null} longitude
+   * @returns {string}
+   */
+  formatCoordinates(latitude, longitude) {
+    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+      return 'No location';
+    }
+
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  }
+
+  /**
    * Cancel upload and reset UI
    */
   cancelUpload() {
@@ -1368,7 +1687,13 @@ export class GalleriesPage {
         const uploadId = await this.uploadFile(file);
 
         // Add to gallery with metadata
-        await this.addPictureToGallery(uploadId, metadata.title, metadata.description);
+        await this.addPictureToGallery(
+          uploadId,
+          metadata.title,
+          metadata.description,
+          metadata.latitude,
+          metadata.longitude
+        );
 
         const completed = i + 1;
         if (progressContainer && progressText && progressFill) {
@@ -1394,6 +1719,15 @@ export class GalleriesPage {
         uploadBtn.querySelector('.btn__text').textContent = 'Upload & Add to Gallery';
       }
     }
+  }
+
+  /**
+   * Upload a cover image file
+   * @param {File} file - File to upload
+   * @returns {Promise<number>} Upload ID
+   */
+  async uploadCoverImage(file) {
+    return this.uploadFile(file);
   }
 
   /**
@@ -1433,16 +1767,23 @@ export class GalleriesPage {
    * @param {string} title - Picture title
    * @param {string} description - Picture description
    */
-  async addPictureToGallery(uploadId, title, description) {
+  async addPictureToGallery(uploadId, title, description, latitude, longitude) {
+    const payload = {
+      upload_id: uploadId,
+      title: title || 'Untitled',
+      description: description || null
+    };
+
+    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+      payload.latitude = latitude;
+      payload.longitude = longitude;
+    }
+
     const response = await fetch(`${this.baseUrl}/api/v1/galleries/${this.currentGalleryForPictures.id}/pictures`, {
       method: 'POST',
       credentials: 'include',
       headers: getCsrfHeaders({ 'Accept': 'application/json' }),
-      body: JSON.stringify({
-        upload_id: uploadId,
-        title: title || 'Untitled',
-        description: description || null
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
@@ -1544,6 +1885,28 @@ export class GalleriesPage {
     }
   }
 
+  isGeoGalleryEnabled(gallery) {
+    if (!gallery) return false;
+    if (typeof gallery.gallery_type === 'string') {
+      return gallery.gallery_type === 'geo_galleries';
+    }
+    return Number.isFinite(gallery.latitude) && Number.isFinite(gallery.longitude);
+  }
+
+  toggleGeoFields(enabled) {
+    const geoGroups = document.querySelectorAll('[data-geo-field]');
+    geoGroups.forEach((group) => {
+      group.hidden = !enabled;
+      group.querySelectorAll('input, textarea, select, button').forEach((field) => {
+        field.disabled = !enabled;
+      });
+    });
+
+    if (!enabled) {
+      this.showFieldError('locationError', '');
+    }
+  }
+
   /**
    * Escape HTML to prevent XSS
    * @param {string} text - Text to escape
@@ -1581,10 +1944,21 @@ export class GalleriesPage {
     const lightboxTitle = document.getElementById('lightboxTitle');
     const lightboxDescription = document.getElementById('lightboxDescription');
     const lightboxFileIndex = document.getElementById('lightboxFileIndex');
+    const lightboxLatitude = document.getElementById('lightboxLatitude');
+    const lightboxLongitude = document.getElementById('lightboxLongitude');
+    const lightboxLocationSource = document.getElementById('lightboxLocationSource');
 
     if (lightboxTitle) lightboxTitle.value = metadata.title;
     if (lightboxDescription) lightboxDescription.value = metadata.description || '';
     if (lightboxFileIndex) lightboxFileIndex.value = index;
+    if (lightboxLatitude) lightboxLatitude.value = metadata.latitude ?? '';
+    if (lightboxLongitude) lightboxLongitude.value = metadata.longitude ?? '';
+    if (lightboxLocationSource) {
+      lightboxLocationSource.textContent =
+        metadata.locationSource === 'exif'
+          ? 'Location detected from EXIF data.'
+          : '';
+    }
 
     // Update navigation buttons
     this.updateLightboxNav();
@@ -1610,8 +1984,16 @@ export class GalleriesPage {
     // Clear form
     const lightboxTitle = document.getElementById('lightboxTitle');
     const lightboxDescription = document.getElementById('lightboxDescription');
+    const lightboxLatitude = document.getElementById('lightboxLatitude');
+    const lightboxLongitude = document.getElementById('lightboxLongitude');
+    const lightboxLocationError = document.getElementById('lightboxLocationError');
+    const lightboxLocationSource = document.getElementById('lightboxLocationSource');
     if (lightboxTitle) lightboxTitle.value = '';
     if (lightboxDescription) lightboxDescription.value = '';
+    if (lightboxLatitude) lightboxLatitude.value = '';
+    if (lightboxLongitude) lightboxLongitude.value = '';
+    if (lightboxLocationError) lightboxLocationError.textContent = '';
+    if (lightboxLocationSource) lightboxLocationSource.textContent = '';
 
     this.currentLightboxIndex = 0;
   }
@@ -1626,11 +2008,21 @@ export class GalleriesPage {
       // Save current metadata without validation (just save whatever is there)
       const lightboxTitle = document.getElementById('lightboxTitle');
       const lightboxDescription = document.getElementById('lightboxDescription');
+      const lightboxLatitude = document.getElementById('lightboxLatitude');
+      const lightboxLongitude = document.getElementById('lightboxLongitude');
 
       if (lightboxTitle && this.currentLightboxIndex >= 0 && this.currentLightboxIndex < this.fileMetadata.length) {
+        const latitudeValue = lightboxLatitude ? parseFloat(lightboxLatitude.value) : NaN;
+        const longitudeValue = lightboxLongitude ? parseFloat(lightboxLongitude.value) : NaN;
+        const hasLatitude = Number.isFinite(latitudeValue);
+        const hasLongitude = Number.isFinite(longitudeValue);
+
         this.fileMetadata[this.currentLightboxIndex] = {
           title: lightboxTitle.value.trim() || this.fileMetadata[this.currentLightboxIndex].title,
-          description: lightboxDescription ? lightboxDescription.value.trim() : ''
+          description: lightboxDescription ? lightboxDescription.value.trim() : '',
+          latitude: hasLatitude ? latitudeValue : null,
+          longitude: hasLongitude ? longitudeValue : null,
+          locationSource: this.fileMetadata[this.currentLightboxIndex].locationSource
         };
       }
 
@@ -1663,6 +2055,8 @@ export class GalleriesPage {
     const lightboxTitle = document.getElementById('lightboxTitle');
     const lightboxDescription = document.getElementById('lightboxDescription');
     const lightboxFileIndex = document.getElementById('lightboxFileIndex');
+    const lightboxLatitude = document.getElementById('lightboxLatitude');
+    const lightboxLongitude = document.getElementById('lightboxLongitude');
 
     if (!lightboxTitle || !lightboxFileIndex) return;
 
@@ -1670,6 +2064,10 @@ export class GalleriesPage {
     if (isNaN(index) || index < 0 || index >= this.selectedFiles.length) return;
 
     const title = lightboxTitle.value.trim();
+    const latitudeValue = lightboxLatitude ? parseFloat(lightboxLatitude.value) : NaN;
+    const longitudeValue = lightboxLongitude ? parseFloat(lightboxLongitude.value) : NaN;
+    const hasLatitude = Number.isFinite(latitudeValue);
+    const hasLongitude = Number.isFinite(longitudeValue);
 
     // Validate title
     if (!title) {
@@ -1677,13 +2075,21 @@ export class GalleriesPage {
       return;
     }
 
+    if (hasLatitude !== hasLongitude) {
+      this.showFieldError('lightboxLocationError', 'Latitude and longitude must be provided together');
+      return;
+    }
+
     // Clear errors
-    this.clearFieldErrors();
+    this.clearFormErrors();
 
     // Save metadata
     this.fileMetadata[index] = {
       title: title,
-      description: lightboxDescription ? lightboxDescription.value.trim() : ''
+      description: lightboxDescription ? lightboxDescription.value.trim() : '',
+      latitude: hasLatitude ? latitudeValue : null,
+      longitude: hasLongitude ? longitudeValue : null,
+      locationSource: this.fileMetadata[index].locationSource
     };
 
     // Update preview item name

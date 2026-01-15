@@ -3,11 +3,7 @@ use actix_web::web;
 use blazing_sun::app::db_query::{mutations as db_mutations, read as db_read};
 use blazing_sun::database::AppState;
 
-pub async fn ensure_test_user(
-    app_state: &web::Data<AppState>,
-    email: &str,
-    password: &str,
-) -> i64 {
+pub async fn ensure_test_user(app_state: &web::Data<AppState>, email: &str, password: &str) -> i64 {
     let db = app_state.db.lock().await;
 
     match db_read::user::get_by_email(&db, email).await {

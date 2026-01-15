@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            l.id as locale_id,\n            l.locale_code,\n            lt.singular,\n            lt.plural\n        FROM localization_translations lt\n        INNER JOIN locales l ON l.id = lt.locale_id\n        WHERE lt.localization_key_id = $1\n        ORDER BY l.locale_code ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "locale_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "locale_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "singular",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "plural",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cf5329ac91e7f0d6fb135cc86561b3af9d0179617255ab268a55fb092b834472"
+}

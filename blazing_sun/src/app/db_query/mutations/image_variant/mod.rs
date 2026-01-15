@@ -70,10 +70,7 @@ pub async fn create_batch(
 }
 
 /// Delete all variants for an upload
-pub async fn delete_by_upload_id(
-    db: &Pool<Postgres>,
-    upload_id: i64,
-) -> Result<u64, sqlx::Error> {
+pub async fn delete_by_upload_id(db: &Pool<Postgres>, upload_id: i64) -> Result<u64, sqlx::Error> {
     let result = sqlx::query!("DELETE FROM image_variants WHERE upload_id = $1", upload_id)
         .execute(db)
         .await?;

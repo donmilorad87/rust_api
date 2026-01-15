@@ -2,9 +2,9 @@
 //!
 //! Manages ASSETS_VERSION in the .env file for cache busting.
 
+use regex::Regex;
 use std::fs;
 use std::path::Path;
-use regex::Regex;
 
 /// Error type for versioner operations
 #[derive(Debug, thiserror::Error)]
@@ -111,7 +111,10 @@ pub fn update_version(env_path: &Path, new_version: &str) -> Result<(), Versione
 }
 
 /// Update version in .env content string
-pub fn update_version_in_string(content: &str, new_version: &str) -> Result<String, VersionerError> {
+pub fn update_version_in_string(
+    content: &str,
+    new_version: &str,
+) -> Result<String, VersionerError> {
     let re = Regex::new(r#"^(ASSETS_VERSION\s*=\s*)["']?[^"'\s\n]+["']?"#)?;
 
     let mut found = false;

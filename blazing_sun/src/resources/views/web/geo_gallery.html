@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Geo Gallery - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/GEO_GALLERY/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="geo-gallery" data-gallery-uuid="{{ gallery_uuid | default(value='') }}">
+    <header class="geo-gallery__header">
+        <span class="geo-gallery__eyebrow">Geo Gallery</span>
+        <h1 id="geoGalleryTitle" class="geo-gallery__title">Geo Gallery</h1>
+    </header>
+
+    <section class="geo-gallery__map-wrapper">
+        <div id="geoGalleryMap" class="geo-gallery__map" aria-label="Gallery map"></div>
+        <div class="geo-gallery__map-meta">
+            <div id="geoGallerySelectedMeta">Select a photo to see its location.</div>
+            <div class="geo-gallery__actions">
+                <button id="geoGalleryEditButton" class="geo-gallery__button geo-gallery__button--primary" type="button" style="display: none;">Update location</button>
+                <div id="geoGalleryEditActions" hidden>
+                    <button id="geoGallerySaveButton" class="geo-gallery__button geo-gallery__button--primary" type="button">Save</button>
+                    <button id="geoGalleryCancelButton" class="geo-gallery__button geo-gallery__button--ghost" type="button">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="geoGalleryStatus" class="geo-gallery__status"></div>
+
+    <section class="geo-gallery__carousel">
+        <div id="geoGalleryCarousel" class="geo-carousel"></div>
+        <div id="geoGalleryEmpty" class="geo-carousel__empty">No images yet.</div>
+        <div class="geo-gallery__controls">
+            <label class="geo-gallery__toggle">
+                <input id="geoGalleryShowAll" type="checkbox">
+                <span>Show all images location</span>
+            </label>
+        </div>
+    </section>
+
+    <section class="geo-gallery__description">
+        <h2>About this gallery</h2>
+        <p id="geoGalleryDescription">Loading description...</p>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/GEO_GALLERY/app.js?v={{ assets_version }}"></script>
+{% endblock %}

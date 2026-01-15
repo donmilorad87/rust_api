@@ -1,0 +1,594 @@
+// ============================================
+// Game Chat Config Page Styles
+// ============================================
+
+@use 'variables' as *;
+
+// ============================================
+// Page Layout
+// ============================================
+
+.game-chat-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: $spacing-lg;
+
+  @media (max-width: $breakpoint-md) {
+    padding: $spacing-md;
+  }
+}
+
+.game-chat-page__header {
+  margin-bottom: $spacing-xl;
+}
+
+.game-chat-page__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.game-chat-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.game-chat-page__subtitle {
+  color: var(--text-secondary-color, #6b7280);
+  margin: 0;
+}
+
+// ============================================
+// Loading State
+// ============================================
+
+.game-chat-page__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xxl;
+  gap: $spacing-md;
+  color: var(--text-secondary-color, #6b7280);
+
+  &.hidden {
+    display: none;
+  }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color, #e5e7eb);
+  border-top-color: var(--primary-color, #3b82f6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ============================================
+// Configuration Form
+// ============================================
+
+.game-chat-form {
+  &.hidden {
+    display: none;
+  }
+}
+
+// ============================================
+// Config Sections
+// ============================================
+
+.config-section {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-sm;
+}
+
+.config-section__title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 $spacing-sm 0;
+
+  svg {
+    color: var(--primary-color, #3b82f6);
+    flex-shrink: 0;
+  }
+}
+
+.config-section__description {
+  color: var(--text-secondary-color, #6b7280);
+  font-size: 0.875rem;
+  margin: 0 0 $spacing-lg 0;
+}
+
+// ============================================
+// Form Elements
+// ============================================
+
+.form-row {
+  display: flex;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-md;
+
+  @media (max-width: $breakpoint-sm) {
+    flex-direction: column;
+    gap: $spacing-md;
+  }
+}
+
+.form-group {
+  flex: 1;
+
+  &--half {
+    flex: 0 0 calc(50% - #{$spacing-lg} / 2);
+
+    @media (max-width: $breakpoint-sm) {
+      flex: 1;
+    }
+  }
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: $spacing-sm;
+
+  .form-label__hint {
+    display: block;
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--text-secondary-color, #6b7280);
+    margin-top: 2px;
+  }
+}
+
+.form-input {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  font-size: 1rem;
+  color: var(--text-color);
+  background: var(--input-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: $radius-md;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 0 0 3px var(--primary-color-alpha, rgba(59, 130, 246, 0.15));
+  }
+
+  &:disabled {
+    background: var(--disabled-bg, #f3f4f6);
+    cursor: not-allowed;
+  }
+}
+
+.form-help {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary-color, #6b7280);
+  margin-top: $spacing-xs;
+}
+
+// ============================================
+// Rate Limit Preview
+// ============================================
+
+.rate-limit-preview {
+  background: var(--info-bg, #eff6ff);
+  border: 1px solid var(--info-border, #bfdbfe);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-top: $spacing-md;
+}
+
+.rate-limit-preview__text {
+  color: var(--info-text, #1e40af);
+  font-size: 0.875rem;
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+// ============================================
+// Toggle Switch
+// ============================================
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.toggle-label {
+  font-weight: 500;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:checked + .toggle-switch__slider {
+      background-color: var(--primary-color, #3b82f6);
+    }
+
+    &:checked + .toggle-switch__slider::before {
+      transform: translateX(22px);
+    }
+
+    &:focus + .toggle-switch__slider {
+      box-shadow: 0 0 0 3px var(--primary-color-alpha, rgba(59, 130, 246, 0.15));
+    }
+  }
+}
+
+.toggle-switch__slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--toggle-off-bg, #d1d5db);
+  border-radius: $radius-full;
+  transition: background-color $transition-fast;
+
+  &::before {
+    content: '';
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform $transition-fast;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// ============================================
+// Profanity Section
+// ============================================
+
+.profanity-section {
+  margin-top: $spacing-lg;
+  transition: opacity $transition-normal;
+}
+
+.word-input-group {
+  display: flex;
+  gap: $spacing-sm;
+
+  .form-input {
+    flex: 1;
+  }
+}
+
+.word-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  min-height: 60px;
+  padding: $spacing-md;
+  background: var(--input-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: $radius-md;
+  margin-top: $spacing-md;
+}
+
+.word-list__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: $spacing-md;
+  color: var(--text-secondary-color, #6b7280);
+  gap: $spacing-sm;
+
+  &.hidden {
+    display: none;
+  }
+
+  svg {
+    opacity: 0.5;
+  }
+}
+
+.word-list__stats {
+  margin-top: $spacing-sm;
+  font-size: 0.75rem;
+  color: var(--text-secondary-color, #6b7280);
+}
+
+.word-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  background: var(--tag-bg, #f3f4f6);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: $radius-full;
+  font-size: 0.875rem;
+  color: var(--text-color);
+}
+
+.word-tag__text {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.word-tag__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: none;
+  border: none;
+  color: var(--text-secondary-color, #6b7280);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: var(--danger-color, #ef4444);
+    background: var(--danger-bg, rgba(239, 68, 68, 0.1));
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(59, 130, 246, 0.15));
+  }
+}
+
+// ============================================
+// Form Actions
+// ============================================
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: $spacing-lg;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  margin-top: $spacing-lg;
+}
+
+// ============================================
+// Buttons
+// ============================================
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: background-color $transition-fast, box-shadow $transition-fast, opacity $transition-fast;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: var(--primary-color-hover, #2563eb);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--primary-color-alpha, rgba(59, 130, 246, 0.3));
+    }
+  }
+
+  &--secondary {
+    background: var(--secondary-bg, #f3f4f6);
+    color: var(--text-color);
+    border: 1px solid var(--border-color, #e5e7eb);
+
+    &:hover:not(:disabled) {
+      background: var(--secondary-bg-hover, #e5e7eb);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--border-color, rgba(229, 231, 235, 0.5));
+    }
+  }
+
+  &--danger {
+    background: var(--danger-color, #ef4444);
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: var(--danger-color-hover, #dc2626);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--danger-color-alpha, rgba(239, 68, 68, 0.3));
+    }
+  }
+
+  &--success {
+    background: var(--success-color, #22c55e);
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: var(--success-color-hover, #16a34a);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--success-color-alpha, rgba(34, 197, 94, 0.3));
+    }
+  }
+
+  &--large {
+    padding: $spacing-md $spacing-lg;
+    font-size: 1rem;
+  }
+}
+
+// ============================================
+// Global Mute Button
+// ============================================
+
+.global-mute-btn {
+  &--active {
+    background: var(--warning-color, #f59e0b) !important;
+    animation: pulse-warning 2s infinite;
+
+    &:hover:not(:disabled) {
+      background: var(--warning-color-hover, #d97706) !important;
+    }
+  }
+}
+
+@keyframes pulse-warning {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--warning-color-alpha, rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    box-shadow: 0 0 0 8px var(--warning-color-alpha, rgba(245, 158, 11, 0));
+  }
+}
+
+// ============================================
+// Modal
+// ============================================
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $spacing-md;
+
+  &.hidden {
+    display: none;
+  }
+}
+
+.modal-content {
+  background: var(--card-bg, #ffffff);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-lg;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xs;
+  background: none;
+  border: none;
+  color: var(--text-secondary-color, #6b7280);
+  cursor: pointer;
+  border-radius: $radius-sm;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: var(--text-color);
+    background: var(--secondary-bg, #f3f4f6);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-color-alpha, rgba(59, 130, 246, 0.15));
+  }
+}
+
+.modal-body {
+  padding: $spacing-lg;
+
+  p {
+    margin: 0;
+    color: var(--text-color);
+    line-height: 1.6;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+// ============================================
+// Hidden Utility
+// ============================================
+
+.hidden {
+  display: none !important;
+}

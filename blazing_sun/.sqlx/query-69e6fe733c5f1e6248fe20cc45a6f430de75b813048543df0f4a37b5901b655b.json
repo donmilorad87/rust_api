@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_user_mutes\n        SET room_id = NULL\n        WHERE muter_user_id = $1 AND muted_user_id = $2 AND room_id = $3\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "69e6fe733c5f1e6248fe20cc45a6f430de75b813048543df0f4a37b5901b655b"
+}

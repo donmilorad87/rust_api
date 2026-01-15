@@ -27,10 +27,20 @@ pub struct OAuthClaimsExt {
 }
 
 /// Helper to create JSON error response
-fn oauth_unauthorized_response(request: ServiceRequest, error: &str, error_description: &str) -> ServiceResponse<BoxBody> {
+fn oauth_unauthorized_response(
+    request: ServiceRequest,
+    error: &str,
+    error_description: &str,
+) -> ServiceResponse<BoxBody> {
     // OAuth 2.0 error format
     let response = HttpResponse::Unauthorized()
-        .insert_header(("WWW-Authenticate", format!(r#"Bearer realm="OAuth", error="{}", error_description="{}""#, error, error_description)))
+        .insert_header((
+            "WWW-Authenticate",
+            format!(
+                r#"Bearer realm="OAuth", error="{}", error_description="{}""#,
+                error, error_description
+            ),
+        ))
         .json(serde_json::json!({
             "error": error,
             "error_description": error_description
@@ -188,7 +198,9 @@ pub fn has_scopes(claims: &OAuthClaimsExt, required_scopes: &str) -> bool {
     let required: Vec<&str> = required_scopes.split_whitespace().collect();
 
     // Check if all required scopes are present in token
-    required.iter().all(|req_scope| token_scopes.contains(req_scope))
+    required
+        .iter()
+        .all(|req_scope| token_scopes.contains(req_scope))
 }
 
 /// Check if OAuth token has ANY of the required scopes
@@ -199,7 +211,9 @@ pub fn has_any_scope(claims: &OAuthClaimsExt, required_scopes: &str) -> bool {
     let required: Vec<&str> = required_scopes.split_whitespace().collect();
 
     // Check if any required scope is present in token
-    required.iter().any(|req_scope| token_scopes.contains(req_scope))
+    required
+        .iter()
+        .any(|req_scope| token_scopes.contains(req_scope))
 }
 
 /// Enforce scope requirements in handler
@@ -233,7 +247,10 @@ pub fn enforce_scopes(claims: &OAuthClaimsExt, required_scopes: &str) -> Result<
 }
 
 /// Enforce that token has ANY of the required scopes
-pub fn enforce_any_scope(claims: &OAuthClaimsExt, required_scopes: &str) -> Result<(), HttpResponse> {
+pub fn enforce_any_scope(
+    claims: &OAuthClaimsExt,
+    required_scopes: &str,
+) -> Result<(), HttpResponse> {
     if has_any_scope(claims, required_scopes) {
         Ok(())
     } else {
@@ -276,7 +293,7 @@ impl FromRequest for OAuthExtractor {
                 serde_json::json!({
                     "error": "invalid_token",
                     "error_description": "OAuth token required"
-                })
+                }),
             ))),
         }
     }
@@ -321,7 +338,7 @@ impl FromRequest for RequireScopes {
                 serde_json::json!({
                     "error": "invalid_token",
                     "error_description": "OAuth token required"
-                })
+                }),
             ))),
         }
     }

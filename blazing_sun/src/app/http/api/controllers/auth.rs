@@ -445,9 +445,7 @@ impl AuthController {
         // If remember_me is checked, create a long-lived refresh token
         if user_data.remember_me {
             let refresh_token = match db_refresh_token_mut::create(
-                &db,
-                user.id,
-                None, // TODO: extract device info from User-Agent
+                &db, user.id, None, // TODO: extract device info from User-Agent
                 None, // TODO: extract IP from request
             )
             .await
@@ -510,10 +508,7 @@ impl AuthController {
     ///
     /// # Responses
     /// - 200: Signed out successfully
-    pub async fn sign_out(
-        state: web::Data<AppState>,
-        req: HttpRequest,
-    ) -> HttpResponse {
+    pub async fn sign_out(state: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
         use actix_web::cookie::{Cookie, SameSite};
 
         let db = state.db.lock().await;
@@ -555,10 +550,7 @@ impl AuthController {
     /// # Responses
     /// - 200: New access token issued
     /// - 401: Invalid or expired refresh token
-    pub async fn refresh(
-        state: web::Data<AppState>,
-        req: HttpRequest,
-    ) -> HttpResponse {
+    pub async fn refresh(state: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
         use actix_web::cookie::{Cookie, SameSite};
 
         // Get refresh token from cookie
@@ -591,15 +583,13 @@ impl AuthController {
         let user = match db_user::get_by_id(&db, refresh_record.user_id).await {
             Ok(u) => u,
             Err(_) => {
-                return HttpResponse::Unauthorized()
-                    .json(BaseResponse::error("User not found"));
+                return HttpResponse::Unauthorized().json(BaseResponse::error("User not found"));
             }
         };
 
         // Check if user is still active
         if user.activated == 0 {
-            return HttpResponse::Forbidden()
-                .json(BaseResponse::error("Account not activated"));
+            return HttpResponse::Forbidden().json(BaseResponse::error("Account not activated"));
         }
 
         // Generate new access token
@@ -652,18 +642,14 @@ impl AuthController {
     /// # Responses
     /// - 200: Signed out from all devices
     /// - 401: Not authenticated
-    pub async fn sign_out_all(
-        state: web::Data<AppState>,
-        req: HttpRequest,
-    ) -> HttpResponse {
+    pub async fn sign_out_all(state: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
         use actix_web::cookie::{Cookie, SameSite};
 
         // Get user_id from JWT (must be authenticated)
         let token = match req.cookie("auth_token") {
             Some(cookie) => cookie.value().to_string(),
             None => {
-                return HttpResponse::Unauthorized()
-                    .json(BaseResponse::error("Not authenticated"));
+                return HttpResponse::Unauthorized().json(BaseResponse::error("Not authenticated"));
             }
         };
 
@@ -674,8 +660,7 @@ impl AuthController {
         ) {
             Ok(data) => data.claims,
             Err(_) => {
-                return HttpResponse::Unauthorized()
-                    .json(BaseResponse::error("Invalid token"));
+                return HttpResponse::Unauthorized().json(BaseResponse::error("Invalid token"));
             }
         };
 

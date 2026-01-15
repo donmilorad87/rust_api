@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET selected_players = '{}',\n            updated_at = NOW()\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "770a08bf5608fadfa731f14910ad7707a6424fa8ef03a45f854ca96c9d243e7e"
+}

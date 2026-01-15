@@ -13,8 +13,8 @@ use crate::app::http::api::controllers::responses::BaseResponse;
 use crate::app::mq::jobs::bulk_delete_uploads::BulkDeleteUploadsParams;
 use crate::app::mq::jobs::bulk_user_action::BulkUserActionParams;
 use crate::app::mq::jobs::delete_user::DeleteUserParams;
-use crate::bootstrap::middleware::controllers::permission::levels;
 use crate::bootstrap::includes::controllers::uploads;
+use crate::bootstrap::middleware::controllers::permission::levels;
 use crate::database::mutations::asset as db_asset_mutations;
 use crate::database::mutations::user as db_user_mutations;
 use crate::database::read::asset as db_asset_read;
@@ -127,7 +127,8 @@ impl AdminController {
         });
 
         let db = state.db.lock().await;
-        let uploads = db_upload_read::get_all_filtered(&db, limit, offset, storage_type, search).await;
+        let uploads =
+            db_upload_read::get_all_filtered(&db, limit, offset, storage_type, search).await;
         let total = db_upload_read::count_filtered(&db, storage_type, search).await;
 
         let upload_dtos: Vec<AdminUploadDto> = uploads
@@ -280,7 +281,7 @@ impl AdminController {
         }
 
         // Clear user's avatar (both UUID and ID)
-        if let Err(e) = db_user_mutations::update_avatar(&db, user_id, None, None).await {
+        if let Err(_e) = db_user_mutations::update_avatar(&db, user_id, None, None).await {
             return HttpResponse::InternalServerError()
                 .json(BaseResponse::error("Failed to clear user avatar"));
         }
@@ -299,8 +300,9 @@ impl AdminController {
 
         // Validate permission value
         if ![1, 10, 50, 100].contains(&new_permissions) {
-            return HttpResponse::BadRequest()
-                .json(BaseResponse::error("Invalid permission level. Must be 1, 10, 50, or 100"));
+            return HttpResponse::BadRequest().json(BaseResponse::error(
+                "Invalid permission level. Must be 1, 10, 50, or 100",
+            ));
         }
 
         let db = state.db.lock().await;
@@ -341,23 +343,22 @@ impl AdminController {
 
         let payload = body.into_inner();
         if payload.user_ids.is_empty() {
-            return HttpResponse::BadRequest()
-                .json(BaseResponse::error("No users selected"));
+            return HttpResponse::BadRequest().json(BaseResponse::error("No users selected"));
         }
 
         if payload.action == "set_permissions" {
             if let Some(value) = payload.permissions {
                 if ![1, 10, 50, 100].contains(&value) {
-                    return HttpResponse::BadRequest()
-                        .json(BaseResponse::error("Invalid permission level. Must be 1, 10, 50, or 100"));
+                    return HttpResponse::BadRequest().json(BaseResponse::error(
+                        "Invalid permission level. Must be 1, 10, 50, or 100",
+                    ));
                 }
             } else {
                 return HttpResponse::BadRequest()
                     .json(BaseResponse::error("Missing permissions value"));
             }
         } else if payload.action != "delete" {
-            return HttpResponse::BadRequest()
-                .json(BaseResponse::error("Invalid bulk action"));
+            return HttpResponse::BadRequest().json(BaseResponse::error("Invalid bulk action"));
         }
 
         let Some(ref mq) = state.mq else {
@@ -376,14 +377,14 @@ impl AdminController {
             Ok(JobStatus::Completed) => {
                 HttpResponse::Ok().json(BaseResponse::success("Bulk action completed"))
             }
-            Ok(JobStatus::Failed) => HttpResponse::InternalServerError()
-                .json(BaseResponse::error("Bulk action failed")),
+            Ok(JobStatus::Failed) => {
+                HttpResponse::InternalServerError().json(BaseResponse::error("Bulk action failed"))
+            }
             Ok(_) => HttpResponse::InternalServerError()
                 .json(BaseResponse::error("Unexpected job status")),
             Err(e) => {
                 tracing::error!("Bulk user action job error: {}", e);
-                HttpResponse::InternalServerError()
-                    .json(BaseResponse::error("Bulk action failed"))
+                HttpResponse::InternalServerError().json(BaseResponse::error("Bulk action failed"))
             }
         }
     }
@@ -484,26 +485,33 @@ impl AdminController {
             let mut new_path = if new_storage_type == "private" {
                 // Moving to private - determine subfolder based on description
                 if upload.description.as_deref() == Some("profile-picture") {
-                    format!("private/profile-pictures/{}", stored_name)
+                    format!("private/profile-pictures/{}", actual_stored_name)
                 } else {
-                    format!("private/{}", stored_name)
+                    format!("private/{}", actual_stored_name)
                 }
             } else {
                 // Moving to public - always flat structure
-                format!("public/{}", stored_name)
+                format!("public/{}", actual_stored_name)
             };
 
             // Move the main file
-            use crate::bootstrap::includes::controllers::uploads;
             let storage_base = crate::config::upload::UploadConfig::storage_path();
-            let mut old_full_path = std::path::PathBuf::from(storage_base).join(&upload.storage_path);
+            let mut old_full_path =
+                std::path::PathBuf::from(storage_base).join(&upload.storage_path);
             let mut new_full_path = std::path::PathBuf::from(storage_base).join(&new_path);
 
-            tracing::info!("Attempting to move: {:?} -> {:?}", old_full_path, new_full_path);
+            tracing::info!(
+                "Attempting to move: {:?} -> {:?}",
+                old_full_path,
+                new_full_path
+            );
 
             // Check if file exists at database path, if not search alternative locations
             if !old_full_path.exists() {
-                tracing::warn!("File not found at database path: {:?}, checking alternative locations", old_full_path);
+                tracing::warn!(
+                    "File not found at database path: {:?}, checking alternative locations",
+                    old_full_path
+                );
 
                 // Check alternative locations
                 if let Some(filename) = std::path::Path::new(&upload.storage_path).file_name() {
@@ -525,7 +533,8 @@ impl AdminController {
                             let full_variant = format!("{}_full.{}", stem_str, ext_str);
                             alternative_paths.push(format!("public/{}", full_variant));
                             alternative_paths.push(format!("private/{}", full_variant));
-                            alternative_paths.push(format!("private/profile-pictures/{}", full_variant));
+                            alternative_paths
+                                .push(format!("private/profile-pictures/{}", full_variant));
                         }
                     }
 
@@ -533,13 +542,20 @@ impl AdminController {
                     for alt_path in alternative_paths {
                         let alt_full_path = std::path::PathBuf::from(storage_base).join(&alt_path);
                         if alt_full_path.exists() {
-                            tracing::info!("Found file at alternative location: {:?}", alt_full_path);
+                            tracing::info!(
+                                "Found file at alternative location: {:?}",
+                                alt_full_path
+                            );
                             old_full_path = alt_full_path;
 
                             // Extract the actual filename from the alternative path
-                            if let Some(alt_filename) = std::path::Path::new(&alt_path).file_name() {
+                            if let Some(alt_filename) = std::path::Path::new(&alt_path).file_name()
+                            {
                                 actual_stored_name = alt_filename.to_string_lossy().to_string();
-                                tracing::info!("Updated stored_name to actual file: {}", actual_stored_name);
+                                tracing::info!(
+                                    "Updated stored_name to actual file: {}",
+                                    actual_stored_name
+                                );
 
                                 // Recalculate new_path with the actual filename
                                 new_path = if new_storage_type == "private" {
@@ -551,8 +567,12 @@ impl AdminController {
                                 } else {
                                     format!("public/{}", actual_stored_name)
                                 };
-                                new_full_path = std::path::PathBuf::from(storage_base).join(&new_path);
-                                tracing::info!("Recalculated destination path: {:?}", new_full_path);
+                                new_full_path =
+                                    std::path::PathBuf::from(storage_base).join(&new_path);
+                                tracing::info!(
+                                    "Recalculated destination path: {:?}",
+                                    new_full_path
+                                );
                             }
 
                             found = true;
@@ -561,12 +581,19 @@ impl AdminController {
                     }
 
                     if !found {
-                        tracing::error!("Source file does not exist at any location. Database path: {:?}", upload.storage_path);
-                        return HttpResponse::InternalServerError()
-                            .json(BaseResponse::error("Source file not found at any location - cannot migrate storage type"));
+                        tracing::error!(
+                            "Source file does not exist at any location. Database path: {:?}",
+                            upload.storage_path
+                        );
+                        return HttpResponse::InternalServerError().json(BaseResponse::error(
+                            "Source file not found at any location - cannot migrate storage type",
+                        ));
                     }
                 } else {
-                    tracing::error!("Could not extract filename from storage_path: {}", upload.storage_path);
+                    tracing::error!(
+                        "Could not extract filename from storage_path: {}",
+                        upload.storage_path
+                    );
                     return HttpResponse::InternalServerError()
                         .json(BaseResponse::error("Invalid storage path"));
                 }
@@ -576,29 +603,41 @@ impl AdminController {
             if let Some(parent) = new_full_path.parent() {
                 if let Err(e) = tokio::fs::create_dir_all(parent).await {
                     tracing::error!("Failed to create directory for moved file: {}", e);
-                    return HttpResponse::InternalServerError()
-                        .json(BaseResponse::error("Failed to create destination directory"));
+                    return HttpResponse::InternalServerError().json(BaseResponse::error(
+                        "Failed to create destination directory",
+                    ));
                 }
             }
 
             // Move the file
             if let Err(e) = tokio::fs::rename(&old_full_path, &new_full_path).await {
-                tracing::error!("Failed to move file from {:?} to {:?}: {}", old_full_path, new_full_path, e);
-                return HttpResponse::InternalServerError()
-                    .json(BaseResponse::error("Failed to move file - check server logs for details"));
+                tracing::error!(
+                    "Failed to move file from {:?} to {:?}: {}",
+                    old_full_path,
+                    new_full_path,
+                    e
+                );
+                return HttpResponse::InternalServerError().json(BaseResponse::error(
+                    "Failed to move file - check server logs for details",
+                ));
             }
-            tracing::info!("Successfully moved main file from {:?} to {:?}", old_full_path, new_full_path);
+            tracing::info!(
+                "Successfully moved main file from {:?} to {:?}",
+                old_full_path,
+                new_full_path
+            );
 
             // Move all variant files
-            use crate::app::db_query::read::image_variant;
             use crate::app::db_query::mutations::image_variant as image_variant_mutations;
+            use crate::app::db_query::read::image_variant;
 
             if let Ok(variants) = image_variant::get_by_upload_id(&db, upload.id).await {
                 let variant_count = variants.len();
                 tracing::info!("Moving {} variant files", variant_count);
 
                 for variant in variants {
-                    let mut old_variant_full_path = std::path::PathBuf::from(storage_base).join(&variant.storage_path);
+                    let mut old_variant_full_path =
+                        std::path::PathBuf::from(storage_base).join(&variant.storage_path);
 
                     // Calculate new variant path
                     let new_variant_path = if new_storage_type == "private" {
@@ -611,16 +650,26 @@ impl AdminController {
                         format!("public/{}", variant.stored_name)
                     };
 
-                    let new_variant_full_path = std::path::PathBuf::from(storage_base).join(&new_variant_path);
+                    let new_variant_full_path =
+                        std::path::PathBuf::from(storage_base).join(&new_variant_path);
 
-                    tracing::info!("Moving variant: {:?} -> {:?}", old_variant_full_path, new_variant_full_path);
+                    tracing::info!(
+                        "Moving variant: {:?} -> {:?}",
+                        old_variant_full_path,
+                        new_variant_full_path
+                    );
 
                     // Check if variant file exists at database path, if not search alternative locations
                     if !old_variant_full_path.exists() {
-                        tracing::warn!("Variant file not found at database path: {:?}, checking alternatives", old_variant_full_path);
+                        tracing::warn!(
+                            "Variant file not found at database path: {:?}, checking alternatives",
+                            old_variant_full_path
+                        );
 
                         // Check alternative locations
-                        if let Some(filename) = std::path::Path::new(&variant.storage_path).file_name() {
+                        if let Some(filename) =
+                            std::path::Path::new(&variant.storage_path).file_name()
+                        {
                             let filename_str = filename.to_string_lossy();
                             let alternative_paths = vec![
                                 format!("public/{}", filename_str),
@@ -630,9 +679,13 @@ impl AdminController {
 
                             let mut found = false;
                             for alt_path in alternative_paths {
-                                let alt_full_path = std::path::PathBuf::from(storage_base).join(&alt_path);
+                                let alt_full_path =
+                                    std::path::PathBuf::from(storage_base).join(&alt_path);
                                 if alt_full_path.exists() {
-                                    tracing::info!("Found variant file at alternative location: {:?}", alt_full_path);
+                                    tracing::info!(
+                                        "Found variant file at alternative location: {:?}",
+                                        alt_full_path
+                                    );
                                     old_variant_full_path = alt_full_path;
                                     found = true;
                                     break;
@@ -640,26 +693,51 @@ impl AdminController {
                             }
 
                             if !found {
-                                tracing::warn!("Variant file does not exist at any location: {:?}", variant.storage_path);
+                                tracing::warn!(
+                                    "Variant file does not exist at any location: {:?}",
+                                    variant.storage_path
+                                );
                                 continue;
                             }
                         } else {
-                            tracing::warn!("Could not extract filename from variant storage_path: {}", variant.storage_path);
+                            tracing::warn!(
+                                "Could not extract filename from variant storage_path: {}",
+                                variant.storage_path
+                            );
                             continue;
                         }
                     }
 
                     // Move variant file
-                    if let Err(e) = tokio::fs::rename(&old_variant_full_path, &new_variant_full_path).await {
-                        tracing::error!("Failed to move variant file {:?} to {:?}: {}", old_variant_full_path, new_variant_full_path, e);
+                    if let Err(e) =
+                        tokio::fs::rename(&old_variant_full_path, &new_variant_full_path).await
+                    {
+                        tracing::error!(
+                            "Failed to move variant file {:?} to {:?}: {}",
+                            old_variant_full_path,
+                            new_variant_full_path,
+                            e
+                        );
                         // Don't fail the whole operation for variant move failure, just log
                     } else {
                         tracing::info!("Successfully moved variant {:?}", new_variant_full_path);
                         // Update variant storage_path in database
-                        if let Err(e) = image_variant_mutations::update_storage_path(&db, variant.id, &new_variant_path).await {
-                            tracing::error!("Failed to update variant storage_path in database: {}", e);
+                        if let Err(e) = image_variant_mutations::update_storage_path(
+                            &db,
+                            variant.id,
+                            &new_variant_path,
+                        )
+                        .await
+                        {
+                            tracing::error!(
+                                "Failed to update variant storage_path in database: {}",
+                                e
+                            );
                         } else {
-                            tracing::info!("Updated variant storage_path in database for variant_id={}", variant.id);
+                            tracing::info!(
+                                "Updated variant storage_path in database for variant_id={}",
+                                variant.id
+                            );
                         }
                     }
                 }
@@ -680,7 +758,7 @@ impl AdminController {
             body.description.as_deref(),
             body.storage_type.as_deref(),
             new_storage_path.as_deref(), // Update storage_path if it changed
-            None, // metadata JSON not updated here
+            None,                        // metadata JSON not updated here
         )
         .await
         {

@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::app::db_query::{mutations as db_mutations, read as db_read};
 use crate::bootstrap::database::database::AppState;
-use crate::bootstrap::middleware::oauth_auth::{extract_oauth_claims, enforce_scopes, has_scopes};
+use crate::bootstrap::middleware::oauth_auth::{enforce_scopes, extract_oauth_claims, has_scopes};
 use crate::config::AppConfig;
 use crate::mq::{self, JobOptions, JobResult};
 
@@ -93,7 +93,10 @@ fn job_result_to_response(result: JobResult<serde_json::Value>) -> HttpResponse 
                 .and_then(|value| value.as_u64())
                 .and_then(|code| StatusCode::from_u16(code as u16).ok())
                 .unwrap_or(StatusCode::OK);
-            let body = payload.get("body").cloned().unwrap_or(serde_json::json!({}));
+            let body = payload
+                .get("body")
+                .cloned()
+                .unwrap_or(serde_json::json!({}));
             HttpResponse::build(status).json(body)
         }
         JobResult::Retry(reason) => HttpResponse::ServiceUnavailable().json(serde_json::json!({
@@ -146,7 +149,8 @@ pub async fn list_galleries(
     let params = mq::jobs::ListGalleriesParams { limit, offset };
     let options = JobOptions::new().priority(0).fault_tolerance(1);
 
-    match mq::enqueue_and_wait_result_dyn(mq, "oauth_list_galleries", &params, options, 30000).await {
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_list_galleries", &params, options, 30000).await
+    {
         Ok(result) => job_result_to_response(result),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "server_error",
@@ -276,7 +280,9 @@ pub async fn list_gallery_images(
     };
     let options = JobOptions::new().priority(0).fault_tolerance(1);
 
-    match mq::enqueue_and_wait_result_dyn(mq, "oauth_list_gallery_images", &params, options, 30000).await {
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_list_gallery_images", &params, options, 30000)
+        .await
+    {
         Ok(result) => job_result_to_response(result),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "server_error",
@@ -346,7 +352,13 @@ pub async fn create_gallery(
         name: body.name.clone(),
         description: body.description.clone(),
         is_public: body.is_public.unwrap_or(false),
+        gallery_type: "regular_galleries".to_string(),
         display_order: gallery_count as i32,
+        latitude: None,
+        longitude: None,
+        tags: None,
+        cover_image_id: None,
+        cover_image_uuid: None,
     };
 
     match db_mutations::gallery::create(&db, &params).await {
@@ -354,9 +366,10 @@ pub async fn create_gallery(
             // Fetch created gallery
             match db_read::gallery::get_by_id(&db, gallery_id).await {
                 Ok(gallery) => {
-                    let first_picture_uuid = db_read::picture::get_first_picture_uuid(&db, gallery_id)
-                        .await
-                        .unwrap_or(None);
+                    let first_picture_uuid =
+                        db_read::picture::get_first_picture_uuid(&db, gallery_id)
+                            .await
+                            .unwrap_or(None);
 
                     let response = GalleryResponse {
                         id: gallery.id,
@@ -464,7 +477,13 @@ pub async fn update_gallery(
         name: body.name.clone(),
         description: body.description.clone(),
         is_public: body.is_public,
+        gallery_type: None,
         display_order: None,
+        latitude: None,
+        longitude: None,
+        tags: None,
+        cover_image_id: None,
+        cover_image_uuid: None,
     };
 
     match db_mutations::gallery::update(&db, gallery_id, &params).await {
@@ -476,9 +495,10 @@ pub async fn update_gallery(
                         .await
                         .unwrap_or(0);
 
-                    let first_picture_uuid = db_read::picture::get_first_picture_uuid(&db, gallery_id)
-                        .await
-                        .unwrap_or(None);
+                    let first_picture_uuid =
+                        db_read::picture::get_first_picture_uuid(&db, gallery_id)
+                            .await
+                            .unwrap_or(None);
 
                     let response = GalleryResponse {
                         id: gallery.id,
@@ -563,7 +583,8 @@ pub async fn delete_gallery(
     };
     let options = JobOptions::new().priority(0).fault_tolerance(1);
 
-    match mq::enqueue_and_wait_result_dyn(mq, "oauth_delete_gallery", &params, options, 30000).await {
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_delete_gallery", &params, options, 30000).await
+    {
         Ok(result) => job_result_to_response(result),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "server_error",
@@ -618,7 +639,8 @@ pub async fn delete_picture(
     };
     let options = JobOptions::new().priority(0).fault_tolerance(1);
 
-    match mq::enqueue_and_wait_result_dyn(mq, "oauth_delete_picture", &params, options, 30000).await {
+    match mq::enqueue_and_wait_result_dyn(mq, "oauth_delete_picture", &params, options, 30000).await
+    {
         Ok(result) => job_result_to_response(result),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": "server_error",

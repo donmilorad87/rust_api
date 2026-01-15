@@ -74,11 +74,7 @@ pub async fn process(
                     .unwrap_or(&variant.variant_name);
 
                 // Storage path relative to storage root
-                let storage_path = format!(
-                    "{}/{}",
-                    params.storage_type,
-                    stored_name
-                );
+                let storage_path = format!("{}/{}", params.storage_type, stored_name);
 
                 variant_params.push(CreateImageVariantParams {
                     upload_id: params.upload_id,

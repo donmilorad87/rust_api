@@ -122,11 +122,14 @@ pub async fn get_private_by_uuid(
 
 /// Check if upload exists by ID
 pub async fn exists(db: &Pool<Postgres>, upload_id: i64) -> bool {
-    sqlx::query_scalar!("SELECT EXISTS(SELECT 1 FROM uploads WHERE id = $1)", upload_id)
-        .fetch_one(db)
-        .await
-        .unwrap_or(Some(false))
-        .unwrap_or(false)
+    sqlx::query_scalar!(
+        "SELECT EXISTS(SELECT 1 FROM uploads WHERE id = $1)",
+        upload_id
+    )
+    .fetch_one(db)
+    .await
+    .unwrap_or(Some(false))
+    .unwrap_or(false)
 }
 
 /// Check if upload exists by UUID
@@ -180,14 +183,11 @@ pub async fn get_all(db: &Pool<Postgres>, limit: i64, offset: i64) -> Vec<Upload
 
 /// Count uploads by user
 pub async fn count_by_user(db: &Pool<Postgres>, user_id: i64) -> i64 {
-    sqlx::query_scalar!(
-        "SELECT COUNT(*) FROM uploads WHERE user_id = $1",
-        user_id
-    )
-    .fetch_one(db)
-    .await
-    .unwrap_or(Some(0))
-    .unwrap_or(0)
+    sqlx::query_scalar!("SELECT COUNT(*) FROM uploads WHERE user_id = $1", user_id)
+        .fetch_one(db)
+        .await
+        .unwrap_or(Some(0))
+        .unwrap_or(0)
 }
 
 /// Get all uploads with pagination and optional filters (admin use)
@@ -223,29 +223,26 @@ pub async fn get_all_filtered(
     // Build dynamic query based on filters
     match (storage_type, is_extension_filter, extension, search_pattern) {
         // Storage type + extension filter
-        (Some(st), true, Some(ext), _) => {
-            sqlx::query_as!(
-                Upload,
-                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+        (Some(st), true, Some(ext), _) => sqlx::query_as!(
+            Upload,
+            r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
                           user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
                    WHERE storage_type = $1 AND LOWER(extension) = $2
                    ORDER BY created_at DESC LIMIT $3 OFFSET $4"#,
-                st,
-                ext,
-                limit,
-                offset
-            )
-            .fetch_all(db)
-            .await
-            .unwrap_or_default()
-        }
+            st,
+            ext,
+            limit,
+            offset
+        )
+        .fetch_all(db)
+        .await
+        .unwrap_or_default(),
         // Storage type + text search (title, description, original_name)
-        (Some(st), false, _, Some(pattern)) => {
-            sqlx::query_as!(
-                Upload,
-                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+        (Some(st), false, _, Some(pattern)) => sqlx::query_as!(
+            Upload,
+            r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
                           user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
@@ -255,77 +252,66 @@ pub async fn get_all_filtered(
                        description ILIKE $2
                    )
                    ORDER BY created_at DESC LIMIT $3 OFFSET $4"#,
-                st,
-                pattern,
-                limit,
-                offset
-            )
-            .fetch_all(db)
-            .await
-            .unwrap_or_default()
-        }
+            st,
+            pattern,
+            limit,
+            offset
+        )
+        .fetch_all(db)
+        .await
+        .unwrap_or_default(),
         // Only storage type
-        (Some(st), _, _, None) => {
-            sqlx::query_as!(
-                Upload,
-                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+        (Some(st), _, _, None) => sqlx::query_as!(
+            Upload,
+            r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
                           user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
                    WHERE storage_type = $1
                    ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
-                st,
-                limit,
-                offset
-            )
-            .fetch_all(db)
-            .await
-            .unwrap_or_default()
-        }
+            st,
+            limit,
+            offset
+        )
+        .fetch_all(db)
+        .await
+        .unwrap_or_default(),
         // Only extension filter
-        (None, true, Some(ext), _) => {
-            sqlx::query_as!(
-                Upload,
-                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+        (None, true, Some(ext), _) => sqlx::query_as!(
+            Upload,
+            r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
                           user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
                    WHERE LOWER(extension) = $1
                    ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
-                ext,
-                limit,
-                offset
-            )
-            .fetch_all(db)
-            .await
-            .unwrap_or_default()
-        }
+            ext,
+            limit,
+            offset
+        )
+        .fetch_all(db)
+        .await
+        .unwrap_or_default(),
         // Only text search (title, description, original_name)
-        (None, false, _, Some(pattern)) => {
-            sqlx::query_as!(
-                Upload,
-                r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
+        (None, false, _, Some(pattern)) => sqlx::query_as!(
+            Upload,
+            r#"SELECT id, uuid, original_name, stored_name, extension, mime_type, size_bytes,
                           storage_type, storage_path, upload_status, chunks_received, total_chunks,
                           user_id, title, description, metadata, created_at, updated_at
                    FROM uploads
                    WHERE original_name ILIKE $1 OR title ILIKE $1 OR description ILIKE $1
                    ORDER BY created_at DESC LIMIT $2 OFFSET $3"#,
-                pattern,
-                limit,
-                offset
-            )
-            .fetch_all(db)
-            .await
-            .unwrap_or_default()
-        }
+            pattern,
+            limit,
+            offset
+        )
+        .fetch_all(db)
+        .await
+        .unwrap_or_default(),
         // No filters
-        (None, _, _, None) => {
-            get_all(db, limit, offset).await
-        }
+        (None, _, _, None) => get_all(db, limit, offset).await,
         // Unreachable: extension filter always sets extension to Some and search_pattern to None
-        _ => {
-            get_all(db, limit, offset).await
-        }
+        _ => get_all(db, limit, offset).await,
     }
 }
 

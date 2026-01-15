@@ -12,16 +12,13 @@ pub struct RedisConfig {
 pub static REDIS: Lazy<RedisConfig> = Lazy::new(|| {
     dotenv::dotenv().ok();
 
-    let host = std::env::var("REDIS_HOST")
-        .unwrap_or_else(|_| "127.0.0.1".to_string());
+    let host = std::env::var("REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port: u16 = std::env::var("REDIS_PORT")
         .unwrap_or_else(|_| "6379".to_string())
         .parse()
         .expect("REDIS_PORT must be a valid number");
-    let user = std::env::var("REDIS_USER")
-        .unwrap_or_else(|_| "default".to_string());
-    let password = std::env::var("REDIS_PASSWORD")
-        .unwrap_or_default();
+    let user = std::env::var("REDIS_USER").unwrap_or_else(|_| "default".to_string());
+    let password = std::env::var("REDIS_PASSWORD").unwrap_or_default();
     let db: u8 = std::env::var("REDIS_DB")
         .unwrap_or_else(|_| "0".to_string())
         .parse()

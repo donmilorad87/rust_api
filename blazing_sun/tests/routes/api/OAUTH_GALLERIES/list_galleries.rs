@@ -8,11 +8,11 @@
 //! - [x] Accepts OAuth JWT with client_id audience
 
 use actix_web::{http::StatusCode, test, App};
-use blazing_sun::{configure_api};
-use blazing_sun::database;
-use blazing_sun::mq;
 use blazing_sun::app::db_query::{mutations as db_mutations, read as db_read};
 use blazing_sun::bootstrap::utility::oauth_jwt;
+use blazing_sun::configure_api;
+use blazing_sun::database;
+use blazing_sun::mq;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -88,6 +88,11 @@ async fn test_list_galleries_accepts_oauth_token() {
                 description: Some("Cross-user gallery".to_string()),
                 is_public: true,
                 display_order: 0,
+                latitude: None,
+                longitude: None,
+                tags: None,
+                cover_image_id: None,
+                cover_image_uuid: None,
             },
         )
         .await
@@ -108,7 +113,8 @@ async fn test_list_galleries_accepts_oauth_token() {
     let payload: GalleriesResponse =
         serde_json::from_slice(&body).expect("Failed to parse galleries response");
 
-    let base_url = std::env::var("APP_URL").unwrap_or_else(|_| "https://local.rust.com".to_string());
+    let base_url =
+        std::env::var("APP_URL").unwrap_or_else(|_| "https://local.rust.com".to_string());
 
     assert_eq!(payload.limit, 16);
     assert_eq!(payload.offset, 0);

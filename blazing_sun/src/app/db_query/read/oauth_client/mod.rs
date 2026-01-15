@@ -101,7 +101,10 @@ pub async fn get_by_id(db: &Pool<Postgres>, client_db_id: i64) -> Result<OAuthCl
 }
 
 /// Get OAuth client by client_id string
-pub async fn get_by_client_id(db: &Pool<Postgres>, client_id: &str) -> Result<OAuthClient, sqlx::Error> {
+pub async fn get_by_client_id(
+    db: &Pool<Postgres>,
+    client_id: &str,
+) -> Result<OAuthClient, sqlx::Error> {
     sqlx::query_as!(
         OAuthClient,
         r#"
@@ -140,7 +143,10 @@ pub async fn get_by_id_and_user(
 }
 
 /// Get all OAuth clients for a user
-pub async fn get_by_user(db: &Pool<Postgres>, user_id: i64) -> Result<Vec<OAuthClient>, sqlx::Error> {
+pub async fn get_by_user(
+    db: &Pool<Postgres>,
+    user_id: i64,
+) -> Result<Vec<OAuthClient>, sqlx::Error> {
     sqlx::query_as!(
         OAuthClient,
         r#"
@@ -197,11 +203,7 @@ pub async fn get_by_user_with_counts(
 }
 
 /// Check if user owns OAuth client
-pub async fn user_owns_client(
-    db: &Pool<Postgres>,
-    client_db_id: i64,
-    user_id: i64,
-) -> bool {
+pub async fn user_owns_client(db: &Pool<Postgres>, client_db_id: i64, user_id: i64) -> bool {
     sqlx::query!(
         r#"SELECT EXISTS(SELECT 1 FROM oauth_clients WHERE id = $1 AND user_id = $2) as "exists!""#,
         client_db_id,

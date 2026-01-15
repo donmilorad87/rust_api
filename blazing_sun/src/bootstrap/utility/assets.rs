@@ -32,9 +32,7 @@ pub fn asset_by_id(uuid: &Uuid, storage_type: &str, variant: Option<&str>) -> St
 
     format!(
         "/api/v1/upload/download/{}/{}{}",
-        storage_type,
-        uuid,
-        variant_param
+        storage_type, uuid, variant_param
     )
 }
 
@@ -47,14 +45,20 @@ mod tests {
     fn test_asset_by_id_with_variant() {
         let uuid = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
         let url = asset_by_id(&uuid, "public", Some("thumb"));
-        assert_eq!(url, "/api/v1/upload/download/public/550e8400-e29b-41d4-a716-446655440000?variant=thumb");
+        assert_eq!(
+            url,
+            "/api/v1/upload/download/public/550e8400-e29b-41d4-a716-446655440000?variant=thumb"
+        );
     }
 
     #[test]
     fn test_asset_by_id_without_variant() {
         let uuid = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
         let url = asset_by_id(&uuid, "private", None);
-        assert_eq!(url, "/api/v1/upload/download/private/550e8400-e29b-41d4-a716-446655440000");
+        assert_eq!(
+            url,
+            "/api/v1/upload/download/private/550e8400-e29b-41d4-a716-446655440000"
+        );
     }
 
     #[test]

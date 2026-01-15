@@ -1,6 +1,6 @@
-use rand::Rng;
 use actix_session::Session;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use rand::Rng;
 
 const CSRF_TOKEN_LENGTH: usize = 32;
 const SESSION_CSRF_KEY: &str = "csrf_token";
@@ -19,7 +19,8 @@ pub fn get_or_create_token(session: &Session) -> Result<String, actix_web::Error
     }
 
     let token = generate_token();
-    session.insert(SESSION_CSRF_KEY, token.clone())
+    session
+        .insert(SESSION_CSRF_KEY, token.clone())
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
     Ok(token)
@@ -42,7 +43,8 @@ pub fn validate_token(session_token: &str, request_token: &str) -> bool {
 
 /// Extract CSRF token from session
 pub fn get_token_from_session(session: &Session) -> Result<Option<String>, actix_web::Error> {
-    session.get::<String>(SESSION_CSRF_KEY)
+    session
+        .get::<String>(SESSION_CSRF_KEY)
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))
 }
 

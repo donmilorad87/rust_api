@@ -1,0 +1,224 @@
+/**
+ * BIGGER_DICE Game Styles
+ *
+ * This file provides CSS custom properties that the BiggerDice
+ * web component can inherit through the Shadow DOM.
+ * The component's internal styles are defined inline in the Shadow DOM template.
+ */
+
+// Import theme variables if available
+// The component uses CSS custom properties which can be inherited from the page
+
+:root {
+  // Game-specific color overrides (component inherits these)
+  --game-primary: #6366f1;
+  --game-success: #22c55e;
+  --game-danger: #ef4444;
+  --game-warning: #f59e0b;
+  --game-bg: #1e1e2e;
+  --game-card-bg: #2a2a3e;
+  --game-text: #e2e8f0;
+  --game-text-muted: #94a3b8;
+  --game-border: #3f3f5a;
+}
+
+// Dark theme variant (auto-applied)
+@media (prefers-color-scheme: dark) {
+  :root {
+    --game-bg: #0f0f1a;
+    --game-card-bg: #1a1a2e;
+    --game-border: #2a2a3e;
+  }
+}
+
+// Game page container styling
+.game-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 80px); // Account for navbar
+  padding: 1rem;
+  background: var(--game-bg);
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+}
+
+.game-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.game-page__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--game-text);
+  margin: 0;
+
+  @media (min-width: 768px) {
+    font-size: 2rem;
+  }
+}
+
+.game-page__back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--game-text-muted);
+  text-decoration: none;
+  border: 1px solid var(--game-border);
+  border-radius: 0.5rem;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background: var(--game-card-bg);
+    color: var(--game-text);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.game-page__content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.game-page__component {
+  width: 100%;
+  max-width: 900px;
+}
+
+// Room info display
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--game-card-bg);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--game-text-muted);
+}
+
+.room-info__label {
+  font-weight: 500;
+}
+
+.room-info__value {
+  color: var(--game-text);
+}
+
+.room-info__copy {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: transparent;
+  color: var(--game-primary);
+  border: 1px solid var(--game-primary);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background: var(--game-primary);
+    color: white;
+  }
+}
+
+// Loading state
+.game-page__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--game-text-muted);
+}
+
+.game-page__spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--game-border);
+  border-top-color: var(--game-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Error state
+.game-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  color: var(--game-text);
+}
+
+.game-page__error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.game-page__error-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.game-page__error-message {
+  color: var(--game-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.game-page__error-action {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  background: var(--game-primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #4f46e5;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 640px) {
+  .game-page {
+    padding: 0.75rem;
+  }
+
+  .game-page__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .room-info {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

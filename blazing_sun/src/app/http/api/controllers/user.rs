@@ -21,7 +21,9 @@ use crate::app::http::api::controllers::responses::{
     BaseResponse, MissingFieldsResponse, UserDto, ValidationErrorResponse,
 };
 use crate::app::http::api::validators::auth::validate_password;
-use crate::app::http::api::validators::user::{PatchUserRequest, PatchUserRequestRaw, PutUserRequest};
+use crate::app::http::api::validators::user::{
+    PatchUserRequest, PatchUserRequestRaw, PutUserRequest,
+};
 use crate::config::ActivationConfig;
 use crate::database::mutations::activation_hash as db_activation_hash;
 use crate::database::mutations::user as db_mutations;
@@ -567,8 +569,9 @@ impl UserController {
                         match crate::database::read::upload::get_by_uuid(&db, &uuid).await {
                             Ok(upload) => (Some(uuid), Some(upload.id)),
                             Err(_) => {
-                                return HttpResponse::BadRequest()
-                                    .json(BaseResponse::error("Upload not found for provided UUID"));
+                                return HttpResponse::BadRequest().json(BaseResponse::error(
+                                    "Upload not found for provided UUID",
+                                ));
                             }
                         }
                     }

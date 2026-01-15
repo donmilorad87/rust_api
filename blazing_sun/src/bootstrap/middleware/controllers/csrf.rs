@@ -1,14 +1,13 @@
+use crate::app::http::api::controllers::responses::BaseResponse;
+use crate::bootstrap::utility::csrf;
+use actix_session::Session;
 use actix_web::{
-    body::{MessageBody, EitherBody},
+    body::{EitherBody, MessageBody},
     dev::{ServiceRequest, ServiceResponse},
     http::{Method, StatusCode},
     middleware::Next,
-    HttpResponse,
-    FromRequest,
+    FromRequest, HttpResponse,
 };
-use actix_session::Session;
-use crate::app::http::api::controllers::responses::BaseResponse;
-use crate::bootstrap::utility::csrf;
 
 /// Extract CSRF token from request (form field `_token` or header `X-CSRF-TOKEN`)
 async fn extract_token_from_request(request: &ServiceRequest) -> Option<String> {
@@ -65,7 +64,8 @@ where
     }
 
     // Get session from the request
-    let session = Session::from_request(request.request(), &mut actix_web::dev::Payload::None).await?;
+    let session =
+        Session::from_request(request.request(), &mut actix_web::dev::Payload::None).await?;
 
     // Get token from session
     let session_token = match csrf::get_token_from_session(&session)? {

@@ -31,19 +31,15 @@ pub static THEME: Lazy<ThemeConfig> = Lazy::new(|| {
     let project_root = std::env::var("THEME_PROJECT_ROOT")
         .unwrap_or_else(|_| concat!(env!("CARGO_MANIFEST_DIR")).to_string());
 
-    let global_page_path = PathBuf::from(&project_root)
-        .join("src/frontend/pages/GLOBAL");
+    let global_page_path = PathBuf::from(&project_root).join("src/frontend/pages/GLOBAL");
 
-    let variables_file = global_page_path
-        .join("src/styles/_variables.scss");
+    let variables_file = global_page_path.join("src/styles/_variables.scss");
 
-    let theme_file = global_page_path
-        .join("src/styles/_theme.scss");
+    let theme_file = global_page_path.join("src/styles/_theme.scss");
 
     let env_file = PathBuf::from(&project_root).join(".env");
 
-    let backup_path = PathBuf::from(&project_root)
-        .join("storage/app/private/theme_backups");
+    let backup_path = PathBuf::from(&project_root).join("storage/app/private/theme_backups");
 
     // SCSS variables whitelist - only these can be modified
     let allowed_scss_variables = vec![

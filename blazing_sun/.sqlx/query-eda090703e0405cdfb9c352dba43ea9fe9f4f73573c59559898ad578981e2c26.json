@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            ps.id,\n            ps.page_seo_id,\n            ps.lang_code,\n            ps.schema_type,\n            ps.entity_schema_id,\n            se.schema_data,\n            ps.position,\n            ps.is_active,\n            ps.created_at,\n            ps.updated_at\n        FROM page_schemas ps\n        LEFT JOIN schema_entities se\n            ON se.lang_code = ps.lang_code\n            AND se.schema_id = ps.entity_schema_id\n        WHERE ps.page_seo_id = $1 AND ps.is_active = true\n        ORDER BY ps.position ASC, ps.id ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "page_seo_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "lang_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "schema_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "entity_schema_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "schema_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "position",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "eda090703e0405cdfb9c352dba43ea9fe9f4f73573c59559898ad578981e2c26"
+}

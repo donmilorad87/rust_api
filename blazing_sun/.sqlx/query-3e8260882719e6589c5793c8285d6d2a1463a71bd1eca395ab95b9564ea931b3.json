@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT DISTINCT schema_type\n        FROM schema_entities\n        WHERE lang_code = $1\n        ORDER BY schema_type ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "schema_type",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3e8260882719e6589c5793c8285d6d2a1463a71bd1eca395ab95b9564ea931b3"
+}

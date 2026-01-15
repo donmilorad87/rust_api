@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO page_seo_translations (\n            page_seo_id,\n            lang_code,\n            title,\n            description,\n            keywords,\n            og_title,\n            og_description,\n            og_image_uuid,\n            og_type,\n            twitter_card,\n            twitter_title,\n            twitter_description,\n            twitter_image_uuid,\n            canonical_url,\n            robots,\n            structured_data,\n            custom_meta\n        )\n        VALUES (\n            $1, $2, $3, $4, $5, $6, $7, $8, $9,\n            $10, $11, $12, $13, $14, $15, $16, $17\n        )\n        ON CONFLICT (page_seo_id, lang_code)\n        DO UPDATE SET\n            title = COALESCE(EXCLUDED.title, page_seo_translations.title),\n            description = COALESCE(EXCLUDED.description, page_seo_translations.description),\n            keywords = COALESCE(EXCLUDED.keywords, page_seo_translations.keywords),\n            og_title = COALESCE(EXCLUDED.og_title, page_seo_translations.og_title),\n            og_description = COALESCE(EXCLUDED.og_description, page_seo_translations.og_description),\n            og_image_uuid = EXCLUDED.og_image_uuid,\n            og_type = COALESCE(EXCLUDED.og_type, page_seo_translations.og_type),\n            twitter_card = COALESCE(EXCLUDED.twitter_card, page_seo_translations.twitter_card),\n            twitter_title = COALESCE(EXCLUDED.twitter_title, page_seo_translations.twitter_title),\n            twitter_description = COALESCE(EXCLUDED.twitter_description, page_seo_translations.twitter_description),\n            twitter_image_uuid = EXCLUDED.twitter_image_uuid,\n            canonical_url = EXCLUDED.canonical_url,\n            robots = COALESCE(EXCLUDED.robots, page_seo_translations.robots),\n            structured_data = COALESCE(EXCLUDED.structured_data, page_seo_translations.structured_data),\n            custom_meta = COALESCE(EXCLUDED.custom_meta, page_seo_translations.custom_meta),\n            updated_at = NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Jsonb",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "eb5a4264c0f56351893dd632c40056498be1cc13557626f7f8b66151d5bfcae1"
+}

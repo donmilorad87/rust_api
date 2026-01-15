@@ -33,10 +33,14 @@ fn build_image_url(base_url: &str, upload_uuid: &uuid::Uuid) -> String {
     )
 }
 
-pub async fn execute(db: &Pool<Postgres>, params: &ListGalleryImagesParams) -> Result<serde_json::Value, String> {
+pub async fn execute(
+    db: &Pool<Postgres>,
+    params: &ListGalleryImagesParams,
+) -> Result<serde_json::Value, String> {
     let base_url = AppConfig::app_url();
 
-    if let Err(sqlx::Error::RowNotFound) = db_read::gallery::get_by_id(db, params.gallery_id).await {
+    if let Err(sqlx::Error::RowNotFound) = db_read::gallery::get_by_id(db, params.gallery_id).await
+    {
         return Ok(json!({
             "status_code": 404,
             "body": {
@@ -50,9 +54,14 @@ pub async fn execute(db: &Pool<Postgres>, params: &ListGalleryImagesParams) -> R
         .await
         .map_err(|e| format!("Failed to count gallery images: {}", e))?;
 
-    let pictures = db_read::picture::get_by_gallery_paginated(db, params.gallery_id, params.limit, params.offset)
-        .await
-        .map_err(|e| format!("Failed to fetch gallery images: {}", e))?;
+    let pictures = db_read::picture::get_by_gallery_paginated(
+        db,
+        params.gallery_id,
+        params.limit,
+        params.offset,
+    )
+    .await
+    .map_err(|e| format!("Failed to fetch gallery images: {}", e))?;
 
     let images = pictures
         .into_iter()

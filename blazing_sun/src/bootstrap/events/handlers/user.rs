@@ -14,12 +14,12 @@ use tracing::info;
 /// - Trigger downstream processes
 /// - Build audit logs
 pub struct UserEventHandler {
-    db: Arc<Mutex<Pool<Postgres>>>,
+    _db: Arc<Mutex<Pool<Postgres>>>,
 }
 
 impl UserEventHandler {
     pub fn new(db: Arc<Mutex<Pool<Postgres>>>) -> Self {
-        Self { db }
+        Self { _db: db }
     }
 }
 
@@ -174,12 +174,12 @@ impl UserEventHandler {
 
 /// Handler for building audit logs from user events
 pub struct UserAuditHandler {
-    db: Arc<Mutex<Pool<Postgres>>>,
+    _db: Arc<Mutex<Pool<Postgres>>>,
 }
 
 impl UserAuditHandler {
     pub fn new(db: Arc<Mutex<Pool<Postgres>>>) -> Self {
-        Self { db }
+        Self { _db: db }
     }
 
     async fn log_audit_entry(&self, event: &DomainEvent) -> Result<(), EventHandlerError> {

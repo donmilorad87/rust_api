@@ -7,15 +7,15 @@
 //! # Test Coverage
 //! - [x] Happy path: Authorized request returns redirect URI JSON
 
+use crate::routes::api::helpers::{ensure_oauth_client, ensure_test_user};
 use actix_web::{http::StatusCode, test, App};
-use blazing_sun::{configure_api, state};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use blazing_sun::app::db_query::mutations as db_mutations;
+use blazing_sun::{configure_api, state};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tokio::time::{timeout, Duration};
-use crate::routes::api::helpers::{ensure_oauth_client, ensure_test_user};
 use uuid::Uuid;
-use blazing_sun::app::db_query::mutations as db_mutations;
 
 #[derive(Deserialize)]
 struct SignInResponse {
@@ -77,9 +77,12 @@ async fn test_authorize_post_returns_redirect() {
         }))
         .to_request();
 
-    let response = timeout(Duration::from_secs(2), test::call_service(&app, authorize_req))
-        .await
-        .expect("authorize_post timed out");
+    let response = timeout(
+        Duration::from_secs(2),
+        test::call_service(&app, authorize_req),
+    )
+    .await
+    .expect("authorize_post timed out");
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -143,7 +146,10 @@ async fn test_authorize_post_rejects_invalid_redirect_scheme() {
     let error: serde_json::Value =
         serde_json::from_slice(&body).expect("Failed to parse error JSON");
 
-    assert_eq!(error.get("error").and_then(|v| v.as_str()), Some("invalid_request"));
+    assert_eq!(
+        error.get("error").and_then(|v| v.as_str()),
+        Some("invalid_request")
+    );
     assert!(error
         .get("error_description")
         .and_then(|v| v.as_str())
@@ -202,7 +208,10 @@ async fn test_authorize_post_requires_pkce_for_public_client() {
     let error: serde_json::Value =
         serde_json::from_slice(&body).expect("Failed to parse error JSON");
 
-    assert_eq!(error.get("error").and_then(|v| v.as_str()), Some("invalid_request"));
+    assert_eq!(
+        error.get("error").and_then(|v| v.as_str()),
+        Some("invalid_request")
+    );
 }
 
 #[actix_rt::test]
@@ -233,7 +242,10 @@ async fn test_authorize_get_rejects_invalid_redirect_scheme() {
     let error: serde_json::Value =
         serde_json::from_slice(&body).expect("Failed to parse error JSON");
 
-    assert_eq!(error.get("error").and_then(|v| v.as_str()), Some("invalid_request"));
+    assert_eq!(
+        error.get("error").and_then(|v| v.as_str()),
+        Some("invalid_request")
+    );
     assert!(error
         .get("error_description")
         .and_then(|v| v.as_str())
@@ -272,7 +284,12 @@ async fn test_authorize_get_accepts_httos_redirect_uri_typo() {
         )
         .await;
     }
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let sign_in_req = test::TestRequest::post()
         .uri("/api/v1/auth/sign-in")

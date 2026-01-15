@@ -19,7 +19,8 @@ This document provides comprehensive documentation of the Blazing Sun Docker inf
 
 ## Overview
 
-Blazing Sun uses a Docker Compose orchestration with **13 services** running on a private bridge network (`devnet` - 172.28.0.0/16).
+Blazing Sun uses a Docker Compose orchestration with **17 services** running on a private bridge network (`devnet` - 172.28.0.0/16).
+The checkout service is a dedicated Rust microservice for Stripe payments and Kafka integration backed by its own PostgreSQL database.
 
 ### Architecture Diagram
 
@@ -79,6 +80,8 @@ Blazing Sun uses a Docker Compose orchestration with **13 services** running on 
                                     └─────────────────────────────────────────────────────────────┘
 ```
 
+Note: The diagram focuses on core HTTP/data services; `ws_gateway` runs as a separate microservice and depends on Kafka + Redis.
+
 ---
 
 ## Network Architecture
@@ -97,6 +100,8 @@ Blazing Sun uses a Docker Compose orchestration with **13 services** running on 
 | Service | Static IP | Port(s) Exposed |
 |---------|-----------|-----------------|
 | rust | 172.28.0.10 | 9999 (internal) |
+| checkout | 172.28.0.24 | 9996 |
+| checkout-postgres | 172.28.0.25 | 5433 |
 | postgres | 172.28.0.11 | 5432 |
 | nginx | 172.28.0.12 | 80, 443 |
 | redis | 172.28.0.13 | 6379 |
@@ -106,9 +111,11 @@ Blazing Sun uses a Docker Compose orchestration with **13 services** running on 
 | kafka | 172.28.0.17 | 9092, 9093 |
 | kafka-ui | 172.28.0.18 | 8080 |
 | pgadmin | 172.28.0.19 | 5050 |
+| pgadmin-checkout | 172.28.0.26 | 5051 |
 | mongo | 172.28.0.20 | 27017 |
 | mongo-express | 172.28.0.21 | 8081 |
 | php-oauth | 172.28.0.22 | 443 (host 8889) |
+| ws_gateway | 172.28.0.23 | 9998 (WS), 9997 (health) |
 
 ---
 
@@ -117,15 +124,19 @@ Blazing Sun uses a Docker Compose orchestration with **13 services** running on 
 | Service | Purpose | Healthcheck | Restart Policy |
 |---------|---------|-------------|----------------|
 | **rust** | Main Actix-web application | None | unless-stopped |
+| **checkout** | Stripe checkout microservice | `curl -f http://localhost:9996/health` | unless-stopped |
+| **checkout-postgres** | PostgreSQL database for checkout transactions | `pg_isready -U checkout -d checkout -p 5433` | unless-stopped |
+| **ws_gateway** | WebSocket gateway for real-time features | `curl -f http://localhost:9997/health` | unless-stopped |
 | **postgres** | Primary relational database (SQLx) | `pg_isready -U app -d blazing_sun` | unless-stopped |
 | **nginx** | SSL termination, reverse proxy, static files | None | unless-stopped |
 | **redis** | Cache and session storage | `redis-cli -a password ping` | unless-stopped |
 | **rabbitmq** | Async task queue (emails, jobs) | `rabbitmq-diagnostics -q ping` | unless-stopped |
-| **kafka** | Event streaming (KRaft mode) | Broker API + topics check | unless-stopped |
+| **kafka** | Event streaming (KRaft mode) | Broker API + required topics check | unless-stopped |
 | **kafka-ui** | Kafka management web UI | None | unless-stopped |
 | **prometheus** | Metrics collection | None | unless-stopped |
 | **grafana** | Monitoring dashboards | None | unless-stopped |
 | **pgadmin** | PostgreSQL admin panel | None | unless-stopped |
+| **pgadmin-checkout** | pgAdmin for checkout database | None | unless-stopped |
 | **mongo** | Document database for flexible schemas | `mongosh --eval db.adminCommand('ping')` | unless-stopped |
 | **mongo-express** | MongoDB admin web UI | None | unless-stopped |
 | **php-oauth** | OAuth callback test service | None | unless-stopped |
@@ -147,19 +158,28 @@ Phase 1: Infrastructure (parallel start with healthchecks)
        └────────────────┴────────────────┴────────────────┴────────────────┘
                                          │
                                          ▼
+Checkout PostgreSQL joins Phase 1 with the same `pg_isready` healthcheck pattern.
 Phase 2: Application (waits for Phase 1 to be healthy)
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                                    Rust App                                    │
 │   depends_on: postgres(healthy), redis(healthy), rabbitmq(healthy),           │
 │               kafka(healthy), mongo(healthy)                                   │
 └───────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                                 Checkout                                      │
+│   depends_on: checkout-postgres(healthy), kafka(healthy)                       │
+└───────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                                  ws_gateway                                    │
+│   depends_on: kafka(healthy), redis(healthy)                                   │
+└───────────────────────────────────────────────────────────────────────────────┘
                                          │
                                          ▼
 Phase 3: UI Services (depend on their backend services)
-┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────┐
-│  Nginx   │ │ Kafka UI │ │ pgAdmin  │ │ Grafana  │ │Mongo Express│
-│(on rust) │ │(on kafka)│ │  (on pg) │ │(on prom) │ │  (on mongo) │
-└──────────┘ └──────────┘ └──────────┘ └──────────┘ └─────────────┘
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐ ┌──────────┐ ┌─────────────┐
+│  Nginx   │ │ Kafka UI │ │ pgAdmin  │ │ pgAdmin Checkout │ │ Grafana  │ │Mongo Express│
+│(on rust) │ │(on kafka)│ │  (on pg) │ │(on checkout pg)  │ │(on prom) │ │  (on mongo) │
+└──────────┘ └──────────┘ └──────────┘ └──────────────────┘ └──────────┘ └─────────────┘
 ```
 
 ---
@@ -174,6 +194,18 @@ BUILD_ENV=dev                    # dev or prod
 
 # Application
 APP_PORT=9999                    # Internal application port
+
+# Checkout
+CHECKOUT_IP=172.28.0.24
+CHECKOUT_PORT=9996
+
+# Checkout PostgreSQL
+CHECKOUT_POSTGRES_IP=172.28.0.25
+CHECKOUT_POSTGRES_HOST=checkout-postgres
+CHECKOUT_POSTGRES_PORT=5433
+CHECKOUT_POSTGRES_USER=checkout
+CHECKOUT_POSTGRES_PASSWORD=checkout_secret_password
+CHECKOUT_POSTGRES_DB=checkout
 
 # php-oauth (callback test service)
 OAUTH_CLIENT_ID=client_...        # OAuth client ID
@@ -195,6 +227,12 @@ PGADMIN_IP=172.28.0.19
 PGADMIN_PORT=5050
 PGADMIN_DEFAULT_EMAIL=admin@blazingsun.app
 PGADMIN_DEFAULT_PASSWORD=pgadmin_secret_password
+
+# pgAdmin Checkout
+PGADMIN_CHECKOUT_IP=172.28.0.26
+PGADMIN_CHECKOUT_PORT=5051
+PGADMIN_CHECKOUT_DEFAULT_EMAIL=checkout-admin@blazingsun.app
+PGADMIN_CHECKOUT_DEFAULT_PASSWORD=checkout_pgadmin_secret
 
 # RabbitMQ (async tasks: notifications, emails)
 RABBITMQ_HOST=rabbitmq
@@ -278,9 +316,13 @@ The `rust/entrypoint.sh` script syncs environment variables from Docker to `blaz
 | `mongodata` | MongoDB data files | Persistent |
 | `cargo-cache` | Rust cargo registry cache | Persistent |
 | `target-cache` | Rust compilation cache | Persistent |
+| `checkout-cargo-cache` | Checkout cargo registry cache | Persistent |
+| `checkout-target-cache` | Checkout compilation cache | Persistent |
+| `checkout-pgdata` | Checkout PostgreSQL data files | Persistent |
 | `prometheusdata` | Prometheus TSDB data | Persistent |
 | `grafanadata` | Grafana dashboards/plugins | Persistent |
 | `pgadmindata` | pgAdmin configuration | Persistent |
+| `pgadmin-checkout-data` | pgAdmin checkout configuration | Persistent |
 
 ---
 
@@ -307,7 +349,28 @@ The `rust/entrypoint.sh` script syncs environment variables from Docker to `blaz
 
 ---
 
-### 2. PostgreSQL (`postgres`)
+### 2. Checkout Service (`checkout`)
+
+**Purpose**: Stripe checkout + webhook processor (Kafka consumer/producer)
+
+**Configuration**:
+- Base Image: `debian:bookworm-slim` with `rustup stable`
+- Working Directory: `/home/rust/checkout`
+- Port: 9996 (health + Stripe webhooks)
+- Kafka Topics: `checkout.commands`, `checkout.events`
+- Auth: `JWT_SECRET` for user JWT verification (transactions)
+- Service Auth: `CHECKOUT_SERVICE_TOKEN` for checkout command validation
+
+**Volume Mounts**:
+- `./checkout:/home/rust/checkout` - Checkout service source code
+- `checkout-cargo-cache:/usr/local/cargo/registry` - Cargo registry
+- `checkout-target-cache:/home/rust/checkout/target` - Build cache
+
+**Dependencies**: checkout-postgres (healthy), kafka (healthy)
+
+---
+
+### 3. PostgreSQL (`postgres`)
 
 **Purpose**: Primary relational database for structured data
 
@@ -329,7 +392,29 @@ pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
 ---
 
-### 3. Nginx (`nginx`)
+### 4. Checkout PostgreSQL (`checkout-postgres`)
+
+**Purpose**: Dedicated PostgreSQL database for checkout transactions
+
+**Configuration**:
+- Base Image: `postgres:latest`
+- Port: 5433
+- Database: `checkout`
+- User: `checkout`
+
+**Healthcheck**:
+```bash
+pg_isready -U ${CHECKOUT_POSTGRES_USER} -d ${CHECKOUT_POSTGRES_DB} -p ${CHECKOUT_POSTGRES_PORT}
+```
+
+**Custom Files**:
+- `postgres_checkout/pg_hba.conf` - Authentication rules
+- `postgres_checkout/postgresql.conf.template` - Performance tuning
+- `postgres_checkout/entrypoint.sh` - Database initialization
+
+---
+
+### 5. Nginx (`nginx`)
 
 **Purpose**: SSL termination, reverse proxy, static file serving
 
@@ -343,6 +428,7 @@ pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 3. Static file serving at `/storage/` from `blazing_sun/src/storage/app/public`
 4. Asset serving at `/assets/` from `blazing_sun/src/resources/`
 5. Sub-path routing for `/grafana/`
+6. Sub-path routing for `/checkout/` (checkout service webhooks)
 
 **Volume Mounts**:
 - `./blazing_sun/src/storage/app/public:/var/www/storage/public:ro`
@@ -351,7 +437,7 @@ pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
 ---
 
-### 4. Redis (`redis`)
+### 6. Redis (`redis`)
 
 **Purpose**: Cache, session storage, and pub/sub messaging
 
@@ -366,7 +452,7 @@ redis-cli -a ${REDIS_PASSWORD} ping
 
 ---
 
-### 5. RabbitMQ (`rabbitmq`)
+### 7. RabbitMQ (`rabbitmq`)
 
 **Purpose**: Async task queue for reliable job processing
 
@@ -386,7 +472,7 @@ redis-cli -a ${REDIS_PASSWORD} ping
 
 ---
 
-### 6. Kafka (`kafka`)
+### 8. Kafka (`kafka`)
 
 **Purpose**: Event streaming for audit logs and cross-service communication
 
@@ -407,7 +493,7 @@ redis-cli -a ${REDIS_PASSWORD} ping
 
 ---
 
-### 7. MongoDB (`mongo`)
+### 9. MongoDB (`mongo`)
 
 **Purpose**: Document database for flexible schema data
 
@@ -429,7 +515,7 @@ mongosh --eval "db.adminCommand('ping')" --quiet
 
 ---
 
-### 8. Monitoring Stack
+### 10. Monitoring Stack
 
 **Prometheus** (172.28.0.15:9090):
 - Metrics collection from all services
@@ -448,7 +534,8 @@ mongosh --eval "db.adminCommand('ping')" --quiet
 | Application | `https://localhost/` | - |
 | RabbitMQ | `http://localhost:15672` | app / rabbitmq_secret_password |
 | Kafka UI | `http://localhost:8080/kafka` | admin / kafka_ui_secret_password |
-| pgAdmin | `http://localhost:5050/pgadmin` | admin@blazingsun.app / pgadmin_secret_password |
+| pgAdmin | `https://localhost/pgadmin/` | admin@blazingsun.app / pgadmin_secret_password |
+| pgAdmin Checkout | `https://localhost/pgadmin_checkout/` | checkout-admin@blazingsun.app / checkout_pgadmin_secret |
 | Mongo Express | `http://localhost:8081/mongo/` | admin / mongo_express_password |
 | PHP OAuth Test | `https://localhost:8889` | - |
 | Grafana | `https://localhost/grafana/` | admin / admin |

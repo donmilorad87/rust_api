@@ -113,7 +113,10 @@ impl EventBus {
     }
 
     /// Publish multiple events (batch)
-    pub async fn publish_batch(&self, events: &[DomainEvent]) -> Vec<Result<(), EventPublishError>> {
+    pub async fn publish_batch(
+        &self,
+        events: &[DomainEvent],
+    ) -> Vec<Result<(), EventPublishError>> {
         self.producer.publish_batch(events).await
     }
 
@@ -130,6 +133,16 @@ pub type SharedEventBus = Arc<EventBus>;
 pub async fn init(
     db: Arc<Mutex<Pool<Postgres>>>,
 ) -> Result<(SharedEventBus, Arc<EventConsumer>), Box<dyn std::error::Error + Send + Sync>> {
+    // Delegate to init_full with no MongoDB (default handlers only)
+    init_full(db, None).await
+}
+
+/// Initialize the event system with MongoDB support (for WebSocket gateway handlers)
+/// This registers chat and game handlers in addition to default handlers.
+pub async fn init_full(
+    db: Arc<Mutex<Pool<Postgres>>>,
+    mongodb: Option<Arc<mongodb::Database>>,
+) -> Result<(SharedEventBus, Arc<EventConsumer>), Box<dyn std::error::Error + Send + Sync>> {
     info!("Initializing Kafka event system...");
 
     // Initialize producer
@@ -138,7 +151,7 @@ pub async fn init(
         Box::new(e) as Box<dyn std::error::Error + Send + Sync>
     })?;
 
-    let event_bus = Arc::new(EventBus::new(producer));
+    let event_bus = Arc::new(EventBus::new(producer.clone()));
 
     // Initialize consumer
     let mut consumer = consumer::init(consumer_groups::MAIN_APP).map_err(|e| {
@@ -146,8 +159,16 @@ pub async fn init(
         Box::new(e) as Box<dyn std::error::Error + Send + Sync>
     })?;
 
-    // Register default handlers
-    handlers::register_default_handlers(&mut consumer, db);
+    // Register handlers based on whether MongoDB is available
+    if mongodb.is_some() {
+        // Register all handlers including WebSocket gateway handlers
+        handlers::register_all_handlers(&mut consumer, db, mongodb, Some(producer.clone()));
+        info!("Registered all handlers (default + WebSocket gateway)");
+    } else {
+        // Register only default handlers
+        handlers::register_default_handlers(&mut consumer, db, Some(producer.clone()));
+        info!("Registered default handlers only");
+    }
 
     // Subscribe to topics
     consumer.subscribe().map_err(|e| {
@@ -331,13 +352,10 @@ pub mod publish {
                 user_agent.map(|s| s.to_string()),
             );
 
-        let event = EventBuilder::new(
-            EventType::Auth(AuthEventType::SignIn),
-            &user_id.to_string(),
-        )
-        .payload(payload)
-        .metadata(metadata)
-        .build();
+        let event = EventBuilder::new(EventType::Auth(AuthEventType::SignIn), &user_id.to_string())
+            .payload(payload)
+            .metadata(metadata)
+            .build();
 
         let event_id = event.id.clone();
         event_bus.publish(&event).await?;

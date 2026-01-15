@@ -17,7 +17,10 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 
 /// Helper to create JSON error response
-fn unauthorized_response(request: ServiceRequest, message: &'static str) -> ServiceResponse<BoxBody> {
+fn unauthorized_response(
+    request: ServiceRequest,
+    message: &'static str,
+) -> ServiceResponse<BoxBody> {
     let response = HttpResponse::Unauthorized().json(BaseResponse::error(message));
     request.into_response(response).map_into_boxed_body()
 }
@@ -45,7 +48,9 @@ fn extract_token(request: &ServiceRequest) -> Option<String> {
 
 /// Extract refresh token from cookie
 fn extract_refresh_token(request: &ServiceRequest) -> Option<String> {
-    request.cookie("refresh_token").map(|c| c.value().to_string())
+    request
+        .cookie("refresh_token")
+        .map(|c| c.value().to_string())
 }
 
 pub async fn verify_jwt(
@@ -244,10 +249,9 @@ async fn try_refresh_optional(
 
     // Add cookie to response headers
     if let Ok(cookie_value) = cookie.to_string().parse() {
-        response.headers_mut().insert(
-            actix_web::http::header::SET_COOKIE,
-            cookie_value,
-        );
+        response
+            .headers_mut()
+            .insert(actix_web::http::header::SET_COOKIE, cookie_value);
     }
 
     Ok(response)
@@ -343,10 +347,9 @@ async fn try_refresh_or_unauthorized(
 
     // Add cookie to response headers
     if let Ok(cookie_value) = cookie.to_string().parse() {
-        response.headers_mut().insert(
-            actix_web::http::header::SET_COOKIE,
-            cookie_value,
-        );
+        response
+            .headers_mut()
+            .insert(actix_web::http::header::SET_COOKIE, cookie_value);
     }
 
     Ok(response)

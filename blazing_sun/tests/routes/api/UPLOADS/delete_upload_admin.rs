@@ -106,12 +106,19 @@ async fn test_admin_can_delete_upload_missing_files() {
         .await;
     }
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api))
-        .await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let req = test::TestRequest::delete()
         .uri(&format!("/api/v1/upload/{}", upload_uuid))
-        .insert_header(("Authorization", format!("Bearer {}", create_jwt(admin_id, 10))))
+        .insert_header((
+            "Authorization",
+            format!("Bearer {}", create_jwt(admin_id, 10)),
+        ))
         .to_request();
 
     let resp = test::call_service(&app, req).await;

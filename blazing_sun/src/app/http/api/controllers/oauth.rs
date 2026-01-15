@@ -7,13 +7,14 @@
 
 use actix_session::Session;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 
 use crate::app::db_query::{mutations, read};
-use crate::app::http::web::controllers::{render_oauth_consent, ConsentScopeInfo, OAuthConsentData};
+use crate::app::http::web::controllers::{
+    render_oauth_consent, ConsentScopeInfo, OAuthConsentData,
+};
 use crate::config::OAuthConfig;
 use crate::database::AppState;
 
@@ -282,9 +283,8 @@ fn verify_pkce_challenge(
 ) -> bool {
     match code_challenge_method {
         "S256" => {
-            let computed_challenge = URL_SAFE_NO_PAD.encode(
-                Sha256::digest(code_verifier.as_bytes()).as_slice()
-            );
+            let computed_challenge =
+                URL_SAFE_NO_PAD.encode(Sha256::digest(code_verifier.as_bytes()).as_slice());
             computed_challenge == code_challenge
         }
         "plain" => code_verifier == code_challenge,
@@ -400,7 +400,8 @@ pub async fn authorize_get(
     };
 
     // Validate redirect_uri
-    let redirect_uris = match read::oauth_client::get_redirect_uris_by_client(&db, client.id).await {
+    let redirect_uris = match read::oauth_client::get_redirect_uris_by_client(&db, client.id).await
+    {
         Ok(uris) => uris,
         Err(e) => {
             tracing::error!("Database error fetching redirect URIs: {}", e);
@@ -413,7 +414,10 @@ pub async fn authorize_get(
         }
     };
 
-    if !redirect_uris.iter().any(|uri| uri.redirect_uri == redirect_uri) {
+    if !redirect_uris
+        .iter()
+        .any(|uri| uri.redirect_uri == redirect_uri)
+    {
         return oauth_error(
             "invalid_request",
             Some("Invalid redirect_uri"),
@@ -450,29 +454,27 @@ pub async fn authorize_get(
 
     // Validate that client is allowed to request these scopes
     for scope_name in &scope_list {
-        let has_scope = match read::oauth_scope::client_has_scope_by_name(
-            &db,
-            client.id,
-            scope_name,
-        )
-        .await
-        {
-            Ok(has) => has,
-            Err(e) => {
-                tracing::error!("Database error checking client scopes: {}", e);
-                return oauth_error(
-                    "server_error",
-                    Some("Internal server error"),
-                    Some(&redirect_uri),
-                    query.state.as_deref(),
-                );
-            }
-        };
+        let has_scope =
+            match read::oauth_scope::client_has_scope_by_name(&db, client.id, scope_name).await {
+                Ok(has) => has,
+                Err(e) => {
+                    tracing::error!("Database error checking client scopes: {}", e);
+                    return oauth_error(
+                        "server_error",
+                        Some("Internal server error"),
+                        Some(&redirect_uri),
+                        query.state.as_deref(),
+                    );
+                }
+            };
 
         if !has_scope {
             return oauth_error(
                 "invalid_scope",
-                Some(&format!("Client is not allowed to request scope: {}", scope_name)),
+                Some(&format!(
+                    "Client is not allowed to request scope: {}",
+                    scope_name
+                )),
                 Some(&query.redirect_uri),
                 query.state.as_deref(),
             );
@@ -641,7 +643,11 @@ pub async fn authorize_post(
         let consent_params = mutations::oauth_authorization::CreateConsentGrantParams {
             user_id,
             client_id: client.id,
-            granted_scopes: decision.scope.split_whitespace().map(|s| s.to_string()).collect(),
+            granted_scopes: decision
+                .scope
+                .split_whitespace()
+                .map(|s| s.to_string())
+                .collect(),
         };
 
         if let Err(e) =
@@ -708,7 +714,9 @@ async fn approve_authorization(
         expires_at,
     };
 
-    if let Err(e) = mutations::oauth_authorization::create_authorization_code(&db, &auth_code_params).await {
+    if let Err(e) =
+        mutations::oauth_authorization::create_authorization_code(&db, &auth_code_params).await
+    {
         tracing::error!("Database error creating authorization code: {}", e);
         return oauth_error(
             "server_error",
@@ -752,7 +760,9 @@ pub async fn token_post(
     state: web::Data<AppState>,
 ) -> HttpResponse {
     match token_req.grant_type.as_str() {
-        "authorization_code" => handle_authorization_code_grant(token_req.into_inner(), &state).await,
+        "authorization_code" => {
+            handle_authorization_code_grant(token_req.into_inner(), &state).await
+        }
         "refresh_token" => handle_refresh_token_grant(token_req.into_inner(), &state).await,
         _ => oauth_error(
             "unsupported_grant_type",
@@ -790,21 +800,43 @@ async fn handle_authorization_code_grant(
     // Validate required parameters
     let code = match &token_req.code {
         Some(c) => c,
-        None => return oauth_error("invalid_request", Some("Missing 'code' parameter"), None, None),
+        None => {
+            return oauth_error(
+                "invalid_request",
+                Some("Missing 'code' parameter"),
+                None,
+                None,
+            )
+        }
     };
 
     let redirect_uri = match &token_req.redirect_uri {
         Some(uri) => uri,
-        None => return oauth_error("invalid_request", Some("Missing 'redirect_uri' parameter"), None, None),
+        None => {
+            return oauth_error(
+                "invalid_request",
+                Some("Missing 'redirect_uri' parameter"),
+                None,
+                None,
+            )
+        }
     };
 
     // Lock database
     let db = state.db.lock().await;
 
     // Get authorization code from database
-    let auth_code = match read::oauth_authorization::get_authorization_code_by_code(&db, code).await {
+    let auth_code = match read::oauth_authorization::get_authorization_code_by_code(&db, code).await
+    {
         Ok(Some(ac)) => ac,
-        Ok(None) => return oauth_error("invalid_grant", Some("Invalid authorization code"), None, None),
+        Ok(None) => {
+            return oauth_error(
+                "invalid_grant",
+                Some("Invalid authorization code"),
+                None,
+                None,
+            )
+        }
         Err(e) => {
             tracing::error!("Database error fetching authorization code: {}", e);
             return oauth_error("server_error", Some("Internal server error"), None, None);
@@ -813,12 +845,22 @@ async fn handle_authorization_code_grant(
 
     // Check if code is already used
     if auth_code.is_used {
-        return oauth_error("invalid_grant", Some("Authorization code already used"), None, None);
+        return oauth_error(
+            "invalid_grant",
+            Some("Authorization code already used"),
+            None,
+            None,
+        );
     }
 
     // Check if code is expired
     if auth_code.expires_at < chrono::Utc::now() {
-        return oauth_error("invalid_grant", Some("Authorization code expired"), None, None);
+        return oauth_error(
+            "invalid_grant",
+            Some("Authorization code expired"),
+            None,
+            None,
+        );
     }
 
     // Verify redirect_uri matches
@@ -845,12 +887,7 @@ async fn handle_authorization_code_grant(
 
     if OAuthConfig::require_pkce_for_public_clients() {
         if auth_code.code_challenge.is_none() {
-            return oauth_error(
-                "invalid_grant",
-                Some("PKCE is required"),
-                None,
-                None,
-            );
+            return oauth_error("invalid_grant", Some("PKCE is required"), None, None);
         }
 
         if auth_code.code_challenge_method.as_deref() != Some("S256") {
@@ -877,7 +914,14 @@ async fn handle_authorization_code_grant(
         // This is a confidential client - verify secret
         let provided_secret = match &token_req.client_secret {
             Some(s) => s,
-            None => return oauth_error("invalid_client", Some("Missing client_secret for confidential client"), None, None),
+            None => {
+                return oauth_error(
+                    "invalid_client",
+                    Some("Missing client_secret for confidential client"),
+                    None,
+                    None,
+                )
+            }
         };
 
         match verify_client_secret(&db, client.id, provided_secret).await {
@@ -898,10 +942,15 @@ async fn handle_authorization_code_grant(
     if let Some(challenge) = &auth_code.code_challenge {
         let verifier = match &token_req.code_verifier {
             Some(v) => v,
-            None => return oauth_error("invalid_request", Some("Missing code_verifier"), None, None),
+            None => {
+                return oauth_error("invalid_request", Some("Missing code_verifier"), None, None)
+            }
         };
 
-        let challenge_method = auth_code.code_challenge_method.as_deref().unwrap_or("plain");
+        let challenge_method = auth_code
+            .code_challenge_method
+            .as_deref()
+            .unwrap_or("plain");
 
         if !verify_pkce_challenge(verifier, challenge, challenge_method) {
             return oauth_error("invalid_grant", Some("Invalid code_verifier"), None, None);
@@ -932,7 +981,12 @@ async fn handle_authorization_code_grant(
         Ok(jwt) => jwt.access_token,
         Err(e) => {
             tracing::error!("JWT generation error: {}", e);
-            return oauth_error("server_error", Some("Failed to generate access token"), None, None);
+            return oauth_error(
+                "server_error",
+                Some("Failed to generate access token"),
+                None,
+                None,
+            );
         }
     };
 
@@ -954,7 +1008,8 @@ async fn handle_authorization_code_grant(
         expires_at: refresh_expires_at,
     };
 
-    if let Err(e) = mutations::oauth_authorization::create_refresh_token(&db, &refresh_params).await {
+    if let Err(e) = mutations::oauth_authorization::create_refresh_token(&db, &refresh_params).await
+    {
         tracing::error!("Database error creating refresh token: {}", e);
         return oauth_error("server_error", Some("Internal server error"), None, None);
     }
@@ -972,16 +1027,20 @@ async fn handle_authorization_code_grant(
 }
 
 /// Handle refresh_token grant with rotation and reuse detection
-async fn handle_refresh_token_grant(
-    token_req: TokenRequest,
-    state: &AppState,
-) -> HttpResponse {
+async fn handle_refresh_token_grant(token_req: TokenRequest, state: &AppState) -> HttpResponse {
     use crate::bootstrap::utility::oauth_jwt;
 
     // Validate required parameters
     let refresh_token_value = match &token_req.refresh_token {
         Some(rt) => rt,
-        None => return oauth_error("invalid_request", Some("Missing 'refresh_token' parameter"), None, None),
+        None => {
+            return oauth_error(
+                "invalid_request",
+                Some("Missing 'refresh_token' parameter"),
+                None,
+                None,
+            )
+        }
     };
 
     // Hash the refresh token to look it up in database
@@ -991,7 +1050,12 @@ async fn handle_refresh_token_grant(
     let db = state.db.lock().await;
 
     // Get refresh token from database
-    let refresh_token = match read::oauth_authorization::get_refresh_token_by_hash(&db, &refresh_token_hash).await {
+    let refresh_token = match read::oauth_authorization::get_refresh_token_by_hash(
+        &db,
+        &refresh_token_hash,
+    )
+    .await
+    {
         Ok(Some(rt)) => rt,
         Ok(None) => return oauth_error("invalid_grant", Some("Invalid refresh token"), None, None),
         Err(e) => {
@@ -1002,7 +1066,12 @@ async fn handle_refresh_token_grant(
 
     // Check if token is revoked
     if refresh_token.is_revoked {
-        return oauth_error("invalid_grant", Some("Refresh token has been revoked"), None, None);
+        return oauth_error(
+            "invalid_grant",
+            Some("Refresh token has been revoked"),
+            None,
+            None,
+        );
     }
 
     // Check if token is expired
@@ -1041,7 +1110,14 @@ async fn handle_refresh_token_grant(
         // This is a confidential client - verify secret
         let provided_secret = match &token_req.client_secret {
             Some(s) => s,
-            None => return oauth_error("invalid_client", Some("Missing client_secret for confidential client"), None, None),
+            None => {
+                return oauth_error(
+                    "invalid_client",
+                    Some("Missing client_secret for confidential client"),
+                    None,
+                    None,
+                )
+            }
         };
 
         match verify_client_secret(&db, client.id, provided_secret).await {
@@ -1075,7 +1151,10 @@ async fn handle_refresh_token_grant(
             refresh_token.token_family_id
         );
 
-        if let Err(e) = mutations::oauth_authorization::revoke_token_family(&db, &refresh_token.token_family_id).await {
+        if let Err(e) =
+            mutations::oauth_authorization::revoke_token_family(&db, &refresh_token.token_family_id)
+                .await
+        {
             tracing::error!("Database error revoking token family: {}", e);
         }
 
@@ -1103,7 +1182,12 @@ async fn handle_refresh_token_grant(
         Ok(jwt) => jwt.access_token,
         Err(e) => {
             tracing::error!("JWT generation error: {}", e);
-            return oauth_error("server_error", Some("Failed to generate access token"), None, None);
+            return oauth_error(
+                "server_error",
+                Some("Failed to generate access token"),
+                None,
+                None,
+            );
         }
     };
 
@@ -1113,8 +1197,8 @@ async fn handle_refresh_token_grant(
     let new_token_hint = &new_refresh_token_value[..8]; // First 8 chars as hint
 
     // Calculate new refresh token expiration
-    let refresh_expires_at = chrono::Utc::now()
-        + chrono::Duration::days(state.oauth_refresh_token_ttl_days);
+    let refresh_expires_at =
+        chrono::Utc::now() + chrono::Duration::days(state.oauth_refresh_token_ttl_days);
 
     // Save new refresh token to database with parent reference
     let refresh_params = mutations::oauth_authorization::CreateRefreshTokenParams {
@@ -1124,17 +1208,20 @@ async fn handle_refresh_token_grant(
         user_id: refresh_token.user_id,
         scopes: refresh_token.scopes.clone(),
         token_family_id: refresh_token.token_family_id.clone(), // Same family
-        parent_token_id: Some(refresh_token.id), // Link to parent by ID
+        parent_token_id: Some(refresh_token.id),                // Link to parent by ID
         expires_at: refresh_expires_at,
     };
 
-    if let Err(e) = mutations::oauth_authorization::create_refresh_token(&db, &refresh_params).await {
+    if let Err(e) = mutations::oauth_authorization::create_refresh_token(&db, &refresh_params).await
+    {
         tracing::error!("Database error creating new refresh token: {}", e);
         return oauth_error("server_error", Some("Internal server error"), None, None);
     }
 
     // Revoke old refresh token (it's now been used)
-    if let Err(e) = mutations::oauth_authorization::revoke_refresh_token(&db, &refresh_token_hash).await {
+    if let Err(e) =
+        mutations::oauth_authorization::revoke_refresh_token(&db, &refresh_token_hash).await
+    {
         tracing::error!("Database error revoking old refresh token: {}", e);
         // Continue anyway - new token was created
     }
@@ -1197,8 +1284,14 @@ pub async fn revoke_post(
             let _ = mutations::oauth_authorization::revoke_refresh_token(&db, &token_hash).await;
 
             // If this is part of a token family and we can find it, revoke the family
-            if let Ok(Some(token)) = read::oauth_authorization::get_refresh_token_by_hash(&db, &token_hash).await {
-                let _ = mutations::oauth_authorization::revoke_token_family(&db, &token.token_family_id).await;
+            if let Ok(Some(token)) =
+                read::oauth_authorization::get_refresh_token_by_hash(&db, &token_hash).await
+            {
+                let _ = mutations::oauth_authorization::revoke_token_family(
+                    &db,
+                    &token.token_family_id,
+                )
+                .await;
             }
         }
         "access_token" => {
@@ -1316,10 +1409,7 @@ pub struct AuthorizedAppInfo {
 ///
 /// Returns a list of OAuth clients the user has granted consent to.
 /// Requires authentication (user must be logged in).
-pub async fn get_authorized_apps(
-    req: HttpRequest,
-    state: web::Data<AppState>,
-) -> HttpResponse {
+pub async fn get_authorized_apps(req: HttpRequest, state: web::Data<AppState>) -> HttpResponse {
     // Get user_id from request extensions (set by auth middleware)
     let user_id = match req.extensions().get::<i64>().copied() {
         Some(id) => id,
@@ -1401,31 +1491,40 @@ pub async fn revoke_app_authorization(
     let db = state.db.lock().await;
 
     // Verify the consent exists for this user
-    let consent = match read::oauth_authorization::get_consent_grant(&db, user_id, client_db_id).await {
-        Ok(Some(c)) => c,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "status": "error",
-                "message": "Authorization not found"
-            }));
-        }
-        Err(e) => {
-            tracing::error!("Database error checking consent: {}", e);
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "status": "error",
-                "message": "Failed to verify authorization"
-            }));
-        }
-    };
+    let consent =
+        match read::oauth_authorization::get_consent_grant(&db, user_id, client_db_id).await {
+            Ok(Some(c)) => c,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "status": "error",
+                    "message": "Authorization not found"
+                }));
+            }
+            Err(e) => {
+                tracing::error!("Database error checking consent: {}", e);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "status": "error",
+                    "message": "Failed to verify authorization"
+                }));
+            }
+        };
 
     // Revoke all refresh tokens for this user+client
-    if let Err(e) = mutations::oauth_authorization::revoke_user_client_refresh_tokens(&db, user_id, consent.client_id).await {
+    if let Err(e) = mutations::oauth_authorization::revoke_user_client_refresh_tokens(
+        &db,
+        user_id,
+        consent.client_id,
+    )
+    .await
+    {
         tracing::error!("Failed to revoke refresh tokens: {}", e);
         // Continue anyway - we still want to revoke consent
     }
 
     // Delete the consent grant
-    if let Err(e) = mutations::oauth_authorization::revoke_consent_grant(&db, user_id, consent.client_id).await {
+    if let Err(e) =
+        mutations::oauth_authorization::revoke_consent_grant(&db, user_id, consent.client_id).await
+    {
         tracing::error!("Database error revoking consent: {}", e);
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "status": "error",

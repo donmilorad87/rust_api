@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Geo Galleries - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/GEO_GALLERIES/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="geo-galleries" data-is-admin="{{ is_admin }}"
+      data-geo-gallery-path="{{ route(name='web.geo_gallery', lang=language, gallery_uuid='__UUID__') | default(value='/geo_gallery/__UUID__') }}">
+    <section class="geo-hero">
+        <div>
+            <p class="geo-hero__eyebrow">Trail-side discovery</p>
+            <h1 class="geo-hero__title">Geo Galleries</h1>
+            <p class="geo-hero__description">
+                Find nature photo galleries on the map, then plan your next hike with nearby cafes, restaurants, and
+                lodgings.
+            </p>
+        </div>
+        <div class="geo-stats">
+            <div class="geo-stats__card">
+                <div class="geo-stats__value" id="geoGalleryCount">0</div>
+                <div class="geo-stats__label">Geo galleries mapped</div>
+            </div>
+            <div class="geo-stats__card">
+                <div class="geo-stats__value" id="geoPlacesCount">0</div>
+                <div class="geo-stats__label">Places to recharge</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="geo-map-layout">
+        <aside class="geo-panel">
+            <div class="geo-panel__section">
+                <h2 class="geo-panel__title">Filters</h2>
+                <label class="geo-filter">
+                    <input type="checkbox" data-filter="galleries" checked>
+                    <span>Geo Galleries</span>
+                </label>
+                <label class="geo-filter">
+                    <input type="checkbox" data-filter="restaurants" checked>
+                    <span>Restaurants</span>
+                </label>
+                <label class="geo-filter">
+                    <input type="checkbox" data-filter="cafes" checked>
+                    <span>Cafes</span>
+                </label>
+                <label class="geo-filter">
+                    <input type="checkbox" data-filter="lodgings" checked>
+                    <span>Lodgings</span>
+                </label>
+            </div>
+
+            <div class="geo-panel__section">
+                <h2 class="geo-panel__title">Legend</h2>
+                <div class="geo-legend">
+                    <div class="geo-legend__item">
+                        <div class="geo-legend__swatch">G</div>
+                        <span>Gallery marker</span>
+                    </div>
+                    <div class="geo-legend__item">
+                        <div class="geo-legend__swatch">R</div>
+                        <span>Restaurant</span>
+                    </div>
+                    <div class="geo-legend__item">
+                        <div class="geo-legend__swatch">C</div>
+                        <span>Cafe</span>
+                    </div>
+                    <div class="geo-legend__item">
+                        <div class="geo-legend__swatch">L</div>
+                        <span>Lodging</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if is_admin %}
+            <div class="geo-panel__section">
+                <h2 class="geo-panel__title">Add a place</h2>
+                <form id="geoPlaceForm" class="geo-panel__form">
+                    <div>
+                        <label for="geoPlaceName">Name</label>
+                        <input id="geoPlaceName" name="name" type="text" placeholder="Trailhead Cafe" required>
+                    </div>
+                    <div>
+                        <label for="geoPlaceType">Type</label>
+                        <select id="geoPlaceType" name="place_type" required>
+                            <option value="restaurant">Restaurant</option>
+                            <option value="cafe">Cafe</option>
+                            <option value="lodging">Lodging</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="geoPlaceDescription">Description</label>
+                        <textarea id="geoPlaceDescription" name="description" placeholder="Great for hikers"></textarea>
+                    </div>
+                    <div>
+                        <label for="geoPlaceLatitude">Latitude</label>
+                        <input id="geoPlaceLatitude" name="latitude" type="number" step="any" placeholder="45.123456" required>
+                    </div>
+                    <div>
+                        <label for="geoPlaceLongitude">Longitude</label>
+                        <input id="geoPlaceLongitude" name="longitude" type="number" step="any" placeholder="16.123456" required>
+                    </div>
+                    <div class="geo-panel__actions">
+                        <button type="button" id="geoPlaceUseLocation" class="geo-button geo-button--secondary">Use my location</button>
+                        <button type="submit" class="geo-button geo-button--primary">Add place</button>
+                    </div>
+                </form>
+                <p class="geo-panel__hint">After creating a place, open its marker to add photos.</p>
+            </div>
+            {% endif %}
+        </aside>
+
+        <div class="geo-map-wrapper">
+            <div id="geoGalleriesMap" class="geo-map" aria-label="Geo galleries map"></div>
+        </div>
+    </section>
+</main>
+
+<div id="geoPlaceGalleryModal" class="geo-modal" aria-hidden="true">
+    <div class="geo-modal__overlay" data-geo-modal-close></div>
+    <div class="geo-modal__container" role="dialog" aria-modal="true" aria-labelledby="geoPlaceGalleryTitle">
+        <header class="geo-modal__header">
+            <div>
+                <h2 id="geoPlaceGalleryTitle" class="geo-modal__title">Place gallery</h2>
+                <p id="geoPlaceGalleryMeta" class="geo-modal__meta"></p>
+            </div>
+            <button type="button" class="geo-modal__close" data-geo-modal-close aria-label="Close">
+                &times;
+            </button>
+        </header>
+        <div class="geo-modal__body">
+            <div id="geoPlaceGalleryGrid" class="geo-gallery-grid"></div>
+            <div id="geoPlaceGalleryEmpty" class="geo-gallery-empty">No images yet.</div>
+
+            {% if is_admin %}
+            <section class="geo-gallery-admin">
+                <h3 class="geo-panel__title">Add photos to this place</h3>
+                <form id="geoPlaceImageForm" class="geo-panel__form">
+                    <input type="hidden" id="geoPlaceImagePlaceId" name="place_id">
+                    <div>
+                        <label for="geoPlaceImages">Images</label>
+                        <input id="geoPlaceImages" name="images" type="file" accept="image/*" multiple>
+                    </div>
+                    <div id="geoPlaceImageMetaList" class="geo-upload-list"></div>
+                    <div class="geo-panel__actions">
+                        <button type="submit" class="geo-button geo-button--primary">Upload images</button>
+                    </div>
+                </form>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/GEO_GALLERIES/app.js?v={{ assets_version }}"></script>
+{% endblock %}

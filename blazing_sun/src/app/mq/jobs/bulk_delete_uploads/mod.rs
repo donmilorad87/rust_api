@@ -45,7 +45,10 @@ pub async fn execute(db: &Pool<Postgres>, params: &BulkDeleteUploadsParams) -> R
     }
 
     if missing_count > 0 {
-        warn!("Bulk delete completed with {} missing upload(s)", missing_count);
+        warn!(
+            "Bulk delete completed with {} missing upload(s)",
+            missing_count
+        );
     }
 
     Ok(deleted_count)

@@ -6,6 +6,13 @@
 /// - transaction.events: Financial transaction events
 /// - category.events: Category management events
 /// - system.events: System-level events (health, metrics)
+/// - checkout.commands: Checkout commands from main service
+/// - checkout.events: Checkout events from payment service
+/// - chat.commands: Chat commands from WebSocket gateway
+/// - chat.events: Chat events to send to WebSocket gateway
+/// - games.commands: Game commands from WebSocket gateway
+/// - games.events: Game events to send to WebSocket gateway
+/// - gateway.presence: Presence updates from WebSocket gateway
 
 /// Main event topics
 pub mod topic {
@@ -27,6 +34,35 @@ pub mod topic {
     /// Dead letter topic for failed event processing
     pub const DEAD_LETTER: &str = "events.dead_letter";
 
+    /// Checkout commands from main service (create_session, etc.)
+    pub const CHECKOUT_COMMANDS: &str = "checkout.commands";
+
+    /// Checkout events from payment service (session_created, payment_succeeded, etc.)
+    pub const CHECKOUT_EVENTS: &str = "checkout.events";
+
+    /// New checkout request topic (user_id, amount_cents)
+    pub const CHECKOUT: &str = "checkout";
+
+    /// New checkout finished topic (success/failed status after Stripe webhook)
+    pub const CHECKOUT_FINISHED: &str = "checkout_finished";
+
+    // === WebSocket Gateway Topics ===
+
+    /// Chat commands from WebSocket gateway (send_message, mark_read, etc.)
+    pub const CHAT_COMMANDS: &str = "chat.commands";
+
+    /// Chat events to send back to WebSocket gateway
+    pub const CHAT_EVENTS: &str = "chat.events";
+
+    /// Game commands from WebSocket gateway (create_room, join_room, roll_dice, etc.)
+    pub const GAMES_COMMANDS: &str = "games.commands";
+
+    /// Game events to send back to WebSocket gateway
+    pub const GAMES_EVENTS: &str = "games.events";
+
+    /// Presence updates from WebSocket gateway (user online/offline)
+    pub const GATEWAY_PRESENCE: &str = "gateway.presence";
+
     /// Get all topics for initialization
     pub fn all() -> Vec<&'static str> {
         vec![
@@ -36,6 +72,15 @@ pub mod topic {
             CATEGORY_EVENTS,
             SYSTEM_EVENTS,
             DEAD_LETTER,
+            CHECKOUT_COMMANDS,
+            CHECKOUT_EVENTS,
+            CHECKOUT,
+            CHECKOUT_FINISHED,
+            CHAT_COMMANDS,
+            CHAT_EVENTS,
+            GAMES_COMMANDS,
+            GAMES_EVENTS,
+            GATEWAY_PRESENCE,
         ]
     }
 }

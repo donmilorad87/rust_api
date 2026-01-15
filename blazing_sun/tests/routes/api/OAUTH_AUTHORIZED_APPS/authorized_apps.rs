@@ -7,10 +7,10 @@
 //! # Test Coverage
 //! - [x] Happy path: Authenticated user receives authorized apps list
 
+use crate::routes::api::helpers::ensure_test_user;
 use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::Deserialize;
-use crate::routes::api::helpers::ensure_test_user;
 use uuid::Uuid;
 
 #[derive(Deserialize)]

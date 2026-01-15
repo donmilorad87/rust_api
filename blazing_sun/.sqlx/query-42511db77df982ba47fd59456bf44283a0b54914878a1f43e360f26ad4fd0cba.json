@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET lobby = (\n            SELECT COALESCE(jsonb_agg(elem), '[]'::JSONB)\n            FROM jsonb_array_elements(lobby) AS elem\n            WHERE (elem->>'user_id')::BIGINT != $2\n        )\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "42511db77df982ba47fd59456bf44283a0b54914878a1f43e360f26ad4fd0cba"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET players = (\n            SELECT COALESCE(jsonb_agg(elem), '[]'::JSONB)\n            FROM jsonb_array_elements(lobby) AS elem\n            WHERE (elem->>'user_id')::BIGINT = ANY(selected_players)\n        ),\n        lobby = (\n            SELECT COALESCE(jsonb_agg(elem), '[]'::JSONB)\n            FROM jsonb_array_elements(lobby) AS elem\n            WHERE NOT ((elem->>'user_id')::BIGINT = ANY(selected_players))\n        ),\n        updated_at = NOW()\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0037d352a0c20695c4d277619222e274d795c1c87705b30db3393a42a44d6e2d"
+}

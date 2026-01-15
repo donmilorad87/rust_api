@@ -13,8 +13,10 @@ pub struct UploadConfig {
 pub static UPLOAD: Lazy<UploadConfig> = Lazy::new(|| {
     dotenv::dotenv().ok();
 
-    let allowed_types_str = std::env::var("UPLOAD_ALLOWED_TYPES")
-        .unwrap_or_else(|_| "jpg,jpeg,png,gif,webp,svg,ico,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,7z,tar,gz".to_string());
+    let allowed_types_str = std::env::var("UPLOAD_ALLOWED_TYPES").unwrap_or_else(|_| {
+        "jpg,jpeg,png,gif,webp,svg,ico,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,7z,tar,gz"
+            .to_string()
+    });
 
     let allowed_types: Vec<String> = allowed_types_str
         .split(',')
@@ -34,8 +36,7 @@ pub static UPLOAD: Lazy<UploadConfig> = Lazy::new(|| {
         allowed_types,
         storage_path: std::env::var("UPLOAD_STORAGE_PATH")
             .unwrap_or_else(|_| "storage/app".to_string()),
-        storage_driver: std::env::var("STORAGE_DRIVER")
-            .unwrap_or_else(|_| "local".to_string()),
+        storage_driver: std::env::var("STORAGE_DRIVER").unwrap_or_else(|_| "local".to_string()),
         public_url_base: std::env::var("STORAGE_PUBLIC_URL")
             .unwrap_or_else(|_| "/storage".to_string()),
         private_url_base: std::env::var("STORAGE_PRIVATE_URL")
@@ -81,6 +82,9 @@ impl UploadConfig {
 
     /// Check if a file extension is allowed
     pub fn is_type_allowed(extension: &str) -> bool {
-        UPLOAD.allowed_types.iter().any(|t| t.eq_ignore_ascii_case(extension))
+        UPLOAD
+            .allowed_types
+            .iter()
+            .any(|t| t.eq_ignore_ascii_case(extension))
     }
 }

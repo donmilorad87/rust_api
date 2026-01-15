@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET players = (\n            SELECT jsonb_agg(\n                CASE\n                    WHEN (elem->>'user_id')::BIGINT = $2\n                    THEN jsonb_set(elem, '{is_ready}', $3::TEXT::JSONB)\n                    ELSE elem\n                END\n            )\n            FROM jsonb_array_elements(players) AS elem\n        )\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "11e4fc67efa55da9a7f929314cb24f352de66b702e0ed80f9316f7ac2a8c435d"
+}

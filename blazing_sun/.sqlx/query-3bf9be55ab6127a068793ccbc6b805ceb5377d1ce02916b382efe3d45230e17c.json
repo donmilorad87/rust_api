@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            st.name,\n            st.label,\n            st.description,\n            st.is_data_type,\n            EXISTS (\n                SELECT 1 FROM schema_type_parents stp2\n                WHERE stp2.parent_name = st.name\n            ) AS \"has_children!\"\n        FROM schema_type_parents stp\n        JOIN schema_types st ON stp.type_name = st.name\n        WHERE stp.parent_name = 'Thing'\n          AND st.is_data_type = false\n        ORDER BY st.name ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_data_type",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "has_children!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "3bf9be55ab6127a068793ccbc6b805ceb5377d1ce02916b382efe3d45230e17c"
+}

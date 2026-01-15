@@ -27,7 +27,9 @@ pub fn parse_scss_variables(path: &Path) -> Result<HashMap<String, String>, Pars
 }
 
 /// Parse SCSS variables from a string
-pub fn parse_scss_variables_from_string(content: &str) -> Result<HashMap<String, String>, ParserError> {
+pub fn parse_scss_variables_from_string(
+    content: &str,
+) -> Result<HashMap<String, String>, ParserError> {
     let mut variables = HashMap::new();
 
     // Match SCSS variables: $name: value;
@@ -41,8 +43,14 @@ pub fn parse_scss_variables_from_string(content: &str) -> Result<HashMap<String,
         }
 
         if let Some(caps) = re.captures(line) {
-            let name = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
-            let value = caps.get(2).map(|m| m.as_str().trim().to_string()).unwrap_or_default();
+            let name = caps
+                .get(1)
+                .map(|m| m.as_str().to_string())
+                .unwrap_or_default();
+            let value = caps
+                .get(2)
+                .map(|m| m.as_str().trim().to_string())
+                .unwrap_or_default();
 
             // Keep SCSS variable name format (with hyphens) for frontend compatibility
             variables.insert(name, value);
@@ -54,13 +62,17 @@ pub fn parse_scss_variables_from_string(content: &str) -> Result<HashMap<String,
 
 /// Parse CSS custom properties from _theme.scss
 /// Returns separate maps for light and dark theme
-pub fn parse_theme_file(path: &Path) -> Result<(HashMap<String, String>, HashMap<String, String>), ParserError> {
+pub fn parse_theme_file(
+    path: &Path,
+) -> Result<(HashMap<String, String>, HashMap<String, String>), ParserError> {
     let content = fs::read_to_string(path)?;
     parse_theme_from_string(&content)
 }
 
 /// Parse CSS custom properties from string
-pub fn parse_theme_from_string(content: &str) -> Result<(HashMap<String, String>, HashMap<String, String>), ParserError> {
+pub fn parse_theme_from_string(
+    content: &str,
+) -> Result<(HashMap<String, String>, HashMap<String, String>), ParserError> {
     let mut light_theme = HashMap::new();
     let mut dark_theme = HashMap::new();
 
@@ -112,8 +124,14 @@ pub fn parse_theme_from_string(content: &str) -> Result<(HashMap<String, String>
 
         // Parse properties
         if let Some(caps) = prop_re.captures(line) {
-            let name = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
-            let value = caps.get(2).map(|m| m.as_str().trim().to_string()).unwrap_or_default();
+            let name = caps
+                .get(1)
+                .map(|m| m.as_str().to_string())
+                .unwrap_or_default();
+            let value = caps
+                .get(2)
+                .map(|m| m.as_str().trim().to_string())
+                .unwrap_or_default();
 
             // Keep CSS property name format (with hyphens) for frontend compatibility
             // Frontend expects: --bg-gradient-start not bg_gradient_start

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Game Chat Configuration - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/GAME_CHAT_CONFIG/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="game-chat-page">
+        {# Header with title and global mute button #}
+        <header class="game-chat-page__header">
+            <div class="game-chat-page__title-row">
+                <h1 class="game-chat-page__title">Game Chat Configuration</h1>
+                <button type="button" class="btn btn--danger global-mute-btn" id="globalMuteBtn" aria-label="Toggle global mute">
+                    <svg class="global-mute-btn__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 9h.01"></path>
+                        <path d="M15 9h.01"></path>
+                        <path d="M8 13a4 4 0 0 0 8 0"></path>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <span class="global-mute-btn__text">Global Mute</span>
+                </button>
+            </div>
+            <p class="game-chat-page__subtitle">Configure chat settings for all game rooms</p>
+        </header>
+
+        {# Loading indicator #}
+        <div class="game-chat-page__loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <span>Loading configuration...</span>
+        </div>
+
+        {# Configuration form #}
+        <form class="game-chat-form hidden" id="configForm">
+            {# Rate Limiting Section #}
+            <section class="config-section" aria-labelledby="rateLimitHeading">
+                <h2 class="config-section__title" id="rateLimitHeading">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Rate Limiting
+                </h2>
+                <p class="config-section__description">Control how many messages users can send within a time window to prevent spam.</p>
+
+                <div class="form-row">
+                    <div class="form-group form-group--half">
+                        <label class="form-label" for="rateLimitMessages">
+                            Messages Per Window
+                            <span class="form-label__hint">Maximum messages allowed</span>
+                        </label>
+                        <input type="number" id="rateLimitMessages" class="form-input" min="1" max="1000" value="10" required aria-describedby="rateLimitMessagesHelp">
+                        <small class="form-help" id="rateLimitMessagesHelp">Recommended: 10-20 messages</small>
+                    </div>
+
+                    <div class="form-group form-group--half">
+                        <label class="form-label" for="rateLimitWindow">
+                            Time Window (seconds)
+                            <span class="form-label__hint">Duration for rate limit</span>
+                        </label>
+                        <input type="number" id="rateLimitWindow" class="form-input" min="1" max="3600" value="60" required aria-describedby="rateLimitWindowHelp">
+                        <small class="form-help" id="rateLimitWindowHelp">Recommended: 30-60 seconds</small>
+                    </div>
+                </div>
+
+                <div class="rate-limit-preview" id="rateLimitPreview">
+                    <span class="rate-limit-preview__text">
+                        Users can send up to <strong id="previewMessages">10</strong> messages every <strong id="previewWindow">60</strong> seconds.
+                    </span>
+                </div>
+            </section>
+
+            {# Message Settings Section #}
+            <section class="config-section" aria-labelledby="messageHeading">
+                <h2 class="config-section__title" id="messageHeading">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Message Settings
+                </h2>
+                <p class="config-section__description">Control the maximum length of chat messages.</p>
+
+                <div class="form-row">
+                    <div class="form-group form-group--half">
+                        <label class="form-label" for="maxMessageLength">
+                            Maximum Message Length
+                            <span class="form-label__hint">Characters allowed</span>
+                        </label>
+                        <input type="number" id="maxMessageLength" class="form-input" min="1" max="10000" value="500" required aria-describedby="maxMessageLengthHelp">
+                        <small class="form-help" id="maxMessageLengthHelp">Recommended: 200-500 characters</small>
+                    </div>
+                </div>
+            </section>
+
+            {# Profanity Filter Section #}
+            <section class="config-section" aria-labelledby="profanityHeading">
+                <h2 class="config-section__title" id="profanityHeading">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    Profanity Filter
+                </h2>
+                <p class="config-section__description">Filter inappropriate words from chat messages.</p>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <div class="toggle-row">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="profanityFilterEnabled" checked>
+                                <span class="toggle-switch__slider"></span>
+                            </label>
+                            <label for="profanityFilterEnabled" class="toggle-label">Enable Profanity Filter</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profanity-section" id="profanitySection">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="addWordInput">
+                                Add Word to Filter
+                                <span class="form-label__hint">Press Enter or click Add</span>
+                            </label>
+                            <div class="word-input-group">
+                                <input type="text" id="addWordInput" class="form-input" placeholder="Enter word to filter..." maxlength="100">
+                                <button type="button" class="btn btn--primary" id="addWordBtn">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="word-list" id="wordList" aria-label="Filtered words">
+                        <div class="word-list__empty" id="wordListEmpty">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 12h8"></path>
+                            </svg>
+                            <span>No words in filter list</span>
+                        </div>
+                        {# Words will be dynamically rendered here #}
+                    </div>
+
+                    <div class="word-list__stats" id="wordListStats">
+                        <span><strong id="wordCount">0</strong> words in filter</span>
+                    </div>
+                </div>
+            </section>
+
+            {# Save Button #}
+            <div class="form-actions">
+                <button type="submit" class="btn btn--primary btn--large" id="saveBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+{# Global Mute Confirmation Modal #}
+<div class="modal-overlay hidden" id="globalMuteModal" role="dialog" aria-labelledby="globalMuteModalTitle" aria-modal="true">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h3 class="modal-title" id="globalMuteModalTitle">Confirm Global Mute</h3>
+            <button type="button" class="modal-close" id="closeGlobalMuteModal" aria-label="Close modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal-body">
+            <p id="globalMuteModalText">Are you sure you want to enable global mute? This will immediately disable chat in ALL game rooms.</p>
+        </div>
+        <footer class="modal-footer">
+            <button type="button" class="btn btn--secondary" id="cancelGlobalMute">Cancel</button>
+            <button type="button" class="btn btn--danger" id="confirmGlobalMute">
+                <span id="confirmGlobalMuteText">Enable Global Mute</span>
+            </button>
+        </footer>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Base URL for API calls
+    window.BASE_URL = '{{ base_url }}';
+</script>
+<script src="/assets/js/GAME_CHAT_CONFIG/app.js?v={{ assets_version }}"></script>
+{% endblock %}

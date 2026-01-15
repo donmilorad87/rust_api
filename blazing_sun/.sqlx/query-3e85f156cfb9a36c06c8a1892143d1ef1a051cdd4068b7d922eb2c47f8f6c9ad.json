@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE game_rooms SET status = $1 WHERE room_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3e85f156cfb9a36c06c8a1892143d1ef1a051cdd4068b7d922eb2c47f8f6c9ad"
+}

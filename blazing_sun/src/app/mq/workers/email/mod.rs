@@ -24,9 +24,7 @@ pub async fn process(
             info!("send_email job {} completed successfully", job.id);
             Ok(JobResult::Success(serde_json::Value::Null))
         }
-        Ok(false) => {
-            Ok(JobResult::Retry("Email sending returned false".to_string()))
-        }
+        Ok(false) => Ok(JobResult::Retry("Email sending returned false".to_string())),
         Err(e) => {
             error!("send_email job {} failed: {}", job.id, e);
             // Check if it's a retryable error

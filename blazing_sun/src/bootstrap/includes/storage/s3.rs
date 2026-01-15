@@ -33,13 +33,14 @@ impl S3Config {
         Ok(Self {
             bucket: std::env::var("S3_BUCKET")
                 .map_err(|_| StorageError::DriverNotConfigured("S3_BUCKET not set".to_string()))?,
-            region: std::env::var("AWS_REGION")
-                .unwrap_or_else(|_| "us-east-1".to_string()),
+            region: std::env::var("AWS_REGION").unwrap_or_else(|_| "us-east-1".to_string()),
             endpoint: std::env::var("S3_ENDPOINT").ok(),
-            access_key_id: std::env::var("AWS_ACCESS_KEY_ID")
-                .map_err(|_| StorageError::DriverNotConfigured("AWS_ACCESS_KEY_ID not set".to_string()))?,
-            secret_access_key: std::env::var("AWS_SECRET_ACCESS_KEY")
-                .map_err(|_| StorageError::DriverNotConfigured("AWS_SECRET_ACCESS_KEY not set".to_string()))?,
+            access_key_id: std::env::var("AWS_ACCESS_KEY_ID").map_err(|_| {
+                StorageError::DriverNotConfigured("AWS_ACCESS_KEY_ID not set".to_string())
+            })?,
+            secret_access_key: std::env::var("AWS_SECRET_ACCESS_KEY").map_err(|_| {
+                StorageError::DriverNotConfigured("AWS_SECRET_ACCESS_KEY not set".to_string())
+            })?,
             public_url_base: std::env::var("S3_PUBLIC_URL").ok(),
         })
     }
@@ -67,6 +68,7 @@ impl S3StorageDriver {
     }
 
     /// Get the S3 key for a file
+    #[allow(dead_code)]
     fn s3_key(&self, filename: &str, visibility: Visibility) -> String {
         format!("{}/{}", visibility.as_str(), filename)
     }
@@ -99,7 +101,8 @@ impl StorageDriver for S3StorageDriver {
         _visibility: Visibility,
     ) -> Result<StoredFile, StorageError> {
         // Delegate to put_with_subfolder with empty subfolder
-        self.put_with_subfolder(_data, _filename, _visibility, "").await
+        self.put_with_subfolder(_data, _filename, _visibility, "")
+            .await
     }
 
     async fn put_with_subfolder(
@@ -135,7 +138,7 @@ impl StorageDriver for S3StorageDriver {
         // ```
 
         Err(StorageError::DriverNotConfigured(
-            "S3 driver not implemented. Add aws-sdk-s3 dependency and implement.".to_string()
+            "S3 driver not implemented. Add aws-sdk-s3 dependency and implement.".to_string(),
         ))
     }
 
@@ -154,7 +157,7 @@ impl StorageDriver for S3StorageDriver {
         // ```
 
         Err(StorageError::DriverNotConfigured(
-            "S3 driver not implemented".to_string()
+            "S3 driver not implemented".to_string(),
         ))
     }
 
@@ -171,7 +174,7 @@ impl StorageDriver for S3StorageDriver {
         // ```
 
         Err(StorageError::DriverNotConfigured(
-            "S3 driver not implemented".to_string()
+            "S3 driver not implemented".to_string(),
         ))
     }
 
@@ -179,7 +182,7 @@ impl StorageDriver for S3StorageDriver {
         // TODO: Implement S3 head_object check
 
         Err(StorageError::DriverNotConfigured(
-            "S3 driver not implemented".to_string()
+            "S3 driver not implemented".to_string(),
         ))
     }
 
@@ -187,7 +190,7 @@ impl StorageDriver for S3StorageDriver {
         // TODO: Implement S3 head_object to get content_length
 
         Err(StorageError::DriverNotConfigured(
-            "S3 driver not implemented".to_string()
+            "S3 driver not implemented".to_string(),
         ))
     }
 

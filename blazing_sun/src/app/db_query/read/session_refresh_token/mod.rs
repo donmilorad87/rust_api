@@ -118,10 +118,7 @@ pub async fn get_active_by_user(
 }
 
 /// Count active sessions for a user
-pub async fn count_active_for_user(
-    db: &Pool<Postgres>,
-    user_id: i64,
-) -> Result<i64, sqlx::Error> {
+pub async fn count_active_for_user(db: &Pool<Postgres>, user_id: i64) -> Result<i64, sqlx::Error> {
     let result = sqlx::query!(
         r#"
         SELECT COUNT(*) as "count!"

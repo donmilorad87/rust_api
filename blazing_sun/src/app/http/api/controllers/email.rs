@@ -5,22 +5,22 @@
 //! - POST /verify-old-email: Verify old email hash (Step 2)
 //! - POST /verify-new-email: Verify new email hash and complete change (Step 3)
 
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
+use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::Deserialize;
 use validator::Validate;
 
 use crate::app::http::api::controllers::responses::{
     BaseResponse, MissingFieldsResponse, ValidationErrorResponse,
 };
-use crate::config::ActivationConfig;
-use crate::database::read::activation_hash as db_activation_hash;
-use crate::database::mutations::activation_hash as db_activation_hash_mutations;
-use crate::database::read::user as db_user;
-use crate::database::mutations::user as db_user_mutations;
-use crate::database::AppState;
-use crate::bootstrap::mq;
 use crate::app::mq::jobs::email::{EmailTemplate, SendEmailParams};
+use crate::bootstrap::mq;
 use crate::bootstrap::mq::JobOptions;
+use crate::config::ActivationConfig;
+use crate::database::mutations::activation_hash as db_activation_hash_mutations;
+use crate::database::mutations::user as db_user_mutations;
+use crate::database::read::activation_hash as db_activation_hash;
+use crate::database::read::user as db_user;
+use crate::database::AppState;
 use std::collections::HashMap;
 
 /// Email Controller
@@ -88,7 +88,7 @@ impl EmailController {
             Some(email) if !email.trim().is_empty() => email.trim().to_string(),
             _ => {
                 return HttpResponse::BadRequest().json(MissingFieldsResponse::new(vec![
-                    "new_email is required".to_string()
+                    "new_email is required".to_string(),
                 ]));
             }
         };
@@ -125,8 +125,9 @@ impl EmailController {
 
         // Check if new email is the same as current email
         if user.email.to_lowercase() == new_email.to_lowercase() {
-            return HttpResponse::BadRequest()
-                .json(BaseResponse::error("New email cannot be the same as current email"));
+            return HttpResponse::BadRequest().json(BaseResponse::error(
+                "New email cannot be the same as current email",
+            ));
         }
 
         // Check if new email is already in use
@@ -234,7 +235,7 @@ impl EmailController {
             Some(c) if !c.trim().is_empty() => c.trim(),
             _ => {
                 return HttpResponse::BadRequest().json(MissingFieldsResponse::new(vec![
-                    "code is required".to_string()
+                    "code is required".to_string(),
                 ]));
             }
         };
@@ -242,16 +243,20 @@ impl EmailController {
         let db = state.db.lock().await;
 
         // Get the activation hash
-        let activation_hash =
-            match db_activation_hash::get_by_hash_and_type(&db, code, "email_change", user_id).await
-            {
-                Ok(hash) => hash,
-                Err(_) => {
-                    return HttpResponse::NotFound().json(BaseResponse::error(
-                        "Invalid or expired verification code",
-                    ));
-                }
-            };
+        let activation_hash = match db_activation_hash::get_by_hash_and_type(
+            &db,
+            code,
+            "email_change",
+            user_id,
+        )
+        .await
+        {
+            Ok(hash) => hash,
+            Err(_) => {
+                return HttpResponse::NotFound()
+                    .json(BaseResponse::error("Invalid or expired verification code"));
+            }
+        };
 
         // Parse metadata to get emails
         let old_email = match activation_hash.metadata.get("old_email") {
@@ -387,7 +392,7 @@ impl EmailController {
             Some(c) if !c.trim().is_empty() => c.trim(),
             _ => {
                 return HttpResponse::BadRequest().json(MissingFieldsResponse::new(vec![
-                    "code is required".to_string()
+                    "code is required".to_string(),
                 ]));
             }
         };
@@ -395,16 +400,20 @@ impl EmailController {
         let db = state.db.lock().await;
 
         // Get the activation hash
-        let activation_hash =
-            match db_activation_hash::get_by_hash_and_type(&db, code, "email_change", user_id).await
-            {
-                Ok(hash) => hash,
-                Err(_) => {
-                    return HttpResponse::NotFound().json(BaseResponse::error(
-                        "Invalid or expired verification code",
-                    ));
-                }
-            };
+        let activation_hash = match db_activation_hash::get_by_hash_and_type(
+            &db,
+            code,
+            "email_change",
+            user_id,
+        )
+        .await
+        {
+            Ok(hash) => hash,
+            Err(_) => {
+                return HttpResponse::NotFound()
+                    .json(BaseResponse::error("Invalid or expired verification code"));
+            }
+        };
 
         // Parse metadata to get new email
         let old_email = match activation_hash.metadata.get("old_email") {

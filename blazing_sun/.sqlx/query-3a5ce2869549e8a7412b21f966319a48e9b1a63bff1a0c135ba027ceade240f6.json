@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            sp.name AS property_name,\n            sp.label AS property_label,\n            sp.description AS property_description,\n            spe.expected_type,\n            st.is_data_type AS expected_is_data_type\n        FROM schema_type_properties stp\n        JOIN schema_properties sp ON sp.name = stp.property_name\n        LEFT JOIN schema_property_expected_types spe ON spe.property_name = sp.name\n        LEFT JOIN schema_types st ON st.name = spe.expected_type\n        WHERE stp.type_name = $1\n        ORDER BY sp.name ASC, spe.expected_type ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "property_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "property_label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "property_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "expected_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "expected_is_data_type",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3a5ce2869549e8a7412b21f966319a48e9b1a63bff1a0c135ba027ceade240f6"
+}

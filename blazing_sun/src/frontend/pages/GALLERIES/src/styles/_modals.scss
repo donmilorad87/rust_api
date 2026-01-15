@@ -193,6 +193,40 @@
   }
 }
 
+.geo-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+
+  .btn {
+    white-space: nowrap;
+  }
+}
+
+.cover-preview {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+
+  img {
+    width: 120px;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid var(--card-border, #e5e7eb);
+  }
+}
+
+@media (max-width: 640px) {
+  .geo-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
 // Button styles
 .btn {
   display: inline-flex;
@@ -492,6 +526,13 @@
   gap: 0.75rem;
   justify-content: flex-end;
   margin-top: 1.5rem;
+}
+
+.upload-options {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 // Image lightbox for editing metadata

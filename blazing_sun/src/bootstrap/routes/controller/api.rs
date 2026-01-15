@@ -102,14 +102,17 @@ pub fn register_route(name: &str, path: &str) {
 /// let url = route_with_lang("user.show", "en", Some(&params));
 /// // Returns: Some("/api/v1/user/123")
 /// ```
-pub fn route_with_lang(name: &str, lang: &str, params: Option<&HashMap<String, String>>) -> Option<String> {
+pub fn route_with_lang(
+    name: &str,
+    lang: &str,
+    params: Option<&HashMap<String, String>>,
+) -> Option<String> {
     let registry = ROUTE_REGISTRY.read().ok()?;
     let map = registry.as_ref()?;
     let lang_map = map.get(name)?;
 
     // Try requested language first, then fall back to default
-    let path = lang_map.get(lang)
-        .or_else(|| lang_map.get(DEFAULT_LANG))?;
+    let path = lang_map.get(lang).or_else(|| lang_map.get(DEFAULT_LANG))?;
 
     if let Some(params) = params {
         let mut result = path.clone();
@@ -148,7 +151,11 @@ pub fn route_url(name: &str, params: Option<&HashMap<String, String>>) -> Option
 }
 
 /// Get route URL by name with language (convenience wrapper)
-pub fn route_url_lang(name: &str, lang: &str, params: Option<&HashMap<String, String>>) -> Option<String> {
+pub fn route_url_lang(
+    name: &str,
+    lang: &str,
+    params: Option<&HashMap<String, String>>,
+) -> Option<String> {
     route_with_lang(name, lang, params)
 }
 
@@ -160,6 +167,12 @@ pub fn get_route_languages(name: &str) -> Option<HashMap<String, String>> {
     let registry = ROUTE_REGISTRY.read().ok()?;
     let map = registry.as_ref()?;
     map.get(name).cloned()
+}
+
+/// Get a snapshot of the full route registry (name -> lang -> path)
+pub fn get_route_registry_snapshot() -> Option<HashMap<String, HashMap<String, String>>> {
+    let registry = ROUTE_REGISTRY.read().ok()?;
+    registry.as_ref().cloned()
 }
 
 /// Check if a route exists for a given name and language
@@ -222,9 +235,18 @@ mod tests {
         register_route_with_lang(route_name, "/registrazione", "it");
         register_route_with_lang(route_name, "/inscription", "fr");
 
-        assert_eq!(route_with_lang(route_name, "en", None), Some("/sign-up".to_string()));
-        assert_eq!(route_with_lang(route_name, "it", None), Some("/registrazione".to_string()));
-        assert_eq!(route_with_lang(route_name, "fr", None), Some("/inscription".to_string()));
+        assert_eq!(
+            route_with_lang(route_name, "en", None),
+            Some("/sign-up".to_string())
+        );
+        assert_eq!(
+            route_with_lang(route_name, "it", None),
+            Some("/registrazione".to_string())
+        );
+        assert_eq!(
+            route_with_lang(route_name, "fr", None),
+            Some("/inscription".to_string())
+        );
     }
 
     #[test]

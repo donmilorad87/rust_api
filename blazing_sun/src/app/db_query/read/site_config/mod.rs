@@ -18,11 +18,11 @@ pub struct SiteConfig {
     pub identity_color_end: String,
     pub identity_size: String,
     pub logo_uuid: Option<Uuid>,
-    pub logo_id: Option<i64>,  // NEW: ID-based logo reference (replaces logo_uuid)
-    pub logo_storage_type: Option<String>,  // Storage type from uploads table
+    pub logo_id: Option<i64>, // NEW: ID-based logo reference (replaces logo_uuid)
+    pub logo_storage_type: Option<String>, // Storage type from uploads table
     pub favicon_uuid: Option<Uuid>,
-    pub favicon_id: Option<i64>,  // NEW: ID-based favicon reference (replaces favicon_uuid)
-    pub favicon_storage_type: Option<String>,  // Storage type from uploads table
+    pub favicon_id: Option<i64>, // NEW: ID-based favicon reference (replaces favicon_uuid)
+    pub favicon_storage_type: Option<String>, // Storage type from uploads table
     // Theme variables
     pub scss_variables: serde_json::Value,
     pub theme_light: serde_json::Value,
@@ -106,7 +106,9 @@ pub async fn get(db: &Pool<Postgres>) -> Result<SiteConfig, sqlx::Error> {
 }
 
 /// Get only the build status (lightweight query for polling)
-pub async fn get_build_status(db: &Pool<Postgres>) -> Result<(Option<String>, Option<String>), sqlx::Error> {
+pub async fn get_build_status(
+    db: &Pool<Postgres>,
+) -> Result<(Option<String>, Option<String>), sqlx::Error> {
     let record = sqlx::query!(
         r#"
         SELECT last_build_status, last_build_error
@@ -158,9 +160,9 @@ pub struct BrandingInfo {
     pub identity_color_end: String,
     pub identity_size: String,
     pub logo_uuid: Option<Uuid>,
-    pub logo_id: Option<i64>,  // NEW: ID-based logo reference
+    pub logo_id: Option<i64>, // NEW: ID-based logo reference
     pub favicon_uuid: Option<Uuid>,
-    pub favicon_id: Option<i64>,  // NEW: ID-based favicon reference
+    pub favicon_id: Option<i64>, // NEW: ID-based favicon reference
     pub logo_stored_name: Option<String>,
     pub favicon_stored_name: Option<String>,
     pub logo_storage_type: Option<String>,
@@ -169,11 +171,9 @@ pub struct BrandingInfo {
 
 /// Get current assets version
 pub async fn get_assets_version(db: &Pool<Postgres>) -> Result<String, sqlx::Error> {
-    let record = sqlx::query!(
-        r#"SELECT assets_version FROM site_config LIMIT 1"#
-    )
-    .fetch_one(db)
-    .await?;
+    let record = sqlx::query!(r#"SELECT assets_version FROM site_config LIMIT 1"#)
+        .fetch_one(db)
+        .await?;
 
     Ok(record.assets_version)
 }

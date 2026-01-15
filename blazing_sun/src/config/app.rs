@@ -5,6 +5,7 @@ pub struct AppConfig {
     pub port: u16,
     pub rust_log: String,
     pub app_url: String,
+    pub checkout_service_token: String,
     /// Version string for CSS and JavaScript assets (e.g., "1.0.43")
     /// Used as query parameter: /assets/css/PAGE/style.css?v=1.0.43
     /// Update this when CSS/JS files change to bust browser cache.
@@ -19,18 +20,16 @@ pub static APP: Lazy<AppConfig> = Lazy::new(|| {
     dotenv::dotenv().ok();
 
     AppConfig {
-        host: std::env::var("HOST")
-            .unwrap_or_else(|_| "0.0.0.0".to_string()),
+        host: std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
         port: std::env::var("PORT")
             .unwrap_or_else(|_| "8888".to_string())
             .parse()
             .expect("PORT must be a valid number"),
-        rust_log: std::env::var("RUST_LOG")
-            .unwrap_or_else(|_| "info".to_string()),
-        app_url: std::env::var("APP_URL")
-            .unwrap_or_else(|_| "http://localhost:8888".to_string()),
-        assets_version: std::env::var("ASSETS_VERSION")
-            .unwrap_or_else(|_| "1.0.0".to_string()),
+        rust_log: std::env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string()),
+        app_url: std::env::var("APP_URL").unwrap_or_else(|_| "http://localhost:8888".to_string()),
+        checkout_service_token: std::env::var("CHECKOUT_SERVICE_TOKEN")
+            .unwrap_or_else(|_| "".to_string()),
+        assets_version: std::env::var("ASSETS_VERSION").unwrap_or_else(|_| "1.0.0".to_string()),
         images_assets_version: std::env::var("IMAGES_ASSETS_VERSION")
             .unwrap_or_else(|_| "1.0.0".to_string()),
     }
@@ -51,6 +50,10 @@ impl AppConfig {
 
     pub fn app_url() -> &'static str {
         &APP.app_url
+    }
+
+    pub fn checkout_service_token() -> &'static str {
+        &APP.checkout_service_token
     }
 
     /// Get the current assets version (CSS/JS)

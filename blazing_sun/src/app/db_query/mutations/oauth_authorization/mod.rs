@@ -92,10 +92,7 @@ pub async fn mark_authorization_code_used(
 }
 
 /// Delete authorization code
-pub async fn delete_authorization_code(
-    db: &Pool<Postgres>,
-    code: &str,
-) -> Result<(), sqlx::Error> {
+pub async fn delete_authorization_code(db: &Pool<Postgres>, code: &str) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         DELETE FROM oauth_authorization_codes

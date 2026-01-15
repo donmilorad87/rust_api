@@ -11,7 +11,10 @@ pub struct DeletePictureParams {
     pub client_id: String,
 }
 
-pub async fn execute(db: &Pool<Postgres>, params: &DeletePictureParams) -> Result<serde_json::Value, String> {
+pub async fn execute(
+    db: &Pool<Postgres>,
+    params: &DeletePictureParams,
+) -> Result<serde_json::Value, String> {
     let client = match db_read::oauth_client::get_by_client_id(db, &params.client_id).await {
         Ok(record) => record,
         Err(sqlx::Error::RowNotFound) => {
@@ -26,9 +29,10 @@ pub async fn execute(db: &Pool<Postgres>, params: &DeletePictureParams) -> Resul
         Err(e) => return Err(format!("Failed to fetch OAuth client: {}", e)),
     };
 
-    let has_scope = db_read::oauth_scope::client_has_scope_by_name(db, client.id, "galleries.delete")
-        .await
-        .map_err(|e| format!("Failed to check client scopes: {}", e))?;
+    let has_scope =
+        db_read::oauth_scope::client_has_scope_by_name(db, client.id, "galleries.delete")
+            .await
+            .map_err(|e| format!("Failed to check client scopes: {}", e))?;
 
     if !has_scope {
         return Ok(json!({

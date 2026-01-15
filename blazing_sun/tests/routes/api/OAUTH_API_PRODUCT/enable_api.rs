@@ -11,8 +11,8 @@ use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::Deserialize;
 
-use blazing_sun::app::db_query::read::oauth_scope as db_read_oauth_scope;
 use crate::routes::api::helpers::ensure_test_user;
+use blazing_sun::app::db_query::read::oauth_scope as db_read_oauth_scope;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -114,7 +114,12 @@ async fn test_enable_api_auto_grants_scopes() {
                 .and_then(|s| s.as_array())
                 .into_iter()
                 .flatten()
-                .filter_map(|scope| scope.get("scope_name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+                .filter_map(|scope| {
+                    scope
+                        .get("scope_name")
+                        .and_then(|n| n.as_str())
+                        .map(|s| s.to_string())
+                })
         })
         .collect();
 

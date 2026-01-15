@@ -1,0 +1,66 @@
+/**
+ * GAMES Page Variables
+ *
+ * CSS variables and design tokens for the games page
+ */
+
+:root {
+  // Layout
+  --games-max-width: 1200px;
+  --games-padding: 2rem;
+  --games-gap: 1.5rem;
+
+  // Lobby Grid
+  --room-card-min-width: 300px;
+  --room-card-aspect-ratio: 16 / 9;
+
+  // Colors
+  --games-card-bg: var(--card-bg, #ffffff);
+  --games-card-border: var(--card-border, #e5e7eb);
+  --games-card-hover-shadow: var(--shadow-lg, 0 10px 15px rgba(0, 0, 0, 0.1));
+
+  // Game Status Colors
+  --status-waiting: #f59e0b;
+  --status-in-progress: #10b981;
+  --status-finished: #6b7280;
+  --status-abandoned: #ef4444;
+
+  // Dice Colors
+  --dice-bg: var(--card-bg, #ffffff);
+  --dice-border: var(--border-color, #d1d5db);
+  --dice-dot: var(--text-primary, #111827);
+  --dice-rolling-bg: color-mix(in srgb, var(--color-accent) 10%, var(--card-bg));
+
+  // Player Colors
+  --player-1-color: #3b82f6;
+  --player-2-color: #ef4444;
+  --spectator-color: #8b5cf6;
+
+  // Turn Indicator
+  --turn-active-bg: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  --turn-active-border: var(--color-accent, #3b82f6);
+
+  // Transitions
+  --games-transition-fast: 150ms ease;
+  --games-transition-normal: 250ms ease;
+  --games-transition-slow: 400ms ease;
+
+  // Chat
+  --chat-height: 300px;
+  --chat-message-bg: var(--table-row-alt-bg, #f9fafb);
+  --chat-system-color: var(--text-muted, #9ca3af);
+
+  // Connection Status
+  --connection-connected: #10b981;
+  --connection-connecting: #f59e0b;
+  --connection-disconnected: #ef4444;
+}
+
+// Dark mode adjustments
+@media (prefers-color-scheme: dark) {
+  :root {
+    --games-card-bg: var(--card-bg, #1f2937);
+    --games-card-border: var(--card-border, #374151);
+    --dice-rolling-bg: color-mix(in srgb, var(--color-accent) 20%, var(--card-bg));
+  }
+}

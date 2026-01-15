@@ -1,0 +1,251 @@
+// ============================================
+// Language Dropdown Component Styles
+// ============================================
+// A dropdown for selecting site language
+// Supports hreflang navigation and client-side translation
+
+.language-dropdown {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-family-base);
+
+  // Trigger button
+  &__trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--input-border, #d1d5db);
+    border-radius: 0.5rem;
+    color: var(--text-primary, #1f2937);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 120px;
+
+    &:hover {
+      background: var(--card-bg-hover, #f9fafb);
+      border-color: var(--input-border-hover, #9ca3af);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-accent, #667eea);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    }
+
+    &[aria-expanded="true"] {
+      border-color: var(--color-accent, #667eea);
+
+      .language-dropdown__arrow {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  // Flag icon (emoji or image)
+  &__flag {
+    font-size: 1.125rem;
+    line-height: 1;
+    flex-shrink: 0;
+
+    // Image flag from database
+    &--image {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      border-radius: 2px;
+    }
+  }
+
+  // Current language text
+  &__current {
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Arrow icon
+  &__arrow {
+    flex-shrink: 0;
+    color: var(--text-secondary, #6b7280);
+    transition: transform 0.2s ease;
+  }
+
+  // Dropdown menu
+  &__menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    min-width: 160px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--input-border, #d1d5db);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    padding: 0.25rem;
+    margin: 0;
+    list-style: none;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s ease;
+
+    // Scrollbar styling
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--text-muted, #9ca3af);
+      border-radius: 3px;
+    }
+  }
+
+  // Menu item
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    color: var(--text-primary, #1f2937);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--card-bg-hover, #f3f4f6);
+    }
+
+    &:focus {
+      outline: none;
+      background: var(--card-bg-hover, #f3f4f6);
+      box-shadow: inset 0 0 0 2px var(--color-accent, #667eea);
+    }
+
+    &--selected {
+      background: color-mix(in srgb, var(--color-accent, #667eea) 10%, transparent);
+      color: var(--color-accent, #667eea);
+      font-weight: 600;
+
+      &:hover {
+        background: color-mix(in srgb, var(--color-accent, #667eea) 15%, transparent);
+      }
+    }
+  }
+
+  // Language name
+  &__name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Checkmark for selected item
+  &__check {
+    flex-shrink: 0;
+    color: var(--color-accent, #667eea);
+  }
+
+  // Open state
+  &--open {
+    .language-dropdown__menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+  }
+}
+
+// Compact variant (for navbar use)
+.language-dropdown--compact {
+  .language-dropdown__trigger {
+    padding: 0.375rem 0.625rem;
+    min-width: auto;
+    gap: 0.375rem;
+  }
+
+  .language-dropdown__current {
+    display: none;
+
+    @media (min-width: 640px) {
+      display: block;
+    }
+  }
+
+  .language-dropdown__flag {
+    font-size: 1.25rem;
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .language-dropdown {
+    &__trigger {
+      background: var(--card-bg, #1f2937);
+      border-color: var(--input-border, #374151);
+      color: var(--text-primary, #f9fafb);
+
+      &:hover {
+        background: var(--card-bg-hover, #374151);
+        border-color: var(--input-border-hover, #4b5563);
+      }
+    }
+
+    &__menu {
+      background: var(--card-bg, #1f2937);
+      border-color: var(--input-border, #374151);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
+                  0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    }
+
+    &__item {
+      color: var(--text-primary, #f9fafb);
+
+      &:hover,
+      &:focus {
+        background: var(--card-bg-hover, #374151);
+      }
+    }
+  }
+}
+
+// Position variants
+.language-dropdown--right {
+  .language-dropdown__menu {
+    left: auto;
+    right: 0;
+  }
+}
+
+.language-dropdown--up {
+  .language-dropdown__menu {
+    top: auto;
+    bottom: calc(100% + 4px);
+    transform: translateY(8px);
+  }
+
+  &.language-dropdown--open .language-dropdown__menu {
+    transform: translateY(0);
+  }
+}
+
+// Hide the language dropdown data source
+// Uses separate ID to avoid conflict with admin languagesTable
+#languageDropdownData {
+  display: none !important;
+}

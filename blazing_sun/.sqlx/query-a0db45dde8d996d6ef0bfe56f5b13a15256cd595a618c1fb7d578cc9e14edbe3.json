@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH RECURSIVE ancestry AS (\n            SELECT\n                stp.type_name,\n                stp.parent_name,\n                ARRAY[stp.type_name] AS path\n            FROM schema_type_parents stp\n            WHERE stp.type_name = $1\n\n            UNION ALL\n\n            SELECT\n                stp.type_name,\n                stp.parent_name,\n                ancestry.path || stp.parent_name\n            FROM schema_type_parents stp\n            JOIN ancestry ON stp.type_name = ancestry.parent_name\n        )\n        SELECT path\n        FROM ancestry\n        WHERE parent_name IS NULL OR parent_name = 'Thing'\n        ORDER BY array_length(path, 1) ASC\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "path",
+        "type_info": "TextArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "a0db45dde8d996d6ef0bfe56f5b13a15256cd595a618c1fb7d578cc9e14edbe3"
+}

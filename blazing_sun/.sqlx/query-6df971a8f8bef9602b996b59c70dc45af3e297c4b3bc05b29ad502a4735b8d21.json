@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE page_hreflangs\n            SET\n                lang_code = $2,\n                url = $3,\n                is_default = $4,\n                updated_at = NOW()\n            WHERE id = $1 AND page_seo_id = $5\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6df971a8f8bef9602b996b59c70dc45af3e297c4b3bc05b29ad502a4735b8d21"
+}

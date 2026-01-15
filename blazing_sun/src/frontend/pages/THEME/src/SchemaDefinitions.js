@@ -1053,6 +1053,21 @@ export function getSchemasForCategory(category) {
     .map(s => s.type);
 }
 
+export function getSchemaChildren(category) {
+  if (!category) return [];
+  return SCHEMA_TYPES.filter(schema => schema.category === category).map(schema => ({
+    type: schema.type,
+    label: schema.label,
+    description: schema.description,
+    has_children: false
+  }));
+}
+
+export function hasSchemaChildren(category) {
+  if (!category) return false;
+  return SCHEMA_TYPES.some(schema => schema.category === category);
+}
+
 /**
  * Build JSON-LD output from schema data
  * @param {string} type - Schema.org @type
@@ -1085,5 +1100,7 @@ export default {
   getSchemasByCategory,
   getSchemaType,
   getSchemasForCategory,
-  buildJsonLd
+  buildJsonLd,
+  getSchemaChildren,
+  hasSchemaChildren
 };

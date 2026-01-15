@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Games - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/GAMES/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="games-hub">
+    <header class="games-hub__header">
+        <h1 class="games-hub__title">Game Lobby</h1>
+        <p class="games-hub__subtitle">Choose a game to play</p>
+    </header>
+
+    <section class="games-hub__grid">
+        <!-- Bigger Dice Game Card -->
+        <a href="{{ route(name='web.games.bigger_dice_lobby') }}" class="game-card">
+            <div class="game-card__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <rect x="2" y="2" width="20" height="20" rx="3" ry="3"></rect>
+                    <circle cx="8" cy="8" r="1.5" fill="currentColor"></circle>
+                    <circle cx="16" cy="8" r="1.5" fill="currentColor"></circle>
+                    <circle cx="8" cy="16" r="1.5" fill="currentColor"></circle>
+                    <circle cx="16" cy="16" r="1.5" fill="currentColor"></circle>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+                </svg>
+            </div>
+            <div class="game-card__content">
+                <h2 class="game-card__title">Bigger Dice</h2>
+                <p class="game-card__description">Roll dice against your opponent. Higher roll wins the round. First to 10 points wins!</p>
+            </div>
+            <div class="game-card__meta">
+                <span class="game-card__players">2 Players</span>
+                <span class="game-card__badge">Popular</span>
+            </div>
+        </a>
+
+        <!-- Coming Soon Cards -->
+        <div class="game-card game-card--disabled">
+            <div class="game-card__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+            </div>
+            <div class="game-card__content">
+                <h2 class="game-card__title">Tic Tac Toe</h2>
+                <p class="game-card__description">Classic strategy game. Get three in a row to win.</p>
+            </div>
+            <div class="game-card__meta">
+                <span class="game-card__players">2 Players</span>
+                <span class="game-card__badge game-card__badge--soon">Coming Soon</span>
+            </div>
+        </div>
+
+        <div class="game-card game-card--disabled">
+            <div class="game-card__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+            </div>
+            <div class="game-card__content">
+                <h2 class="game-card__title">Speed Match</h2>
+                <p class="game-card__description">Test your reflexes in this fast-paced matching game.</p>
+            </div>
+            <div class="game-card__meta">
+                <span class="game-card__players">1-4 Players</span>
+                <span class="game-card__badge game-card__badge--soon">Coming Soon</span>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/GAMES/app.js?v={{ assets_version }}"></script>
+{% endblock %}

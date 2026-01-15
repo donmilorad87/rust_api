@@ -165,7 +165,7 @@ export class PasswordChange {
         // Backend clears the HttpOnly auth cookie in the response
         // Redirect to sign-in page for re-authentication
         setTimeout(() => {
-          window.location.href = '/sign-in';
+          window.location.href = '/sign_in';
         }, 1500);
       } else {
         this.handleApiError(result);

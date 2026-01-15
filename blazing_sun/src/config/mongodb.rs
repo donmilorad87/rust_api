@@ -22,14 +22,18 @@ pub static MONGODB: Lazy<MongoDbConfig> = Lazy::new(|| {
         .expect("MONGO_PORT must be a valid number");
     let user = std::env::var("MONGO_USER").unwrap_or_else(|_| "app".to_string());
     let password = std::env::var("MONGO_PASSWORD").unwrap_or_else(|_| "".to_string());
-    let database = std::env::var("MONGO_INITDB_DATABASE").unwrap_or_else(|_| "blazing_sun".to_string());
+    let database =
+        std::env::var("MONGO_INITDB_DATABASE").unwrap_or_else(|_| "blazing_sun".to_string());
 
     // Build URL from components if MONGO_URL not provided
     let url = std::env::var("MONGO_URL").unwrap_or_else(|_| {
         if password.is_empty() {
             format!("mongodb://{}:{}/{}", host, port, database)
         } else {
-            format!("mongodb://{}:{}@{}:{}/{}", user, password, host, port, database)
+            format!(
+                "mongodb://{}:{}@{}:{}/{}",
+                user, password, host, port, database
+            )
         }
     });
 

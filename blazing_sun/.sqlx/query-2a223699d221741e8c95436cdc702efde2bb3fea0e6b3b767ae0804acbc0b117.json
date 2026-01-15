@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT player_count, allow_spectators, max_spectators, lobby_chat_enabled\n        FROM game_rooms\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "player_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "allow_spectators",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "max_spectators",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "lobby_chat_enabled",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "2a223699d221741e8c95436cdc702efde2bb3fea0e6b3b767ae0804acbc0b117"
+}

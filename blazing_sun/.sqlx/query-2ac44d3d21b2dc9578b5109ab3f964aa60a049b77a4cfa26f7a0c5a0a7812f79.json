@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO schema_entities (schema_id, lang_code, schema_type, schema_data, schema_hash)\n        VALUES ($1, $2, $3, $4, $5)\n        ON CONFLICT (lang_code, schema_id)\n        DO UPDATE SET\n            schema_type = EXCLUDED.schema_type,\n            schema_data = EXCLUDED.schema_data,\n            schema_hash = EXCLUDED.schema_hash,\n            updated_at = NOW()\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Text",
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2ac44d3d21b2dc9578b5109ab3f964aa60a049b77a4cfa26f7a0c5a0a7812f79"
+}

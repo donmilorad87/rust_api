@@ -37,7 +37,10 @@ pub async fn update_logo(db: &Pool<Postgres>, logo_uuid: Option<Uuid>) -> Result
 /// Update favicon UUID and favicon ID
 /// When a UUID is provided, automatically populates favicon_id from the uploads table
 /// This maintains consistency between UUID-based and ID-based references
-pub async fn update_favicon(db: &Pool<Postgres>, favicon_uuid: Option<Uuid>) -> Result<(), sqlx::Error> {
+pub async fn update_favicon(
+    db: &Pool<Postgres>,
+    favicon_uuid: Option<Uuid>,
+) -> Result<(), sqlx::Error> {
     // Update both UUID and ID columns in a single query
     // If UUID is NULL, set ID to NULL as well
     // If UUID is provided, look up the corresponding ID from uploads table
@@ -92,10 +95,7 @@ pub async fn update_theme_light(
 }
 
 /// Update dark theme CSS custom properties
-pub async fn update_theme_dark(
-    db: &Pool<Postgres>,
-    theme_dark: &Value,
-) -> Result<(), sqlx::Error> {
+pub async fn update_theme_dark(db: &Pool<Postgres>, theme_dark: &Value) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"UPDATE site_config SET theme_dark = $1 WHERE true"#,
         theme_dark
@@ -133,12 +133,9 @@ pub async fn update_themes(
     }
 
     if let Some(dark) = theme_dark {
-        sqlx::query!(
-            r#"UPDATE site_config SET theme_dark = $1 WHERE true"#,
-            dark
-        )
-        .execute(db)
-        .await?;
+        sqlx::query!(r#"UPDATE site_config SET theme_dark = $1 WHERE true"#, dark)
+            .execute(db)
+            .await?;
     }
 
     Ok(())
@@ -160,10 +157,7 @@ pub async fn set_build_started(db: &Pool<Postgres>) -> Result<(), sqlx::Error> {
 }
 
 /// Mark build as successful
-pub async fn set_build_success(
-    db: &Pool<Postgres>,
-    new_version: &str,
-) -> Result<(), sqlx::Error> {
+pub async fn set_build_success(db: &Pool<Postgres>, new_version: &str) -> Result<(), sqlx::Error> {
     let now = Utc::now();
     sqlx::query!(
         r#"
@@ -184,10 +178,7 @@ pub async fn set_build_success(
 }
 
 /// Mark build as failed
-pub async fn set_build_failed(
-    db: &Pool<Postgres>,
-    error_message: &str,
-) -> Result<(), sqlx::Error> {
+pub async fn set_build_failed(db: &Pool<Postgres>, error_message: &str) -> Result<(), sqlx::Error> {
     let now = Utc::now();
     sqlx::query!(
         r#"
@@ -207,10 +198,7 @@ pub async fn set_build_failed(
 }
 
 /// Update assets version directly
-pub async fn update_assets_version(
-    db: &Pool<Postgres>,
-    version: &str,
-) -> Result<(), sqlx::Error> {
+pub async fn update_assets_version(db: &Pool<Postgres>, version: &str) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"UPDATE site_config SET assets_version = $1 WHERE true"#,
         version
@@ -370,12 +358,9 @@ pub async fn update_full(
     }
 
     if let Some(ref dark) = params.theme_dark {
-        sqlx::query!(
-            r#"UPDATE site_config SET theme_dark = $1 WHERE true"#,
-            dark
-        )
-        .execute(db)
-        .await?;
+        sqlx::query!(r#"UPDATE site_config SET theme_dark = $1 WHERE true"#, dark)
+            .execute(db)
+            .await?;
     }
 
     Ok(())

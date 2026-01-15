@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id,\n            lang_code,\n            from_schema_id,\n            property,\n            to_schema_id,\n            created_at\n        FROM entity_relations\n        WHERE lang_code = $1 AND from_schema_id = $2\n        ORDER BY id ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "lang_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "from_schema_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "property",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "to_schema_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "6dbea511caf0e76bbb2e13eaf743b4ec0be47ae0d69bd8221b4a85e332c9ca08"
+}

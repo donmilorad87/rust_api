@@ -33,7 +33,10 @@ pub struct CreateUserAdminParams {
     pub activated: i16,
 }
 
-pub async fn create_admin(db: &Pool<Postgres>, params: &CreateUserAdminParams) -> Result<i64, sqlx::Error> {
+pub async fn create_admin(
+    db: &Pool<Postgres>,
+    params: &CreateUserAdminParams,
+) -> Result<i64, sqlx::Error> {
     let hashed_password = bcrypt::hash(&params.password, bcrypt::DEFAULT_COST).unwrap();
 
     let result = sqlx::query!(
@@ -61,7 +64,11 @@ pub struct UpdateUserFullParams {
     pub password: Option<String>,
 }
 
-pub async fn update_full(db: &Pool<Postgres>, user_id: i64, params: &UpdateUserFullParams) -> Result<(), sqlx::Error> {
+pub async fn update_full(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    params: &UpdateUserFullParams,
+) -> Result<(), sqlx::Error> {
     // Update first_name and last_name
     sqlx::query!(
         "UPDATE users SET first_name = $1, last_name = $2, updated_at = NOW() WHERE id = $3",
@@ -107,36 +114,60 @@ pub struct UpdateUserPartialParams {
     pub password: Option<String>,
 }
 
-pub async fn update_partial(db: &Pool<Postgres>, user_id: i64, params: &UpdateUserPartialParams) -> Result<(), sqlx::Error> {
+pub async fn update_partial(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    params: &UpdateUserPartialParams,
+) -> Result<(), sqlx::Error> {
     // Update each field individually if present
     // (SQLx requires compile-time checked queries, so we can't build dynamic SQL)
     if let Some(ref first_name) = params.first_name {
-        sqlx::query!("UPDATE users SET first_name = $1, updated_at = NOW() WHERE id = $2", first_name, user_id)
-            .execute(db)
-            .await?;
+        sqlx::query!(
+            "UPDATE users SET first_name = $1, updated_at = NOW() WHERE id = $2",
+            first_name,
+            user_id
+        )
+        .execute(db)
+        .await?;
     }
     if let Some(ref last_name) = params.last_name {
-        sqlx::query!("UPDATE users SET last_name = $1, updated_at = NOW() WHERE id = $2", last_name, user_id)
-            .execute(db)
-            .await?;
+        sqlx::query!(
+            "UPDATE users SET last_name = $1, updated_at = NOW() WHERE id = $2",
+            last_name,
+            user_id
+        )
+        .execute(db)
+        .await?;
     }
     if let Some(balance) = params.balance {
-        sqlx::query!("UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2", balance, user_id)
-            .execute(db)
-            .await?;
+        sqlx::query!(
+            "UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2",
+            balance,
+            user_id
+        )
+        .execute(db)
+        .await?;
     }
     if let Some(ref password) = params.password {
         let hashed_password = bcrypt::hash(password, bcrypt::DEFAULT_COST).unwrap();
-        sqlx::query!("UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2", &hashed_password, user_id)
-            .execute(db)
-            .await?;
+        sqlx::query!(
+            "UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2",
+            &hashed_password,
+            user_id
+        )
+        .execute(db)
+        .await?;
     }
 
     Ok(())
 }
 
 /// Update user password (for password reset flows)
-pub async fn update_password(db: &Pool<Postgres>, user_id: i64, password: &str) -> Result<(), sqlx::Error> {
+pub async fn update_password(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    password: &str,
+) -> Result<(), sqlx::Error> {
     let hashed_password = bcrypt::hash(password, bcrypt::DEFAULT_COST).unwrap();
     sqlx::query!(
         "UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2",
@@ -149,7 +180,11 @@ pub async fn update_password(db: &Pool<Postgres>, user_id: i64, password: &str) 
 }
 
 /// Update user email address (for email change flows with verification)
-pub async fn update_email(db: &Pool<Postgres>, user_id: i64, new_email: &str) -> Result<(), sqlx::Error> {
+pub async fn update_email(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    new_email: &str,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         "UPDATE users SET email = $1, updated_at = NOW() WHERE id = $2",
         new_email,
@@ -161,7 +196,11 @@ pub async fn update_email(db: &Pool<Postgres>, user_id: i64, new_email: &str) ->
 }
 
 /// Set user activated flag
-pub async fn set_activated(db: &Pool<Postgres>, user_id: i64, activated: i16) -> Result<(), sqlx::Error> {
+pub async fn set_activated(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    activated: i16,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         "UPDATE users SET activated = $1, updated_at = NOW() WHERE id = $2",
         activated,
@@ -173,7 +212,11 @@ pub async fn set_activated(db: &Pool<Postgres>, user_id: i64, activated: i16) ->
 }
 
 /// Set user_must_set_password flag
-pub async fn set_user_must_set_password(db: &Pool<Postgres>, user_id: i64, value: i16) -> Result<(), sqlx::Error> {
+pub async fn set_user_must_set_password(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    value: i16,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         "UPDATE users SET user_must_set_password = $1, updated_at = NOW() WHERE id = $2",
         value,
@@ -185,7 +228,10 @@ pub async fn set_user_must_set_password(db: &Pool<Postgres>, user_id: i64, value
 }
 
 /// Activate user and clear user_must_set_password (for admin-created user password setup)
-pub async fn activate_and_clear_must_set_password(db: &Pool<Postgres>, user_id: i64) -> Result<(), sqlx::Error> {
+pub async fn activate_and_clear_must_set_password(
+    db: &Pool<Postgres>,
+    user_id: i64,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         "UPDATE users SET activated = 1, user_must_set_password = 0, updated_at = NOW() WHERE id = $1",
         user_id
@@ -225,7 +271,11 @@ pub async fn update_avatar(
 }
 
 /// Update user's permissions (admin only)
-pub async fn update_permissions(db: &Pool<Postgres>, user_id: i64, permissions: i16) -> Result<(), sqlx::Error> {
+pub async fn update_permissions(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    permissions: i16,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         "UPDATE users SET permissions = $1, updated_at = NOW() WHERE id = $2",
         permissions,
@@ -233,5 +283,22 @@ pub async fn update_permissions(db: &Pool<Postgres>, user_id: i64, permissions: 
     )
     .execute(db)
     .await?;
+    Ok(())
+}
+
+/// Increment user balance by amount (in cents)
+pub async fn add_balance(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    amount_cents: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        "UPDATE users SET balance = balance + $1, updated_at = NOW() WHERE id = $2",
+        amount_cents,
+        user_id
+    )
+    .execute(db)
+    .await?;
+
     Ok(())
 }

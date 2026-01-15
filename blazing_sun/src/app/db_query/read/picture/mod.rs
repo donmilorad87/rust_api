@@ -15,6 +15,8 @@ pub struct Picture {
     pub upload_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
     pub display_order: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -28,6 +30,8 @@ pub struct PictureWithUpload {
     pub upload_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
     pub display_order: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -47,7 +51,7 @@ pub async fn get_by_id(db: &Pool<Postgres>, picture_id: i64) -> Result<Picture, 
     sqlx::query_as!(
         Picture,
         r#"
-        SELECT id, gallery_id, upload_id, title, description, display_order, created_at, updated_at
+        SELECT id, gallery_id, upload_id, title, description, latitude, longitude, display_order, created_at, updated_at
         FROM pictures
         WHERE id = $1
         "#,
@@ -71,6 +75,8 @@ pub async fn get_by_id_with_upload(
             p.upload_id,
             p.title,
             p.description,
+            p.latitude,
+            p.longitude,
             p.display_order,
             p.created_at,
             p.updated_at,
@@ -100,7 +106,7 @@ pub async fn get_by_gallery(
     sqlx::query_as!(
         Picture,
         r#"
-        SELECT id, gallery_id, upload_id, title, description, display_order, created_at, updated_at
+        SELECT id, gallery_id, upload_id, title, description, latitude, longitude, display_order, created_at, updated_at
         FROM pictures
         WHERE gallery_id = $1
         ORDER BY display_order ASC, created_at DESC
@@ -125,6 +131,8 @@ pub async fn get_by_gallery_with_uploads(
             p.upload_id,
             p.title,
             p.description,
+            p.latitude,
+            p.longitude,
             p.display_order,
             p.created_at,
             p.updated_at,
@@ -163,6 +171,8 @@ pub async fn get_by_gallery_paginated(
             p.upload_id,
             p.title,
             p.description,
+            p.latitude,
+            p.longitude,
             p.display_order,
             p.created_at,
             p.updated_at,
@@ -285,7 +295,7 @@ pub async fn get_by_gallery_and_upload(
     sqlx::query_as!(
         Picture,
         r#"
-        SELECT id, gallery_id, upload_id, title, description, display_order, created_at, updated_at
+        SELECT id, gallery_id, upload_id, title, description, latitude, longitude, display_order, created_at, updated_at
         FROM pictures
         WHERE gallery_id = $1 AND upload_id = $2
         "#,

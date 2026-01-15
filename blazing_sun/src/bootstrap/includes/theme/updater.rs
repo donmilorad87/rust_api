@@ -2,11 +2,11 @@
 //!
 //! Atomic file updates with backup and rollback support.
 
+use chrono::Utc;
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use chrono::Utc;
 
 /// Error type for updater operations
 #[derive(Debug, thiserror::Error)]
@@ -57,7 +57,9 @@ impl Backup {
 
         if let Some(path) = variables_file {
             if path.exists() {
-                let backup_path = self.backup_dir.join(format!("variables_{}.scss", self.timestamp));
+                let backup_path = self
+                    .backup_dir
+                    .join(format!("variables_{}.scss", self.timestamp));
                 fs::copy(path, &backup_path)?;
                 self.variables_backup = Some(backup_path);
             }
@@ -65,7 +67,9 @@ impl Backup {
 
         if let Some(path) = theme_file {
             if path.exists() {
-                let backup_path = self.backup_dir.join(format!("theme_{}.scss", self.timestamp));
+                let backup_path = self
+                    .backup_dir
+                    .join(format!("theme_{}.scss", self.timestamp));
                 fs::copy(path, &backup_path)?;
                 self.theme_backup = Some(backup_path);
             }
@@ -196,35 +200,34 @@ pub fn update_theme_in_string(
     light_theme: &HashMap<String, String>,
     dark_theme: &HashMap<String, String>,
 ) -> Result<String, UpdaterError> {
-    let mut result = content.to_string();
-
     // Process all properties in both themes
-    let all_properties: std::collections::HashSet<_> = light_theme.keys()
-        .chain(dark_theme.keys())
-        .collect();
+    let all_properties: std::collections::HashSet<_> =
+        light_theme.keys().chain(dark_theme.keys()).collect();
 
     for name in all_properties {
         // Convert underscore back to hyphen for CSS property names
         let css_name = name.replace('_', "-");
 
         // Update in :root section (light theme)
-        if let Some(value) = light_theme.get(name) {
-            let pattern = format!(r"(:root\s*\{{[^}}]*)(--{})\s*:\s*[^;]+;", regex::escape(&css_name));
-            if let Ok(re) = Regex::new(&pattern) {
+        if let Some(_value) = light_theme.get(name) {
+            let pattern = format!(
+                r"(:root\s*\{{[^}}]*)(--{})\s*:\s*[^;]+;",
+                regex::escape(&css_name)
+            );
+            if let Ok(_re) = Regex::new(&pattern) {
                 // This is complex because we need to preserve context
                 // Simpler approach: line-by-line replacement
             }
         }
 
         // Update in [data-theme="dark"] section
-        if let Some(value) = dark_theme.get(name) {
+        if let Some(_value) = dark_theme.get(name) {
             // Similar logic for dark theme
         }
     }
 
     // Simpler approach: process line by line with section tracking
-    result = update_theme_line_by_line(content, light_theme, dark_theme)?;
-
+    let result = update_theme_line_by_line(content, light_theme, dark_theme)?;
     Ok(result)
 }
 
@@ -283,13 +286,18 @@ fn update_theme_line_by_line(
             let indent = caps.get(1).map(|m| m.as_str()).unwrap_or("  ");
             let prop_name = caps.get(2).map(|m| m.as_str()).unwrap_or("");
 
-            let theme = if in_dark { dark_theme } else if in_root { light_theme } else { &HashMap::new() };
+            let theme = if in_dark {
+                dark_theme
+            } else if in_root {
+                light_theme
+            } else {
+                &HashMap::new()
+            };
 
             // Try underscore format first (frontend uses this), then hyphen format for backwards compatibility
             // This is important because the database may have BOTH formats, and underscore has the newer value
             let underscore_name = prop_name.replace('-', "_");
-            let new_value = theme.get(&underscore_name)
-                .or_else(|| theme.get(prop_name));
+            let new_value = theme.get(&underscore_name).or_else(|| theme.get(prop_name));
 
             if let Some(value) = new_value {
                 // Replace with new value
@@ -376,7 +384,10 @@ $font-size-base: 1rem;
         light.insert("bg-gradient-start".to_string(), "#old-value".to_string());
 
         let result = update_theme_line_by_line(content, &light, &HashMap::new()).unwrap();
-        assert!(result.contains("--bg-gradient-start: #new-value;"), "Underscore format should take priority");
+        assert!(
+            result.contains("--bg-gradient-start: #new-value;"),
+            "Underscore format should take priority"
+        );
     }
 
     #[test]

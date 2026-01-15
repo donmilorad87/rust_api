@@ -86,8 +86,12 @@ async fn test_bulk_delete_users() {
 
     let token = create_superadmin_token(super_id);
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api))
-        .await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let req = test::TestRequest::post()
         .uri("/api/v1/admin/users/bulk")
@@ -107,8 +111,16 @@ async fn test_bulk_delete_users() {
     assert_eq!(payload.status, "success");
 
     let db = app_state.db.lock().await;
-    assert!(blazing_sun::app::db_query::read::user::get_by_id(&db, user_a).await.is_err());
-    assert!(blazing_sun::app::db_query::read::user::get_by_id(&db, user_b).await.is_err());
+    assert!(
+        blazing_sun::app::db_query::read::user::get_by_id(&db, user_a)
+            .await
+            .is_err()
+    );
+    assert!(
+        blazing_sun::app::db_query::read::user::get_by_id(&db, user_b)
+            .await
+            .is_err()
+    );
 }
 
 #[actix_rt::test]
@@ -144,8 +156,12 @@ async fn test_bulk_update_permissions() {
 
     let token = create_superadmin_token(super_id);
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api))
-        .await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let req = test::TestRequest::post()
         .uri("/api/v1/admin/users/bulk")

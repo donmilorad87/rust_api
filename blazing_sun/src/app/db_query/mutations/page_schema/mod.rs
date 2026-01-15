@@ -9,8 +9,11 @@ use sqlx::{Pool, Postgres};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreatePageSchemaParams {
     pub page_seo_id: i64,
+    pub lang_code: String,
     pub schema_type: String,
-    pub schema_data: serde_json::Value,
+    /// Reference to schema_entities.schema_id (the @id from JSON-LD)
+    /// schema_data is fetched from schema_entities via JOIN
+    pub entity_schema_id: String,
     pub position: Option<i32>,
     pub is_active: Option<bool>,
 }
@@ -19,12 +22,13 @@ pub struct CreatePageSchemaParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdatePageSchemaParams {
     pub schema_type: Option<String>,
-    pub schema_data: Option<serde_json::Value>,
+    pub entity_schema_id: Option<String>,
     pub position: Option<i32>,
     pub is_active: Option<bool>,
 }
 
 /// Create a new page schema
+/// Uses entity_schema_id to reference schema_entities - schema_data comes from JOIN
 pub async fn create(
     db: &Pool<Postgres>,
     params: &CreatePageSchemaParams,
@@ -34,13 +38,14 @@ pub async fn create(
 
     let result = sqlx::query!(
         r#"
-        INSERT INTO page_schemas (page_seo_id, schema_type, schema_data, position, is_active)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO page_schemas (page_seo_id, lang_code, schema_type, entity_schema_id, position, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
         "#,
         params.page_seo_id,
+        params.lang_code,
         params.schema_type,
-        params.schema_data,
+        params.entity_schema_id,
         position,
         is_active
     )
@@ -62,13 +67,13 @@ pub async fn update(
         UPDATE page_schemas
         SET
             schema_type = COALESCE($1, schema_type),
-            schema_data = COALESCE($2, schema_data),
+            entity_schema_id = COALESCE($2, entity_schema_id),
             position = COALESCE($3, position),
             is_active = COALESCE($4, is_active)
         WHERE id = $5
         "#,
         params.schema_type,
-        params.schema_data,
+        params.entity_schema_id,
         params.position,
         params.is_active,
         id

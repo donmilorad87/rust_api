@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Checkout Database",
+      "Group": "Servers",
+      "Host": "checkout-postgres",
+      "Port": 5433,
+      "MaintenanceDB": "postgres",
+      "Username": "checkout",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpass"
+    }
+  }
+}

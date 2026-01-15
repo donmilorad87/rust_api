@@ -1,0 +1,7 @@
+{
+  "SIGN_UP": {
+    "singular": "Sign up",
+    "plural": "Sign ups",
+    "context": "Button label for sign up/registration"
+  }
+}

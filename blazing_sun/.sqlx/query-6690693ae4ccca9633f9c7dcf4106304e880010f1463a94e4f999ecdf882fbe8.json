@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT schema_id, lang_code FROM schema_entities WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "schema_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "lang_code",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "6690693ae4ccca9633f9c7dcf4106304e880010f1463a94e4f999ecdf882fbe8"
+}

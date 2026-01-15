@@ -60,7 +60,7 @@ export class ProfilePage {
       // No token AND no user data means something is wrong
       this.showToast('Please sign in to view your profile', 'error');
       setTimeout(() => {
-        window.location.href = '/sign-in';
+        window.location.href = '/sign_in';
       }, 1500);
       return;
     }

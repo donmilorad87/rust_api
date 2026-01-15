@@ -25,14 +25,24 @@
 //! <a href="{{ route(name='upload.chunked.chunk', uuid='abc', index='1') }}">Upload Chunk</a>
 //! ```
 
-use crate::config::{AppConfig, UploadConfig};
 use crate::bootstrap::routes::controller::api::{route_with_lang, DEFAULT_LANG};
-use serde::{Deserialize, Serialize};
+use crate::config::{AppConfig, UploadConfig};
 use crate::database::read::upload as db_upload_read;
+use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
+use serde_json::Map as JsonMap;
 use sqlx::{Pool, Postgres};
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Mutex;
 use tera::{Function, Result as TeraResult, Value};
 use uuid::Uuid;
+
+const DEFAULT_LOCALE: &str = "en_US";
+
+static LOCALIZATION_CACHE: Lazy<Mutex<HashMap<String, Value>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 /// Asset visibility type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -111,7 +121,12 @@ pub fn assets_with_variant(name: &str, visibility: &str, variant: Option<&str>) 
             };
 
             let version = AppConfig::images_assets_version();
-            format!("{}/{}?v={}", UploadConfig::public_url_base(), filename, version)
+            format!(
+                "{}/{}?v={}",
+                UploadConfig::public_url_base(),
+                filename,
+                version
+            )
         }
         AssetVisibility::Private => {
             // Private assets go through API, no version needed
@@ -192,7 +207,12 @@ pub async fn assets_by_uuid(
             .unwrap_or(&u.stored_name);
 
         let version = AppConfig::images_assets_version();
-        format!("{}/{}?v={}", UploadConfig::public_url_base(), filename, version)
+        format!(
+            "{}/{}?v={}",
+            UploadConfig::public_url_base(),
+            filename,
+            version
+        )
     })
 }
 
@@ -287,14 +307,9 @@ pub async fn asset_by_id(
     let url = match upload.storage_type.as_str() {
         "public" => format!(
             "/api/v1/upload/download/public/{}{}",
-            upload.uuid,
-            variant_param
+            upload.uuid, variant_param
         ),
-        "private" => format!(
-            "/api/v1/upload/private/{}{}",
-            upload.uuid,
-            variant_param
-        ),
+        "private" => format!("/api/v1/upload/private/{}{}", upload.uuid, variant_param),
         _ => return None, // Unknown storage type
     };
 
@@ -389,8 +404,8 @@ pub async fn avatar_by_id(
 
     Some(format!(
         "/api/v1/avatar/{}{}",
-        upload.uuid,          // UUID for avatar endpoint
-        variant_param         // "?variant=thumb" or empty
+        upload.uuid,   // UUID for avatar endpoint
+        variant_param  // "?variant=thumb" or empty
     ))
 }
 
@@ -437,7 +452,12 @@ pub async fn avatar_by_id_or(
 /// ```
 pub fn public_upload_url(stored_name: &str) -> String {
     let version = AppConfig::images_assets_version();
-    format!("{}/{}?v={}", UploadConfig::public_url_base(), stored_name, version)
+    format!(
+        "{}/{}?v={}",
+        UploadConfig::public_url_base(),
+        stored_name,
+        version
+    )
 }
 
 /// Generate a versioned image URL
@@ -573,7 +593,9 @@ impl PageAssets {
 pub fn determine_assets(page_name: &str) -> PageAssets {
     assert!(!page_name.is_empty(), "page_name must not be empty");
     assert!(
-        page_name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-'),
+        page_name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-'),
         "page_name must contain only alphanumeric characters, underscores, or hyphens"
     );
 
@@ -849,7 +871,11 @@ pub fn route_with_params(name: &str, params: &HashMap<String, String>) -> Option
 /// let url = route_with_params_lang("user.show", "it", &params);
 /// // Returns: Some("/api/v1/utente/123")
 /// ```
-pub fn route_with_params_lang(name: &str, lang: &str, params: &HashMap<String, String>) -> Option<String> {
+pub fn route_with_params_lang(
+    name: &str,
+    lang: &str,
+    params: &HashMap<String, String>,
+) -> Option<String> {
     route_with_lang(name, lang, Some(params))
 }
 
@@ -881,21 +907,33 @@ impl Function for AssetsFunction {
         let name = match args.get("name") {
             Some(Value::String(s)) => s.clone(),
             Some(Value::Null) | None => return Ok(Value::String(String::new())),
-            Some(_) => return Err(tera::Error::msg("assets() 'name' argument must be a string")),
+            Some(_) => {
+                return Err(tera::Error::msg(
+                    "assets() 'name' argument must be a string",
+                ))
+            }
         };
 
         // Get visibility (optional, defaults to "public")
         let visibility = match args.get("visibility") {
             Some(Value::String(s)) => s.clone(),
             Some(Value::Null) | None => "public".to_string(),
-            Some(_) => return Err(tera::Error::msg("assets() 'visibility' argument must be a string")),
+            Some(_) => {
+                return Err(tera::Error::msg(
+                    "assets() 'visibility' argument must be a string",
+                ))
+            }
         };
 
         // Get variant (optional, for responsive images)
         let variant = match args.get("variant") {
             Some(Value::String(s)) => Some(s.as_str()),
             Some(Value::Null) | None => None,
-            Some(_) => return Err(tera::Error::msg("assets() 'variant' argument must be a string")),
+            Some(_) => {
+                return Err(tera::Error::msg(
+                    "assets() 'variant' argument must be a string",
+                ))
+            }
         };
 
         // Generate the URL
@@ -911,6 +949,153 @@ impl Function for AssetsFunction {
 /// Get a Tera Function for asset URL generation
 pub fn make_assets_function() -> impl Function {
     AssetsFunction
+}
+
+/// Tera function for translating localization keys using JSON files.
+struct TranslateFunction;
+
+impl Function for TranslateFunction {
+    fn call(&self, args: &HashMap<String, Value>) -> TeraResult<Value> {
+        let key = match args.get("key") {
+            Some(Value::String(value)) => value.to_string(),
+            _ => {
+                return Err(tera::Error::msg(
+                    "translate() requires a string 'key' argument",
+                ));
+            }
+        };
+
+        let locale = match args.get("locale") {
+            Some(Value::String(value)) => value.to_string(),
+            _ => DEFAULT_LOCALE.to_string(),
+        };
+
+        let form = match args.get("form") {
+            Some(Value::String(value)) => value.as_str(),
+            _ => "singular",
+        };
+
+        let args_map = match args.get("args") {
+            Some(Value::Object(map)) => map.clone(),
+            _ => JsonMap::new(),
+        };
+
+        let entry = get_localized_entry(&locale, &key)
+            .or_else(|| get_localized_entry(DEFAULT_LOCALE, &key));
+
+        let template = match entry {
+            Some(value) => {
+                let chosen = if form == "plural" {
+                    "plural"
+                } else {
+                    "singular"
+                };
+                value
+                    .get(chosen)
+                    .and_then(|v| v.as_str())
+                    .map(|text| text.to_string())
+                    .unwrap_or_else(|| key.clone())
+            }
+            None => key.clone(),
+        };
+
+        let translated = replace_template_args(&template, &args_map);
+        Ok(Value::String(translated))
+    }
+
+    fn is_safe(&self) -> bool {
+        true
+    }
+}
+
+/// Get a Tera Function for translate() usage.
+pub fn make_translate_function() -> impl Function {
+    TranslateFunction
+}
+
+fn get_localized_entry(locale: &str, key: &str) -> Option<Value> {
+    let data = load_locale_file(locale)?;
+    data.get(key).cloned()
+}
+
+fn load_locale_file(locale: &str) -> Option<Value> {
+    let mut cache = LOCALIZATION_CACHE.lock().ok()?;
+    if let Some(value) = cache.get(locale) {
+        return Some(value.clone());
+    }
+
+    // Try exact match first (e.g., "sr_RS.json")
+    let path = localization_path(locale);
+    if let Ok(contents) = fs::read_to_string(&path) {
+        if let Ok(json) = serde_json::from_str::<Value>(&contents) {
+            cache.insert(locale.to_string(), json.clone());
+            return Some(json);
+        }
+    }
+
+    // If locale is a short code (2 chars), try to find matching locale file
+    // e.g., "sr" should match "sr_RS.json"
+    if locale.len() == 2 {
+        if let Some(full_locale) = find_locale_for_language(locale) {
+            let path = localization_path(&full_locale);
+            if let Ok(contents) = fs::read_to_string(&path) {
+                if let Ok(json) = serde_json::from_str::<Value>(&contents) {
+                    // Cache under both short code and full locale
+                    cache.insert(locale.to_string(), json.clone());
+                    cache.insert(full_locale, json.clone());
+                    return Some(json);
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// Find a full locale code for a short language code
+/// e.g., "sr" -> "sr_RS", "en" -> "en_US"
+fn find_locale_for_language(lang: &str) -> Option<String> {
+    let localization_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("resources")
+        .join("localization");
+
+    if let Ok(entries) = fs::read_dir(&localization_dir) {
+        for entry in entries.flatten() {
+            let file_name = entry.file_name();
+            let name = file_name.to_string_lossy();
+            // Match files like "sr_RS.json" for language "sr"
+            if name.starts_with(lang) && name.ends_with(".json") {
+                let locale = name.trim_end_matches(".json");
+                return Some(locale.to_string());
+            }
+        }
+    }
+
+    None
+}
+
+fn localization_path(locale: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("resources")
+        .join("localization")
+        .join(format!("{}.json", locale))
+}
+
+fn replace_template_args(template: &str, args: &JsonMap<String, Value>) -> String {
+    let mut result = template.to_string();
+    for (key, value) in args {
+        let replacement = match value {
+            Value::String(text) => text.clone(),
+            Value::Number(number) => number.to_string(),
+            Value::Bool(flag) => flag.to_string(),
+            _ => value.to_string(),
+        };
+        let placeholder = format!("##{}##", key);
+        result = result.replace(&placeholder, &replacement);
+    }
+    result
 }
 
 /// Register all template functions with a Tera instance
@@ -933,6 +1118,8 @@ pub fn register_template_functions(tera: &mut tera::Tera) {
     tera.register_function("route", make_route_function());
     // Register the assets() function for asset URL generation
     tera.register_function("assets", make_assets_function());
+    // Register the translate() function for localization strings
+    tera.register_function("translate", make_translate_function());
 }
 
 #[cfg(test)]
@@ -964,8 +1151,14 @@ mod tests {
 
     #[test]
     fn test_asset_visibility_from_str() {
-        assert_eq!(AssetVisibility::from_str("public"), Some(AssetVisibility::Public));
-        assert_eq!(AssetVisibility::from_str("PRIVATE"), Some(AssetVisibility::Private));
+        assert_eq!(
+            AssetVisibility::from_str("public"),
+            Some(AssetVisibility::Public)
+        );
+        assert_eq!(
+            AssetVisibility::from_str("PRIVATE"),
+            Some(AssetVisibility::Private)
+        );
         assert_eq!(AssetVisibility::from_str("invalid"), None);
     }
 
@@ -988,7 +1181,9 @@ mod tests {
     #[test]
     fn test_determine_assets_dashboard() {
         let assets = determine_assets("DASHBOARD");
-        assert!(assets.css_path.starts_with("/assets/css/DASHBOARD/style.css"));
+        assert!(assets
+            .css_path
+            .starts_with("/assets/css/DASHBOARD/style.css"));
         assert!(assets.js_path.starts_with("/assets/js/DASHBOARD/app.js"));
     }
 

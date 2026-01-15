@@ -8,11 +8,11 @@
 //! - [x] Rejects delete when client lacks galleries.delete scope (even if token has it)
 
 use actix_web::{http::StatusCode, test, App};
+use blazing_sun::app::db_query::{mutations as db_mutations, read as db_read};
+use blazing_sun::bootstrap::utility::oauth_jwt;
 use blazing_sun::configure_api;
 use blazing_sun::database;
 use blazing_sun::mq;
-use blazing_sun::app::db_query::{mutations as db_mutations, read as db_read};
-use blazing_sun::bootstrap::utility::oauth_jwt;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -59,6 +59,11 @@ async fn test_delete_gallery_denied_when_client_scope_revoked() {
                 description: None,
                 is_public: true,
                 display_order: 0,
+                latitude: None,
+                longitude: None,
+                tags: None,
+                cover_image_id: None,
+                cover_image_uuid: None,
             },
         )
         .await
@@ -97,7 +102,8 @@ async fn test_delete_gallery_denied_when_client_scope_revoked() {
 
     {
         let db = app_state.db.lock().await;
-        let _ = db_mutations::oauth_scope::remove_client_scope(&db, client_db_id, delete_scope_id).await;
+        let _ = db_mutations::oauth_scope::remove_client_scope(&db, client_db_id, delete_scope_id)
+            .await;
     }
 
     let token = oauth_jwt::generate_access_token(
@@ -127,5 +133,8 @@ async fn test_delete_gallery_denied_when_client_scope_revoked() {
         serde_json::from_slice(&body).expect("Failed to parse error response");
 
     assert_eq!(payload.error, "insufficient_scope");
-    assert_eq!(payload.error_description, "You do not have scope access for deletion");
+    assert_eq!(
+        payload.error_description,
+        "You do not have scope access for deletion"
+    );
 }

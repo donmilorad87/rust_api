@@ -41,14 +41,19 @@ pub async fn create(
     expiry_minutes: i64,
 ) -> Result<i64, sqlx::Error> {
     let expiry_time = Utc::now() + Duration::minutes(expiry_minutes);
-    create_with_metadata(db, user_id, hash, hash_type, expiry_time, serde_json::json!({})).await
+    create_with_metadata(
+        db,
+        user_id,
+        hash,
+        hash_type,
+        expiry_time,
+        serde_json::json!({}),
+    )
+    .await
 }
 
 /// Mark activation hash as used
-pub async fn mark_as_used(
-    db: &Pool<Postgres>,
-    hash_id: i64,
-) -> Result<(), sqlx::Error> {
+pub async fn mark_as_used(db: &Pool<Postgres>, hash_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         UPDATE activation_hashes
@@ -64,10 +69,7 @@ pub async fn mark_as_used(
 }
 
 /// Delete activation hash by ID
-pub async fn delete(
-    db: &Pool<Postgres>,
-    hash_id: i64,
-) -> Result<(), sqlx::Error> {
+pub async fn delete(db: &Pool<Postgres>, hash_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         DELETE FROM activation_hashes

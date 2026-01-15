@@ -10,12 +10,12 @@
 //! - [x] Deletes picture for owner with galleries.delete scope
 
 use actix_web::{http::StatusCode, test, App};
+use blazing_sun::app::db_query::{mutations as db_mutations, read as db_read};
+use blazing_sun::bootstrap::utility::oauth_jwt;
 use blazing_sun::configure_api;
 use blazing_sun::database;
 use blazing_sun::database::AppState;
 use blazing_sun::mq;
-use blazing_sun::app::db_query::{mutations as db_mutations, read as db_read};
-use blazing_sun::bootstrap::utility::oauth_jwt;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -56,6 +56,11 @@ async fn create_gallery_with_picture(
             description: None,
             is_public: true,
             display_order: 0,
+            latitude: None,
+            longitude: None,
+            tags: None,
+            cover_image_id: None,
+            cover_image_uuid: None,
         },
     )
     .await
@@ -87,6 +92,8 @@ async fn create_gallery_with_picture(
             upload_id,
             title: Some("Test Picture".to_string()),
             description: None,
+            latitude: None,
+            longitude: None,
             display_order: 0,
         },
     )
@@ -138,7 +145,8 @@ async fn test_delete_picture_denied_when_client_scope_revoked() {
 
     {
         let db = app_state.db.lock().await;
-        let _ = db_mutations::oauth_scope::remove_client_scope(&db, client_db_id, delete_scope_id).await;
+        let _ = db_mutations::oauth_scope::remove_client_scope(&db, client_db_id, delete_scope_id)
+            .await;
     }
 
     let token = oauth_jwt::generate_access_token(
@@ -153,7 +161,12 @@ async fn test_delete_picture_denied_when_client_scope_revoked() {
     .expect("Failed to generate OAuth JWT")
     .access_token;
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let req = test::TestRequest::delete()
         .uri(&format!("/api/v1/oauth/pictures/{}", picture_id))
@@ -168,7 +181,10 @@ async fn test_delete_picture_denied_when_client_scope_revoked() {
         serde_json::from_slice(&body).expect("Failed to parse error response");
 
     assert_eq!(payload.error, "insufficient_scope");
-    assert_eq!(payload.error_description, "You do not have scope access for deletion");
+    assert_eq!(
+        payload.error_description,
+        "You do not have scope access for deletion"
+    );
 }
 
 #[actix_rt::test]
@@ -216,7 +232,8 @@ async fn test_delete_picture_forbidden_for_non_owner() {
 
     {
         let db = app_state.db.lock().await;
-        let _ = db_mutations::oauth_scope::add_client_scope(&db, client_db_id, delete_scope_id).await;
+        let _ =
+            db_mutations::oauth_scope::add_client_scope(&db, client_db_id, delete_scope_id).await;
     }
 
     let token = oauth_jwt::generate_access_token(
@@ -231,7 +248,12 @@ async fn test_delete_picture_forbidden_for_non_owner() {
     .expect("Failed to generate OAuth JWT")
     .access_token;
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let req = test::TestRequest::delete()
         .uri(&format!("/api/v1/oauth/pictures/{}", picture_id))
@@ -246,7 +268,10 @@ async fn test_delete_picture_forbidden_for_non_owner() {
         serde_json::from_slice(&body).expect("Failed to parse error response");
 
     assert_eq!(payload.error, "insufficient_permissions");
-    assert_eq!(payload.error_description, "You can only delete pictures you own");
+    assert_eq!(
+        payload.error_description,
+        "You can only delete pictures you own"
+    );
 }
 
 #[actix_rt::test]
@@ -293,7 +318,8 @@ async fn test_delete_picture_success_for_owner() {
 
     {
         let db = app_state.db.lock().await;
-        let _ = db_mutations::oauth_scope::add_client_scope(&db, client_db_id, delete_scope_id).await;
+        let _ =
+            db_mutations::oauth_scope::add_client_scope(&db, client_db_id, delete_scope_id).await;
     }
 
     let token = oauth_jwt::generate_access_token(
@@ -308,7 +334,12 @@ async fn test_delete_picture_success_for_owner() {
     .expect("Failed to generate OAuth JWT")
     .access_token;
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let req = test::TestRequest::delete()
         .uri(&format!("/api/v1/oauth/pictures/{}", picture_id))

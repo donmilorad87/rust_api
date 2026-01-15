@@ -181,10 +181,7 @@ pub async fn send(
 }
 
 /// Send a welcome email
-pub async fn send_welcome(
-    recipient: &EmailRecipient,
-    first_name: &str,
-) -> Result<bool, String> {
+pub async fn send_welcome(recipient: &EmailRecipient, first_name: &str) -> Result<bool, String> {
     let mut variables = HashMap::new();
     variables.insert("first_name".to_string(), first_name.to_string());
     variables.insert("email".to_string(), recipient.email.clone());

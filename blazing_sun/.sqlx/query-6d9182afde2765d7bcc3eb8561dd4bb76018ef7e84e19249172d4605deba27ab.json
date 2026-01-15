@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO galleries (user_id, name, description, is_public, gallery_type, display_order, latitude, longitude, tags, cover_image_id, cover_image_uuid)\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Varchar",
+        "Text",
+        "Bool",
+        "Varchar",
+        "Int4",
+        "Float8",
+        "Float8",
+        "TextArray",
+        "Int8",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6d9182afde2765d7bcc3eb8561dd4bb76018ef7e84e19249172d4605deba27ab"
+}

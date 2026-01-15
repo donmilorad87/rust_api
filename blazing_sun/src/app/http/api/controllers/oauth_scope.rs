@@ -50,7 +50,8 @@ pub async fn list_scopes_by_api_product(
     let db = state.db.lock().await;
 
     // Verify API product exists
-    let _api_product = match db_read::oauth_scope::get_api_product_by_id(&db, api_product_id).await {
+    let _api_product = match db_read::oauth_scope::get_api_product_by_id(&db, api_product_id).await
+    {
         Ok(Some(_)) => (),
         Ok(None) => {
             return HttpResponse::NotFound().json(serde_json::json!({
@@ -136,7 +137,8 @@ pub async fn list_client_scopes(
     }
 
     // Get client's allowed scopes
-    let allowed_scopes = match db_read::oauth_scope::get_client_allowed_scopes(&db, client.id).await {
+    let allowed_scopes = match db_read::oauth_scope::get_client_allowed_scopes(&db, client.id).await
+    {
         Ok(scopes) => scopes
             .into_iter()
             .map(|s| ScopeInfo {

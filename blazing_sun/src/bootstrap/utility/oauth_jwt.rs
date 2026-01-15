@@ -62,9 +62,7 @@ pub fn generate_access_token(
     let encoding_key = EncodingKey::from_rsa_pem(private_key_pem.as_bytes())?;
 
     // Get current timestamp
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)?
-        .as_secs() as i64;
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64;
 
     // Create JWT claims
     let claims = OAuthClaims {
@@ -126,10 +124,10 @@ pub fn verify_access_token(
 pub fn extract_jwks_components(
     public_key_path: &str,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
-    use rsa::RsaPublicKey;
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
     use rsa::pkcs8::DecodePublicKey;
     use rsa::traits::PublicKeyParts;
-    use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+    use rsa::RsaPublicKey;
 
     // Read public key from file
     let public_key_pem = fs::read_to_string(public_key_path)?;

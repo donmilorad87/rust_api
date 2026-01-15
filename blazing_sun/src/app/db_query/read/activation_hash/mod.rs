@@ -51,10 +51,7 @@ pub async fn get_by_hash_and_type(
 }
 
 /// Get activation hash by hash string only (for general lookups)
-pub async fn get_by_hash(
-    db: &Pool<Postgres>,
-    hash: &str,
-) -> Result<ActivationHash, sqlx::Error> {
+pub async fn get_by_hash(db: &Pool<Postgres>, hash: &str) -> Result<ActivationHash, sqlx::Error> {
     sqlx::query_as!(
         ActivationHash,
         r#"

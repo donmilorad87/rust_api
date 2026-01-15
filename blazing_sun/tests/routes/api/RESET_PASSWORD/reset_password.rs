@@ -48,11 +48,11 @@
 //! - [x] Security: XSS attempt
 //! - [x] Integration: Full flow with sign-in after reset
 
-use actix_web::{App, http::StatusCode, test};
+use crate::routes::api::helpers::ensure_test_user;
+use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::{Deserialize, Serialize};
-use tabled::{Table, Tabled, settings::Style};
-use crate::routes::api::helpers::ensure_test_user;
+use tabled::{settings::Style, Table, Tabled};
 use uuid::Uuid;
 
 // ============================================
@@ -197,7 +197,12 @@ async fn test_reset_password_valid() {
 
     // Arrange
     let app_state = state().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let mut results = vec![];
 
@@ -280,7 +285,10 @@ async fn test_reset_password_valid() {
 
     assert!(http_pass, "HTTP status should be 200 OK");
     assert!(status_pass, "Response status should be 'success'");
-    assert!(message_pass, "Response message should be 'Password reset successfully'");
+    assert!(
+        message_pass,
+        "Response message should be 'Password reset successfully'"
+    );
 }
 
 // ============================================
@@ -335,7 +343,9 @@ async fn test_reset_password_missing_all_fields() {
         has_code_error,
     ));
 
-    let has_password_error = response.errors.contains(&"password is required".to_string());
+    let has_password_error = response
+        .errors
+        .contains(&"password is required".to_string());
     results.push(TestResult::new(
         "Password Required Error",
         "true",
@@ -357,8 +367,14 @@ async fn test_reset_password_missing_all_fields() {
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
     assert!(has_code_error, "Should have 'code is required' error");
-    assert!(has_password_error, "Should have 'password is required' error");
-    assert!(has_confirm_error, "Should have 'confirm_password is required' error");
+    assert!(
+        has_password_error,
+        "Should have 'password is required' error"
+    );
+    assert!(
+        has_confirm_error,
+        "Should have 'confirm_password is required' error"
+    );
 }
 
 // ============================================
@@ -414,7 +430,9 @@ async fn test_reset_password_missing_code() {
     ));
 
     // Should NOT have password errors
-    let no_password_error = !response.errors.contains(&"password is required".to_string());
+    let no_password_error = !response
+        .errors
+        .contains(&"password is required".to_string());
     results.push(TestResult::new(
         "No Password Error",
         "true",
@@ -441,7 +459,12 @@ async fn test_reset_password_missing_password() {
 
     // Arrange
     let app_state = state().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let payload = ResetPasswordRequest {
         code: Some("1234567890123456789012345678901234567890".to_string()),
@@ -472,7 +495,9 @@ async fn test_reset_password_missing_password() {
         http_pass,
     ));
 
-    let has_password_error = response.errors.contains(&"password is required".to_string());
+    let has_password_error = response
+        .errors
+        .contains(&"password is required".to_string());
     results.push(TestResult::new(
         "Has Password Error",
         "true",
@@ -483,7 +508,10 @@ async fn test_reset_password_missing_password() {
     print_test_results(&results);
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
-    assert!(has_password_error, "Should have 'password is required' error");
+    assert!(
+        has_password_error,
+        "Should have 'password is required' error"
+    );
 }
 
 // ============================================
@@ -499,7 +527,12 @@ async fn test_reset_password_missing_confirm_password() {
 
     // Arrange
     let app_state = state().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let payload = ResetPasswordRequest {
         code: Some("1234567890123456789012345678901234567890".to_string()),
@@ -543,7 +576,10 @@ async fn test_reset_password_missing_confirm_password() {
     print_test_results(&results);
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
-    assert!(has_confirm_error, "Should have 'confirm_password is required' error");
+    assert!(
+        has_confirm_error,
+        "Should have 'confirm_password is required' error"
+    );
 }
 
 // ============================================
@@ -603,7 +639,10 @@ async fn test_reset_password_invalid_code() {
     print_test_results(&results);
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
-    assert!(has_code_error, "Should have 'invalid or expired code' error");
+    assert!(
+        has_code_error,
+        "Should have 'invalid or expired code' error"
+    );
 }
 
 // ============================================
@@ -1029,7 +1068,10 @@ async fn test_reset_password_missing_number() {
         http_pass,
     ));
 
-    let has_number_error = response.password_errors.iter().any(|e| e.contains("number"));
+    let has_number_error = response
+        .password_errors
+        .iter()
+        .any(|e| e.contains("number"));
     results.push(TestResult::new(
         "Has Number Error",
         "at least one number",
@@ -1206,7 +1248,10 @@ async fn test_reset_password_mismatch() {
     print_test_results(&results);
 
     assert!(http_pass, "HTTP status should be 400 Bad Request");
-    assert!(has_mismatch_error, "Should have passwords do not match error");
+    assert!(
+        has_mismatch_error,
+        "Should have passwords do not match error"
+    );
 }
 
 // ============================================
@@ -1338,7 +1383,10 @@ async fn test_reset_password_sql_injection() {
 
     print_test_results(&results);
 
-    assert!(not_server_error, "SQL injection should not cause server error");
+    assert!(
+        not_server_error,
+        "SQL injection should not cause server error"
+    );
 }
 
 // ============================================
@@ -1480,7 +1528,12 @@ async fn test_reset_password_full_integration() {
     let app_state = state().await;
     let test_email = format!("reset_password_full_{}@example.com", Uuid::new_v4());
     ensure_test_user(&app_state, &test_email, "asdqwE123~~").await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let mut results = vec![];
     let new_password = "IntegrationTest123!";
@@ -1558,7 +1611,11 @@ async fn test_reset_password_full_integration() {
     results.push(TestResult::new(
         "Step 3: Sign In",
         "200 OK with token",
-        &format!("{} (token: {})", signin_status, signin_response.token.is_some()),
+        &format!(
+            "{} (token: {})",
+            signin_status,
+            signin_response.token.is_some()
+        ),
         signin_ok,
     ));
 

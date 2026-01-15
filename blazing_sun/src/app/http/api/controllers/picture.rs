@@ -17,6 +17,8 @@ pub struct AddPictureRequest {
     pub upload_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
 }
 
 /// Request body for updating a picture
@@ -24,6 +26,8 @@ pub struct AddPictureRequest {
 pub struct UpdatePictureRequest {
     pub title: Option<String>,
     pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
 }
 
 /// Request body for reordering pictures
@@ -46,6 +50,8 @@ pub struct PictureResponse {
     pub upload_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
     pub display_order: i32,
     pub created_at: String,
     pub updated_at: String,
@@ -127,11 +133,31 @@ pub async fn get_gallery_pictures(
                 .map(|p| {
                     // Generate URLs for all sizes
                     let urls = PictureUrls {
-                        thumb: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("thumb")),
-                        small: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("small")),
-                        medium: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("medium")),
-                        large: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("large")),
-                        full: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("full")),
+                        thumb: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("thumb"),
+                        ),
+                        small: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("small"),
+                        ),
+                        medium: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("medium"),
+                        ),
+                        large: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("large"),
+                        ),
+                        full: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("full"),
+                        ),
                     };
 
                     PictureResponse {
@@ -140,6 +166,8 @@ pub async fn get_gallery_pictures(
                         upload_id: p.upload_id,
                         title: p.title,
                         description: p.description,
+                        latitude: p.latitude,
+                        longitude: p.longitude,
                         display_order: p.display_order,
                         created_at: p.created_at.to_rfc3339(),
                         updated_at: p.updated_at.to_rfc3339(),
@@ -227,6 +255,8 @@ pub async fn add_picture(
         upload_id: body.upload_id,
         title: body.title.clone(),
         description: body.description.clone(),
+        latitude: body.latitude,
+        longitude: body.longitude,
         display_order: picture_count as i32,
     };
 
@@ -236,11 +266,31 @@ pub async fn add_picture(
             match db_read::picture::get_by_id_with_upload(&db, picture_id).await {
                 Ok(p) => {
                     let urls = PictureUrls {
-                        thumb: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("thumb")),
-                        small: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("small")),
-                        medium: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("medium")),
-                        large: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("large")),
-                        full: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("full")),
+                        thumb: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("thumb"),
+                        ),
+                        small: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("small"),
+                        ),
+                        medium: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("medium"),
+                        ),
+                        large: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("large"),
+                        ),
+                        full: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("full"),
+                        ),
                     };
 
                     let response = PictureResponse {
@@ -249,6 +299,8 @@ pub async fn add_picture(
                         upload_id: p.upload_id,
                         title: p.title,
                         description: p.description,
+                        latitude: p.latitude,
+                        longitude: p.longitude,
                         display_order: p.display_order,
                         created_at: p.created_at.to_rfc3339(),
                         updated_at: p.updated_at.to_rfc3339(),
@@ -342,6 +394,8 @@ pub async fn update_picture(
     let params = db_mutations::picture::UpdatePictureParams {
         title: body.title.clone(),
         description: body.description.clone(),
+        latitude: body.latitude,
+        longitude: body.longitude,
         display_order: None, // Don't update display_order here (use reorder endpoint)
     };
 
@@ -351,11 +405,31 @@ pub async fn update_picture(
             match db_read::picture::get_by_id_with_upload(&db, picture_id).await {
                 Ok(p) => {
                     let urls = PictureUrls {
-                        thumb: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("thumb")),
-                        small: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("small")),
-                        medium: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("medium")),
-                        large: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("large")),
-                        full: assets::asset_by_id(&p.upload_uuid, &p.upload_storage_type, Some("full")),
+                        thumb: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("thumb"),
+                        ),
+                        small: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("small"),
+                        ),
+                        medium: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("medium"),
+                        ),
+                        large: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("large"),
+                        ),
+                        full: assets::asset_by_id(
+                            &p.upload_uuid,
+                            &p.upload_storage_type,
+                            Some("full"),
+                        ),
                     };
 
                     let response = PictureResponse {
@@ -364,6 +438,8 @@ pub async fn update_picture(
                         upload_id: p.upload_id,
                         title: p.title,
                         description: p.description,
+                        latitude: p.latitude,
+                        longitude: p.longitude,
                         display_order: p.display_order,
                         created_at: p.created_at.to_rfc3339(),
                         updated_at: p.updated_at.to_rfc3339(),
@@ -516,18 +592,17 @@ pub async fn bulk_delete_pictures(
     }
 
     // Verify all picture IDs belong to this gallery
-    let valid_ids = match db_read::picture::get_ids_by_gallery_and_ids(&db, gallery_id, &picture_ids)
-        .await
-    {
-        Ok(ids) => ids,
-        Err(e) => {
-            drop(db);
-            eprintln!("Failed to validate pictures: {:?}", e);
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": "Failed to validate pictures"
-            }));
-        }
-    };
+    let valid_ids =
+        match db_read::picture::get_ids_by_gallery_and_ids(&db, gallery_id, &picture_ids).await {
+            Ok(ids) => ids,
+            Err(e) => {
+                drop(db);
+                eprintln!("Failed to validate pictures: {:?}", e);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "Failed to validate pictures"
+                }));
+            }
+        };
 
     if valid_ids.len() != picture_ids.len() {
         drop(db);

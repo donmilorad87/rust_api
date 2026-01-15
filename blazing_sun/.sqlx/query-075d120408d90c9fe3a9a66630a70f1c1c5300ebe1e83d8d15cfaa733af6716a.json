@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET spectators = array_append(spectators, $1)\n        WHERE room_id = $2\n        AND NOT ($1 = ANY(spectators))\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "075d120408d90c9fe3a9a66630a70f1c1c5300ebe1e83d8d15cfaa733af6716a"
+}

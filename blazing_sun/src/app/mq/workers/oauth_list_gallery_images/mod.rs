@@ -11,7 +11,10 @@ pub async fn process(
     let params: ListGalleryImagesParams = match serde_json::from_str(&job.payload) {
         Ok(p) => p,
         Err(e) => {
-            error!("Failed to deserialize oauth_list_gallery_images payload: {}", e);
+            error!(
+                "Failed to deserialize oauth_list_gallery_images payload: {}",
+                e
+            );
             return Ok(JobResult::Failed(format!("Invalid payload: {}", e)));
         }
     };

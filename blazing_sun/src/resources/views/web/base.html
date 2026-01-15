@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{% if theme == "dark" %}dark{% else %}light{% endif %}">
+<html lang="{{ html_lang | default(value='en') }}" data-theme="{% if theme == "dark" %}dark{% else %}light{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +10,11 @@
     {% if seo_keywords %}<meta name="keywords" content="{{ seo_keywords }}">{% endif %}
     {% if seo_robots %}<meta name="robots" content="{{ seo_robots }}">{% endif %}
     {% if seo_canonical %}<link rel="canonical" href="{{ seo_canonical }}">{% endif %}
+    {% if hreflang_links %}
+        {% for link in hreflang_links %}
+            <link rel="alternate" hreflang="{{ link.code }}" href="{{ link.href }}">
+        {% endfor %}
+    {% endif %}
 
     {# Open Graph Meta Tags #}
     {% if og_title %}<meta property="og:title" content="{{ og_title }}">{% endif %}
@@ -212,6 +217,25 @@
 <body>
     {# Include Navigation Bar #}
     {% include "partials/_navbar.html" %}
+
+    {# Language Selection Data Source (hidden) #}
+    {# Populated by backend with available languages from database #}
+    {# Fields: code, name, flag (fallback), icon_url (image from uploads) #}
+    {# NOTE: Uses id="languageDropdownData" to avoid conflict with admin languagesTable #}
+    {% if available_languages %}
+    <ul id="languageDropdownData" style="display: none;" aria-hidden="true">
+        {% for lang in available_languages %}
+        <li data-code="{{ lang.code }}"
+            data-name="{{ lang.name }}"
+            data-native="{{ lang.name }}"
+            {% if lang.flag %}data-flag="{{ lang.flag }}"{% endif %}
+            {% if lang.icon_url %}data-icon-url="{{ lang.icon_url }}"{% endif %}
+            {% if lang.code is containing(language) %}data-selected="true"{% endif %}>
+            {{ lang.name }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 
     {% block content %}{% endblock %}
 

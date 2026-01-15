@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET lobby = (\n            SELECT COALESCE(jsonb_agg(elem), '[]'::JSONB)\n            FROM jsonb_array_elements(lobby) AS elem\n            WHERE (elem->>'user_id')::BIGINT = ANY(selected_players)\n        ),\n        updated_at = NOW()\n        WHERE room_id = $1\n        RETURNING jsonb_array_length(lobby) as removed_count\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "removed_count",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "6064cee137a2bf768f1af3960e8b5b20023f2e3296576ceebe290baee6bf8c66"
+}

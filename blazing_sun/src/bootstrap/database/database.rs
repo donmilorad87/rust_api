@@ -67,7 +67,8 @@ pub async fn create_mongodb() -> Result<SharedMongoDb, mongodb::error::Error> {
     // Configure connection pool
     client_options.max_pool_size = Some(MongoDbConfig::max_pool_size());
     client_options.min_pool_size = Some(MongoDbConfig::min_pool_size());
-    client_options.connect_timeout = Some(Duration::from_millis(MongoDbConfig::connect_timeout_ms()));
+    client_options.connect_timeout =
+        Some(Duration::from_millis(MongoDbConfig::connect_timeout_ms()));
 
     // Set app name for monitoring
     client_options.app_name = Some("blazing_sun".to_string());

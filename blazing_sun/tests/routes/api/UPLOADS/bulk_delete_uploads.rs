@@ -116,8 +116,12 @@ async fn test_admin_bulk_delete_uploads() {
         .expect("Failed to create upload 2");
     }
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api))
-        .await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let payload = BulkDeleteRequest {
         upload_uuids: vec![upload_uuid_1.to_string(), upload_uuid_2.to_string()],
@@ -125,7 +129,10 @@ async fn test_admin_bulk_delete_uploads() {
 
     let req = test::TestRequest::post()
         .uri("/api/v1/admin/uploads/bulk-delete")
-        .insert_header(("Authorization", format!("Bearer {}", create_jwt(admin_id, 10))))
+        .insert_header((
+            "Authorization",
+            format!("Bearer {}", create_jwt(admin_id, 10)),
+        ))
         .set_json(&payload)
         .to_request();
 
@@ -137,8 +144,10 @@ async fn test_admin_bulk_delete_uploads() {
     assert_eq!(payload.status, "success");
 
     let db = app_state.db.lock().await;
-    let deleted_1 = blazing_sun::app::db_query::read::upload::get_by_uuid(&db, &upload_uuid_1).await;
-    let deleted_2 = blazing_sun::app::db_query::read::upload::get_by_uuid(&db, &upload_uuid_2).await;
+    let deleted_1 =
+        blazing_sun::app::db_query::read::upload::get_by_uuid(&db, &upload_uuid_1).await;
+    let deleted_2 =
+        blazing_sun::app::db_query::read::upload::get_by_uuid(&db, &upload_uuid_2).await;
     assert!(deleted_1.is_err());
     assert!(deleted_2.is_err());
 }

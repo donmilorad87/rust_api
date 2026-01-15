@@ -34,44 +34,12 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     );
 
     // ============================================
-    // Web Pages (Public)
+    // Web Pages (Localized Router)
     // ============================================
-    cfg.route("/", web::get().to(PagesController::homepage));
-    cfg.route("/sign-up", web::get().to(PagesController::sign_up));
-    cfg.route("/sign-in", web::get().to(PagesController::sign_in));
+    cfg.route("/", web::get().to(PagesController::localized_router));
     cfg.route(
-        "/forgot-password",
-        web::get().to(PagesController::forgot_password),
-    );
-
-    // ============================================
-    // Web Pages (Authenticated)
-    // ============================================
-    cfg.route("/profile", web::get().to(PagesController::profile));
-    cfg.route("/oauth/applications", web::get().to(PagesController::oauth_applications));
-    cfg.route("/galleries", web::get().to(PagesController::galleries));
-    cfg.route("/logout", web::get().to(PagesController::logout));
-
-    // ============================================
-    // Admin Pages (Permission Protected)
-    // Routes named by MINIMUM permission required
-    // Higher permissions inherit access (Super Admin can access Admin routes)
-    // ============================================
-    cfg.route(
-        "/admin/uploads",
-        web::get().to(PagesController::uploads),
-    );
-    cfg.route(
-        "/admin/theme",
-        web::get().to(PagesController::theme),
-    );
-
-    // ============================================
-    // Super Admin Pages (Super Admin Only)
-    // ============================================
-    cfg.route(
-        "/superadmin/users",
-        web::get().to(PagesController::registered_users),
+        "/{path:.*}",
+        web::get().to(PagesController::localized_router),
     );
 
     // ============================================
@@ -83,18 +51,47 @@ pub fn register(cfg: &mut web::ServiceConfig) {
 /// Register all web route names for URL generation
 fn register_route_names() {
     route!("web.home", "/");
-    route!("web.sign_up", "/sign-up");
-    route!("web.sign_in", "/sign-in");
-    route!("web.forgot_password", "/forgot-password");
+    route!("web.sign_up", "/sign_up");
+    route!("web.sign_in", "/sign_in");
+    route!("web.forgot_password", "/forgot_password");
     route!("web.profile", "/profile");
+    route!("web.balance", "/balance");
     route!("oauth.applications", "/oauth/applications");
     route!("web.galleries", "/galleries");
+    route!("web.geo_galleries", "/geo_galleries");
+    route!("web.geo_gallery", "/geo_gallery/{gallery_uuid}");
+    route!("web.competitions", "/competitions");
+    route!("web.games", "/games");
+    route!("web.games.bigger_dice_lobby", "/games/bigger-dice");
+    route!("web.games.bigger_dice", "/games/bigger-dice/{room_id}");
     route!("web.logout", "/logout");
+
+    // Serbian variants
+    route!("web.home", "/", "sr");
+    route!("web.sign_up", "/registracija", "sr");
+    route!("web.sign_in", "/prijava", "sr");
+    route!("web.forgot_password", "/zaboravljena_lozinka", "sr");
+    route!("web.profile", "/profil", "sr");
+    route!("web.balance", "/balans", "sr");
+    route!("oauth.applications", "/oauth/aplikacije", "sr");
+    route!("web.galleries", "/galerije", "sr");
+    route!("web.geo_galleries", "/geo_galerije", "sr");
+    route!("web.geo_gallery", "/geo_galerija/{gallery_uuid}", "sr");
+    route!("web.competitions", "/takmicenja", "sr");
+    route!("web.games", "/igre", "sr");
+    route!("web.games.bigger_dice_lobby", "/igre/vece-kocke", "sr");
+    route!("web.games.bigger_dice", "/igre/vece-kocke/{room_id}", "sr");
+    route!("web.logout", "/odjava", "sr");
 
     // Admin pages (Admin+ can access)
     route!("admin.uploads", "/admin/uploads");
     route!("admin.theme", "/admin/theme");
+    route!("admin.game_chat", "/admin/game-chat");
+    route!("admin.uploads", "/admin/otpremanja", "sr");
+    route!("admin.theme", "/admin/tema", "sr");
+    route!("admin.game_chat", "/admin/igra-pricaonica", "sr");
 
     // Super Admin pages (Super Admin only)
     route!("superadmin.users", "/superadmin/users");
+    route!("superadmin.users", "/superadmin/korisnici", "sr");
 }

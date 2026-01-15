@@ -13,11 +13,11 @@
 //! - [ ] Security: Rate limiting
 //! - [ ] Security: Token expiration validation
 
+use crate::routes::api::helpers::ensure_test_user;
 use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::{Deserialize, Serialize};
 use tabled::{settings::Style, Table, Tabled};
-use crate::routes::api::helpers::ensure_test_user;
 use uuid::Uuid;
 
 #[derive(Serialize)]

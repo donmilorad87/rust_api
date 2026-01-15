@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM entity_relations\n        WHERE lang_code = $1 AND (from_schema_id = $2 OR to_schema_id = $2)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2ae9be657427391b38673cb7c47da1bba474822133b87622d4b9df1759e5fe0e"
+}

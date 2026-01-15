@@ -10,6 +10,8 @@ pub struct AddPictureParams {
     pub upload_id: i64,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
     pub display_order: i32,
 }
 
@@ -17,6 +19,8 @@ pub struct AddPictureParams {
 pub struct UpdatePictureParams {
     pub title: Option<String>,
     pub description: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
     pub display_order: Option<i32>,
 }
 
@@ -27,14 +31,16 @@ pub async fn add_to_gallery(
 ) -> Result<i64, sqlx::Error> {
     let result = sqlx::query!(
         r#"
-        INSERT INTO pictures (gallery_id, upload_id, title, description, display_order)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO pictures (gallery_id, upload_id, title, description, latitude, longitude, display_order)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
         "#,
         params.gallery_id,
         params.upload_id,
         params.title,
         params.description,
+        params.latitude,
+        params.longitude,
         params.display_order
     )
     .fetch_one(db)
@@ -77,6 +83,36 @@ pub async fn update_description(
     Ok(())
 }
 
+/// Update picture location
+pub async fn update_location(
+    db: &Pool<Postgres>,
+    picture_id: i64,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
+) -> Result<(), sqlx::Error> {
+    if let Some(lat) = latitude {
+        sqlx::query!(
+            r#"UPDATE pictures SET latitude = $1 WHERE id = $2"#,
+            lat,
+            picture_id
+        )
+        .execute(db)
+        .await?;
+    }
+
+    if let Some(lng) = longitude {
+        sqlx::query!(
+            r#"UPDATE pictures SET longitude = $1 WHERE id = $2"#,
+            lng,
+            picture_id
+        )
+        .execute(db)
+        .await?;
+    }
+
+    Ok(())
+}
+
 /// Update picture display order
 pub async fn update_display_order(
     db: &Pool<Postgres>,
@@ -115,20 +151,18 @@ pub async fn update(
         update_display_order(db, picture_id, display_order).await?;
     }
 
+    if params.latitude.is_some() || params.longitude.is_some() {
+        update_location(db, picture_id, params.latitude, params.longitude).await?;
+    }
+
     Ok(())
 }
 
 /// Remove a picture from a gallery
-pub async fn remove_from_gallery(
-    db: &Pool<Postgres>,
-    picture_id: i64,
-) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query!(
-        r#"DELETE FROM pictures WHERE id = $1"#,
-        picture_id
-    )
-    .execute(db)
-    .await?;
+pub async fn remove_from_gallery(db: &Pool<Postgres>, picture_id: i64) -> Result<u64, sqlx::Error> {
+    let result = sqlx::query!(r#"DELETE FROM pictures WHERE id = $1"#, picture_id)
+        .execute(db)
+        .await?;
 
     Ok(result.rows_affected())
 }
@@ -162,12 +196,9 @@ pub async fn remove_all_from_gallery(
     db: &Pool<Postgres>,
     gallery_id: i64,
 ) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query!(
-        r#"DELETE FROM pictures WHERE gallery_id = $1"#,
-        gallery_id
-    )
-    .execute(db)
-    .await?;
+    let result = sqlx::query!(r#"DELETE FROM pictures WHERE gallery_id = $1"#, gallery_id)
+        .execute(db)
+        .await?;
 
     Ok(result.rows_affected())
 }

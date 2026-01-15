@@ -11,8 +11,8 @@ use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::Deserialize;
 
-use blazing_sun::app::db_query::read::oauth_scope as db_read_oauth_scope;
 use crate::routes::api::helpers::ensure_test_user;
+use blazing_sun::app::db_query::read::oauth_scope as db_read_oauth_scope;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -106,5 +106,8 @@ async fn test_revoke_read_scope_is_blocked() {
     let error: serde_json::Value =
         serde_json::from_slice(&body).expect("Failed to parse error JSON");
 
-    assert_eq!(error.get("error").and_then(|v| v.as_str()), Some("scope_locked"));
+    assert_eq!(
+        error.get("error").and_then(|v| v.as_str()),
+        Some("scope_locked")
+    );
 }

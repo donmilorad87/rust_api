@@ -11,8 +11,10 @@ use actix_web::{http::StatusCode, test, App};
 use blazing_sun::{configure_api, state};
 use serde::Deserialize;
 
-use blazing_sun::app::db_query::read::{oauth_scope as db_read_oauth_scope, oauth_client as db_read_oauth_client};
 use crate::routes::api::helpers::ensure_test_user;
+use blazing_sun::app::db_query::read::{
+    oauth_client as db_read_oauth_client, oauth_scope as db_read_oauth_scope,
+};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -39,7 +41,12 @@ async fn test_disable_api_preserves_read_scope() {
         .expect("Missing galleries_api product");
     drop(db);
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_api)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_api),
+    )
+    .await;
 
     let sign_in_req = test::TestRequest::post()
         .uri("/api/v1/auth/sign-in")
@@ -92,10 +99,7 @@ async fn test_disable_api_preserves_read_scope() {
     };
 
     let enable_req = test::TestRequest::post()
-        .uri(&format!(
-            "/api/v1/oauth/clients/{}/enable-api",
-            client_id
-        ))
+        .uri(&format!("/api/v1/oauth/clients/{}/enable-api", client_id))
         .insert_header(("Authorization", format!("Bearer {}", sign_in_json.token)))
         .set_json(serde_json::json!({
             "api_product_id": api_product.id
@@ -117,10 +121,7 @@ async fn test_disable_api_preserves_read_scope() {
     assert_eq!(disable_resp.status(), StatusCode::OK);
 
     let scopes_req = test::TestRequest::get()
-        .uri(&format!(
-            "/api/v1/oauth/clients/{}/scopes",
-            client_id
-        ))
+        .uri(&format!("/api/v1/oauth/clients/{}/scopes", client_id))
         .insert_header(("Authorization", format!("Bearer {}", sign_in_json.token)))
         .to_request();
 
@@ -136,6 +137,8 @@ async fn test_disable_api_preserves_read_scope() {
         .and_then(|v| v.as_array())
         .expect("Missing scopes array");
 
-    let has_read = scopes.iter().any(|s| s.get("scope_name").and_then(|n| n.as_str()) == Some("galleries.read"));
+    let has_read = scopes
+        .iter()
+        .any(|s| s.get("scope_name").and_then(|n| n.as_str()) == Some("galleries.read"));
     assert!(has_read);
 }

@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT sp_update_player_score($1, $2, $3) as \"new_score!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "new_score!",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int8",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "2067fdd4b60b5532ce2a1d4a783d9873ad8e1837db2b070aa533428bd3201078"
+}

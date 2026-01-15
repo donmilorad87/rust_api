@@ -8,11 +8,11 @@
 //! - [x] Returns empty images list and total for gallery with no pictures
 
 use actix_web::{http::StatusCode, test, App};
+use blazing_sun::app::db_query::mutations as db_mutations;
+use blazing_sun::bootstrap::utility::oauth_jwt;
 use blazing_sun::configure_api;
 use blazing_sun::database;
 use blazing_sun::mq;
-use blazing_sun::app::db_query::mutations as db_mutations;
-use blazing_sun::bootstrap::utility::oauth_jwt;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -64,6 +64,11 @@ async fn test_gallery_images_empty_list() {
                 description: None,
                 is_public: true,
                 display_order: 0,
+                latitude: None,
+                longitude: None,
+                tags: None,
+                cover_image_id: None,
+                cover_image_uuid: None,
             },
         )
         .await

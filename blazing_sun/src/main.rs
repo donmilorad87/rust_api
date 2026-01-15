@@ -1,15 +1,15 @@
-use actix_session::config::{PersistentSession, CookieContentSecurity};
-use actix_session::{SessionMiddleware, storage::RedisSessionStore};
-use actix_web::cookie::{Key, SameSite, time::Duration};
+use actix_session::config::{CookieContentSecurity, PersistentSession};
+use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_web::cookie::{time::Duration, Key, SameSite};
 use actix_web::middleware::from_fn;
 use actix_web::web::{Data, JsonConfig};
 use actix_web::{App, HttpServer};
+use blazing_sun::bootstrap::middleware::controllers::csrf;
 use blazing_sun::config::{AppConfig, SessionConfig};
 use blazing_sun::database::{create_mongodb, create_pool, state_full, AppState};
 use blazing_sun::events;
 use blazing_sun::init_crons;
 use blazing_sun::middleware::{cors, security_headers, tracing_logger};
-use blazing_sun::bootstrap::middleware::controllers::csrf;
 use blazing_sun::mq;
 use blazing_sun::{configure_api, configure_web, json_error_handler};
 use std::sync::Arc;
@@ -32,7 +32,10 @@ async fn main() -> std::io::Result<()> {
         Ok(scheduler) => scheduler,
         Err(e) => {
             error!("Failed to initialize cron jobs: {}", e);
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                e.to_string(),
+            ));
         }
     };
 
@@ -42,24 +45,46 @@ async fn main() -> std::io::Result<()> {
         Ok(queue) => queue,
         Err(e) => {
             error!("Failed to initialize message queue: {}", e);
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                e.to_string(),
+            ));
         }
     };
 
     // Start MQ processor with 4 concurrent workers
     mq::start_processor(mq_queue.clone(), 4).await;
 
+    // Initialize MongoDB connection (needed for WebSocket gateway handlers)
+    let mongodb = match create_mongodb().await {
+        Ok(db) => {
+            info!("MongoDB connected successfully");
+            Some(db)
+        }
+        Err(e) => {
+            warn!(
+                "Failed to connect to MongoDB (continuing without MongoDB): {}",
+                e
+            );
+            None
+        }
+    };
+
     // Initialize Kafka event system (for event-driven architecture)
+    // Uses init_full to register WebSocket gateway handlers (chat, games) when MongoDB is available
     let events_pool = create_pool().await;
     let events_db = Arc::new(Mutex::new(events_pool));
 
-    let (event_bus, event_consumer) = match events::init(events_db).await {
+    let (event_bus, event_consumer) = match events::init_full(events_db, mongodb.clone()).await {
         Ok((bus, consumer)) => {
             info!("Kafka event system initialized successfully");
             (Some(bus), Some(consumer))
         }
         Err(e) => {
-            warn!("Failed to initialize Kafka event system (continuing without events): {}", e);
+            warn!(
+                "Failed to initialize Kafka event system (continuing without events): {}",
+                e
+            );
             (None, None)
         }
     };
@@ -70,18 +95,6 @@ async fn main() -> std::io::Result<()> {
         info!("Kafka event consumer started");
     }
 
-    // Initialize MongoDB connection
-    let mongodb = match create_mongodb().await {
-        Ok(db) => {
-            info!("MongoDB connected successfully");
-            Some(db)
-        }
-        Err(e) => {
-            warn!("Failed to connect to MongoDB (continuing without MongoDB): {}", e);
-            None
-        }
-    };
-
     // Cast SharedQueue to DynMq for AppState (avoids circular dependency)
     let dyn_mq: blazing_sun::database::DynMq = mq_queue;
 
@@ -89,14 +102,21 @@ async fn main() -> std::io::Result<()> {
     let state: Data<AppState> = state_full(dyn_mq, event_bus, mongodb).await;
 
     // Initialize session configuration
-    let session_config = SessionConfig::from_env()
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Session config error: {}", e)))?;
+    let session_config = SessionConfig::from_env().map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Session config error: {}", e),
+        )
+    })?;
 
     // Initialize Redis session store
     let redis_url = session_config.redis_url.clone();
-    let session_store = RedisSessionStore::new(&redis_url)
-        .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Redis session store error: {}", e)))?;
+    let session_store = RedisSessionStore::new(&redis_url).await.map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Redis session store error: {}", e),
+        )
+    })?;
 
     info!("Redis session store initialized successfully");
 
@@ -124,18 +144,16 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new(move || {
         // Build session middleware with configuration
-        let session_middleware = SessionMiddleware::builder(session_store.clone(), secret_key.clone())
-            .cookie_name(session_config.cookie_name.clone())
-            .cookie_secure(session_config.secure_cookie)
-            .cookie_http_only(session_config.http_only)
-            .cookie_same_site(same_site)
-            .cookie_path(session_config.cookie_path.clone())
-            .session_lifecycle(
-                PersistentSession::default()
-                    .session_ttl(session_ttl)
-            )
-            .cookie_content_security(CookieContentSecurity::Private)
-            .build();
+        let session_middleware =
+            SessionMiddleware::builder(session_store.clone(), secret_key.clone())
+                .cookie_name(session_config.cookie_name.clone())
+                .cookie_secure(session_config.secure_cookie)
+                .cookie_http_only(session_config.http_only)
+                .cookie_same_site(same_site)
+                .cookie_path(session_config.cookie_path.clone())
+                .session_lifecycle(PersistentSession::default().session_ttl(session_ttl))
+                .cookie_content_security(CookieContentSecurity::Private)
+                .build();
 
         App::new()
             .wrap(tracing_logger::configure())

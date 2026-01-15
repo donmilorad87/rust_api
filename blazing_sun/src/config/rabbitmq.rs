@@ -12,18 +12,14 @@ pub struct RabbitMQConfig {
 pub static RABBITMQ: Lazy<RabbitMQConfig> = Lazy::new(|| {
     dotenv::dotenv().ok();
 
-    let host = std::env::var("RABBITMQ_HOST")
-        .unwrap_or_else(|_| "127.0.0.1".to_string());
+    let host = std::env::var("RABBITMQ_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port: u16 = std::env::var("RABBITMQ_PORT")
         .unwrap_or_else(|_| "5672".to_string())
         .parse()
         .expect("RABBITMQ_PORT must be a valid number");
-    let user = std::env::var("RABBITMQ_USER")
-        .unwrap_or_else(|_| "guest".to_string());
-    let password = std::env::var("RABBITMQ_PASSWORD")
-        .unwrap_or_else(|_| "guest".to_string());
-    let vhost = std::env::var("RABBITMQ_VHOST")
-        .unwrap_or_else(|_| "/".to_string());
+    let user = std::env::var("RABBITMQ_USER").unwrap_or_else(|_| "guest".to_string());
+    let password = std::env::var("RABBITMQ_PASSWORD").unwrap_or_else(|_| "guest".to_string());
+    let vhost = std::env::var("RABBITMQ_VHOST").unwrap_or_else(|_| "/".to_string());
 
     // Build AMQP URL
     let encoded_vhost = if vhost == "/" {

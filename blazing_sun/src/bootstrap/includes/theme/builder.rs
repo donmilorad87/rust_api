@@ -49,7 +49,7 @@ impl BuildResult {
 }
 
 /// Run npm build in the specified directory
-pub fn run_build(working_dir: &Path, timeout_secs: u64) -> Result<BuildResult, BuilderError> {
+pub fn run_build(working_dir: &Path, _timeout_secs: u64) -> Result<BuildResult, BuilderError> {
     // Verify working directory exists
     if !working_dir.exists() {
         return Err(BuilderError::WorkingDirNotFound(
@@ -101,18 +101,14 @@ pub async fn run_build_async(
     let working_dir = working_dir.to_path_buf();
 
     // Spawn blocking task for the build
-    let build_future = tokio::task::spawn_blocking(move || {
-        run_build(&working_dir, timeout_secs)
-    });
+    let build_future = tokio::task::spawn_blocking(move || run_build(&working_dir, timeout_secs));
 
     // Apply timeout
     match timeout(Duration::from_secs(timeout_secs), build_future).await {
-        Ok(result) => {
-            match result {
-                Ok(build_result) => build_result,
-                Err(e) => Err(BuilderError::BuildFailed(format!("Task panicked: {}", e))),
-            }
-        }
+        Ok(result) => match result {
+            Ok(build_result) => build_result,
+            Err(e) => Err(BuilderError::BuildFailed(format!("Task panicked: {}", e))),
+        },
         Err(_) => Err(BuilderError::Timeout(timeout_secs)),
     }
 }

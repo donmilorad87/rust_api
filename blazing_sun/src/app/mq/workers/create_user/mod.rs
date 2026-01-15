@@ -24,9 +24,7 @@ pub async fn process(
             info!("create_user job {} completed successfully", job.id);
             Ok(JobResult::Success(serde_json::Value::Null))
         }
-        Ok(false) => {
-            Ok(JobResult::Retry("User creation returned false".to_string()))
-        }
+        Ok(false) => Ok(JobResult::Retry("User creation returned false".to_string())),
         Err(e) => {
             error!("create_user job {} failed: {}", job.id, e);
             // Check if it's a retryable error

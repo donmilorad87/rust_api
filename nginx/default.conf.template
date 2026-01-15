@@ -18,12 +18,24 @@ upstream kafka_ui {
     server kafka-ui:8080;
 }
 
+upstream checkout {
+    server checkout:9996;
+}
+
 upstream pgadmin {
     server pgadmin:80;
 }
 
+upstream pgadmin_checkout {
+    server pgadmin_checkout:80;
+}
+
 upstream mongo_express {
     server mongo-express:8081;
+}
+
+upstream ws_gateway {
+    server ws_gateway:9998;
 }
 
 # Redirect HTTP to HTTPS
@@ -64,9 +76,9 @@ server {
 
     # ===================
     # Strip trailing slash (redirect /path/ to /path)
-    # Excludes: root /, service paths (rabbitmq, prometheus, grafana, kafka, pgadmin, mongo, api, storage, assets)
+    # Excludes: root /, service paths (rabbitmq, prometheus, grafana, kafka, checkout, pgadmin, pgadmin_checkout, mongo, api, storage, assets)
     # ===================
-    rewrite ^/((?!rabbitmq|prometheus|grafana|kafka|pgadmin|mongo|api|storage|assets).*)(?:/)+$ /$1 permanent;
+    rewrite ^/((?!rabbitmq|prometheus|grafana|kafka|checkout|pgadmin|pgadmin_checkout|mongo|api|storage|assets).*)(?:/)+$ /$1 permanent;
 
     # ===================
     # RabbitMQ Management
@@ -130,6 +142,22 @@ server {
     }
 
     # ===================
+    # Checkout Service
+    # ===================
+    location = /checkout {
+        return 301 /checkout/;
+    }
+
+    location /checkout/ {
+        proxy_pass http://checkout/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ===================
     # pgAdmin (PostgreSQL)
     # ===================
     location /pgadmin/ {
@@ -140,6 +168,20 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Script-Name /pgadmin;
+        proxy_redirect off;
+    }
+
+    # ===================
+    # pgAdmin Checkout (PostgreSQL)
+    # ===================
+    location /pgadmin_checkout/ {
+        proxy_pass http://pgadmin_checkout;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Script-Name /pgadmin_checkout;
         proxy_redirect off;
     }
 
@@ -175,6 +217,17 @@ server {
     }
 
     # ===================
+    # Localization JSON (public)
+    # ===================
+    location /localizations/ {
+        alias /var/www/localizations/;
+        expires 5m;
+        add_header Cache-Control "public, max-age=300";
+        add_header X-Content-Type-Options "nosniff";
+        try_files $uri =404;
+    }
+
+    # ===================
     # Public Storage Files (static file serving)
     # ===================
     location /storage/ {
@@ -190,6 +243,22 @@ server {
 
         # Deny access to other file types
         return 404;
+    }
+
+    # ===================
+    # WebSocket Gateway
+    # ===================
+    location /ws {
+        proxy_pass http://ws_gateway;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
     }
 
     # ===================
