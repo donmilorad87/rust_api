@@ -1,13 +1,11 @@
 pub mod auth;
 pub mod chat;
-pub mod checkout;
 pub mod checkout_finished;
 pub mod games;
 pub mod user;
 
 pub use auth::{AuthEventHandler, SecurityMonitorHandler};
 pub use chat::ChatCommandHandler;
-pub use checkout::CheckoutEventHandler;
 pub use checkout_finished::CheckoutFinishedHandler;
 pub use games::GameCommandHandler;
 pub use user::{UserAuditHandler, UserEventHandler};
@@ -44,11 +42,7 @@ pub fn register_default_handlers(
     let security_handler = SecurityMonitorHandler::new();
     consumer.register_handler(Arc::new(security_handler));
 
-    // Existing checkout.events handler (for checkout.commands/checkout.events flow)
-    let checkout_handler = CheckoutEventHandler::new(db.clone(), producer.clone());
-    consumer.register_handler(Arc::new(checkout_handler));
-
-    // New checkout_finished handler (for checkout/checkout_finished flow)
+    // Checkout finished handler (checkout/checkout_finished flow)
     let checkout_finished_handler = CheckoutFinishedHandler::new(db, producer);
     consumer.register_handler(Arc::new(checkout_finished_handler));
 

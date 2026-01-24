@@ -10,4 +10,5 @@
 pub mod bigger_dice;
 pub mod mongodb_game_chat;
 pub mod mongodb_games;
+pub mod tic_tac_toe;
 pub mod types;

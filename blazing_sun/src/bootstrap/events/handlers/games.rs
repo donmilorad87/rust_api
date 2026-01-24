@@ -6,19 +6,22 @@
 
 use crate::app::db_query::mutations::game_room as game_room_mutations;
 use crate::app::db_query::mutations::game_player_disconnects as disconnect_mutations;
+use crate::app::db_query::mutations::user as user_mutations;
 use crate::app::db_query::read::game_room as game_room_read;
 use crate::app::db_query::read::game_player_disconnects as disconnect_read;
 use crate::app::db_query::read::user;
 use crate::app::games::bigger_dice::{self, BiggerDiceRoundState};
+use crate::app::games::tic_tac_toe::{self, TicTacToeMatchState};
 use crate::app::games::mongodb_game_chat::{ChatChannel, MongoGameChatClient};
 use crate::app::games::mongodb_games::MongoGameClient;
 use crate::app::db_query::mutations::game_user_mutes as mute_mutations;
+use crate::config::GamesConfig;
 // game_user_mutes read operations available if needed for filtering
 #[allow(unused_imports)]
 use crate::app::db_query::read::game_user_mutes as mute_read;
 use crate::app::games::types::{
-    Audience, BannedPlayer, EventEnvelope, GameEvent, GameHistoryPlayer, GamePlayer, GameRoom,
-    GameSpectator, GameType, RoomStatus,
+    Audience, BannedPlayer, BiggerDicePlayerRoll, EventEnvelope, GameEvent, GameHistoryPlayer,
+    GamePlayer, GameRoom, GameSpectator, GameType, RoomStatus,
 };
 use crate::events::consumer::{EventHandler, EventHandlerError};
 use crate::events::producer::EventProducer;
@@ -43,6 +46,8 @@ pub struct GameCommandHandler {
     rooms: Arc<Mutex<HashMap<String, GameRoom>>>,
     /// Round states for Bigger Dice games (transient, not persisted)
     round_states: Arc<Mutex<HashMap<String, BiggerDiceRoundState>>>,
+    /// Match states for Tic Tac Toe games (transient, not persisted)
+    tic_tac_toe_states: Arc<Mutex<HashMap<String, TicTacToeMatchState>>>,
     /// Votes to auto-replace disconnected players (room_id -> user_id -> voters)
     disconnect_votes: Arc<Mutex<HashMap<String, HashMap<i64, HashSet<i64>>>>>,
 }
@@ -59,6 +64,7 @@ impl GameCommandHandler {
             producer,
             rooms: Arc::new(Mutex::new(HashMap::new())),
             round_states: Arc::new(Mutex::new(HashMap::new())),
+            tic_tac_toe_states: Arc::new(Mutex::new(HashMap::new())),
             disconnect_votes: Arc::new(Mutex::new(HashMap::new())),
         }
     }
@@ -265,18 +271,20 @@ impl GameCommandHandler {
             recorded_players: record.recorded_players.clone(),
             recorded_spectators: record.recorded_spectators.clone(),
             selected_players: record.selected_players.clone(),
-            auto_players: Vec::new(),
+            auto_players: record.auto_players.clone(),
         }
     }
 
     /// Get room from cache or database
     async fn get_room(&self, room_id: &str) -> Result<Option<GameRoom>, EventHandlerError> {
         // Check cache first
-        {
+        let cached_room = {
             let rooms = self.rooms.lock().await;
-            if let Some(room) = rooms.get(room_id) {
-                return Ok(Some(room.clone()));
-            }
+            rooms.get(room_id).cloned()
+        };
+
+        if let Some(room) = cached_room {
+            return Ok(Some(room));
         }
 
         // Fallback to database
@@ -284,6 +292,7 @@ impl GameCommandHandler {
         let record = game_room_read::get_by_room_id(&db, room_id)
             .await
             .map_err(|e| EventHandlerError::Retryable(format!("Database error: {}", e)))?;
+        drop(db);
 
         if let Some(record) = record {
             let room = Self::db_record_to_game_room(&record);
@@ -292,18 +301,26 @@ impl GameCommandHandler {
             rooms.insert(room_id.to_string(), room.clone());
             Ok(Some(room))
         } else {
+            // Room not found in database - ensure it's also removed from cache
+            // (handles stale cache entries)
+            let mut rooms = self.rooms.lock().await;
+            rooms.remove(room_id);
             Ok(None)
         }
     }
 
     /// Get room by name from cache or database
     async fn get_room_by_name(&self, room_name: &str) -> Result<Option<GameRoom>, EventHandlerError> {
-        // Check cache first
-        {
+        // Check cache first - get both the room and its room_id for potential cleanup
+        let cached_result = {
             let rooms = self.rooms.lock().await;
-            if let Some(room) = rooms.values().find(|r| r.room_name == room_name && r.status == RoomStatus::Waiting) {
-                return Ok(Some(room.clone()));
-            }
+            rooms.values()
+                .find(|r| r.room_name == room_name && r.status == RoomStatus::Waiting)
+                .map(|r| (r.room_id.clone(), r.clone()))
+        };
+
+        if let Some((_, room)) = cached_result {
+            return Ok(Some(room));
         }
 
         // Fallback to database
@@ -311,6 +328,7 @@ impl GameCommandHandler {
         let record = game_room_read::get_by_room_name(&db, room_name)
             .await
             .map_err(|e| EventHandlerError::Retryable(format!("Database error: {}", e)))?;
+        drop(db);
 
         if let Some(record) = record {
             let room = Self::db_record_to_game_room(&record);
@@ -319,6 +337,15 @@ impl GameCommandHandler {
             rooms.insert(room.room_id.clone(), room.clone());
             Ok(Some(room))
         } else {
+            // Room not found in database - clean up any stale cache entries with this name
+            let mut rooms = self.rooms.lock().await;
+            let stale_ids: Vec<String> = rooms.iter()
+                .filter(|(_, r)| r.room_name == room_name)
+                .map(|(id, _)| id.clone())
+                .collect();
+            for id in stale_ids {
+                rooms.remove(&id);
+            }
             Ok(None)
         }
     }
@@ -361,18 +388,48 @@ impl GameCommandHandler {
     }
 
     /// Send an event back to the WebSocket gateway via Kafka
+    ///
+    /// When `game_type` is provided and the event doesn't already have a game prefix,
+    /// the event will be prefixed with the game type (e.g., "games.event.bigger_dice.room_created")
     async fn publish_game_event(
         &self,
         event: GameEvent,
         audience: Audience,
+    ) -> Result<(), EventHandlerError> {
+        self.publish_game_event_typed(event, audience, None).await
+    }
+
+    /// Send a game-typed event back to the WebSocket gateway via Kafka
+    ///
+    /// This version includes the game_type prefix for events like room_created, player_left, etc.
+    /// Use this for events that need to be filtered by game type on the frontend.
+    async fn publish_game_event_typed(
+        &self,
+        event: GameEvent,
+        audience: Audience,
+        game_type: Option<&str>,
     ) -> Result<(), EventHandlerError> {
         let Some(producer) = &self.producer else {
             warn!("No Kafka producer available for game events");
             return Ok(());
         };
 
-        // Construct full event type like "games.event.room_created"
-        let event_type = format!("games.event.{}", event.event_type_name());
+        let base_event_name = event.event_type_name();
+
+        // Construct full event type:
+        // - If event already has game prefix (e.g., "bigger_dice.rolled"), use as-is
+        // - If game_type provided and no prefix, add game prefix (e.g., "bigger_dice.room_created")
+        // - Otherwise, use base name (e.g., "room_created") for backward compatibility
+        let event_type = if base_event_name.contains('.') {
+            // Already has a game prefix like "bigger_dice.rolled" or "tic_tac_toe.moved"
+            format!("games.event.{}", base_event_name)
+        } else if let Some(gt) = game_type {
+            // Add game prefix like "games.event.bigger_dice.room_created"
+            format!("games.event.{}.{}", gt, base_event_name)
+        } else {
+            // Fallback to original behavior (no game prefix)
+            format!("games.event.{}", base_event_name)
+        };
 
         let envelope = EventEnvelope {
             event_id: Uuid::new_v4().to_string(),
@@ -399,6 +456,141 @@ impl GameCommandHandler {
             .map_err(|e| EventHandlerError::Retryable(format!("Failed to publish game event: {}", e)))?;
 
         Ok(())
+    }
+
+    /// Publish a game participation event to Kafka for the checkout service
+    /// This event is published when a player is selected to play and their balance is deducted
+    async fn publish_game_participation_event(
+        &self,
+        user_id: i64,
+        amount_cents: i64,
+        room_id: &str,
+        room_name: &str,
+        game_type: GameType,
+        username: Option<&str>,
+    ) {
+        let Some(producer) = &self.producer else {
+            warn!("No Kafka producer available for game participation events");
+            return;
+        };
+
+        let event_payload = serde_json::json!({
+            "event_type": "game.participation.deducted",
+            "event_id": Uuid::new_v4().to_string(),
+            "timestamp": Utc::now().to_rfc3339(),
+            "user_id": user_id,
+            "amount_cents": amount_cents,
+            "game_type": game_type.as_str(),
+            "room_id": room_id,
+            "room_name": room_name,
+            "username": username,
+            "description": format!("PAY {} GAME", game_type.as_str().to_uppercase().replace("_", " ")),
+        });
+
+        let bytes = match serde_json::to_vec(&event_payload) {
+            Ok(b) => b,
+            Err(e) => {
+                error!(error = %e, "Failed to serialize game participation event");
+                return;
+            }
+        };
+
+        // Route to the correct topic based on game type
+        let topic_name = match game_type {
+            GameType::BiggerDice => topic::BIGGER_DICE_PARTICIPATION_PAYED,
+            GameType::TicTacToe => topic::TIC_TAC_TOE_PARTICIPATION_PAYED,
+        };
+
+        // Use user_id as partition key to ensure ordering per user
+        let key = user_id.to_string();
+        if let Err(e) = producer.send_raw(topic_name, Some(&key), &bytes).await {
+            error!(
+                error = %e,
+                user_id = %user_id,
+                amount = %amount_cents,
+                room_id = %room_id,
+                topic = %topic_name,
+                "Failed to publish game participation event"
+            );
+        } else {
+            info!(
+                user_id = %user_id,
+                amount = %amount_cents,
+                room_id = %room_id,
+                game_type = %game_type.as_str(),
+                topic = %topic_name,
+                "Published game participation event to Kafka"
+            );
+        }
+    }
+
+    /// Publish a game prize win event to Kafka for the checkout service
+    /// This event is published when a game finishes and the winner receives their prize
+    async fn publish_game_prize_win_event(
+        &self,
+        user_id: i64,
+        amount_cents: i64,
+        room_id: &str,
+        room_name: &str,
+        game_type: GameType,
+        username: Option<&str>,
+        total_players: usize,
+    ) {
+        let Some(producer) = &self.producer else {
+            warn!("No Kafka producer available for game prize win events");
+            return;
+        };
+
+        let event_payload = serde_json::json!({
+            "event_type": "game.prize.won",
+            "event_id": Uuid::new_v4().to_string(),
+            "timestamp": Utc::now().to_rfc3339(),
+            "user_id": user_id,
+            "amount_cents": amount_cents,
+            "game_type": game_type.as_str(),
+            "room_id": room_id,
+            "room_name": room_name,
+            "username": username,
+            "total_players": total_players,
+            "description": format!("{} GAME PRIZE WIN", game_type.as_str().to_uppercase().replace("_", " ")),
+        });
+
+        let bytes = match serde_json::to_vec(&event_payload) {
+            Ok(b) => b,
+            Err(e) => {
+                error!(error = %e, "Failed to serialize game prize win event");
+                return;
+            }
+        };
+
+        // Route to the correct topic based on game type
+        let topic_name = match game_type {
+            GameType::BiggerDice => topic::BIGGER_DICE_WIN_PRIZE,
+            GameType::TicTacToe => topic::TIC_TAC_TOE_WIN_PRIZE,
+        };
+
+        // Use user_id as partition key to ensure ordering per user
+        let key = user_id.to_string();
+        if let Err(e) = producer.send_raw(topic_name, Some(&key), &bytes).await {
+            error!(
+                error = %e,
+                user_id = %user_id,
+                amount = %amount_cents,
+                room_id = %room_id,
+                topic = %topic_name,
+                "Failed to publish game prize win event"
+            );
+        } else {
+            info!(
+                user_id = %user_id,
+                amount = %amount_cents,
+                room_id = %room_id,
+                game_type = %game_type.as_str(),
+                total_players = %total_players,
+                topic = %topic_name,
+                "Published game prize win event to Kafka"
+            );
+        }
     }
 
     /// Handle create_room command
@@ -449,6 +641,11 @@ impl GameCommandHandler {
             .await
             .map_err(|e| EventHandlerError::Retryable(format!("Failed to create room in database: {}", e)))?;
 
+        // Add host to lobby in database (important for persistence)
+        game_room_mutations::add_to_lobby(&db, &room_id, user_id)
+            .await
+            .map_err(|e| EventHandlerError::Retryable(format!("Failed to add host to lobby: {}", e)))?;
+
         drop(db);
 
         // Build room for cache and events
@@ -491,7 +688,12 @@ impl GameCommandHandler {
             allow_spectators: room.allow_spectators,
         };
 
-        self.publish_game_event(event, Audience::broadcast()).await?;
+        let gt = game_type_enum.as_str();
+        self.publish_game_event_typed(event, Audience::broadcast(), Some(gt)).await?;
+
+        // Send room state to the host so they have the full state including themselves in lobby
+        let room_state = Self::room_state_event(&room);
+        self.publish_game_event_typed(room_state, Audience::user(user_id), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -606,9 +808,11 @@ impl GameCommandHandler {
         // Update cache
         self.update_room(&room).await?;
 
+        let gt = room.game_type.as_str();
+
         // Notify the joining user with full room state
         let room_state = Self::room_state_event(&room);
-        self.publish_game_event(room_state, Audience::user(user_id)).await?;
+        self.publish_game_event_typed(room_state, Audience::user(user_id), Some(gt)).await?;
 
         // Notify room that someone joined lobby
         let event = GameEvent::LobbyJoined {
@@ -617,7 +821,7 @@ impl GameCommandHandler {
             player,
         };
 
-        self.publish_game_event(event, Audience::room(room_id.clone())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id.clone()), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -652,8 +856,9 @@ impl GameCommandHandler {
             .or_else(|| room.lobby.iter().find(|p| p.user_id == user_id));
         let username = player.map(|p| p.username.clone()).unwrap_or_default();
 
-        // Store room name for room_removed event
+        // Store room name and game type for events
         let room_name = room.room_name.clone();
+        let gt = room.game_type.as_str();
 
         // Remove player from both players and lobby lists
         room.players.retain(|p| p.user_id != user_id);
@@ -671,8 +876,8 @@ impl GameCommandHandler {
             username,
         };
 
-        // If room is empty or host left during waiting, deactivate room (soft delete)
-        let should_deactivate = room.players.is_empty()
+        // If room is completely empty (no players AND no lobby members) or host left during waiting, deactivate room (soft delete)
+        let should_deactivate = (room.players.is_empty() && room.lobby.is_empty())
             || (room.status == RoomStatus::Waiting && room.host_id == user_id);
 
         if should_deactivate {
@@ -699,13 +904,13 @@ impl GameCommandHandler {
                 reason: reason.to_string(),
             };
             // Broadcast to all clients so they can remove the room from their lobby list
-            self.publish_game_event(room_removed_event, Audience::broadcast()).await?;
+            self.publish_game_event_typed(room_removed_event, Audience::broadcast(), Some(gt)).await?;
         } else {
             drop(db);
             self.update_room(&room).await?;
         }
 
-        self.publish_game_event(event, Audience::room(room_id.to_string())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -752,13 +957,15 @@ impl GameCommandHandler {
 
         self.clear_disconnect_votes_for(room_id, user_id).await;
 
+        let gt = room.game_type.as_str();
+
         let event = GameEvent::PlayerDisconnected {
             room_id: room_id.to_string(),
             user_id,
             username,
             timeout_at,
         };
-        self.publish_game_event(event, Audience::room(room_id.to_string())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
 
         Ok(())
     }
@@ -907,16 +1114,21 @@ impl GameCommandHandler {
             if let Err(e) = game_room_mutations::ban_player_system(&db, room_id, target_user_id).await {
                 warn!(error = %e, "Failed to ban disconnected player");
             }
+            // Persist auto_players to database
+            if let Err(e) = game_room_mutations::add_auto_player(&db, room_id, target_user_id).await {
+                warn!(error = %e, "Failed to add auto_player to database");
+            }
             drop(db);
 
             self.clear_disconnect_votes_for(room_id, target_user_id).await;
 
+            let gt = room.game_type.as_str();
             let event = GameEvent::PlayerAutoEnabled {
                 room_id: room_id.to_string(),
                 user_id: target_user_id,
                 username,
             };
-            self.publish_game_event(event, Audience::room(room_id.to_string())).await?;
+            self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
 
             self.auto_roll_until_human_turn(room_id).await?;
         }
@@ -980,27 +1192,31 @@ impl GameCommandHandler {
         // Other users need to be in the room
         if is_banned {
             // Banned users see NotInRoom
+            let gt = room.game_type.as_str();
             let not_in_room = GameEvent::NotInRoom {
                 room_id: room.room_id.clone(),
                 room_name: room.room_name.clone(),
                 is_password_protected: room.is_password_protected,
                 status: room.status.clone(),
+                allow_spectators: room.allow_spectators,
                 socket_id: socket_id.to_string(),
             };
-            self.publish_game_event(not_in_room, Audience::user(user_id)).await?;
+            self.publish_game_event_typed(not_in_room, Audience::user(user_id), Some(gt)).await?;
             return Ok(());
         }
 
         if !is_host && !is_player && !is_spectator && !is_in_lobby {
             // Non-host users who aren't in the room see NotInRoom
+            let gt = room.game_type.as_str();
             let not_in_room = GameEvent::NotInRoom {
                 room_id: room.room_id.clone(),
                 room_name: room.room_name.clone(),
                 is_password_protected: room.is_password_protected,
                 status: room.status.clone(),
+                allow_spectators: room.allow_spectators,
                 socket_id: socket_id.to_string(),
             };
-            self.publish_game_event(not_in_room, Audience::user(user_id)).await?;
+            self.publish_game_event_typed(not_in_room, Audience::user(user_id), Some(gt)).await?;
             return Ok(());
         }
 
@@ -1042,6 +1258,12 @@ impl GameCommandHandler {
         if was_auto {
             room.disable_auto_player(user_id);
             self.update_room(&room).await?;
+            // Persist auto_players removal to database
+            let db = self.db.lock().await;
+            if let Err(e) = game_room_mutations::remove_auto_player(&db, &room_id_str, user_id).await {
+                warn!(error = %e, "Failed to remove auto_player from database");
+            }
+            drop(db);
         }
 
         if is_player {
@@ -1054,10 +1276,11 @@ impl GameCommandHandler {
         }
 
         // Send room state to rejoin user
+        let gt = room.game_type.as_str();
         let room_state = Self::room_state_event(&room);
-        
+
         // Send room state to the rejoining user
-        self.publish_game_event(room_state, Audience::user(user_id)).await?;
+        self.publish_game_event_typed(room_state, Audience::user(user_id), Some(gt)).await?;
 
         if room.game_type == GameType::BiggerDice && room.status == RoomStatus::InProgress {
             let round_state = {
@@ -1065,17 +1288,70 @@ impl GameCommandHandler {
                 round_states.get(&room_id_str).cloned()
             };
 
-            if let (Some(round_state), Some(player1), Some(player2)) =
-                (round_state, room.players.get(0), room.players.get(1))
-            {
+            if let Some(round_state) = round_state {
+                // Build current rolls from round state
+                let current_rolls: Vec<(i64, i32)> = round_state
+                    .current_round_rolls
+                    .iter()
+                    .map(|(&pid, &roll)| (pid, roll))
+                    .collect();
+
+                // Calculate pending rollers (active_rollers who haven't rolled yet)
+                let pending_rollers: Vec<i64> = round_state
+                    .active_rollers
+                    .iter()
+                    .skip(round_state.current_roller_index)
+                    .copied()
+                    .collect();
+
+                // Load round history from MongoDB for rejoining player
+                let round_history: Vec<serde_json::Value> = if let Some(mongodb) = &self.mongodb {
+                    let game_client = MongoGameClient::new(mongodb.clone());
+                    match game_client.get_room_round_results(&room_id_str).await {
+                        Ok(results) => results
+                            .into_iter()
+                            .map(|r| {
+                                // Format as frontend expects:
+                                // { round, rolls: [{id, roll, username}], winnerId, winnerName, isTiebreaker }
+                                let rolls: Vec<serde_json::Value> = r
+                                    .rolls
+                                    .into_iter()
+                                    .map(|pr| {
+                                        serde_json::json!({
+                                            "id": pr.user_id.to_string(),
+                                            "roll": pr.roll,
+                                            "username": pr.username
+                                        })
+                                    })
+                                    .collect();
+
+                                serde_json::json!({
+                                    "round": r.round_number,
+                                    "rolls": rolls,
+                                    "winnerId": r.winner_id.map(|id| id.to_string()),
+                                    "winnerName": r.winner_username,
+                                    "isTiebreaker": r.is_tiebreaker
+                                })
+                            })
+                            .collect(),
+                        Err(e) => {
+                            warn!(error = %e, room_id = %room_id_str, "Failed to load round history from MongoDB");
+                            Vec::new()
+                        }
+                    }
+                } else {
+                    Vec::new()
+                };
+
                 let event = GameEvent::BiggerDiceState {
                     room_id: room_id_str.clone(),
-                    player1_id: player1.user_id,
-                    player1_roll: round_state.last_player1_roll,
-                    player2_id: player2.user_id,
-                    player2_roll: round_state.last_player2_roll,
+                    round_number: round_state.round_number,
+                    current_rolls,
+                    pending_rollers,
+                    is_tiebreaker: round_state.is_tiebreaker,
+                    round_history,
                 };
-                self.publish_game_event(event, Audience::user(user_id)).await?;
+                self.publish_game_event_typed(event, Audience::user(user_id), Some(gt)).await?;
             }
         }
 
@@ -1085,7 +1361,7 @@ impl GameCommandHandler {
                 user_id,
                 username: username.clone(),
             };
-            self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+            self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
         }
 
         // Notify room that player has reconnected
@@ -1095,7 +1371,7 @@ impl GameCommandHandler {
                 user_id,
                 username: username.clone(),
             };
-            self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+            self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
 
             info!(
                 room_id = %room_id_str,
@@ -1125,7 +1401,7 @@ impl GameCommandHandler {
                     username: player.username.clone(),
                     timeout_at,
                 };
-                self.publish_game_event(event, Audience::user(user_id)).await?;
+                self.publish_game_event_typed(event, Audience::user(user_id), Some(gt)).await?;
             }
         }
 
@@ -1176,34 +1452,37 @@ impl GameCommandHandler {
         }
         drop(db);
 
+        let gt = room.game_type.as_str();
+
         let event = GameEvent::PlayerReady {
             room_id: room_id.to_string(),
             user_id,
             username,
         };
 
-        self.publish_game_event(event, Audience::room(room_id.to_string())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
 
         // Check if all selected players are ready and auto-start
         // Must have exactly player_count selected players, and all must be ready
         if room.selected_players.len() == room.player_count as usize && room.all_selected_ready() {
             info!(room_id = %room_id, player_count = %room.player_count, "All selected players ready - auto-starting game");
-            
+
             // Move selected players from lobby to players
             room.move_selected_to_players();
             room.status = RoomStatus::InProgress;
 
-            let events = bigger_dice::start_game(&mut room);
+            // Start game and get initialized round state
+            let (events, round_state) = bigger_dice::start_game(&mut room);
 
             // Update game start in database with full state
             let first_turn = room.players.first().map(|p| p.user_id);
             let players_json = serde_json::to_value(&room.players).unwrap_or_default();
             let lobby_json = serde_json::to_value(&room.lobby).unwrap_or_default();
-            
+
             let db = self.db.lock().await;
             if let Err(e) = game_room_mutations::start_game_with_state(
-                &db, 
-                room_id, 
+                &db,
+                room_id,
                 first_turn,
                 &players_json,
                 &lobby_json,
@@ -1212,18 +1491,27 @@ impl GameCommandHandler {
             }
             drop(db);
 
-            // Initialize round state
+            // Store initialized round state with all players as active rollers
             {
                 let mut round_states = self.round_states.lock().await;
-                round_states.insert(room_id.to_string(), BiggerDiceRoundState::default());
+                round_states.insert(room_id.to_string(), round_state);
             }
 
             // Update cache with started game state
             self.update_room(&room).await?;
 
             for event in events {
-                self.publish_game_event(event, Audience::room(room_id.to_string())).await?;
+                self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
             }
+
+            // Broadcast room_removed to all users so lobby viewers remove this room from their list
+            // (game has started, no longer available to join)
+            let room_removed_event = GameEvent::RoomRemoved {
+                room_id: room_id.to_string(),
+                room_name: room.room_name.clone(),
+                reason: "game_started".to_string(),
+            };
+            self.publish_game_event_typed(room_removed_event, Audience::broadcast(), Some(gt)).await?;
         } else {
             // Update cache with ready state
             self.update_room(&room).await?;
@@ -1287,6 +1575,8 @@ impl GameCommandHandler {
         // Update cache
         self.update_room(&room).await?;
 
+        let gt = room.game_type.as_str();
+
         let event = GameEvent::SpectatorJoined {
             room_id: room_id.to_string(),
             user_id,
@@ -1296,8 +1586,8 @@ impl GameCommandHandler {
         // Send room state to spectator
         let room_state = Self::room_state_event(&room);
 
-        self.publish_game_event(room_state, Audience::user(user_id)).await?;
-        self.publish_game_event(event, Audience::room(room_id.to_string())).await?;
+        self.publish_game_event_typed(room_state, Audience::user(user_id), Some(gt)).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -1346,13 +1636,15 @@ impl GameCommandHandler {
             // Update cache
             self.update_room(&room).await?;
 
+            let gt = room.game_type.as_str();
+
             let event = GameEvent::SpectatorLeft {
                 room_id: room_id.to_string(),
                 user_id,
                 username: user.first_name.clone(),
             };
 
-            self.publish_game_event(event, Audience::room(room_id.to_string())).await?;
+            self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
 
             info!(
                 room_id = %room_id,
@@ -1407,6 +1699,55 @@ impl GameCommandHandler {
             return Ok(());
         }
 
+        // Game participation fee in cents (configurable via env, default 1000 = 10 coins)
+        let game_fee_cents = GamesConfig::bigger_dice_entry_fee_cents();
+
+        // Deduct balance from the target player BEFORE selecting them
+        // This is atomic - checks and deducts in one query
+        let db = self.db.lock().await;
+        let deduct_result = user_mutations::deduct_balance_if_sufficient(&db, target_user_id, game_fee_cents).await;
+        drop(db);
+
+        let new_balance = match deduct_result {
+            Ok(balance) => balance,
+            Err(user_mutations::DeductBalanceError::InsufficientBalance { current, required }) => {
+                warn!(
+                    target_user_id = %target_user_id,
+                    current_balance = %current,
+                    required = %required,
+                    "Player has insufficient balance to be selected"
+                );
+                let error = GameEvent::Error {
+                    code: "insufficient_balance".to_string(),
+                    message: format!("Player does not have enough balance. Has {} cents, needs {} cents.", current, required),
+                    socket_id: socket_id.to_string(),
+                };
+                self.publish_game_event(error, Audience::user(user_id)).await?;
+                return Ok(());
+            }
+            Err(user_mutations::DeductBalanceError::UserNotFound) => {
+                warn!(target_user_id = %target_user_id, "Target user not found when deducting balance");
+                let error = GameEvent::Error {
+                    code: "user_not_found".to_string(),
+                    message: "Player not found".to_string(),
+                    socket_id: socket_id.to_string(),
+                };
+                self.publish_game_event(error, Audience::user(user_id)).await?;
+                return Ok(());
+            }
+            Err(user_mutations::DeductBalanceError::DatabaseError(e)) => {
+                error!(error = %e, "Database error when deducting balance");
+                return Err(EventHandlerError::Retryable(format!("Database error: {}", e)));
+            }
+        };
+
+        info!(
+            target_user_id = %target_user_id,
+            deducted_amount = %game_fee_cents,
+            new_balance = %new_balance,
+            "Deducted game participation fee from player"
+        );
+
         // Select player for game in database (adds to selected_players, keeps in lobby)
         let db = self.db.lock().await;
         let success = game_room_mutations::select_player_for_game(&db, room_id, user_id, target_user_id)
@@ -1418,6 +1759,15 @@ impl GameCommandHandler {
         drop(db);
 
         if !success {
+            // Refund the player since selection failed
+            let db = self.db.lock().await;
+            if let Err(e) = user_mutations::add_balance(&db, target_user_id, game_fee_cents).await {
+                error!(error = %e, target_user_id = %target_user_id, "Failed to refund player after selection failure");
+            } else {
+                info!(target_user_id = %target_user_id, refunded_amount = %game_fee_cents, "Refunded player after selection failure");
+            }
+            drop(db);
+
             let error = GameEvent::Error {
                 code: "player_not_in_lobby".to_string(),
                 message: "Player is not in the lobby or already selected".to_string(),
@@ -1436,6 +1786,17 @@ impl GameCommandHandler {
         let player = room.lobby.iter().find(|p| p.user_id == target_user_id).cloned();
 
         let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
+
+        // Publish game participation event for checkout service
+        self.publish_game_participation_event(
+            target_user_id,
+            game_fee_cents,
+            &room_id_str,
+            &room.room_name,
+            room.game_type.clone(),
+            player.as_ref().map(|p| p.username.as_str()),
+        ).await;
 
         // Update cache
         self.update_room(&room).await?;
@@ -1446,7 +1807,7 @@ impl GameCommandHandler {
                 room_id: room_id_str.clone(),
                 player: p,
             };
-            self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+            self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
         }
 
         info!(
@@ -1455,7 +1816,8 @@ impl GameCommandHandler {
             selected_player_id = %target_user_id,
             selected_count = room.selected_players.len(),
             player_count = room.player_count,
-            "Admin selected player for game (persisted to database)"
+            fee_deducted = %game_fee_cents,
+            "Admin selected player for game (persisted to database, fee deducted)"
         );
 
         // Check if we have enough players selected - auto-transition to ready phase
@@ -1481,13 +1843,9 @@ impl GameCommandHandler {
             // Update cache: keep only selected players in lobby
             room.lobby.retain(|p| room.selected_players.contains(&p.user_id));
             
-            // Update room status to starting (ready phase)
-            room.status = RoomStatus::InProgress;
-            let db = self.db.lock().await;
-            let _ = game_room_mutations::update_status(&db, room_id, "starting")
-                .await
-                .map_err(|e| warn!(error = %e, "Failed to update room status"));
-            drop(db);
+            // Keep room in waiting status during ready phase
+            // Status changes to in_progress only when game actually starts (all players ready)
+            room.status = RoomStatus::Waiting;
 
             self.update_room(&room).await?;
 
@@ -1498,7 +1856,7 @@ impl GameCommandHandler {
                     reason: "not_selected".to_string(),
                     message: "The game has started without you. You were not selected to play.".to_string(),
                 };
-                self.publish_game_event(removed_event, Audience::user(*removed_user_id)).await?;
+                self.publish_game_event_typed(removed_event, Audience::user(*removed_user_id), Some(gt)).await?;
             }
 
             // Notify selected players about game starting (ready phase)
@@ -1506,24 +1864,24 @@ impl GameCommandHandler {
                 room_id: room_id_str.clone(),
                 players: room.lobby.clone(),
             };
-            
+
             // Send to all selected players
             for selected_id in &room.selected_players {
-                self.publish_game_event(starting_event.clone(), Audience::user(*selected_id)).await?;
+                self.publish_game_event_typed(starting_event.clone(), Audience::user(*selected_id), Some(gt)).await?;
             }
-            
+
             // Send to spectators too
             for spectator_id in &room.spectators {
-                self.publish_game_event(starting_event.clone(), Audience::user(*spectator_id)).await?;
+                self.publish_game_event_typed(starting_event.clone(), Audience::user(*spectator_id), Some(gt)).await?;
             }
 
             // Send updated room state to remaining players
             let room_state = Self::room_state_event(&room);
             for selected_id in &room.selected_players {
-                self.publish_game_event(room_state.clone(), Audience::user(*selected_id)).await?;
+                self.publish_game_event_typed(room_state.clone(), Audience::user(*selected_id), Some(gt)).await?;
             }
             for spectator_id in &room.spectators {
-                self.publish_game_event(room_state.clone(), Audience::user(*spectator_id)).await?;
+                self.publish_game_event_typed(room_state.clone(), Audience::user(*spectator_id), Some(gt)).await?;
             }
         }
 
@@ -1617,6 +1975,7 @@ impl GameCommandHandler {
         drop(db);
 
         let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
 
         // Update cache
         self.update_room(&room).await?;
@@ -1626,7 +1985,7 @@ impl GameCommandHandler {
             room_id: room_id_str.clone(),
             player: player.clone(),
         };
-        self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
 
         info!(
             room_id = %room_id_str,
@@ -1706,6 +2065,7 @@ impl GameCommandHandler {
         let username = player.map(|p| p.username).unwrap_or_else(|| "Unknown".to_string());
 
         let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
 
         // Update cache
         self.update_room(&room).await?;
@@ -1717,7 +2077,7 @@ impl GameCommandHandler {
             username: username.clone(),
         };
 
-        self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
 
         info!(
             room_id = %room_id_str,
@@ -1794,6 +2154,7 @@ impl GameCommandHandler {
         let username = spectator.map(|s| s.username).unwrap_or_else(|| "Unknown".to_string());
 
         let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
 
         // Update cache
         self.update_room(&room).await?;
@@ -1805,9 +2166,9 @@ impl GameCommandHandler {
             username: username.clone(),
         };
 
-        self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
 
-        // Notify the kicked spectator
+        // Notify the kicked spectator (error events can stay unprefixed)
         let kicked_event = GameEvent::Error {
             code: "kicked_from_room".to_string(),
             message: "You have been removed from this room by the admin".to_string(),
@@ -1884,6 +2245,7 @@ impl GameCommandHandler {
         room.ban_user(target_user_id, &username);
 
         let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
 
         // Update cache
         self.update_room(&room).await?;
@@ -1894,7 +2256,7 @@ impl GameCommandHandler {
             user_id: target_user_id,
             username: username.clone(),
         };
-        self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
 
         info!(
             room_id = %room_id_str,
@@ -1976,6 +2338,7 @@ impl GameCommandHandler {
             .unwrap_or_else(|| "Unknown".to_string());
 
         let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
 
         // Update cache
         self.update_room(&room).await?;
@@ -1986,7 +2349,7 @@ impl GameCommandHandler {
             user_id: target_user_id,
             username: username.clone(),
         };
-        self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
 
         info!(
             room_id = %room_id_str,
@@ -2010,11 +2373,186 @@ impl GameCommandHandler {
         Ok(())
     }
 
+    /// Handle bigger_dice.auto_roll command (frontend fallback for kicked players)
+    ///
+    /// This is triggered by the frontend when it detects that a kicked player's turn
+    /// has not been auto-rolled by the backend (e.g., due to cache miss losing auto_players state).
+    ///
+    /// The handler:
+    /// 1. Verifies the target player is in the auto_players set (or adds them if not and they're banned)
+    /// 2. Verifies it's the target player's turn
+    /// 3. Performs the roll on their behalf
+    async fn handle_bigger_dice_auto_roll(
+        &self,
+        _requester_id: i64,
+        room_id: &str,
+        target_user_id: i64,
+        socket_id: &str,
+    ) -> Result<(), EventHandlerError> {
+        let room_opt = self.get_room(room_id).await?;
+        let Some(mut room) = room_opt else {
+            return Ok(()); // Room not found, silently ignore
+        };
+
+        // Game must be in progress
+        if room.status != RoomStatus::InProgress {
+            return Ok(());
+        }
+
+        // Verify it's the target player's turn
+        if room.current_turn != Some(target_user_id) {
+            info!(
+                room_id = %room_id,
+                target_user_id = %target_user_id,
+                current_turn = ?room.current_turn,
+                "Auto-roll skipped: not target player's turn"
+            );
+            return Ok(());
+        }
+
+        // If target is banned but not in auto_players (cache was lost), restore them to auto_players
+        if room.is_banned(target_user_id) && !room.is_auto_player(target_user_id) {
+            info!(
+                room_id = %room_id,
+                target_user_id = %target_user_id,
+                "Restoring banned player to auto_players (cache recovery)"
+            );
+            room.enable_auto_player(target_user_id);
+            self.update_room(&room).await?;
+            // Persist to database during cache recovery
+            let db = self.db.lock().await;
+            if let Err(e) = game_room_mutations::add_auto_player(&db, room_id, target_user_id).await {
+                warn!(error = %e, "Failed to add auto_player to database during cache recovery");
+            }
+            drop(db);
+        }
+
+        // Verify the target player is in auto_players
+        if !room.is_auto_player(target_user_id) {
+            info!(
+                room_id = %room_id,
+                target_user_id = %target_user_id,
+                "Auto-roll skipped: player not in auto_players"
+            );
+            return Ok(());
+        }
+
+        info!(
+            room_id = %room_id,
+            target_user_id = %target_user_id,
+            "Frontend-triggered auto-roll for kicked player"
+        );
+
+        // Perform the auto-roll
+        self.perform_bigger_dice_roll(target_user_id, room_id, socket_id).await?;
+        self.auto_roll_until_human_turn(room_id).await?;
+
+        Ok(())
+    }
+
+    /// Handle voluntary auto-play request from a player
+    ///
+    /// This allows a player to voluntarily enable auto-play for themselves,
+    /// meaning the game will automatically play their turns (like kicked players).
+    async fn handle_enable_auto_play(
+        &self,
+        user_id: i64,
+        room_id: &str,
+        socket_id: &str,
+    ) -> Result<(), EventHandlerError> {
+        let room_opt = self.get_room(room_id).await?;
+        let Some(mut room) = room_opt else {
+            let error = GameEvent::Error {
+                code: "room_not_found".to_string(),
+                message: "Room not found".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        };
+
+        // Must be a player in the game
+        if !room.is_player(user_id) {
+            let error = GameEvent::Error {
+                code: "not_a_player".to_string(),
+                message: "You are not a player in this game".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        }
+
+        // Game must be in progress
+        if room.status != RoomStatus::InProgress {
+            let error = GameEvent::Error {
+                code: "game_not_in_progress".to_string(),
+                message: "Game is not in progress".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        }
+
+        // Already auto-playing
+        if room.is_auto_player(user_id) {
+            let error = GameEvent::Error {
+                code: "already_auto_play".to_string(),
+                message: "You are already in auto-play mode".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        }
+
+        let username = room
+            .get_player(user_id)
+            .map(|p| p.username.clone())
+            .unwrap_or_else(|| format!("User #{}", user_id));
+
+        // Enable auto-play for this player
+        room.enable_auto_player(user_id);
+        self.update_room(&room).await?;
+
+        // Persist auto_players to database
+        let db = self.db.lock().await;
+        if let Err(e) = game_room_mutations::add_auto_player(&db, room_id, user_id).await {
+            warn!(error = %e, "Failed to add auto_player to database");
+        }
+        drop(db);
+
+        let gt = room.game_type.as_str();
+
+        info!(
+            room_id = %room_id,
+            user_id = %user_id,
+            username = %username,
+            "Player voluntarily enabled auto-play"
+        );
+
+        // Publish event to notify all players
+        let event = GameEvent::PlayerAutoEnabled {
+            room_id: room_id.to_string(),
+            user_id,
+            username,
+        };
+        self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
+
+        // If it's this player's turn, auto-roll for them
+        self.auto_roll_until_human_turn(room_id).await?;
+
+        Ok(())
+    }
+
     async fn auto_roll_until_human_turn(&self, room_id: &str) -> Result<(), EventHandlerError> {
         let mut roll_count = 0;
+        // Loop guard to prevent infinite loops in auto-play scenarios.
+        // In a 2-player all-auto game, a typical game to 10 points could take 20-40+ rounds
+        // (2 rolls per round). Setting to 100 allows up to 50 complete rounds which should
+        // be more than enough for any normal game to complete.
+        const MAX_AUTO_ROLLS: i32 = 100;
         loop {
-            if roll_count >= 10 {
-                warn!(room_id = %room_id, "Auto-roll loop guard triggered");
+            if roll_count >= MAX_AUTO_ROLLS {
+                warn!(room_id = %room_id, roll_count = %roll_count, "Auto-roll loop guard triggered after {} rolls", MAX_AUTO_ROLLS);
                 break;
             }
 
@@ -2087,16 +2625,88 @@ impl GameCommandHandler {
             .entry(room_id.to_string())
             .or_insert_with(BiggerDiceRoundState::default);
 
+        // If round state has empty active_rollers (e.g., recovered from crash), reinitialize
+        if round_state.active_rollers.is_empty() {
+            let all_player_ids: Vec<i64> = room.players.iter().map(|p| p.user_id).collect();
+            round_state.initialize(&all_player_ids);
+            info!(
+                room_id = %room_id,
+                players = ?all_player_ids,
+                "Reinitialized round state with room players"
+            );
+        }
+
         // Process the roll
         let (events, game_ended) = bigger_dice::process_roll(&mut room, round_state, user_id);
 
+        // Get round number for saving round results (before dropping round_states)
+        let current_round_number = round_state.round_number;
+
         let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
 
         drop(round_states);
 
-        // Publish events
-        for event in events {
-            self.publish_game_event(event, Audience::room(room_id_str.clone())).await?;
+        // Publish events and save round results to MongoDB
+        for event in &events {
+            // Save round results to MongoDB for rejoining players
+            if let GameEvent::BiggerDiceRoundResult {
+                rolls,
+                winner_id,
+                is_tiebreaker,
+                ..
+            } = event
+            {
+                // Only save rounds that have a winner (not ties going to tiebreaker)
+                if let Some(winner) = winner_id {
+                    if let Some(mongodb) = &self.mongodb {
+                        let game_client = MongoGameClient::new(mongodb.clone());
+
+                        // Build player rolls with usernames
+                        let player_rolls: Vec<BiggerDicePlayerRoll> = rolls
+                            .iter()
+                            .map(|(pid, roll)| {
+                                let username = room
+                                    .players
+                                    .iter()
+                                    .find(|p| p.user_id == *pid)
+                                    .map(|p| p.username.clone())
+                                    .unwrap_or_else(|| format!("Player {}", pid));
+                                BiggerDicePlayerRoll {
+                                    user_id: *pid,
+                                    username,
+                                    roll: *roll,
+                                }
+                            })
+                            .collect();
+
+                        // Get winner username
+                        let winner_username = room
+                            .players
+                            .iter()
+                            .find(|p| p.user_id == *winner)
+                            .map(|p| p.username.clone());
+
+                        // Save to MongoDB
+                        if let Err(e) = game_client
+                            .save_round_result(
+                                room_id,
+                                current_round_number,
+                                player_rolls,
+                                Some(*winner),
+                                winner_username,
+                                *is_tiebreaker,
+                            )
+                            .await
+                        {
+                            error!(error = %e, room_id = %room_id, round = %current_round_number, "Failed to save round result to MongoDB");
+                        }
+                    }
+                }
+            }
+
+            // Publish the event
+            self.publish_game_event_typed(event.clone(), Audience::room(room_id_str.clone()), Some(gt)).await?;
         }
 
         // If game ended, save to history and clean up
@@ -2124,6 +2734,63 @@ impl GameCommandHandler {
                     room.started_at.unwrap_or_else(Utc::now),
                 ).await {
                     error!(error = %e, "Failed to save game history to MongoDB");
+                }
+
+                // Clear in-progress round results (TTL would also clean up, but this is faster)
+                if let Err(e) = game_client.clear_room_round_results(room_id).await {
+                    warn!(error = %e, room_id = %room_id, "Failed to clear round results from MongoDB");
+                }
+            }
+
+            // Award prize to winner (configurable percentage of total pool)
+            // Winner gets BIGGER_DICE_WINNING_PERCENTAGE% of (total_players * BIGGER_DICE_ENTRY_FEE_CENTS)
+            if let Some(winner_id) = room.winner_id {
+                let total_players = room.players.len();
+                let entry_fee_cents = GamesConfig::bigger_dice_entry_fee_cents();
+                let total_pool_cents = (total_players as i64) * entry_fee_cents;
+
+                // Read winning percentage from config (default: 60%)
+                let winning_percentage = GamesConfig::bigger_dice_winning_percentage() as i64;
+                let prize_cents = (total_pool_cents * winning_percentage) / 100;
+
+                // Get winner's username
+                let winner_username = room.players.iter()
+                    .find(|p| p.user_id == winner_id)
+                    .map(|p| p.username.clone());
+
+                // Add prize to winner's balance
+                let db = self.db.lock().await;
+                match user_mutations::add_balance(&db, winner_id, prize_cents).await {
+                    Ok(()) => {
+                        info!(
+                            winner_id = %winner_id,
+                            prize_cents = %prize_cents,
+                            room_id = %room_id_str,
+                            "Awarded prize to winner"
+                        );
+
+                        drop(db);
+
+                        // Publish prize win event to Kafka for checkout transaction
+                        self.publish_game_prize_win_event(
+                            winner_id,
+                            prize_cents,
+                            &room_id_str,
+                            &room.room_name,
+                            room.game_type.clone(),
+                            winner_username.as_deref(),
+                            total_players,
+                        ).await;
+                    }
+                    Err(e) => {
+                        drop(db);
+                        error!(
+                            error = %e,
+                            winner_id = %winner_id,
+                            prize_cents = %prize_cents,
+                            "Failed to add prize to winner's balance"
+                        );
+                    }
                 }
             }
 
@@ -2171,6 +2838,241 @@ impl GameCommandHandler {
         Ok(())
     }
 
+    /// Handle tic_tac_toe.move command
+    async fn handle_tic_tac_toe_move(
+        &self,
+        user_id: i64,
+        room_id: &str,
+        position: u8,
+        socket_id: &str,
+    ) -> Result<(), EventHandlerError> {
+        // Get room from cache or database
+        let room_opt = self.get_room(room_id).await?;
+
+        let Some(mut room) = room_opt else {
+            let error = GameEvent::Error {
+                code: "room_not_found".to_string(),
+                message: "Room not found".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        };
+
+        if room.status != RoomStatus::InProgress {
+            let error = GameEvent::Error {
+                code: "game_not_in_progress".to_string(),
+                message: "Game is not in progress".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        }
+
+        if room.game_type != GameType::TicTacToe {
+            let error = GameEvent::Error {
+                code: "wrong_game_type".to_string(),
+                message: "This is not a Tic Tac Toe game".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        }
+
+        if room.current_turn != Some(user_id) {
+            let error = GameEvent::Error {
+                code: "not_your_turn".to_string(),
+                message: "It's not your turn".to_string(),
+                socket_id: socket_id.to_string(),
+            };
+            self.publish_game_event(error, Audience::user(user_id)).await?;
+            return Ok(());
+        }
+
+        // Get or create match state
+        let mut tic_tac_toe_states = self.tic_tac_toe_states.lock().await;
+        let match_state = tic_tac_toe_states
+            .entry(room_id.to_string())
+            .or_insert_with(|| {
+                // If state doesn't exist, reinitialize from room
+                if room.players.len() == 2 {
+                    TicTacToeMatchState::initialize(
+                        room.players[0].user_id,
+                        room.players[1].user_id,
+                    )
+                } else {
+                    TicTacToeMatchState::default()
+                }
+            });
+
+        // Process the move
+        let (events, game_ended, match_ended) = tic_tac_toe::process_move(
+            &mut room,
+            match_state,
+            user_id,
+            position,
+        );
+
+        let room_id_str = room_id.to_string();
+        let gt = room.game_type.as_str();
+
+        drop(tic_tac_toe_states);
+
+        // Publish events
+        for event in events {
+            self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
+        }
+
+        // If match ended, handle prize and cleanup
+        if match_ended {
+            if let Some(winner_id) = room.winner_id {
+                // Award prize to winner
+                let total_pool = tic_tac_toe::ENTRY_FEE_CENTS * 2;
+                let prize = (total_pool * tic_tac_toe::WINNING_PERCENTAGE) / 100;
+
+                let winner_username = room
+                    .get_player(winner_id)
+                    .map(|p| p.username.clone());
+
+                // Publish prize event to Kafka
+                self.publish_tic_tac_toe_prize_event(
+                    winner_id,
+                    prize,
+                    room_id,
+                    &room.room_name,
+                    winner_username.as_deref(),
+                ).await;
+            }
+
+            // Save to MongoDB for history
+            if let Some(mongodb) = &self.mongodb {
+                let game_client = MongoGameClient::new(mongodb.clone());
+
+                let history_players: Vec<GameHistoryPlayer> = room.players.iter().map(|p| {
+                    GameHistoryPlayer {
+                        user_id: p.user_id,
+                        username: p.username.clone(),
+                        final_score: p.score,
+                        is_winner: Some(p.user_id) == room.winner_id,
+                    }
+                }).collect();
+
+                if let Err(e) = game_client.save_game(
+                    &room.room_id,
+                    &room.room_name,
+                    room.game_type.clone(),
+                    history_players,
+                    room.winner_id,
+                    Vec::new(),
+                    room.started_at.unwrap_or_else(Utc::now),
+                ).await {
+                    error!(error = %e, "Failed to save Tic Tac Toe game to MongoDB");
+                }
+            }
+
+            // Update database to finished
+            let db = self.db.lock().await;
+            if let Err(e) = game_room_mutations::end_game(&db, room_id, room.winner_id).await {
+                warn!(error = %e, "Failed to update game status in database");
+            }
+            drop(db);
+
+            // Clean up cache
+            {
+                let mut states = self.tic_tac_toe_states.lock().await;
+                states.remove(&room_id_str);
+            }
+            self.remove_room_from_cache(&room_id_str).await;
+
+            info!(
+                room_id = %room_id_str,
+                winner_id = ?room.winner_id,
+                "Tic Tac Toe match ended and saved to history"
+            );
+        } else if game_ended {
+            // Single game ended but match continues - update state
+            self.update_room(&room).await?;
+
+            // Update turn in database
+            let db = self.db.lock().await;
+            if let Some(current_turn) = room.current_turn {
+                if let Err(e) = game_room_mutations::update_turn(&db, room_id, current_turn, room.turn_number).await {
+                    warn!(error = %e, "Failed to update turn in database");
+                }
+            }
+            drop(db);
+        } else {
+            // Move made, game continues
+            self.update_room(&room).await?;
+
+            // Update turn in database
+            let db = self.db.lock().await;
+            if let Some(current_turn) = room.current_turn {
+                if let Err(e) = game_room_mutations::update_turn(&db, room_id, current_turn, room.turn_number).await {
+                    warn!(error = %e, "Failed to update turn in database");
+                }
+            }
+            drop(db);
+        }
+
+        Ok(())
+    }
+
+    /// Publish Tic Tac Toe prize win event to Kafka
+    async fn publish_tic_tac_toe_prize_event(
+        &self,
+        user_id: i64,
+        amount_cents: i64,
+        room_id: &str,
+        room_name: &str,
+        username: Option<&str>,
+    ) {
+        let Some(producer) = &self.producer else {
+            warn!("No Kafka producer available for Tic Tac Toe prize events");
+            return;
+        };
+
+        let event_payload = serde_json::json!({
+            "event_type": "game.prize.won",
+            "event_id": Uuid::new_v4().to_string(),
+            "timestamp": Utc::now().to_rfc3339(),
+            "user_id": user_id,
+            "amount_cents": amount_cents,
+            "game_type": "tic_tac_toe",
+            "room_id": room_id,
+            "room_name": room_name,
+            "username": username,
+            "total_players": 2,
+            "description": "TIC TAC TOE GAME PRIZE WIN",
+        });
+
+        let bytes = match serde_json::to_vec(&event_payload) {
+            Ok(b) => b,
+            Err(e) => {
+                error!(error = %e, "Failed to serialize Tic Tac Toe prize event");
+                return;
+            }
+        };
+
+        let key = user_id.to_string();
+        if let Err(e) = producer.send_raw(topic::TIC_TAC_TOE_WIN_PRIZE, Some(&key), &bytes).await {
+            error!(
+                error = %e,
+                user_id = %user_id,
+                amount = %amount_cents,
+                room_id = %room_id,
+                "Failed to publish Tic Tac Toe prize event"
+            );
+        } else {
+            info!(
+                user_id = %user_id,
+                amount = %amount_cents,
+                room_id = %room_id,
+                "Published Tic Tac Toe prize event to Kafka"
+            );
+        }
+    }
+
     /// Handle list_rooms command - return list of available rooms for a game type
     async fn handle_list_rooms(
         &self,
@@ -2197,7 +3099,7 @@ impl GameCommandHandler {
             .filter_map(|record| Self::room_list_item_for_user(record, user_id))
             .collect();
 
-        // Publish room list event to the requesting user
+        // Publish room list event to the requesting user (unprefixed - generic event)
         let event = GameEvent::RoomList {
             rooms: rooms.clone(),
             socket_id: socket_id.to_string(),
@@ -2265,25 +3167,61 @@ impl GameCommandHandler {
         }
 
         // Determine audience based on channel
+        // - Lobby: all room members (during waiting phase)
+        // - Players: send to entire room (players AND spectators - spectators get read-only view)
+        // - Spectators: only spectators can see this chat
         let audience = match channel {
             ChatChannel::Lobby => Audience::room(room_id),
-            ChatChannel::Players => Audience::players(room_id),
+            ChatChannel::Players => Audience::room(room_id), // Spectators can view players chat (read-only)
             ChatChannel::Spectators => Audience::spectators(room_id),
         };
 
-        // Publish chat message event
-        let event = GameEvent::ChatMessage {
-            room_id: room_id.to_string(),
-            channel: channel_str.to_string(),
-            user_id,
-            username: username.to_string(),
-            avatar_id,
-            content: content.to_string(),
-            is_system: false,
-            timestamp: Utc::now().to_rfc3339(),
+        let gt = room.game_type.as_str();
+        let timestamp = Utc::now().to_rfc3339();
+
+        // Publish game-specific chat event based on game type and channel
+        let event = match (gt, &channel) {
+            ("bigger_dice", ChatChannel::Lobby) => GameEvent::BiggerDiceLobbyChat {
+                room_id: room_id.to_string(),
+                user_id,
+                username: username.to_string(),
+                avatar_id,
+                content: content.to_string(),
+                is_system: false,
+                timestamp,
+            },
+            ("bigger_dice", ChatChannel::Players) => GameEvent::BiggerDicePlayerChat {
+                room_id: room_id.to_string(),
+                user_id,
+                username: username.to_string(),
+                avatar_id,
+                content: content.to_string(),
+                is_system: false,
+                timestamp,
+            },
+            ("bigger_dice", ChatChannel::Spectators) => GameEvent::BiggerDiceSpectatorChat {
+                room_id: room_id.to_string(),
+                user_id,
+                username: username.to_string(),
+                avatar_id,
+                content: content.to_string(),
+                is_system: false,
+                timestamp,
+            },
+            // Fallback to generic event for other game types
+            _ => GameEvent::ChatMessage {
+                room_id: room_id.to_string(),
+                channel: channel_str.to_string(),
+                user_id,
+                username: username.to_string(),
+                avatar_id,
+                content: content.to_string(),
+                is_system: false,
+                timestamp,
+            },
         };
 
-        self.publish_game_event(event, audience).await?;
+        self.publish_game_event_typed(event, audience, Some(gt)).await?;
 
         Ok(())
     }
@@ -2402,20 +3340,22 @@ impl GameCommandHandler {
             .map(|p| p.username.clone())
             .unwrap_or_else(|| format!("User #{}", target_user_id));
 
+        let gt = room.game_type.as_str();
+
         // Publish deselected event to room
         let event = GameEvent::PlayerDeselected {
             room_id: room_id.to_string(),
             user_id: target_user_id,
             username: target_username,
         };
-        self.publish_game_event(event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id), Some(gt)).await?;
 
         // Publish updated selected players list
         let selected_event = GameEvent::SelectedPlayersUpdated {
             room_id: room_id.to_string(),
             selected_players: room.selected_players.clone(),
         };
-        self.publish_game_event(selected_event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(selected_event, Audience::room(room_id), Some(gt)).await?;
 
         Ok(())
     }
@@ -2463,13 +3403,15 @@ impl GameCommandHandler {
             .map(|s| s.username.clone())
             .unwrap_or_else(|| format!("User #{}", target_user_id));
 
+        let gt = room.game_type.as_str();
+
         // Publish event to room
         let event = GameEvent::AdminSpectatorDesignated {
             room_id: room_id.to_string(),
             user_id: target_user_id,
             username: target_username,
         };
-        self.publish_game_event(event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id), Some(gt)).await?;
 
         Ok(())
     }
@@ -2573,16 +3515,18 @@ impl GameCommandHandler {
             joined_at: Utc::now(),
         };
 
+        let gt = room.game_type.as_str();
+
         // Publish spectator joined event
         let event = GameEvent::SpectatorDataJoined {
             room_id: room_id.to_string(),
             spectator: spectator.clone(),
         };
-        self.publish_game_event(event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id), Some(gt)).await?;
 
         // Send room state to the new spectator
         let state_event = Self::room_state_event(&room);
-        self.publish_game_event(state_event, Audience::user(user_id)).await?;
+        self.publish_game_event_typed(state_event, Audience::user(user_id), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -2661,23 +3605,25 @@ impl GameCommandHandler {
             joined_at: Utc::now(),
         };
 
+        let gt = room.game_type.as_str();
+
         // Notify room about the change
         let left_event = GameEvent::PlayerLeft {
             room_id: room_id.to_string(),
             user_id,
             username: username.to_string(),
         };
-        self.publish_game_event(left_event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(left_event, Audience::room(room_id), Some(gt)).await?;
 
         let joined_event = GameEvent::SpectatorDataJoined {
             room_id: room_id.to_string(),
             spectator,
         };
-        self.publish_game_event(joined_event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(joined_event, Audience::room(room_id), Some(gt)).await?;
 
         // Send updated room state to the user
         let state_event = Self::room_state_event(&room);
-        self.publish_game_event(state_event, Audience::user(user_id)).await?;
+        self.publish_game_event_typed(state_event, Audience::user(user_id), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -2752,24 +3698,26 @@ impl GameCommandHandler {
             joined_at: Utc::now(),
         };
 
+        let gt = room.game_type.as_str();
+
         // Notify room about the change
         let left_event = GameEvent::SpectatorLeft {
             room_id: room_id.to_string(),
             user_id,
             username: username.to_string(),
         };
-        self.publish_game_event(left_event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(left_event, Audience::room(room_id), Some(gt)).await?;
 
         let joined_event = GameEvent::LobbyJoined {
             room_id: room_id.to_string(),
             room_name: room.room_name.clone(),
             player: player.clone(),
         };
-        self.publish_game_event(joined_event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(joined_event, Audience::room(room_id), Some(gt)).await?;
 
         // Send updated room state to the user
         let state_event = Self::room_state_event(&room);
-        self.publish_game_event(state_event, Audience::user(user_id)).await?;
+        self.publish_game_event_typed(state_event, Audience::user(user_id), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -2826,6 +3774,8 @@ impl GameCommandHandler {
             .map(|p| p.username.clone())
             .unwrap_or_else(|| format!("User #{}", user_id));
 
+        let gt = room.game_type.as_str();
+
         // Publish ready changed event
         let event = GameEvent::PlayerReadyChanged {
             room_id: room_id.to_string(),
@@ -2833,7 +3783,7 @@ impl GameCommandHandler {
             username,
             is_ready,
         };
-        self.publish_game_event(event, Audience::room(room_id)).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id), Some(gt)).await?;
 
         // Check if all selected players are ready - auto-start the game
         // Only check if we have enough selected players
@@ -2842,7 +3792,7 @@ impl GameCommandHandler {
                 room_id = %room_id,
                 "All selected players ready - auto-starting game"
             );
-            
+
             // Auto-start the game
             let mut room = room;
             room.move_selected_to_players();
@@ -2867,7 +3817,7 @@ impl GameCommandHandler {
                 players: room.players.clone(),
                 first_turn,
             };
-            self.publish_game_event(started_event, Audience::room(room_id)).await?;
+            self.publish_game_event_typed(started_event, Audience::room(room_id), Some(gt)).await?;
         }
 
         Ok(())
@@ -2952,17 +3902,40 @@ impl GameCommandHandler {
             rooms.insert(room_id.to_string(), room.clone());
         }
 
-        // Publish game started event
-        let event = GameEvent::GameStarted {
-            room_id: room_id.to_string(),
-            players: room.players.clone(),
-            first_turn: room.current_turn.unwrap_or(0),
+        // Initialize game-specific state and get events
+        let (game_events, first_turn) = match room.game_type {
+            GameType::BiggerDice => {
+                let (events, round_state) = bigger_dice::start_game(&mut room);
+                {
+                    let mut states = self.round_states.lock().await;
+                    states.insert(room_id.to_string(), round_state);
+                }
+                let first = room.current_turn.unwrap_or(0);
+                (events, first)
+            }
+            GameType::TicTacToe => {
+                let (events, match_state) = tic_tac_toe::start_game(&mut room);
+                {
+                    let mut states = self.tic_tac_toe_states.lock().await;
+                    states.insert(room_id.to_string(), match_state);
+                }
+                let first = room.current_turn.unwrap_or(0);
+                (events, first)
+            }
         };
-        self.publish_game_event(event, Audience::room(room_id)).await?;
+
+        let gt = room.game_type.as_str();
+
+        // Publish all game events
+        for event in game_events {
+            self.publish_game_event_typed(event, Audience::room(room_id), Some(gt)).await?;
+        }
 
         info!(
             room_id = %room_id,
             player_count = %room.players.len(),
+            game_type = %gt,
+            first_turn = %first_turn,
             "Game started"
         );
 
@@ -2983,10 +3956,34 @@ impl GameCommandHandler {
             EventHandlerError::Fatal(format!("Invalid channel: {}", e))
         })?;
 
+        // Get room and validate channel read access
+        let room_opt = self.get_room(room_id).await?;
+        if let Some(ref room) = room_opt {
+            // Validate channel read permissions:
+            // - Lobby: anyone in room can read
+            // - Players: players + spectators + lobby can read
+            // - Spectators: only spectators can read
+            let can_read = match channel {
+                ChatChannel::Lobby => true,
+                ChatChannel::Players => room.is_player(user_id) || room.is_spectator(user_id) || room.is_in_lobby(user_id),
+                ChatChannel::Spectators => room.is_spectator(user_id),
+            };
+
+            if !can_read {
+                let error = GameEvent::Error {
+                    code: "channel_access_denied".to_string(),
+                    message: format!("You do not have access to the {} channel", channel_str),
+                    socket_id: socket_id.to_string(),
+                };
+                self.publish_game_event(error, Audience::user(user_id)).await?;
+                return Ok(());
+            }
+        }
+
         // Get chat history from MongoDB
         let messages: Vec<serde_json::Value> = if let Some(chat_client) = self.get_chat_client() {
             let limit = limit.unwrap_or(50);
-            chat_client.get_messages(room_id, channel, limit, None)
+            chat_client.get_messages(room_id, channel.clone(), limit, None)
                 .await
                 .map_err(|e| EventHandlerError::Retryable(format!("Failed to get chat history: {}", e)))?
                 .into_iter()
@@ -3003,14 +4000,33 @@ impl GameCommandHandler {
             vec![]
         };
 
-        // Send chat history to user
-        let event = GameEvent::ChatHistory {
-            room_id: room_id.to_string(),
-            channel: channel_str.to_string(),
-            messages,
-            socket_id: socket_id.to_string(),
+        // Send game-specific chat history to user
+        let gt = room_opt.as_ref().map(|r| r.game_type.as_str());
+        let event = match (gt, &channel) {
+            (Some("bigger_dice"), ChatChannel::Lobby) => GameEvent::BiggerDiceLobbyChatHistory {
+                room_id: room_id.to_string(),
+                messages,
+                socket_id: socket_id.to_string(),
+            },
+            (Some("bigger_dice"), ChatChannel::Players) => GameEvent::BiggerDicePlayerChatHistory {
+                room_id: room_id.to_string(),
+                messages,
+                socket_id: socket_id.to_string(),
+            },
+            (Some("bigger_dice"), ChatChannel::Spectators) => GameEvent::BiggerDiceSpectatorChatHistory {
+                room_id: room_id.to_string(),
+                messages,
+                socket_id: socket_id.to_string(),
+            },
+            // Fallback to generic event for other game types
+            _ => GameEvent::ChatHistory {
+                room_id: room_id.to_string(),
+                channel: channel_str.to_string(),
+                messages,
+                socket_id: socket_id.to_string(),
+            },
         };
-        self.publish_game_event(event, Audience::user(user_id)).await?;
+        self.publish_game_event_typed(event, Audience::user(user_id), gt).await?;
 
         Ok(())
     }
@@ -3056,13 +4072,30 @@ impl EventHandler for GameCommandHandler {
 
         match command_type {
             "create_room" => {
+                // Debug: log the entire payload to see what's being received
+                info!(
+                    payload = ?envelope.payload,
+                    "create_room: received payload"
+                );
+
                 let avatar_id = Self::parse_optional_i64(envelope.payload.get("avatar_id"));
                 let game_type = envelope.payload.get("game_type").and_then(|v| v.as_str()).unwrap_or("bigger_dice");
                 let room_name = envelope.payload.get("room_name").and_then(|v| v.as_str())
                     .ok_or_else(|| EventHandlerError::Fatal("Missing room_name".to_string()))?;
                 let password = envelope.payload.get("password").and_then(|v| v.as_str());
-                let player_count = envelope.payload.get("player_count").and_then(|v| v.as_i64()).map(|v| v as i32);
+                // Accept both "player_count" and "max_players" from frontend
+                let player_count = envelope.payload.get("player_count")
+                    .or_else(|| envelope.payload.get("max_players"))
+                    .and_then(|v| v.as_i64())
+                    .map(|v| v as i32);
                 let allow_spectators = envelope.payload.get("allow_spectators").and_then(|v| v.as_bool());
+
+                info!(
+                    player_count = ?player_count,
+                    raw_player_count = ?envelope.payload.get("player_count"),
+                    raw_max_players = ?envelope.payload.get("max_players"),
+                    "create_room: parsed player_count"
+                );
 
                 self.handle_create_room(
                     user_id,
@@ -3185,6 +4218,30 @@ impl EventHandler for GameCommandHandler {
                     .ok_or_else(|| EventHandlerError::Fatal("Missing room_id".to_string()))?;
 
                 self.handle_bigger_dice_roll(user_id, room_id, socket_id).await
+            }
+            "bigger_dice.auto_roll" => {
+                let room_id = envelope.payload.get("room_id").and_then(|v| v.as_str())
+                    .ok_or_else(|| EventHandlerError::Fatal("Missing room_id".to_string()))?;
+                let target_user_id = Self::parse_user_id(envelope.payload.get("target_user_id"))
+                    .ok_or_else(|| EventHandlerError::Fatal("Missing target_user_id".to_string()))?;
+
+                self.handle_bigger_dice_auto_roll(user_id, room_id, target_user_id, socket_id).await
+            }
+            "bigger_dice.enable_auto_play" => {
+                let room_id = envelope.payload.get("room_id").and_then(|v| v.as_str())
+                    .ok_or_else(|| EventHandlerError::Fatal("Missing room_id".to_string()))?;
+
+                self.handle_enable_auto_play(user_id, room_id, socket_id).await
+            }
+            "tic_tac_toe.move" => {
+                let room_id = envelope.payload.get("room_id").and_then(|v| v.as_str())
+                    .ok_or_else(|| EventHandlerError::Fatal("Missing room_id".to_string()))?;
+                let position = envelope.payload.get("position")
+                    .and_then(|v| v.as_u64())
+                    .map(|v| v as u8)
+                    .ok_or_else(|| EventHandlerError::Fatal("Missing position".to_string()))?;
+
+                self.handle_tic_tac_toe_move(user_id, room_id, position, socket_id).await
             }
             "list_rooms" => {
                 let game_type = envelope.payload.get("game_type").and_then(|v| v.as_str()).unwrap_or("bigger_dice");

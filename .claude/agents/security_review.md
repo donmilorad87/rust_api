@@ -1,7 +1,7 @@
 ---
 name: security-review
 description: Security auditing and vulnerability assessment. Use for OWASP compliance, code review, and security reports.
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 color: yellow
 ---

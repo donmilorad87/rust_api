@@ -1,4 +1,4 @@
-(function(){"use strict";const _=document.createElement("template");_.innerHTML=`
+(function(){"use strict";const v=document.createElement("template");v.innerHTML=`
   <style>
     :host {
       display: block;
@@ -489,6 +489,51 @@
       animation: scaleIn 0.2s;
     }
 
+    .modal-content--small {
+      max-width: 340px;
+      padding: 1.5rem;
+    }
+
+    .modal-body {
+      margin-bottom: 1.5rem;
+    }
+
+    .confirm-message {
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: var(--text-color);
+    }
+
+    .confirm-message--error {
+      color: var(--danger-color);
+    }
+
+    .confirm-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 0;
+    }
+
+    .loader-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loader-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -830,6 +875,12 @@
       font-size: 2.5rem;
       font-weight: 700;
       color: var(--primary-color);
+      transition: transform 0.15s ease-out, color 0.15s ease-out;
+    }
+
+    .player-score.score-updated {
+      transform: scale(1.2);
+      color: var(--success-color);
     }
 
     .player-label {
@@ -861,8 +912,28 @@
 
     .dice-container {
       display: flex;
-      gap: 3rem;
+      gap: 2rem;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .dice-wrapper {
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dice-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      max-width: 80px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      text-align: center;
     }
 
     .dice {
@@ -890,12 +961,44 @@
       75% { transform: translate(-3px, -3px) rotate(-3deg); }
     }
 
-    .dice--player-1 {
+    .dice--player-0 {
       border: 3px solid var(--primary-color);
     }
 
-    .dice--player-2 {
+    .dice--player-1 {
       border: 3px solid var(--warning-color);
+    }
+
+    .dice--player-2 {
+      border: 3px solid var(--success-color);
+    }
+
+    .dice--player-3 {
+      border: 3px solid #e879f9;
+    }
+
+    .dice--player-4 {
+      border: 3px solid #38bdf8;
+    }
+
+    .dice--player-5 {
+      border: 3px solid #fb7185;
+    }
+
+    .dice--player-6 {
+      border: 3px solid #a78bfa;
+    }
+
+    .dice--player-7 {
+      border: 3px solid #34d399;
+    }
+
+    .dice--player-8 {
+      border: 3px solid #fbbf24;
+    }
+
+    .dice--player-9 {
+      border: 3px solid #f472b6;
     }
 
     .dice-dot {
@@ -928,7 +1031,14 @@
     .dice[data-value="6"] .dice-dot:nth-child(7),
     .dice[data-value="6"] .dice-dot:nth-child(9) { background: #1e1e2e; }
 
-    .ready-btn, .roll-btn {
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ready-btn, .roll-btn, .auto-play-btn {
       padding: 1rem 2.5rem;
       font-size: 1.125rem;
       font-weight: 600;
@@ -963,6 +1073,218 @@
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
+    }
+
+    .auto-play-btn {
+      background: linear-gradient(135deg, var(--warning-color, #f59e0b), #d97706);
+      color: white;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .auto-play-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Turn Timer */
+    .turn-timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      border-radius: 2rem;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+      animation: timer-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes timer-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .turn-timer__icon {
+      font-size: 1.5rem;
+      animation: icon-swing 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes icon-swing {
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(5deg); }
+    }
+
+    .turn-timer__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .turn-timer__label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary-color, #6366f1);
+      opacity: 0.8;
+    }
+
+    .turn-timer__bar {
+      width: 120px;
+      height: 6px;
+      background: rgba(99, 102, 241, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .turn-timer__progress {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+
+    .turn-timer__text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--primary-color, #6366f1);
+      min-width: 2rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Warning state - last 2 seconds */
+    .turn-timer--warning {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      animation: timer-shake 0.3s ease-in-out infinite;
+    }
+
+    @keyframes timer-shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+    }
+
+    .turn-timer--warning .turn-timer__icon {
+      animation: icon-shake 0.2s ease-in-out infinite;
+    }
+
+    @keyframes icon-shake {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-10deg); }
+      75% { transform: rotate(10deg); }
+    }
+
+    .turn-timer--warning .turn-timer__progress {
+      background: linear-gradient(90deg, #ef4444, #f97316, #eab308);
+    }
+
+    .turn-timer--warning .turn-timer__text {
+      color: #ef4444;
+      text-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    .turn-timer--warning .turn-timer__label {
+      color: #ef4444;
+    }
+
+    /* Ready Timer - similar to turn timer but for ready phase */
+    .ready-timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(16, 185, 129, 0.15));
+      border: 2px solid rgba(34, 197, 94, 0.4);
+      border-radius: 2rem;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+      animation: ready-timer-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes ready-timer-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .ready-timer__icon {
+      font-size: 1.5rem;
+      animation: icon-swing 0.5s ease-in-out infinite alternate;
+    }
+
+    .ready-timer__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .ready-timer__label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--success-color, #22c55e);
+      opacity: 0.8;
+    }
+
+    .ready-timer__bar {
+      width: 120px;
+      height: 6px;
+      background: rgba(34, 197, 94, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .ready-timer__progress {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #22c55e, #10b981, #14b8a6);
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+
+    .ready-timer__text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--success-color, #22c55e);
+      min-width: 2rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+    }
+
+    /* Warning state - last 5 seconds */
+    .ready-timer--warning {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      animation: timer-shake 0.3s ease-in-out infinite;
+    }
+
+    .ready-timer--warning .ready-timer__icon {
+      animation: icon-shake 0.2s ease-in-out infinite;
+    }
+
+    .ready-timer--warning .ready-timer__progress {
+      background: linear-gradient(90deg, #ef4444, #f97316, #eab308);
+    }
+
+    .ready-timer--warning .ready-timer__text {
+      color: #ef4444;
+      text-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    .ready-timer--warning .ready-timer__label {
+      color: #ef4444;
     }
 
     .turn-indicator {
@@ -1020,6 +1342,42 @@
       font-size: 0.875rem;
       color: var(--text-muted);
       margin-top: 1rem;
+    }
+
+    .not-in-room__spectator-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--primary-color-alpha, rgba(99, 102, 241, 0.1));
+      border-radius: 0.5rem;
+      border: 1px solid var(--primary-color, #6366f1);
+    }
+
+    .not-in-room__spectator-option .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .not-in-room__spectator-option .form-checkbox input[type="checkbox"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      cursor: pointer;
+      accent-color: var(--primary-color, #6366f1);
+    }
+
+    .not-in-room__spectator-option .form-checkbox__label {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    .not-in-room__spectator-option .form-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
     /* ============================================
@@ -1398,42 +1756,6 @@
       font-size: 2.5rem;
       font-weight: 700;
       color: var(--primary-color);
-    }
-
-    .game-over__ready-indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 0.75rem;
-      padding: 0.375rem 0.75rem;
-      background: var(--bg-color);
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .game-over__ready-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      animation: pulse 1.5s infinite;
-    }
-
-    .game-over__ready-indicator--ready .game-over__ready-dot {
-      background: var(--success-color, #22c55e);
-      animation: none;
-    }
-
-    .game-over__ready-indicator--ready .game-over__ready-text {
-      color: var(--success-color, #22c55e);
-      font-weight: 600;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
     }
 
     .game-over__btn:disabled {
@@ -2021,7 +2343,6 @@
         <div class="empty-state__icon">🎲</div>
         <h3 class="empty-state__title">No Active Rooms</h3>
         <p class="empty-state__message">Create a new room to start playing!</p>
-        <button class="create-room-btn" id="emptyCreateBtn">Create Room</button>
       </div>
 
       <div id="roomsGrid" class="rooms-grid hidden"></div>
@@ -2069,6 +2390,13 @@
         <div class="not-in-room__icon">🚪</div>
         <h3 class="not-in-room__title">You are not in this room</h3>
         <p class="not-in-room__text">This room already has players. You can request to join the game.</p>
+        <div id="spectatorOptionContainer" class="not-in-room__spectator-option hidden">
+          <label class="form-checkbox">
+            <input type="checkbox" id="joinAsSpectatorCheckbox">
+            <span class="form-checkbox__label">Join as Spectator</span>
+          </label>
+          <span class="form-hint">Watch the game without participating</span>
+        </div>
         <div class="not-in-room__actions">
           <button id="enterRoomBtn" class="game-btn game-btn--primary">
             <span id="enterRoomBtnText">Enter Room</span>
@@ -2107,33 +2435,35 @@
         </div>
 
         <div class="dice-area">
-          <div class="dice-container">
-            <div class="dice dice--player-1" id="dice1" data-value="0">
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-            </div>
-            <div class="dice dice--player-2" id="dice2" data-value="0">
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-            </div>
+          <div class="dice-container" id="diceContainer">
+            <!-- Dice are rendered dynamically based on player count -->
           </div>
 
           <button class="ready-btn hidden" id="readyBtn">Ready!</button>
-          <button class="roll-btn hidden" id="rollBtn" disabled>Roll Dice</button>
+          <div class="ready-timer hidden" id="readyTimer">
+            <span class="ready-timer__icon">⏱️</span>
+            <div class="ready-timer__content">
+              <span class="ready-timer__label">Auto-ready in</span>
+              <div class="ready-timer__bar">
+                <div class="ready-timer__progress" id="readyTimerProgress"></div>
+              </div>
+            </div>
+            <span class="ready-timer__text" id="readyTimerText">30</span>
+          </div>
+          <div class="turn-timer hidden" id="turnTimer">
+            <span class="turn-timer__icon">⏱️</span>
+            <div class="turn-timer__content">
+              <span class="turn-timer__label">Auto-roll in</span>
+              <div class="turn-timer__bar">
+                <div class="turn-timer__progress" id="turnTimerProgress"></div>
+              </div>
+            </div>
+            <span class="turn-timer__text" id="turnTimerText">5</span>
+          </div>
+          <div class="action-buttons" id="actionButtons">
+            <button class="roll-btn hidden" id="rollBtn" disabled>Roll Dice</button>
+            <button class="auto-play-btn hidden" id="autoPlayBtn">Auto Play</button>
+          </div>
         </div>
       </div>
 
@@ -2145,13 +2475,13 @@
               <span class="chat-tab__label">Lobby</span>
               <span class="chat-tab__badge hidden" id="lobbyBadge">0</span>
             </button>
-            <button class="chat-tab" data-channel="players" id="chatTabPlayers">
-              <span class="chat-tab__label">Players</span>
-              <span class="chat-tab__badge hidden" id="playersBadge">0</span>
-            </button>
             <button class="chat-tab" data-channel="spectators" id="chatTabSpectators">
               <span class="chat-tab__label">Spectators</span>
               <span class="chat-tab__badge hidden" id="spectatorsBadge">0</span>
+            </button>
+            <button class="chat-tab" data-channel="players" id="chatTabPlayers">
+              <span class="chat-tab__label">Players</span>
+              <span class="chat-tab__badge hidden" id="playersBadge">0</span>
             </button>
           </div>
           <button class="chat-toggle" id="chatToggle" title="Toggle chat">
@@ -2176,7 +2506,7 @@
         </div>
       </div>
 
-      <footer class="game-footer">
+      <footer class="game-footer" id="gameFooter">
         <span class="round-info" id="roundInfo">Round 0 / First to 10</span>
         <button class="leave-btn" id="leaveBtn">Leave Game</button>
       </footer>
@@ -2251,6 +2581,48 @@
     </div>
   </div>
 
+  <!-- Create Room Confirmation Modal -->
+  <div id="createConfirmModal" class="modal-overlay">
+    <div class="modal-content modal-content--small">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Game Room</h3>
+        <button class="modal-close" id="createConfirmCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-loader" id="createConfirmLoader">
+          <div class="loader-spinner"></div>
+          <p class="loader-text">Checking balance...</p>
+        </div>
+        <p class="confirm-message hidden" id="createConfirmMessage"></p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="createConfirmCancelBtn">Cancel</button>
+        <button type="button" class="btn-primary hidden" id="createConfirmBtn">Create Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join Room Confirmation Modal -->
+  <div id="joinConfirmModal" class="modal-overlay">
+    <div class="modal-content modal-content--small">
+      <div class="modal-header">
+        <h3 class="modal-title">Join Game Room</h3>
+        <button class="modal-close" id="joinConfirmCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-loader" id="joinConfirmLoader">
+          <div class="loader-spinner"></div>
+          <p class="loader-text">Checking balance...</p>
+        </div>
+        <p class="confirm-message hidden" id="joinConfirmMessage"></p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="joinConfirmCancelBtn">Cancel</button>
+        <button type="button" class="btn-primary hidden" id="joinConfirmBtn">Join Room</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Disconnect Overlay -->
   <div id="disconnectOverlay" class="disconnect-overlay" aria-hidden="true"></div>
 
@@ -2276,12 +2648,12 @@
       </div>
     </div>
   </div>
-`;const b={DISCONNECTED:"disconnected",CONNECTING:"connecting",CONNECTED:"connected",RECONNECTING:"reconnecting"},g={WAITING:"waiting",PLAYING:"playing",FINISHED:"finished"},y={LOBBY:"lobby",GAME:"game"};class w extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this.shadowRoot.appendChild(_.content.cloneNode(!0)),this.mode=y.GAME,this.connectionState=b.DISCONNECTED,this.ws=null,this.reconnectAttempts=0,this.maxReconnectAttempts=5,this.reconnectDelay=1e3,this.heartbeatInterval=null,this.heartbeatTimeout=null,this.availableRooms=[],this.pendingJoinRoomId=null,this.pendingJoinRoomName=null,this.notInRoomInfo=null,this.wantsToSpectate=!1,this.roomId="",this.roomName="",this.players=[],this.lobby=[],this.bannedPlayers=[],this.spectators=[],this.hostId=null,this.isAdmin=!1,this.maxPlayers=2,this.allowSpectators=!0,this.gameStatus=g.WAITING,this.currentTurn=null,this.round=0,this.myPlayerId=null,this.roundHistory=[],this.lastDiceState=null,this.disconnectedPlayers=new Map,this.kickVotes=new Set,this.autoPlayers=new Set,this.disconnectTicker=null,this.disconnectOverlayIds=new Set,this.windowEventsBound=!1,this.hasSentDisconnectIntent=!1,this.handlePageHide=null,this.handleBeforeUnload=null,this.handleOffline=null,this.chatChannel="lobby",this.chatMessages={lobby:[],players:[],spectators:[]},this.chatHistoryRequested={lobby:!1,players:!1,spectators:!1},this.chatUnreadCounts={lobby:0,players:0,spectators:0},this.mutedUsers=new Set,this.isChatCollapsed=!1,this.isPlayer=!1,this.isSpectator=!1,this.cacheElements(),this.bindEvents()}static get observedAttributes(){return["data-ws-url","data-room-id","data-room-name","data-user-id","data-username","data-avatar-id","data-mode","data-spectate"]}connectedCallback(){this.wsUrl=this.dataset.wsUrl,this.roomId=this.dataset.roomId||"",this.roomName=this.dataset.roomName||"",this.userId=this.dataset.userId,this.username=this.dataset.username,this.avatarId=this.dataset.avatarId,this.myPlayerId=this.userId,this.mode=this.dataset.mode==="lobby"?y.LOBBY:y.GAME,this.wantsToSpectate=this.dataset.spectate==="true",this.setupModeUI(),this.bindWindowEvents(),this.wsUrl&&this.connect()}disconnectedCallback(){this.unbindWindowEvents(),this.disconnect()}cacheElements(){const e=t=>{const a=this.shadowRoot.getElementById(t);return a||console.warn(`[BiggerDice] Element not found: ${t}`),a};this.elements={headerTitle:e("headerTitle"),gameStatus:e("gameStatus"),connectionDot:e("connectionDot"),connectionText:e("connectionText"),lobbySection:e("lobbySection"),createRoomBtn:e("createRoomBtn"),emptyCreateBtn:e("emptyCreateBtn"),loadingState:e("loadingState"),emptyState:e("emptyState"),roomsGrid:e("roomsGrid"),createRoomModal:e("createRoomModal"),createRoomForm:e("createRoomForm"),roomNameInput:e("roomNameInput"),roomPasswordInput:e("roomPasswordInput"),playerCountInput:e("playerCountInput"),allowSpectatorsInput:e("allowSpectatorsInput"),modalCloseBtn:e("modalCloseBtn"),modalCancelBtn:e("modalCancelBtn"),modalCreateBtn:e("modalCreateBtn"),joinPasswordModal:e("joinPasswordModal"),joinPasswordForm:e("joinPasswordForm"),joinPasswordInput:e("joinPasswordInput"),joinPasswordError:e("joinPasswordError"),joinPasswordCloseBtn:e("joinPasswordCloseBtn"),joinPasswordCancelBtn:e("joinPasswordCancelBtn"),gameSection:e("gameSection"),waitingForAdmin:e("waitingForAdmin"),waitingPlayersList:e("waitingPlayersList"),adminLobby:e("adminLobby"),lobbyCount:e("lobbyCount"),lobbyPlayersList:e("lobbyPlayersList"),bannedPlayersSection:e("bannedPlayersSection"),bannedCount:e("bannedCount"),bannedPlayersList:e("bannedPlayersList"),waitingState:e("waitingState"),notInRoomState:e("notInRoomState"),enterRoomBtn:e("enterRoomBtn"),enterRoomBtnText:e("enterRoomBtnText"),notInRoomHint:e("notInRoomHint"),gameBoard:e("gameBoard"),turnIndicator:e("turnIndicator"),playersArea:e("playersArea"),dice1:e("dice1"),dice2:e("dice2"),readyBtn:e("readyBtn"),rollBtn:e("rollBtn"),roundInfo:e("roundInfo"),leaveBtn:e("leaveBtn"),disconnectOverlay:e("disconnectOverlay"),resultOverlay:e("resultOverlay"),resultIcon:e("resultIcon"),resultTitle:e("resultTitle"),resultScore1:e("resultScore1"),resultLabel1:e("resultLabel1"),resultScore2:e("resultScore2"),resultLabel2:e("resultLabel2"),resultMessage:e("resultMessage"),resultContinueBtn:e("resultContinueBtn"),resultLeaveBtn:e("resultLeaveBtn"),spectatorBanner:e("spectatorBanner"),requestToPlayBtn:e("requestToPlayBtn"),spectatorsPanel:e("spectatorsPanel"),spectatorsCount:e("spectatorsCount"),spectatorsList:e("spectatorsList"),chatPanel:e("chatPanel"),chatTabLobby:e("chatTabLobby"),chatTabPlayers:e("chatTabPlayers"),chatTabSpectators:e("chatTabSpectators"),lobbyBadge:e("lobbyBadge"),playersBadge:e("playersBadge"),spectatorsBadge:e("spectatorsBadge"),chatToggle:e("chatToggle"),chatBody:e("chatBody"),chatMessages:e("chatMessages"),chatForm:e("chatForm"),chatInput:e("chatInput"),chatSend:e("chatSend")}}bindEvents(){console.log("[BiggerDice] Binding events..."),this.elements.createRoomBtn&&this.elements.createRoomBtn.addEventListener("click",()=>{console.log("[BiggerDice] Create room button clicked"),this.showCreateRoomModal()}),this.elements.emptyCreateBtn&&this.elements.emptyCreateBtn.addEventListener("click",()=>{console.log("[BiggerDice] Empty create button clicked"),this.showCreateRoomModal()}),this.elements.modalCloseBtn&&this.elements.modalCloseBtn.addEventListener("click",()=>{console.log("[BiggerDice] Modal close button clicked"),this.hideCreateRoomModal()}),this.elements.modalCancelBtn&&this.elements.modalCancelBtn.addEventListener("click",()=>{console.log("[BiggerDice] Modal cancel button clicked"),this.hideCreateRoomModal()}),this.elements.createRoomForm&&this.elements.createRoomForm.addEventListener("submit",e=>{console.log("[BiggerDice] Form submitted"),e.preventDefault(),e.stopPropagation(),this.createRoom()}),this.elements.modalCreateBtn&&this.elements.modalCreateBtn.addEventListener("click",e=>{console.log("[BiggerDice] Create button clicked directly"),e.preventDefault(),e.stopPropagation(),this.createRoom()}),this.elements.createRoomModal&&this.elements.createRoomModal.addEventListener("click",e=>{e.target===this.elements.createRoomModal&&(console.log("[BiggerDice] Modal overlay clicked"),this.hideCreateRoomModal())}),this.elements.joinPasswordCloseBtn&&this.elements.joinPasswordCloseBtn.addEventListener("click",()=>this.hideJoinPasswordModal()),this.elements.joinPasswordCancelBtn&&this.elements.joinPasswordCancelBtn.addEventListener("click",()=>this.hideJoinPasswordModal()),this.elements.joinPasswordForm&&this.elements.joinPasswordForm.addEventListener("submit",e=>{e.preventDefault(),this.submitJoinWithPassword()}),this.elements.joinPasswordModal&&this.elements.joinPasswordModal.addEventListener("click",e=>{e.target===this.elements.joinPasswordModal&&this.hideJoinPasswordModal()}),this.elements.readyBtn&&this.elements.readyBtn.addEventListener("click",()=>this.sendReady()),this.elements.rollBtn&&this.elements.rollBtn.addEventListener("click",()=>this.sendRoll()),this.elements.leaveBtn&&this.elements.leaveBtn.addEventListener("click",()=>this.leaveGame()),this.elements.resultContinueBtn&&this.elements.resultContinueBtn.addEventListener("click",()=>this.hideResultOverlay()),this.elements.resultLeaveBtn&&this.elements.resultLeaveBtn.addEventListener("click",()=>this.leaveGame()),this.elements.enterRoomBtn&&this.elements.enterRoomBtn.addEventListener("click",()=>this.handleEnterRoomClick()),this.elements.requestToPlayBtn&&this.elements.requestToPlayBtn.addEventListener("click",()=>this.requestToPlay()),this.elements.chatTabLobby&&this.elements.chatTabLobby.addEventListener("click",()=>this.switchChatChannel("lobby")),this.elements.chatTabPlayers&&this.elements.chatTabPlayers.addEventListener("click",()=>this.switchChatChannel("players")),this.elements.chatTabSpectators&&this.elements.chatTabSpectators.addEventListener("click",()=>this.switchChatChannel("spectators")),this.elements.chatToggle&&this.elements.chatToggle.addEventListener("click",()=>this.toggleChat()),this.elements.chatForm&&this.elements.chatForm.addEventListener("submit",e=>{e.preventDefault(),this.sendChatMessage()}),this.elements.playersArea&&this.elements.playersArea.addEventListener("click",e=>{const t=e.target.closest('[data-action="kick-disconnected"]');if(!t)return;const a=t.dataset.userId;a&&this.sendKickDisconnected(a)}),this.elements.disconnectOverlay&&this.elements.disconnectOverlay.addEventListener("click",e=>{const t=e.target.closest('[data-action="kick-disconnected"]');if(!t)return;const a=t.dataset.userId;a&&this.sendKickDisconnected(a)}),console.log("[BiggerDice] Events bound successfully")}bindWindowEvents(){this.windowEventsBound||(this.handlePageHide=()=>this.notifyDisconnectIntent(),this.handleBeforeUnload=()=>this.notifyDisconnectIntent(),this.handleOffline=()=>{this.notifyDisconnectIntent(),this.ws?.close()},window.addEventListener("pagehide",this.handlePageHide),window.addEventListener("beforeunload",this.handleBeforeUnload),window.addEventListener("offline",this.handleOffline),this.windowEventsBound=!0)}unbindWindowEvents(){this.windowEventsBound&&(this.handlePageHide&&window.removeEventListener("pagehide",this.handlePageHide),this.handleBeforeUnload&&window.removeEventListener("beforeunload",this.handleBeforeUnload),this.handleOffline&&window.removeEventListener("offline",this.handleOffline),this.handlePageHide=null,this.handleBeforeUnload=null,this.handleOffline=null,this.windowEventsBound=!1)}notifyDisconnectIntent(){this.hasSentDisconnectIntent||this.roomId&&this.gameStatus===g.PLAYING&&(!this.isPlayer||this.isSpectator||(this.hasSentDisconnectIntent=!0,this.send({type:"games.command.leave_room",room_id:this.roomId})))}setupModeUI(){this.mode===y.LOBBY?(this.elements.lobbySection.classList.add("active"),this.elements.gameSection.classList.remove("active"),this.elements.headerTitle.textContent="Bigger Dice Lobby"):(this.elements.lobbySection.classList.remove("active"),this.elements.gameSection.classList.add("active"),this.elements.headerTitle.textContent=this.roomName||"Bigger Dice")}connect(){if(this.connectionState!==b.CONNECTING){this.setConnectionState(b.CONNECTING);try{this.ws=new WebSocket(this.wsUrl),this.ws.onopen=()=>this.handleOpen(),this.ws.onmessage=e=>this.handleMessage(e),this.ws.onclose=e=>this.handleClose(e),this.ws.onerror=e=>this.handleError(e)}catch(e){console.error("WebSocket connection error:",e),this.scheduleReconnect()}}}disconnect(){this.stopHeartbeat(),this.stopDisconnectTickerIfNeeded(),this.ws&&(this.ws.close(),this.ws=null),this.setConnectionState(b.DISCONNECTED)}handleOpen(){console.log("BiggerDice: WebSocket connected"),this.reconnectAttempts=0,this.startHeartbeat()}handleMessage(e){try{const t=JSON.parse(e.data);switch(console.log("BiggerDice: Received",t.type,t),t.type){case"system.welcome":this.handleWelcome(t);break;case"system.authenticated":this.handleAuthenticated(t);break;case"system.heartbeat_ack":this.handleHeartbeatAck();break;case"system.error":this.handleSystemError(t);break;case"room_list":case"games.event.room_list":this.handleRoomList(t.rooms);break;case"room_created":case"games.event.room_created":this.handleRoomCreated(t);break;case"room_joined":case"games.event.room_joined":this.handleRoomJoined(t);break;case"room_removed":case"games.event.room_removed":this.handleRoomRemoved(t);break;case"games.event.room_state":this.handleRoomState(t.room);break;case"games.event.player_joined":this.handlePlayerJoined(t);break;case"games.event.player_left":this.handlePlayerLeft(t);break;case"games.event.player_disconnected":this.handlePlayerDisconnected(t);break;case"games.event.player_rejoined":this.handlePlayerRejoined(t);break;case"games.event.player_auto_enabled":this.handlePlayerAutoEnabled(t);break;case"games.event.player_auto_disabled":this.handlePlayerAutoDisabled(t);break;case"lobby_joined":case"games.event.lobby_joined":this.handleLobbyJoined(t);break;case"player_selected":case"games.event.player_selected":this.handlePlayerSelected(t);break;case"player_kicked":case"games.event.player_kicked":this.handlePlayerKicked(t);break;case"player_banned":case"games.event.player_banned":this.handlePlayerBanned(t);break;case"player_unbanned":case"games.event.player_unbanned":this.handlePlayerUnbanned(t);break;case"user_banned":case"games.event.user_banned":this.handleUserBanned(t);break;case"lobby_updated":case"games.event.lobby_updated":this.handleLobbyUpdated(t);break;case"games.event.game_started":this.handleGameStarted(t);break;case"player_ready":case"games.event.player_ready":this.handlePlayerReady(t);break;case"games.event.bigger_dice.rolled":this.handleDiceRolled(t);break;case"games.event.bigger_dice.state":this.handleBiggerDiceState(t);break;case"games.event.bigger_dice.round_result":this.handleRoundResult(t);break;case"turn_changed":case"games.event.turn_changed":this.handleTurnChanged(t);break;case"games.event.round_complete":case"games.event.bigger_dice.round_complete":this.handleRoundComplete(t);break;case"games.event.game_over":case"games.event.bigger_dice.game_over":this.handleGameOver(t);break;case"error":case"games.event.error":this.handleGameError(t);break;case"games.event.not_in_room":this.handleNotInRoom(t);break;case"chat_message":case"games.event.chat_message":this.handleChatMessage(t);break;case"chat_history":case"games.event.chat_history":this.handleChatHistory(t);break;case"user_muted":case"games.event.user_muted":console.log("[Chat] User muted:",t.target_user_id);break;case"user_unmuted":case"games.event.user_unmuted":console.log("[Chat] User unmuted:",t.target_user_id);break;case"spectator_joined":case"games.event.spectator_joined":case"spectator_data_joined":case"games.event.spectator_data_joined":this.handleSpectatorJoined(t);break;case"spectator_left":case"games.event.spectator_left":this.handleSpectatorLeft(t);break;case"request_to_play_accepted":case"games.event.request_to_play_accepted":this.handleRequestToPlayAccepted(t);break;case"removed_from_game":case"games.event.removed_from_game":this.handleRemovedFromGame(t);break;case"game_starting":case"games.event.game_starting":this.handleGameStarting(t);break;default:console.warn("BiggerDice: Unknown message type",t.type)}}catch(t){console.error("BiggerDice: Error parsing message",t)}}handleClose(e){console.log("BiggerDice: WebSocket closed",e.code,e.reason),this.stopHeartbeat(),this.setConnectionState(b.DISCONNECTED),this.scheduleReconnect()}handleError(e){console.error("BiggerDice: WebSocket error",e)}scheduleReconnect(){if(this.reconnectAttempts>=this.maxReconnectAttempts){console.error("BiggerDice: Max reconnect attempts reached"),this.dispatchEvent(new CustomEvent("game-error",{detail:{message:"Unable to connect to game server"}}));return}this.setConnectionState(b.RECONNECTING),this.reconnectAttempts++;const e=this.reconnectDelay*Math.pow(2,this.reconnectAttempts-1);console.log(`BiggerDice: Reconnecting in ${e}ms`),setTimeout(()=>this.connect(),e)}send(e){this.ws&&this.ws.readyState===WebSocket.OPEN?this.ws.send(JSON.stringify(e)):console.warn("BiggerDice: WebSocket not connected")}startHeartbeat(){this.stopHeartbeat(),this.heartbeatInterval=setInterval(()=>{this.ws&&this.ws.readyState===WebSocket.OPEN&&(this.send({type:"system.heartbeat"}),this.heartbeatTimeout=setTimeout(()=>{console.warn("BiggerDice: Heartbeat timeout"),this.ws?.close()},1e4))},3e4)}stopHeartbeat(){this.heartbeatInterval&&(clearInterval(this.heartbeatInterval),this.heartbeatInterval=null),this.heartbeatTimeout&&(clearTimeout(this.heartbeatTimeout),this.heartbeatTimeout=null)}handleHeartbeatAck(){this.heartbeatTimeout&&(clearTimeout(this.heartbeatTimeout),this.heartbeatTimeout=null)}setConnectionState(e){this.connectionState=e,this.updateConnectionUI()}updateConnectionUI(){const e=this.elements.connectionDot,t=this.elements.connectionText,a=this.elements.gameStatus;switch(e.classList.remove("connection-dot--connected","connection-dot--connecting"),this.connectionState){case b.CONNECTED:e.classList.add("connection-dot--connected"),t.textContent="Connected";break;case b.CONNECTING:case b.RECONNECTING:e.classList.add("connection-dot--connecting"),t.textContent=this.connectionState===b.CONNECTING?"Connecting...":"Reconnecting...";break;default:t.textContent="Disconnected"}this.mode===y.LOBBY&&(a.textContent=this.connectionState===b.CONNECTED?"Connected":"Connecting")}handleWelcome(e){console.log("BiggerDice: Welcome received, authenticating"),this.send({type:"system.authenticate",user_id:String(this.userId),username:this.username||"Guest",avatar_id:this.avatarId||null})}handleAuthenticated(e){console.log("BiggerDice: Authenticated as",e.username),this.setConnectionState(b.CONNECTED),this.mode===y.LOBBY?this.requestRoomList():this.roomId&&this.send({type:"games.command.rejoin_room",room_id:this.roomId})}handleSystemError(e){console.error("BiggerDice: System error",e.code,e.message),this.dispatchEvent(new CustomEvent("game-error",{detail:{code:e.code,message:e.message}}))}requestRoomList(){this.send({type:"games.command.list_rooms",game_type:"bigger_dice"})}handleRoomList(e){this.availableRooms=(e||[]).filter(t=>t.game_type==="bigger_dice"),this.renderRoomList()}handleRoomCreated(e){console.log("[BiggerDice] handleRoomCreated:",e);const t=String(e.host_id),a=String(this.userId);if(t===a)console.log("[BiggerDice] We are the host, dispatching room-joined event"),this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:e.room_id,game_type:e.game_type||"bigger_dice"},bubbles:!0,composed:!0}));else{console.log("[BiggerDice] Not the host, adding room to list");const s={room_id:e.room_id,room_name:e.room_name,game_type:e.game_type||"bigger_dice",host_name:e.host_name||e.host_username||"Unknown",status:"waiting",player_count:1,spectator_count:0,max_players:e.max_players||2,allow_spectators:e.allow_spectators===!0,is_password_protected:e.is_password_protected||!1};this.mode===y.LOBBY&&(this.availableRooms.some(o=>o.room_id===s.room_id)||(this.availableRooms.unshift(s),this.renderRoomList()))}}handleRoomJoined(e){this.pendingJoinRoomId&&this.hideJoinPasswordModal(),this.notInRoomInfo=null,this.elements.notInRoomState.classList.add("hidden"),this.chatHistoryRequested={lobby:!1,players:!1,spectators:!1},this.chatMessages={lobby:[],players:[],spectators:[]};const t=e.player?.user_id||e.player_id;t===this.userId||t===String(this.userId)||String(t)===this.userId?this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:e.room_id,game_type:"bigger_dice"}})):this.requestRoomList()}handleRoomRemoved(e){console.log("[BiggerDice] handleRoomRemoved:",e);const t=e.room_id,a=e.reason||"unknown",s=this.availableRooms.length;this.availableRooms=this.availableRooms.filter(i=>i.room_id!==t),this.availableRooms.length<s&&(console.log(`[BiggerDice] Room ${t} removed from list (reason: ${a})`),this.mode===y.LOBBY&&this.renderRoomList()),this.roomId===t&&this.mode===y.GAME&&this.showRoomClosedMessage()}renderRoomList(){const e=this.elements.roomsGrid,t=this.elements.loadingState,a=this.elements.emptyState;if(t.classList.add("hidden"),this.availableRooms.length===0){a.classList.remove("hidden"),e.classList.add("hidden");return}a.classList.add("hidden"),e.classList.remove("hidden"),e.innerHTML=this.availableRooms.map(s=>{const i=s.players?.length||0,o=s.max_players||2,c=s.spectator_count||0,r=s.allow_spectators===!0,d=i>=o,n=s.can_rejoin===!0;return`
-      <div class="room-card" data-room-id="${s.room_id}">
+`;const p={DISCONNECTED:"disconnected",CONNECTING:"connecting",CONNECTED:"connected",RECONNECTING:"reconnecting"},g={WAITING:"waiting",PLAYING:"playing",FINISHED:"finished"},b={LOBBY:"lobby",GAME:"game"};class _ extends HTMLElement{constructor(){super(),this.attachShadow({mode:"open"}),this.shadowRoot.appendChild(v.content.cloneNode(!0)),this.mode=b.GAME,this.connectionState=p.DISCONNECTED,this.ws=null,this.reconnectAttempts=0,this.maxReconnectAttempts=5,this.reconnectDelay=1e3,this.heartbeatInterval=null,this.heartbeatTimeout=null,this.availableRooms=[],this.pendingJoinRoomId=null,this.pendingJoinRoomName=null,this.pendingJoinAsSpectator=!1,this.notInRoomInfo=null,this.wantsToSpectate=!1,this.roomId="",this.roomName="",this.players=[],this.lobby=[],this.bannedPlayers=[],this.spectators=[],this.hostId=null,this.isAdmin=!1,this.maxPlayers=2,this.allowSpectators=!0,this.gameStatus=g.WAITING,this.currentTurn=null,this.round=0,this.myPlayerId=null,this.roundHistory=[],this.lastDiceState=null,this.diceElements=[],this.disconnectedPlayers=new Map,this.kickVotes=new Set,this.autoPlayers=new Set,this.pendingAutoRoll=null,this.autoRollTimeoutId=null,this.isAnimating=!1,this.animationPromise=null,this.rollEventQueue=[],this.roundEndedWithWinner=!1,this.disconnectTicker=null,this.disconnectOverlayIds=new Set,this.windowEventsBound=!1,this.hasSentDisconnectIntent=!1,this.handlePageHide=null,this.handleBeforeUnload=null,this.handleOffline=null,this.turnTimer=null,this.turnTimeRemaining=0,this.turnTimerDuration=5,this.gameConfig={entry_fee_cents:1e3,ready_timeout_seconds:30,winning_percentage:60},this.readyTimer=null,this.readyTimeRemaining=0,this.readyTimerDuration=30,this.chatChannel="lobby",this.chatMessages={lobby:[],players:[],spectators:[]},this.chatHistoryRequested={lobby:!1,players:!1,spectators:!1},this.chatUnreadCounts={lobby:0,players:0,spectators:0},this.mutedUsers=new Set,this.isChatCollapsed=!1,this.isPlayer=!1,this.isSpectator=!1,this.cacheElements(),this.bindEvents()}static get observedAttributes(){return["data-ws-url","data-room-id","data-room-name","data-user-id","data-username","data-avatar-id","data-balance","data-mode","data-spectate"]}connectedCallback(){this.wsUrl=this.dataset.wsUrl,this.roomId=this.dataset.roomId||"",this.roomName=this.dataset.roomName||"",this.userId=this.dataset.userId,this.username=this.dataset.username,this.avatarId=this.dataset.avatarId,this.myPlayerId=this.userId,this.mode=this.dataset.mode==="lobby"?b.LOBBY:b.GAME,this.wantsToSpectate=this.dataset.spectate==="true",this.fetchGameConfig(),this.setupModeUI(),this.bindWindowEvents(),this.wsUrl&&this.connect()}disconnectedCallback(){this.unbindWindowEvents(),this.disconnect(),this.autoRollTimeoutId&&(clearTimeout(this.autoRollTimeoutId),this.autoRollTimeoutId=null),this.pendingAutoRoll=null,this.stopReadyTimer()}cacheElements(){const e=t=>{const s=this.shadowRoot.getElementById(t);return s||console.warn(`[BiggerDice] Element not found: ${t}`),s};this.elements={headerTitle:e("headerTitle"),gameStatus:e("gameStatus"),connectionDot:e("connectionDot"),connectionText:e("connectionText"),lobbySection:e("lobbySection"),createRoomBtn:e("createRoomBtn"),loadingState:e("loadingState"),emptyState:e("emptyState"),roomsGrid:e("roomsGrid"),createRoomModal:e("createRoomModal"),createRoomForm:e("createRoomForm"),roomNameInput:e("roomNameInput"),roomPasswordInput:e("roomPasswordInput"),playerCountInput:e("playerCountInput"),allowSpectatorsInput:e("allowSpectatorsInput"),modalCloseBtn:e("modalCloseBtn"),modalCancelBtn:e("modalCancelBtn"),modalCreateBtn:e("modalCreateBtn"),joinPasswordModal:e("joinPasswordModal"),joinPasswordForm:e("joinPasswordForm"),joinPasswordInput:e("joinPasswordInput"),joinPasswordError:e("joinPasswordError"),joinPasswordCloseBtn:e("joinPasswordCloseBtn"),joinPasswordCancelBtn:e("joinPasswordCancelBtn"),createConfirmModal:e("createConfirmModal"),createConfirmLoader:e("createConfirmLoader"),createConfirmMessage:e("createConfirmMessage"),createConfirmCloseBtn:e("createConfirmCloseBtn"),createConfirmCancelBtn:e("createConfirmCancelBtn"),createConfirmBtn:e("createConfirmBtn"),joinConfirmModal:e("joinConfirmModal"),joinConfirmLoader:e("joinConfirmLoader"),joinConfirmMessage:e("joinConfirmMessage"),joinConfirmCloseBtn:e("joinConfirmCloseBtn"),joinConfirmCancelBtn:e("joinConfirmCancelBtn"),joinConfirmBtn:e("joinConfirmBtn"),gameSection:e("gameSection"),waitingForAdmin:e("waitingForAdmin"),waitingPlayersList:e("waitingPlayersList"),adminLobby:e("adminLobby"),lobbyCount:e("lobbyCount"),lobbyPlayersList:e("lobbyPlayersList"),bannedPlayersSection:e("bannedPlayersSection"),bannedCount:e("bannedCount"),bannedPlayersList:e("bannedPlayersList"),waitingState:e("waitingState"),notInRoomState:e("notInRoomState"),enterRoomBtn:e("enterRoomBtn"),enterRoomBtnText:e("enterRoomBtnText"),notInRoomHint:e("notInRoomHint"),spectatorOptionContainer:e("spectatorOptionContainer"),joinAsSpectatorCheckbox:e("joinAsSpectatorCheckbox"),gameBoard:e("gameBoard"),turnIndicator:e("turnIndicator"),playersArea:e("playersArea"),diceContainer:e("diceContainer"),readyBtn:e("readyBtn"),actionButtons:e("actionButtons"),rollBtn:e("rollBtn"),autoPlayBtn:e("autoPlayBtn"),turnTimer:e("turnTimer"),turnTimerProgress:e("turnTimerProgress"),turnTimerText:e("turnTimerText"),readyTimer:e("readyTimer"),readyTimerProgress:e("readyTimerProgress"),readyTimerText:e("readyTimerText"),roundInfo:e("roundInfo"),leaveBtn:e("leaveBtn"),disconnectOverlay:e("disconnectOverlay"),resultOverlay:e("resultOverlay"),resultIcon:e("resultIcon"),resultTitle:e("resultTitle"),resultScore1:e("resultScore1"),resultLabel1:e("resultLabel1"),resultScore2:e("resultScore2"),resultLabel2:e("resultLabel2"),resultMessage:e("resultMessage"),resultContinueBtn:e("resultContinueBtn"),resultLeaveBtn:e("resultLeaveBtn"),spectatorBanner:e("spectatorBanner"),requestToPlayBtn:e("requestToPlayBtn"),spectatorsPanel:e("spectatorsPanel"),spectatorsCount:e("spectatorsCount"),spectatorsList:e("spectatorsList"),gameFooter:e("gameFooter"),chatPanel:e("chatPanel"),chatTabLobby:e("chatTabLobby"),chatTabPlayers:e("chatTabPlayers"),chatTabSpectators:e("chatTabSpectators"),lobbyBadge:e("lobbyBadge"),playersBadge:e("playersBadge"),spectatorsBadge:e("spectatorsBadge"),chatToggle:e("chatToggle"),chatBody:e("chatBody"),chatMessages:e("chatMessages"),chatForm:e("chatForm"),chatInput:e("chatInput"),chatSend:e("chatSend")}}bindEvents(){console.log("[BiggerDice] Binding events..."),this.elements.createRoomBtn&&this.elements.createRoomBtn.addEventListener("click",()=>{console.log("[BiggerDice] Create room button clicked"),this.showCreateRoomModal()}),this.elements.modalCloseBtn&&this.elements.modalCloseBtn.addEventListener("click",()=>{console.log("[BiggerDice] Modal close button clicked"),this.hideCreateRoomModal()}),this.elements.modalCancelBtn&&this.elements.modalCancelBtn.addEventListener("click",()=>{console.log("[BiggerDice] Modal cancel button clicked"),this.hideCreateRoomModal()}),this.elements.createRoomForm&&this.elements.createRoomForm.addEventListener("submit",e=>{console.log("[BiggerDice] Form submitted"),e.preventDefault(),e.stopPropagation(),this.showCreateConfirmModal()}),this.elements.modalCreateBtn&&this.elements.modalCreateBtn.addEventListener("click",e=>{console.log("[BiggerDice] Create button clicked directly"),e.preventDefault(),e.stopPropagation(),this.showCreateConfirmModal()}),this.elements.createRoomModal&&this.elements.createRoomModal.addEventListener("click",e=>{e.target===this.elements.createRoomModal&&(console.log("[BiggerDice] Modal overlay clicked"),this.hideCreateRoomModal())}),this.elements.joinPasswordCloseBtn&&this.elements.joinPasswordCloseBtn.addEventListener("click",()=>this.hideJoinPasswordModal()),this.elements.joinPasswordCancelBtn&&this.elements.joinPasswordCancelBtn.addEventListener("click",()=>this.hideJoinPasswordModal()),this.elements.joinPasswordForm&&this.elements.joinPasswordForm.addEventListener("submit",e=>{e.preventDefault(),this.submitJoinWithPassword()}),this.elements.joinPasswordModal&&this.elements.joinPasswordModal.addEventListener("click",e=>{e.target===this.elements.joinPasswordModal&&this.hideJoinPasswordModal()}),this.elements.createConfirmCloseBtn&&this.elements.createConfirmCloseBtn.addEventListener("click",()=>this.hideCreateConfirmModal()),this.elements.createConfirmCancelBtn&&this.elements.createConfirmCancelBtn.addEventListener("click",()=>this.hideCreateConfirmModal()),this.elements.createConfirmBtn&&this.elements.createConfirmBtn.addEventListener("click",()=>{this.hideCreateConfirmModal(),this.createRoom()}),this.elements.createConfirmModal&&this.elements.createConfirmModal.addEventListener("click",e=>{e.target===this.elements.createConfirmModal&&this.hideCreateConfirmModal()}),this.elements.joinConfirmCloseBtn&&this.elements.joinConfirmCloseBtn.addEventListener("click",()=>this.hideJoinConfirmModal()),this.elements.joinConfirmCancelBtn&&this.elements.joinConfirmCancelBtn.addEventListener("click",()=>this.hideJoinConfirmModal()),this.elements.joinConfirmBtn&&this.elements.joinConfirmBtn.addEventListener("click",()=>{this.hideJoinConfirmModal(),this.executeJoinRoom()}),this.elements.joinConfirmModal&&this.elements.joinConfirmModal.addEventListener("click",e=>{e.target===this.elements.joinConfirmModal&&this.hideJoinConfirmModal()}),this.elements.readyBtn&&this.elements.readyBtn.addEventListener("click",()=>this.sendReady()),this.elements.rollBtn&&this.elements.rollBtn.addEventListener("click",()=>this.sendRoll()),this.elements.autoPlayBtn&&this.elements.autoPlayBtn.addEventListener("click",()=>this.sendEnableAutoPlay()),this.elements.leaveBtn&&this.elements.leaveBtn.addEventListener("click",()=>this.leaveGame()),this.elements.resultContinueBtn&&this.elements.resultContinueBtn.addEventListener("click",()=>this.hideResultOverlay()),this.elements.resultLeaveBtn&&this.elements.resultLeaveBtn.addEventListener("click",()=>this.leaveGame()),this.elements.enterRoomBtn&&this.elements.enterRoomBtn.addEventListener("click",()=>this.handleEnterRoomClick()),this.elements.joinAsSpectatorCheckbox&&this.elements.joinAsSpectatorCheckbox.addEventListener("change",e=>{this.wantsToSpectate=e.target.checked,this.updateEnterRoomButton()}),this.elements.requestToPlayBtn&&this.elements.requestToPlayBtn.addEventListener("click",()=>this.requestToPlay()),this.elements.chatTabLobby&&this.elements.chatTabLobby.addEventListener("click",()=>this.switchChatChannel("lobby")),this.elements.chatTabPlayers&&this.elements.chatTabPlayers.addEventListener("click",()=>this.switchChatChannel("players")),this.elements.chatTabSpectators&&this.elements.chatTabSpectators.addEventListener("click",()=>this.switchChatChannel("spectators")),this.elements.chatToggle&&this.elements.chatToggle.addEventListener("click",()=>this.toggleChat()),this.elements.chatForm&&this.elements.chatForm.addEventListener("submit",e=>{e.preventDefault(),this.sendChatMessage()}),this.elements.playersArea&&this.elements.playersArea.addEventListener("click",e=>{const t=e.target.closest('[data-action="kick-disconnected"]');if(!t)return;const s=t.dataset.userId;s&&this.sendKickDisconnected(s)}),this.elements.disconnectOverlay&&this.elements.disconnectOverlay.addEventListener("click",e=>{const t=e.target.closest('[data-action="kick-disconnected"]');if(!t)return;const s=t.dataset.userId;s&&this.sendKickDisconnected(s)}),console.log("[BiggerDice] Events bound successfully")}bindWindowEvents(){this.windowEventsBound||(this.handlePageHide=()=>this.notifyDisconnectIntent(),this.handleBeforeUnload=()=>this.notifyDisconnectIntent(),this.handleOffline=()=>{this.notifyDisconnectIntent(),this.ws?.close()},window.addEventListener("pagehide",this.handlePageHide),window.addEventListener("beforeunload",this.handleBeforeUnload),window.addEventListener("offline",this.handleOffline),this.windowEventsBound=!0)}unbindWindowEvents(){this.windowEventsBound&&(this.handlePageHide&&window.removeEventListener("pagehide",this.handlePageHide),this.handleBeforeUnload&&window.removeEventListener("beforeunload",this.handleBeforeUnload),this.handleOffline&&window.removeEventListener("offline",this.handleOffline),this.handlePageHide=null,this.handleBeforeUnload=null,this.handleOffline=null,this.windowEventsBound=!1)}notifyDisconnectIntent(){this.hasSentDisconnectIntent||this.roomId&&this.gameStatus===g.PLAYING&&(!this.isPlayer||this.isSpectator||(this.hasSentDisconnectIntent=!0,this.send({type:"games.command.leave_room",room_id:this.roomId})))}setupModeUI(){this.mode===b.LOBBY?(this.elements.lobbySection.classList.add("active"),this.elements.gameSection.classList.remove("active"),this.elements.headerTitle.textContent="Bigger Dice Lobby"):(this.elements.lobbySection.classList.remove("active"),this.elements.gameSection.classList.add("active"),this.elements.headerTitle.textContent=this.roomName||"Bigger Dice")}connect(){if(this.connectionState!==p.CONNECTING){this.setConnectionState(p.CONNECTING);try{this.ws=new WebSocket(this.wsUrl),this.ws.onopen=()=>this.handleOpen(),this.ws.onmessage=e=>this.handleMessage(e),this.ws.onclose=e=>this.handleClose(e),this.ws.onerror=e=>this.handleError(e)}catch(e){console.error("WebSocket connection error:",e),this.scheduleReconnect()}}}disconnect(){this.stopHeartbeat(),this.stopDisconnectTickerIfNeeded(),this.ws&&(this.ws.close(),this.ws=null),this.setConnectionState(p.DISCONNECTED)}handleOpen(){console.log("BiggerDice: WebSocket connected"),this.reconnectAttempts=0,this.startHeartbeat()}handleMessage(e){try{const t=JSON.parse(e.data);switch(console.log("BiggerDice: Received",t.type,t),t.type){case"system.welcome":this.handleWelcome(t);break;case"system.authenticated":this.handleAuthenticated(t);break;case"system.heartbeat_ack":this.handleHeartbeatAck();break;case"system.error":this.handleSystemError(t);break;case"room_list":case"games.event.room_list":this.handleRoomList(t.rooms);break;case"games.event.bigger_dice.room_created":this.handleRoomCreated(t);break;case"games.event.bigger_dice.room_joined":this.handleRoomJoined(t);break;case"games.event.bigger_dice.room_removed":this.handleRoomRemoved(t);break;case"games.event.bigger_dice.room_state":this.handleRoomState(t.room);break;case"games.event.bigger_dice.player_joined":this.handlePlayerJoined(t);break;case"games.event.bigger_dice.player_left":this.handlePlayerLeft(t);break;case"games.event.bigger_dice.player_disconnected":this.handlePlayerDisconnected(t);break;case"games.event.bigger_dice.player_rejoined":this.handlePlayerRejoined(t);break;case"games.event.bigger_dice.player_auto_enabled":this.handlePlayerAutoEnabled(t);break;case"games.event.bigger_dice.player_auto_disabled":this.handlePlayerAutoDisabled(t);break;case"games.event.bigger_dice.lobby_joined":this.handleLobbyJoined(t);break;case"games.event.bigger_dice.player_selected":this.handlePlayerSelected(t);break;case"games.event.bigger_dice.player_kicked":this.handlePlayerKicked(t);break;case"games.event.bigger_dice.player_banned":this.handlePlayerBanned(t);break;case"games.event.bigger_dice.player_unbanned":this.handlePlayerUnbanned(t);break;case"games.event.bigger_dice.user_banned":this.handleUserBanned(t);break;case"games.event.bigger_dice.lobby_updated":this.handleLobbyUpdated(t);break;case"games.event.bigger_dice.game_started":this.handleGameStarted(t);break;case"games.event.bigger_dice.player_ready":this.handlePlayerReady(t);break;case"games.event.bigger_dice.rolled":this.handleDiceRolled(t);break;case"games.event.bigger_dice.state":this.handleBiggerDiceState(t);break;case"games.event.bigger_dice.round_result":this.handleRoundResult(t);break;case"games.event.bigger_dice.tiebreaker_started":this.handleTiebreakerStarted(t);break;case"games.event.bigger_dice.turn_changed":this.handleTurnChanged(t);break;case"games.event.bigger_dice.round_complete":this.handleRoundComplete(t);break;case"games.event.bigger_dice.game_over":this.handleGameOver(t);break;case"error":case"games.event.error":this.handleGameError(t);break;case"games.event.bigger_dice.not_in_room":this.handleNotInRoom(t);break;case"games.event.bigger_dice.lobby_chat":this.handleChatMessage(t,"lobby");break;case"games.event.bigger_dice.player_chat":this.handleChatMessage(t,"players");break;case"games.event.bigger_dice.spectator_chat":this.handleChatMessage(t,"spectators");break;case"games.event.bigger_dice.lobby_chat_history":this.handleChatHistory(t,"lobby");break;case"games.event.bigger_dice.player_chat_history":this.handleChatHistory(t,"players");break;case"games.event.bigger_dice.spectator_chat_history":this.handleChatHistory(t,"spectators");break;case"games.event.bigger_dice.chat_message":this.handleChatMessage(t,t.channel||"lobby");break;case"games.event.bigger_dice.chat_history":this.handleChatHistory(t,t.channel||"lobby");break;case"games.event.bigger_dice.user_muted":console.log("[Chat] User muted:",t.target_user_id);break;case"games.event.bigger_dice.user_unmuted":console.log("[Chat] User unmuted:",t.target_user_id);break;case"games.event.bigger_dice.spectator_joined":case"games.event.bigger_dice.spectator_data_joined":this.handleSpectatorJoined(t);break;case"games.event.bigger_dice.spectator_left":this.handleSpectatorLeft(t);break;case"games.event.bigger_dice.request_to_play_accepted":this.handleRequestToPlayAccepted(t);break;case"games.event.bigger_dice.removed_from_game":this.handleRemovedFromGame(t);break;case"games.event.bigger_dice.game_starting":this.handleGameStarting(t);break;default:console.warn("BiggerDice: Unknown message type",t.type)}}catch(t){console.error("BiggerDice: Error parsing message",t)}}handleClose(e){console.log("BiggerDice: WebSocket closed",e.code,e.reason),this.stopHeartbeat(),this.setConnectionState(p.DISCONNECTED),this.scheduleReconnect()}handleError(e){console.error("BiggerDice: WebSocket error",e)}scheduleReconnect(){if(this.reconnectAttempts>=this.maxReconnectAttempts){console.error("BiggerDice: Max reconnect attempts reached"),this.dispatchEvent(new CustomEvent("game-error",{detail:{message:"Unable to connect to game server"}}));return}this.setConnectionState(p.RECONNECTING),this.reconnectAttempts++;const e=this.reconnectDelay*Math.pow(2,this.reconnectAttempts-1);console.log(`BiggerDice: Reconnecting in ${e}ms`),setTimeout(()=>this.connect(),e)}send(e){this.ws&&this.ws.readyState===WebSocket.OPEN?this.ws.send(JSON.stringify(e)):console.warn("BiggerDice: WebSocket not connected")}startHeartbeat(){this.stopHeartbeat(),this.heartbeatInterval=setInterval(()=>{this.ws&&this.ws.readyState===WebSocket.OPEN&&(this.send({type:"system.heartbeat"}),this.heartbeatTimeout=setTimeout(()=>{console.warn("BiggerDice: Heartbeat timeout"),this.ws?.close()},1e4))},3e4)}stopHeartbeat(){this.heartbeatInterval&&(clearInterval(this.heartbeatInterval),this.heartbeatInterval=null),this.heartbeatTimeout&&(clearTimeout(this.heartbeatTimeout),this.heartbeatTimeout=null)}handleHeartbeatAck(){this.heartbeatTimeout&&(clearTimeout(this.heartbeatTimeout),this.heartbeatTimeout=null)}setConnectionState(e){this.connectionState=e,this.updateConnectionUI()}updateConnectionUI(){const e=this.elements.connectionDot,t=this.elements.connectionText,s=this.elements.gameStatus;switch(e.classList.remove("connection-dot--connected","connection-dot--connecting"),this.connectionState){case p.CONNECTED:e.classList.add("connection-dot--connected"),t.textContent="Connected";break;case p.CONNECTING:case p.RECONNECTING:e.classList.add("connection-dot--connecting"),t.textContent=this.connectionState===p.CONNECTING?"Connecting...":"Reconnecting...";break;default:t.textContent="Disconnected"}this.mode===b.LOBBY&&(s.textContent=this.connectionState===p.CONNECTED?"Connected":"Connecting")}handleWelcome(e){console.log("BiggerDice: Welcome received, authenticating"),this.send({type:"system.authenticate",user_id:String(this.userId),username:this.username||"Guest",avatar_id:this.avatarId||null})}handleAuthenticated(e){console.log("BiggerDice: Authenticated as",e.username),this.setConnectionState(p.CONNECTED),this.mode===b.LOBBY?this.requestRoomList():this.roomId&&this.send({type:"games.command.rejoin_room",room_id:this.roomId})}handleSystemError(e){console.error("BiggerDice: System error",e.code,e.message),this.dispatchEvent(new CustomEvent("game-error",{detail:{code:e.code,message:e.message}}))}requestRoomList(){this.send({type:"games.command.list_rooms",game_type:"bigger_dice"})}handleRoomList(e){this.availableRooms=(e||[]).filter(t=>t.game_type==="bigger_dice"),this.renderRoomList()}handleRoomCreated(e){if(console.log("[BiggerDice] handleRoomCreated:",e),e.game_type&&e.game_type!=="bigger_dice"){console.log("[BiggerDice] Ignoring room_created for different game:",e.game_type);return}const t=String(e.host_id),s=String(this.userId);if(t===s)console.log("[BiggerDice] We are the host, dispatching room-joined event"),this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:e.room_id,game_type:e.game_type||"bigger_dice"},bubbles:!0,composed:!0}));else{console.log("[BiggerDice] Not the host, adding room to list");const i={room_id:e.room_id,room_name:e.room_name,game_type:e.game_type||"bigger_dice",host_name:e.host_name||e.host_username||"Unknown",status:"waiting",player_count:1,spectator_count:0,max_players:e.player_count||e.max_players||2,allow_spectators:e.allow_spectators===!0,is_password_protected:e.is_password_protected||!1};this.mode===b.LOBBY&&(this.availableRooms.some(n=>n.room_id===i.room_id)||(this.availableRooms.unshift(i),this.renderRoomList()))}}handleRoomJoined(e){this.pendingJoinRoomId&&this.hideJoinPasswordModal(),this.notInRoomInfo=null,this.elements.notInRoomState.classList.add("hidden"),this.chatHistoryRequested={lobby:!1,players:!1,spectators:!1},this.chatMessages={lobby:[],players:[],spectators:[]};const t=e.player?.user_id||e.player_id;t===this.userId||t===String(this.userId)||String(t)===this.userId?this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:e.room_id,game_type:"bigger_dice"}})):this.requestRoomList()}handleRoomRemoved(e){console.log("[BiggerDice] handleRoomRemoved:",e);const t=e.room_id,s=e.reason||"unknown",i=this.availableRooms.length;this.availableRooms=this.availableRooms.filter(a=>a.room_id!==t),this.availableRooms.length<i&&(console.log(`[BiggerDice] Room ${t} removed from list (reason: ${s})`),this.mode===b.LOBBY&&this.renderRoomList()),this.roomId===t&&this.mode===b.GAME&&this.showRoomClosedMessage()}renderRoomList(){const e=this.elements.roomsGrid,t=this.elements.loadingState,s=this.elements.emptyState;if(t.classList.add("hidden"),this.availableRooms.length===0){s.classList.remove("hidden"),e.classList.add("hidden");return}s.classList.add("hidden"),e.classList.remove("hidden"),e.innerHTML=this.availableRooms.map(i=>{const a=i.players?.length||0,n=i.player_count||i.max_players||2,r=i.spectator_count||0,o=i.allow_spectators===!0,d=a>=n,l=i.can_rejoin===!0;return`
+      <div class="room-card" data-room-id="${i.room_id}">
         <div class="room-card__header">
           <span class="room-card__name">
-            ${this.escapeHtml(s.room_name)}
-            ${s.is_password_protected?`
+            ${this.escapeHtml(i.room_name)}
+            ${i.is_password_protected?`
               <span class="room-card__lock" title="Password protected">
                 <svg class="room-card__lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -2290,7 +2662,7 @@
               </span>
             `:""}
           </span>
-          <span class="room-card__status room-card__status--${s.status}">${this.formatStatus(s.status)}</span>
+          <span class="room-card__status room-card__status--${i.status}">${this.formatStatus(i.status)}</span>
         </div>
         <div class="room-card__info">
           <span class="room-card__info-item" title="Players">
@@ -2300,139 +2672,139 @@
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            ${i}/${o}
+            ${a}/${n}
           </span>
-          ${r?`
+          ${o?`
             <span class="room-card__info-item" title="Spectators">
               <svg class="room-card__info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
-              ${c}
+              ${r}
             </span>
           `:`
             <span class="room-card__no-spectators" title="Spectators not allowed">No spectators</span>
           `}
         </div>
         <div class="room-card__players">
-          ${(s.players||[]).map(m=>`
-            <span class="player-badge ${m.is_ready?"player-badge--ready":""}">${this.escapeHtml(m.username||m.name)}</span>
+          ${(i.players||[]).map(c=>`
+            <span class="player-badge ${c.is_ready?"player-badge--ready":""}">${this.escapeHtml(c.username||c.name)}</span>
           `).join("")}
-          ${i<o?'<span class="player-badge">Waiting...</span>':""}
+          ${a<n?'<span class="player-badge">Waiting...</span>':""}
         </div>
         <div class="room-card__actions">
-          ${n?`
-            <button class="join-btn" data-action="rejoin" data-room-id="${s.room_id}">Rejoin</button>
+          ${l?`
+            <button class="join-btn" data-action="rejoin" data-room-id="${i.room_id}">Rejoin</button>
           `:""}
-          ${!n&&s.status==="waiting"&&!d?`
-            <button class="join-btn" data-action="join" data-room-id="${s.room_id}" data-room-name="${this.escapeHtml(s.room_name)}" data-protected="${s.is_password_protected||!1}">Join Game</button>
+          ${!l&&i.status==="waiting"&&!d?`
+            <button class="join-btn" data-action="join" data-room-id="${i.room_id}" data-room-name="${this.escapeHtml(i.room_name)}" data-protected="${i.is_password_protected||!1}">Join Game</button>
           `:""}
-          ${!n&&r?`
-            <button class="spectate-btn" data-action="spectate" data-room-id="${s.room_id}">
-              ${s.status==="waiting"?"Spectate":"Watch"}
+          ${!l&&o?`
+            <button class="spectate-btn" data-action="spectate" data-room-id="${i.room_id}">
+              ${i.status==="waiting"?"Spectate":"Watch"}
             </button>
           `:""}
         </div>
       </div>
-    `}).join(""),e.querySelectorAll("[data-action]").forEach(s=>{s.addEventListener("click",i=>{const o=i.target.dataset.roomId,c=i.target.dataset.action;(c==="join"||c==="spectate"||c==="rejoin")&&this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:o,game_type:"bigger_dice",as_spectator:c==="spectate"},bubbles:!0,composed:!0}))})})}showCreateRoomModal(){console.log("[BiggerDice] showCreateRoomModal called"),this.elements.createRoomModal?(this.elements.createRoomModal.classList.add("active"),console.log("[BiggerDice] Modal should now be visible")):console.error("[BiggerDice] createRoomModal element not found"),this.elements.roomNameInput&&(this.elements.roomNameInput.value="",this.elements.roomNameInput.focus()),this.elements.roomPasswordInput&&(this.elements.roomPasswordInput.value=""),this.elements.playerCountInput&&(this.elements.playerCountInput.value="2"),this.elements.allowSpectatorsInput&&(this.elements.allowSpectatorsInput.checked=!0)}hideCreateRoomModal(){console.log("[BiggerDice] hideCreateRoomModal called"),this.elements.createRoomModal&&(this.elements.createRoomModal.classList.remove("active"),console.log("[BiggerDice] Modal hidden"))}createRoom(){console.log("[BiggerDice] createRoom called");const e=this.elements.roomNameInput?.value.trim()||`Room ${Date.now()}`,t=this.elements.roomPasswordInput?.value.trim()||"",a=parseInt(this.elements.playerCountInput?.value||"2",10),s=this.elements.allowSpectatorsInput?.checked??!0;console.log("[BiggerDice] Creating room:",e,"players:",a,"spectators:",s);const i={type:"games.command.create_room",game_type:"bigger_dice",room_name:e,max_players:a,allow_spectators:s};t&&(i.password=t),this.send(i),this.hideCreateRoomModal(),console.log("[BiggerDice] Room creation message sent")}showJoinPasswordModal(e,t){this.pendingJoinRoomId=e,this.pendingJoinRoomName=t,this.elements.joinPasswordInput.value="",this.elements.joinPasswordError.classList.add("hidden"),this.elements.joinPasswordModal.classList.add("active"),this.elements.joinPasswordInput.focus()}hideJoinPasswordModal(){this.elements.joinPasswordModal.classList.remove("active"),this.pendingJoinRoomId=null,this.pendingJoinRoomName=null}submitJoinWithPassword(){const e=this.elements.joinPasswordInput.value;e&&this.send({type:"games.command.join_room",room_name:this.pendingJoinRoomName,password:e})}switchChatChannel(e){if(e==="lobby"&&this.isLobbyChatDisabled()){console.log("[Chat] Lobby chat is disabled during ready phase");return}if(e==="players"&&!this.isPlayer&&!this.isSpectator){console.log("[Chat] Cannot access players channel - not a player or spectator");return}if(e==="spectators"&&!this.isSpectator){console.log("[Chat] Cannot access spectators channel - not a spectator");return}this.chatChannel=e,this.elements.chatTabLobby?.classList.toggle("active",e==="lobby"),this.elements.chatTabPlayers?.classList.toggle("active",e==="players"),this.elements.chatTabSpectators?.classList.toggle("active",e==="spectators"),this.chatUnreadCounts[e]=0,this.updateChatBadges(),this.renderChatMessages(),this.updateChatInputAccess(),!this.chatHistoryRequested[e]&&this.chatMessages[e].length===0&&this.roomId&&(this.chatHistoryRequested[e]=!0,this.requestChatHistory(e))}isLobbyChatDisabled(){return this.gameStatus===g.STARTING||this.gameStatus===g.IN_PROGRESS||this.gameStatus===g.PLAYING||this.gameStatus===g.FINISHED||this.gameStatus===g.WAITING&&this.players.length>=this.maxPlayers}updateChatInputAccess(){const e=this.elements.chatInputArea,t=this.elements.chatInput,a=this.elements.chatSendBtn,s=this.isSpectator&&!this.isPlayer&&this.chatChannel==="players";e&&(s?(e.classList.add("chat-input--disabled"),t&&(t.disabled=!0,t.placeholder="Spectators cannot send messages in players chat"),a&&(a.disabled=!0)):(e.classList.remove("chat-input--disabled"),t&&(t.disabled=!1,t.placeholder="Type a message..."),a&&(a.disabled=!1)))}toggleChat(){this.isChatCollapsed=!this.isChatCollapsed,this.elements.chatPanel?.classList.toggle("collapsed",this.isChatCollapsed)}sendChatMessage(){const e=this.elements.chatInput?.value.trim();!e||!this.roomId||(this.send({type:"games.command.send_chat",room_id:this.roomId,channel:this.chatChannel,content:e,avatar_id:this.avatarId||null}),this.elements.chatInput&&(this.elements.chatInput.value=""))}requestChatHistory(e){this.roomId&&this.send({type:"games.command.get_chat_history",room_id:this.roomId,channel:e,limit:50})}handleChatMessage(e){const t={id:e.message_id||Date.now(),userId:e.user_id,username:e.username||"Unknown",avatarId:e.avatar_id,content:e.content,isSystem:e.is_system||!1,isModerated:e.is_moderated||!1,timestamp:e.created_at?new Date(e.created_at):new Date},a=e.channel||"lobby";this.chatMessages[a]||(this.chatMessages[a]=[]),this.chatMessages[a].push(t),this.chatMessages[a].length>100&&(this.chatMessages[a]=this.chatMessages[a].slice(-100)),a===this.chatChannel?this.renderChatMessages():(this.chatUnreadCounts[a]++,this.updateChatBadges())}handleChatHistory(e){const t=e.channel||"lobby",a=e.messages||[];this.chatMessages[t]=a.map(s=>({id:s.message_id||s._id||Date.now(),userId:s.user_id,username:s.username||"Unknown",avatarId:s.avatar_id,content:s.content,isSystem:s.is_system||!1,isModerated:s.is_moderated||!1,timestamp:s.created_at?new Date(s.created_at):new Date})),t===this.chatChannel&&this.renderChatMessages()}renderChatMessages(){const e=this.elements.chatMessages;if(!e)return;const t=this.chatMessages[this.chatChannel]||[];if(t.length===0){e.innerHTML='<div class="chat-empty">No messages yet. Say hello!</div>';return}e.innerHTML=t.map(a=>{const s=this.mutedUsers.has(String(a.userId));if(a.isSystem)return`<div class="chat-message chat-message--system">${this.escapeHtml(a.content)}</div>`;const i=(a.username||"U").substring(0,2).toUpperCase(),o=a.timestamp.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});return`
-        <div class="chat-message ${s?"chat-message--muted":""}" data-user-id="${a.userId}">
-          <div class="chat-message__avatar">${i}</div>
+    `}).join(""),e.querySelectorAll("[data-action]").forEach(i=>{i.addEventListener("click",a=>{const n=a.target.dataset.roomId,r=a.target.dataset.action;(r==="join"||r==="spectate"||r==="rejoin")&&this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:n,game_type:"bigger_dice",as_spectator:r==="spectate"},bubbles:!0,composed:!0}))})})}showCreateRoomModal(){console.log("[BiggerDice] showCreateRoomModal called"),this.elements.createRoomModal?(this.elements.createRoomModal.classList.add("active"),console.log("[BiggerDice] Modal should now be visible")):console.error("[BiggerDice] createRoomModal element not found"),this.elements.roomNameInput&&(this.elements.roomNameInput.value="",this.elements.roomNameInput.focus()),this.elements.roomPasswordInput&&(this.elements.roomPasswordInput.value=""),this.elements.playerCountInput&&(this.elements.playerCountInput.value="2"),this.elements.allowSpectatorsInput&&(this.elements.allowSpectatorsInput.checked=!0)}hideCreateRoomModal(){console.log("[BiggerDice] hideCreateRoomModal called"),this.elements.createRoomModal&&(this.elements.createRoomModal.classList.remove("active"),console.log("[BiggerDice] Modal hidden"))}async fetchGameConfig(){try{const e=await fetch("/api/v1/games/config",{method:"GET",headers:{Accept:"application/json"}});if(e.ok){const t=await e.json();t.bigger_dice&&(this.gameConfig={entry_fee_cents:t.bigger_dice.entry_fee_cents||1e3,ready_timeout_seconds:t.bigger_dice.ready_timeout_seconds||30,winning_percentage:t.bigger_dice.winning_percentage||60},this.readyTimerDuration=this.gameConfig.ready_timeout_seconds,console.log("[BiggerDice] Game config loaded:",this.gameConfig))}}catch(e){console.error("[BiggerDice] Failed to fetch game config:",e)}}getDisplayCost(){return this.gameConfig.entry_fee_cents/100}async showCreateConfirmModal(){console.log("[BiggerDice] showCreateConfirmModal called"),this.elements.createConfirmModal&&this.elements.createConfirmModal.classList.add("active"),this.elements.createConfirmLoader&&this.elements.createConfirmLoader.classList.remove("hidden"),this.elements.createConfirmMessage&&this.elements.createConfirmMessage.classList.add("hidden"),this.elements.createConfirmBtn&&this.elements.createConfirmBtn.classList.add("hidden");try{const e=await fetch("/api/v1/user",{method:"GET",credentials:"include",headers:{Accept:"application/json"}});if(!e.ok)throw new Error("Failed to fetch user data");const s=(await e.json()).user?.balance??0,i=this.gameConfig.entry_fee_cents,a=this.getDisplayCost(),n=s>=i;console.log("[BiggerDice] User balance:",s,"Required:",i,"Has enough:",n),this.elements.createConfirmLoader&&this.elements.createConfirmLoader.classList.add("hidden");const r=this.elements.createConfirmMessage;r&&(n?(r.textContent=`To create a room, you need at least ${a} coins (${i} balance). Creating the room is free, but if you are selected to play, it will cost ${a} coins.`,r.classList.remove("confirm-message--error")):(r.textContent=`You do not have enough credits to create a game. You need at least ${i} balance (${a} coins).`,r.classList.add("confirm-message--error")),r.classList.remove("hidden"));const o=this.elements.createConfirmBtn;o&&(n?o.classList.remove("hidden"):o.classList.add("hidden"))}catch(e){console.error("[BiggerDice] Error fetching balance:",e),this.elements.createConfirmLoader&&this.elements.createConfirmLoader.classList.add("hidden"),this.elements.createConfirmMessage&&(this.elements.createConfirmMessage.textContent="Failed to check balance. Please try again.",this.elements.createConfirmMessage.classList.add("confirm-message--error"),this.elements.createConfirmMessage.classList.remove("hidden"))}}hideCreateConfirmModal(){console.log("[BiggerDice] hideCreateConfirmModal called"),this.elements.createConfirmModal&&this.elements.createConfirmModal.classList.remove("active")}async showJoinConfirmModal(e,t,s=!1){console.log("[BiggerDice] showJoinConfirmModal called for room:",e),this.elements.joinConfirmModal&&this.elements.joinConfirmModal.classList.add("active"),this.elements.joinConfirmLoader&&this.elements.joinConfirmLoader.classList.remove("hidden"),this.elements.joinConfirmMessage&&this.elements.joinConfirmMessage.classList.add("hidden"),this.elements.joinConfirmBtn&&this.elements.joinConfirmBtn.classList.add("hidden");try{const i=await fetch("/api/v1/user",{method:"GET",credentials:"include",headers:{Accept:"application/json"}});if(!i.ok)throw new Error("Failed to fetch user data");const n=(await i.json()).user?.balance??0,r=this.gameConfig.entry_fee_cents,o=this.getDisplayCost(),d=n>=r;console.log("[BiggerDice] User balance:",n,"Required:",r,"Has enough:",d),this.elements.joinConfirmLoader&&this.elements.joinConfirmLoader.classList.add("hidden");const l=this.elements.joinConfirmMessage;l&&(d?(l.textContent=`Joining the room is free. However, if the admin selects you to play, it will cost ${o} coins (${r} balance).`,l.classList.remove("confirm-message--error")):(l.textContent=`You do not have enough credits to join this room. You need at least ${r} balance (${o} coins) to be eligible for selection.`,l.classList.add("confirm-message--error")),l.classList.remove("hidden"));const c=this.elements.joinConfirmBtn;c&&(d?c.classList.remove("hidden"):c.classList.add("hidden"))}catch(i){console.error("[BiggerDice] Error fetching balance:",i),this.elements.joinConfirmLoader&&this.elements.joinConfirmLoader.classList.add("hidden"),this.elements.joinConfirmMessage&&(this.elements.joinConfirmMessage.textContent="Failed to check balance. Please try again.",this.elements.joinConfirmMessage.classList.add("confirm-message--error"),this.elements.joinConfirmMessage.classList.remove("hidden"))}}hideJoinConfirmModal(){console.log("[BiggerDice] hideJoinConfirmModal called"),this.elements.joinConfirmModal&&this.elements.joinConfirmModal.classList.remove("active")}createRoom(){console.log("[BiggerDice] createRoom called");const e=this.elements.roomNameInput?.value.trim()||`Room ${Date.now()}`,t=this.elements.roomPasswordInput?.value.trim()||"",s=parseInt(this.elements.playerCountInput?.value||"2",10),i=this.elements.allowSpectatorsInput?.checked??!0;console.log("[BiggerDice] Creating room:",e,"players:",s,"spectators:",i);const a={type:"games.command.create_room",game_type:"bigger_dice",room_name:e,max_players:s,allow_spectators:i};t&&(a.password=t),this.send(a),this.hideCreateRoomModal(),console.log("[BiggerDice] Room creation message sent")}showJoinPasswordModal(e,t,s=!1){this.pendingJoinRoomId=e,this.pendingJoinRoomName=t,this.pendingJoinAsSpectator=s,this.elements.joinPasswordInput.value="",this.elements.joinPasswordError.classList.add("hidden"),this.elements.joinPasswordModal.classList.add("active"),this.elements.joinPasswordInput.focus()}hideJoinPasswordModal(){this.elements.joinPasswordModal.classList.remove("active"),this.pendingJoinRoomId=null,this.pendingJoinRoomName=null,this.pendingJoinAsSpectator=!1}submitJoinWithPassword(){const e=this.elements.joinPasswordInput.value;e&&(this.pendingJoinAsSpectator?this.send({type:"games.command.join_as_spectator",room_name:this.pendingJoinRoomName,password:e}):this.send({type:"games.command.join_room",room_name:this.pendingJoinRoomName,password:e}))}switchChatChannel(e){const t=this.players.some(s=>String(s.user_id||s.id)===String(this.myPlayerId));if(console.log("[Chat] switchChatChannel called:",{channel:e,isPlayer:this.isPlayer,isSpectator:this.isSpectator,amIAPlayer:t,currentChannel:this.chatChannel,messagesInChannel:this.chatMessages[e]?.length||0}),e==="lobby"&&this.isLobbyChatDisabled()){console.log("[Chat] Lobby chat is disabled during ready/playing phase");return}if(e==="players"&&!this.isPlayer&&!this.isSpectator&&!t){console.log("[Chat] Cannot access players channel - not a player or spectator");return}if(e==="spectators"&&(t||!this.isSpectator)){console.log("[Chat] Cannot access spectators channel - players cannot see spectator chat");return}console.log("[Chat] Access granted, setting chatChannel to:",e),this.chatChannel=e,this.elements.chatTabLobby?.classList.toggle("active",e==="lobby"),this.elements.chatTabPlayers?.classList.toggle("active",e==="players"),this.elements.chatTabSpectators?.classList.toggle("active",e==="spectators"),this.chatUnreadCounts[e]=0,this.updateChatBadges(),console.log("[Chat] About to renderChatMessages, chatChannel is:",this.chatChannel),this.renderChatMessages(),this.updateChatInputAccess(),!this.chatHistoryRequested[e]&&this.chatMessages[e].length===0&&this.roomId&&(this.chatHistoryRequested[e]=!0,this.requestChatHistory(e))}isLobbyChatDisabled(){return this.gameStatus===g.STARTING||this.gameStatus===g.IN_PROGRESS||this.gameStatus===g.PLAYING||this.gameStatus===g.FINISHED||this.gameStatus===g.WAITING&&this.players.length>=this.maxPlayers}updateChatInputAccess(){const e=this.elements.chatForm,t=this.elements.chatInput,s=this.elements.chatSend,i=this.players.some(n=>String(n.user_id||n.id)===String(this.myPlayerId)),a=this.isSpectator&&!i&&this.chatChannel==="players";e&&(a?(e.classList.add("chat-input--disabled"),t&&(t.disabled=!0,t.placeholder="Spectators cannot send messages in players chat"),s&&(s.disabled=!0)):(e.classList.remove("chat-input--disabled"),t&&(t.disabled=!1,t.placeholder="Type a message..."),s&&(s.disabled=!1)))}toggleChat(){this.isChatCollapsed=!this.isChatCollapsed,this.elements.chatPanel?.classList.toggle("collapsed",this.isChatCollapsed)}sendChatMessage(){const e=this.elements.chatInput?.value.trim();!e||!this.roomId||(this.send({type:"games.command.send_chat",room_id:this.roomId,channel:this.chatChannel,content:e,avatar_id:this.avatarId||null}),this.elements.chatInput&&(this.elements.chatInput.value=""))}requestChatHistory(e){this.roomId&&this.send({type:"games.command.get_chat_history",room_id:this.roomId,channel:e,limit:50})}handleChatMessage(e,t){const s=t||e.channel||"lobby";console.log("[Chat] handleChatMessage received:",{channel:s,username:e.username,content:e.content?.substring(0,50),currentChannel:this.chatChannel,isSpectator:this.isSpectator});const i={id:e.message_id||Date.now(),userId:e.user_id,username:e.username||"Unknown",avatarId:e.avatar_id,content:e.content,isSystem:e.is_system||!1,isModerated:e.is_moderated||!1,timestamp:e.created_at?new Date(e.created_at):new Date};this.chatMessages[s]||(this.chatMessages[s]=[]),this.chatMessages[s].push(i),console.log("[Chat] Added message to channel",s,"- now has",this.chatMessages[s].length,"messages"),this.chatMessages[s].length>100&&(this.chatMessages[s]=this.chatMessages[s].slice(-100)),s===this.chatChannel?(console.log("[Chat] Channel matches current, rendering"),this.renderChatMessages()):(console.log("[Chat] Channel does not match current ("+this.chatChannel+"), incrementing badge"),this.chatUnreadCounts[s]++,this.updateChatBadges())}handleChatHistory(e,t){const s=t||e.channel||"lobby",i=e.messages||[];console.log("[Chat] handleChatHistory received for channel:",s,"messages count:",i.length);const a=i.map(l=>({id:l.message_id||l._id||Date.now(),userId:l.user_id,username:l.username||"Unknown",avatarId:l.avatar_id,content:l.content,isSystem:l.is_system||!1,isModerated:l.is_moderated||!1,timestamp:l.created_at?new Date(l.created_at):new Date})),n=this.chatMessages[s]||[],r=new Set(n.map(l=>String(l.id))),d=[...a.filter(l=>!r.has(String(l.id))),...n];d.sort((l,c)=>l.timestamp-c.timestamp),n.length,this.chatMessages[s]=d.slice(-100),console.log("[Chat] handleChatHistory: merged",a.length,"history +",n.length,"existing =",this.chatMessages[s].length,"messages for channel",s),s===this.chatChannel&&(console.log("[Chat] handleChatHistory: channel matches current, rendering"),this.renderChatMessages())}renderChatMessages(){const e=this.elements.chatMessages;if(console.log("[Chat] renderChatMessages called, chatChannel:",this.chatChannel,"container exists:",!!e),!e){console.log("[Chat] renderChatMessages: No container element, returning");return}const t=this.chatMessages[this.chatChannel]||[];if(console.log("[Chat] renderChatMessages: Found",t.length,"messages for channel",this.chatChannel),console.log("[Chat] All chatMessages state:",{lobby:this.chatMessages.lobby?.length||0,players:this.chatMessages.players?.length||0,spectators:this.chatMessages.spectators?.length||0}),t.length===0){console.log("[Chat] renderChatMessages: No messages, showing empty state"),e.innerHTML='<div class="chat-empty">No messages yet. Say hello!</div>';return}e.innerHTML=t.map(s=>{const i=this.mutedUsers.has(String(s.userId));if(s.isSystem)return`<div class="chat-message chat-message--system">${this.escapeHtml(s.content)}</div>`;const a=(s.username||"U").substring(0,2).toUpperCase(),n=s.timestamp.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});return`
+        <div class="chat-message ${i?"chat-message--muted":""}" data-user-id="${s.userId}">
+          <div class="chat-message__avatar">${a}</div>
           <div class="chat-message__content">
             <div class="chat-message__header">
-              <span class="chat-message__username">${this.escapeHtml(a.username)}</span>
-              <span class="chat-message__time">${o}</span>
+              <span class="chat-message__username">${this.escapeHtml(s.username)}</span>
+              <span class="chat-message__time">${n}</span>
             </div>
-            <div class="chat-message__text">${this.escapeHtml(a.content)}</div>
+            <div class="chat-message__text">${this.escapeHtml(s.content)}</div>
           </div>
-          ${String(a.userId)!==String(this.userId)?`
-            <button class="chat-message__mute" data-user-id="${a.userId}" title="${s?"Unmute user":"Mute user"}">
-              ${s?"🔊":"🔇"}
+          ${String(s.userId)!==String(this.userId)?`
+            <button class="chat-message__mute" data-user-id="${s.userId}" title="${i?"Unmute user":"Mute user"}">
+              ${i?"🔊":"🔇"}
             </button>
           `:""}
         </div>
-      `}).join(""),e.scrollTop=e.scrollHeight,e.querySelectorAll(".chat-message__mute").forEach(a=>{a.addEventListener("click",s=>{const i=s.target.dataset.userId;this.toggleMuteUser(i)})})}toggleMuteUser(e){const t=String(e);this.mutedUsers.has(t)?(this.mutedUsers.delete(t),this.send({type:"games.command.unmute_user",room_id:this.roomId,target_user_id:parseInt(e,10)})):(this.mutedUsers.add(t),this.send({type:"games.command.mute_user",room_id:this.roomId,target_user_id:parseInt(e,10)})),this.renderChatMessages()}updateChatBadges(){const e=(t,a)=>{t&&(a>0?(t.textContent=a>99?"99+":String(a),t.classList.remove("hidden")):t.classList.add("hidden"))};e(this.elements.lobbyBadge,this.chatUnreadCounts.lobby),e(this.elements.playersBadge,this.chatUnreadCounts.players),e(this.elements.spectatorsBadge,this.chatUnreadCounts.spectators)}updateChatTabAccess(){const e=this.elements.chatTabLobby,t=this.elements.chatTabPlayers,a=this.elements.chatTabSpectators,s=this.isLobbyChatDisabled(),i=this.spectators&&this.spectators.length>0,o=this.players.some(c=>String(c.user_id||c.id)===String(this.myPlayerId));e&&(s?(e.classList.add("hidden"),e.disabled=!0):(e.classList.remove("hidden"),e.disabled=!1)),t&&(s?(t.classList.remove("hidden"),t.classList.remove("disabled"),t.disabled=!1,this.isSpectator&&!o?t.setAttribute("title","View players chat (read-only)"):t.removeAttribute("title")):(t.classList.add("hidden"),t.disabled=!0)),a&&(s&&this.isSpectator&&i?(a.classList.remove("hidden"),a.classList.remove("disabled"),a.disabled=!1):(a.classList.add("hidden"),a.disabled=!0)),this.chatChannel==="lobby"&&s&&(o?this.switchChatChannel("players"):this.isSpectator&&(i?this.switchChatChannel("spectators"):this.switchChatChannel("players"))),this.chatChannel==="spectators"&&(!this.isSpectator||!i)&&(s?this.switchChatChannel("players"):this.switchChatChannel("lobby")),this.updateChatInputAccess()}updateSpectatorUI(){const e=this.elements.spectatorBanner,t=this.elements.requestToPlayBtn;if(e)if(this.isSpectator){if(e.classList.remove("hidden"),t){const s=this.players.length<this.maxPlayers&&this.gameStatus===g.WAITING;t.classList.toggle("hidden",!s)}}else e.classList.add("hidden");this.renderSpectatorsList()}renderSpectatorsList(){const e=this.elements.spectatorsPanel,t=this.elements.spectatorsCount,a=this.elements.spectatorsList;if(!e||!a)return;if(!this.allowSpectators||this.spectators.length===0){e.classList.add("hidden");return}e.classList.remove("hidden"),t&&(t.textContent=this.spectators.length);const s=String(this.myPlayerId);a.innerHTML=this.spectators.map(i=>{const o=(i.username||"U").charAt(0).toUpperCase(),c=String(i.user_id)===s;return`
-        <div class="spectator-item ${c?"spectator-item--me":""}" data-user-id="${i.user_id}">
-          <span class="spectator-item__avatar">${o}</span>
-          <span class="spectator-item__name">${this.escapeHtml(i.username)}${c?" (you)":""}</span>
+      `}).join(""),console.log("[Chat] renderChatMessages: rendered",t.length,"messages to container"),e.scrollTop=e.scrollHeight,e.querySelectorAll(".chat-message__mute").forEach(s=>{s.addEventListener("click",i=>{const a=i.target.dataset.userId;this.toggleMuteUser(a)})})}toggleMuteUser(e){const t=String(e);this.mutedUsers.has(t)?(this.mutedUsers.delete(t),this.send({type:"games.command.unmute_user",room_id:this.roomId,target_user_id:parseInt(e,10)})):(this.mutedUsers.add(t),this.send({type:"games.command.mute_user",room_id:this.roomId,target_user_id:parseInt(e,10)})),this.renderChatMessages()}updateChatBadges(){const e=(t,s)=>{t&&(s>0?(t.textContent=s>99?"99+":String(s),t.classList.remove("hidden")):t.classList.add("hidden"))};e(this.elements.lobbyBadge,this.chatUnreadCounts.lobby),e(this.elements.playersBadge,this.chatUnreadCounts.players),e(this.elements.spectatorsBadge,this.chatUnreadCounts.spectators)}updateChatTabAccess(){const e=this.elements.chatTabLobby,t=this.elements.chatTabPlayers,s=this.elements.chatTabSpectators,i=this.isLobbyChatDisabled(),a=this.players.some(n=>String(n.user_id||n.id)===String(this.myPlayerId));e&&(i?(e.classList.add("hidden"),e.disabled=!0):(e.classList.remove("hidden"),e.disabled=!1)),t&&(i?(t.classList.remove("hidden"),t.classList.remove("disabled"),t.disabled=!1,this.isSpectator&&!a?t.setAttribute("title","View players chat (read-only)"):t.removeAttribute("title")):(t.classList.add("hidden"),t.disabled=!0)),s&&(this.isSpectator&&!a?(s.classList.remove("hidden"),s.classList.remove("disabled"),s.disabled=!1):(s.classList.add("hidden"),s.disabled=!0)),this.chatChannel==="lobby"&&i&&(console.log("[Chat] updateChatTabAccess: lobby disabled, auto-switching. isSpectator:",this.isSpectator,"amIAPlayer:",a),this.isSpectator&&!a?(console.log("[Chat] updateChatTabAccess: switching spectator to spectators channel"),this.switchChatChannel("spectators")):(console.log("[Chat] updateChatTabAccess: switching to players channel"),this.switchChatChannel("players"))),this.chatChannel==="spectators"&&(!this.isSpectator||a)&&(i?this.switchChatChannel("players"):this.switchChatChannel("lobby")),this.isSpectator&&!a&&i&&!this.chatHistoryRequested.players&&this.chatMessages.players.length===0&&this.roomId&&(this.chatHistoryRequested.players=!0,this.requestChatHistory("players")),this.updateChatInputAccess()}updateSpectatorUI(){const e=this.elements.spectatorBanner,t=this.elements.requestToPlayBtn;if(e)if(this.isSpectator){if(e.classList.remove("hidden"),t){const i=this.players.length<this.maxPlayers&&this.gameStatus===g.WAITING;t.classList.toggle("hidden",!i)}}else e.classList.add("hidden");this.renderSpectatorsList()}renderSpectatorsList(){const e=this.elements.spectatorsPanel,t=this.elements.spectatorsCount,s=this.elements.spectatorsList;if(!e||!s)return;if(!this.allowSpectators||this.spectators.length===0){e.classList.add("hidden");return}e.classList.remove("hidden"),t&&(t.textContent=this.spectators.length);const i=String(this.myPlayerId);s.innerHTML=this.spectators.map(a=>{const n=(a.username||"U").charAt(0).toUpperCase(),r=String(a.user_id)===i;return`
+        <div class="spectator-item ${r?"spectator-item--me":""}" data-user-id="${a.user_id}">
+          <span class="spectator-item__avatar">${n}</span>
+          <span class="spectator-item__name">${this.escapeHtml(a.username)}${r?" (you)":""}</span>
         </div>
-      `}).join("")}requestToPlay(){console.log("[BiggerDice] Requesting to play"),this.send({type:"games.command.request_to_play",room_id:this.roomId}),this.elements.requestToPlayBtn&&(this.elements.requestToPlayBtn.disabled=!0,this.elements.requestToPlayBtn.textContent="Requested...")}handleSpectatorJoined(e){console.log("[BiggerDice] Spectator joined:",e);const t=e.spectator||e,a={user_id:t.user_id,username:t.username,avatar_id:t.avatar_id,joined_at:t.joined_at};this.spectators.find(s=>String(s.user_id)===String(a.user_id))||this.spectators.push(a),this.updateSpectatorUI(),this.isAdmin&&this.elements.adminLobby&&!this.elements.adminLobby.classList.contains("hidden")&&this.renderAdminLobby()}handleSpectatorLeft(e){console.log("[BiggerDice] Spectator left:",e);const t=String(e.user_id);this.spectators=this.spectators.filter(a=>String(a.user_id)!==t),this.updateSpectatorUI()}handleRequestToPlayAccepted(e){console.log("[BiggerDice] Request to play accepted:",e),String(e.user_id)===String(this.myPlayerId)&&(this.isSpectator=!1);const t=String(e.user_id);this.spectators=this.spectators.filter(a=>String(a.user_id)!==t),this.updateSpectatorUI(),this.updateChatTabAccess()}joinRoom(e,t=!1){this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:e,game_type:"bigger_dice"}}))}handleRoomState(e){this.notInRoomInfo=null,this.hasSentDisconnectIntent=!1,this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.pendingJoinRoomId&&this.hideJoinPasswordModal(),this.roomId=e.room_id,this.roomName=e.room_name,this.players=e.players||[],this.lobby=e.lobby||[],this.hostId=e.host_id,this.isAdmin=String(e.host_id)===String(this.myPlayerId),this.maxPlayers=e.max_players||2,this.allowSpectators=e.allow_spectators===!0,this.gameStatus=e.status==="in_progress"?g.PLAYING:e.status,this.currentTurn=e.current_turn,this.round=e.round||e.turn_number||0,e.banned_users&&Array.isArray(e.banned_users)?this.bannedPlayers=e.banned_users.map(a=>typeof a=="object"&&a!==null?{user_id:a.user_id,username:a.username||`User #${a.user_id}`}:{user_id:a,username:`User #${a}`}):this.bannedPlayers=[],this.spectators=e.spectators||[],this.autoPlayers=new Set((e.auto_players||[]).map(a=>String(a))),this.stopDisconnectTickerIfNeeded();const t=String(this.myPlayerId);this.isPlayer=this.players.some(a=>String(a.id||a.user_id)===t),this.isSpectator=this.spectators.some(a=>String(a.user_id)===t),this.updateChatTabAccess(),this.updateSpectatorUI(),!this.chatHistoryRequested.lobby&&this.chatMessages.lobby.length===0&&(this.chatHistoryRequested.lobby=!0,this.requestChatHistory("lobby")),this.updateGameUI(),this.applyDiceState()}handlePlayerJoined(e){const t={id:e.player_id,name:e.player_name,score:0,is_ready:!1};this.players.find(a=>a.id===t.id)||this.players.push(t),this.updateGameUI()}handlePlayerLeft(e){const t=String(e.player_id);if(t===String(this.hostId)){this.showRoomClosedMessage();return}this.players=this.players.filter(a=>String(a.id)!==t),this.lobby=this.lobby.filter(a=>String(a.user_id)!==t),this.disconnectedPlayers.delete(t),this.autoPlayers.delete(t),this.kickVotes.delete(t),this.stopDisconnectTickerIfNeeded(),this.updateGameUI()}handlePlayerDisconnected(e){const t=String(e.user_id),a=e.timeout_at?new Date(e.timeout_at):null;a&&!Number.isNaN(a.getTime())&&(this.disconnectedPlayers.set(t,{timeoutAt:a}),this.kickVotes.delete(t),this.startDisconnectTicker(),this.updateGameUI())}handlePlayerRejoined(e){const t=String(e.user_id);this.disconnectedPlayers.delete(t),this.kickVotes.delete(t),this.autoPlayers.delete(t),this.stopDisconnectTickerIfNeeded(),this.updateGameUI()}handlePlayerAutoEnabled(e){const t=String(e.user_id);this.autoPlayers.add(t),this.disconnectedPlayers.delete(t),this.kickVotes.delete(t),this.stopDisconnectTickerIfNeeded(),this.updateGameUI()}handlePlayerAutoDisabled(e){const t=String(e.user_id);this.autoPlayers.delete(t),this.updateGameUI()}showRoomClosedMessage(){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin){const e=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),a=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__message");e&&(e.textContent="🚪"),t&&(t.textContent="Room Closed"),a&&(a.textContent="This room has been closed. The admin has left the game."),this.elements.waitingForAdmin.classList.remove("hidden")}this.elements.leaveBtn&&(this.elements.leaveBtn.textContent="Return to Lobby")}handleLobbyJoined(e){const t=e.player||{user_id:e.user_id,username:e.username,avatar_id:e.avatar_id,score:0,is_ready:!1};this.lobby.findIndex(s=>String(s.user_id)===String(t.user_id))===-1&&this.lobby.push(t),this.updateGameUI()}handlePlayerSelected(e){const t=e.player;this.lobby=this.lobby.filter(s=>String(s.user_id)!==String(t.user_id)),this.players.findIndex(s=>String(s.user_id||s.id)===String(t.user_id))===-1&&this.players.push(t),this.updateGameUI()}handlePlayerKicked(e){const t=e.player_id||e.user_id;if(e.player_name,this.lobby=this.lobby.filter(a=>String(a.user_id)!==String(t)),String(t)===String(this.myPlayerId)){this.showKickedMessage();return}this.updateGameUI()}showKickedMessage(){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin){const e=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),a=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__text");e&&(e.textContent="🚫"),t&&(t.textContent="You have been kicked"),a&&(a.textContent="The host has kicked you from the lobby."),this.elements.waitingForAdmin.classList.remove("hidden")}setTimeout(()=>{this.dispatchEvent(new CustomEvent("game-leave"))},3e3)}handlePlayerBanned(e){const t=e.player_id||e.user_id,a=e.player_name||e.username||"Unknown";if(this.lobby=this.lobby.filter(s=>String(s.user_id)!==String(t)),this.players=this.players.filter(s=>String(s.user_id||s.id)!==String(t)),this.bannedPlayers.some(s=>String(s.user_id)===String(t))||this.bannedPlayers.push({user_id:t,username:a}),String(t)===String(this.myPlayerId)){this.showBannedMessage();return}this.updateGameUI()}handlePlayerUnbanned(e){const t=e.player_id||e.user_id;this.bannedPlayers=this.bannedPlayers.filter(a=>String(a.user_id)!==String(t)),this.updateGameUI()}handleUserBanned(e){this.showUserBannedState(e.room_name)}showUserBannedState(e){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.waitingForAdmin&&this.elements.waitingForAdmin.classList.add("hidden"),this.elements.notInRoomState){const t=this.elements.notInRoomState.querySelector(".not-in-room__icon"),a=this.elements.notInRoomState.querySelector(".not-in-room__title"),s=this.elements.notInRoomState.querySelector(".not-in-room__text"),i=this.elements.notInRoomState.querySelector(".not-in-room__actions");t&&(t.textContent="⛔"),a&&(a.textContent="You are banned from this room"),s&&(s.textContent="The host has banned you from this room. You cannot join it."),i&&i.classList.add("hidden"),this.elements.notInRoomState.classList.remove("hidden")}}showBannedMessage(){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin){const e=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),a=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__text");e&&(e.textContent="⛔"),t&&(t.textContent="You have been banned"),a&&(a.textContent="The host has banned you from this room. You cannot rejoin."),this.elements.waitingForAdmin.classList.remove("hidden")}setTimeout(()=>{this.dispatchEvent(new CustomEvent("game-leave"))},3e3)}handleLobbyUpdated(e){this.lobby=e.lobby||[],this.updateGameUI()}handleGameStarted(e){console.log("[BiggerDice] Game started:",e),this.gameStatus=g.PLAYING,this.players=e.players,this.currentTurn=e.first_turn,this.round=1,this.roundHistory=[],this.disconnectedPlayers.clear(),this.kickVotes.clear(),this.autoPlayers.clear(),this.stopDisconnectTickerIfNeeded(),this.players.forEach(t=>{t.score=0,t.is_ready=!1}),this.updateChatTabAccess(),this.updateGameUI()}handleGameStarting(e){console.log("[BiggerDice] Game starting (ready phase):",e),this.players=e.players||[],this.lobby=e.players||[],this.gameStatus=g.WAITING,this.disconnectedPlayers.clear(),this.kickVotes.clear(),this.autoPlayers.clear(),this.stopDisconnectTickerIfNeeded(),this.updateChatTabAccess(),this.updateGameUI()}handleRemovedFromGame(e){console.log("[BiggerDice] Removed from game:",e),this.players=[],this.lobby=[],this.spectators=[],this.showRemovedFromGameMessage(e.message||"You were not selected to play.")}showRemovedFromGameMessage(e){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin&&this.elements.waitingForAdmin.classList.add("hidden"),this.elements.waitingForAdmin){const t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),a=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),s=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__message");t&&(t.textContent="👋"),a&&(a.textContent="Not Selected for This Game"),s&&(s.textContent=e),this.elements.waitingForAdmin.classList.remove("hidden")}setTimeout(()=>{this.dispatchEvent(new CustomEvent("game-leave"))},5e3)}handleDiceRolled(e){const a=this.players.findIndex(s=>String(s.id||s.user_id)===String(e.player_id))===0?this.elements.dice1:this.elements.dice2;this.animateDiceRoll(a,e.roll)}handleBiggerDiceState(e){this.lastDiceState={player1_id:e.player1_id?String(e.player1_id):null,player2_id:e.player2_id?String(e.player2_id):null,player1_roll:Number.isInteger(e.player1_roll)?e.player1_roll:null,player2_roll:Number.isInteger(e.player2_roll)?e.player2_roll:null},this.applyDiceState()}applyDiceState(){if(!this.lastDiceState||this.players.length===0)return;const{player1_id:e,player2_id:t,player1_roll:a,player2_roll:s}=this.lastDiceState;[{playerId:e,roll:a},{playerId:t,roll:s}].forEach(({playerId:o,roll:c})=>{if(!o)return;const r=this.players.findIndex(n=>String(n.id||n.user_id)===o),d=r===0?this.elements.dice1:r===1?this.elements.dice2:null;this.setDiceValue(d,c)})}setDiceValue(e,t){if(!e)return;const a=Number.isInteger(t)?t:0;e.dataset.value=String(a)}handlePlayerReady(e){console.log("[BiggerDice] Player ready:",e);const t=String(e.user_id),a=e.username,s=this.lobby.find(o=>String(o.user_id)===t);s&&(s.is_ready=!0,console.log(`[BiggerDice] Lobby player ${a} is now ready`));const i=this.players.find(o=>String(o.user_id||o.id)===t);if(i&&(i.is_ready=!0,console.log(`[BiggerDice] Game player ${a} is now ready`)),this.gameStatus===g.FINISHED){const o=this.elements.gameBoard;if(o){const r=this.players.findIndex(d=>String(d.id||d.user_id)===t);if(r!==-1){const d=o.querySelector(`#player${r}ReadyIndicator`);if(d){d.classList.add("game-over__ready-indicator--ready");const n=d.querySelector(".game-over__ready-text");n&&(n.textContent="Ready!"),console.log(`[BiggerDice] Updated game over ready indicator for ${a} (player ${r})`)}}}this.players.every(r=>r.is_ready===!0)&&this.players.length>=this.maxPlayers&&console.log("[BiggerDice] All players ready for rematch! Waiting for server to restart game...");return}this.updateGameUI()}handleRoundResult(e){console.log("[BiggerDice] Round result:",e);const t=String(e.player1_id),a=String(e.player2_id),s=e.player1_roll,i=e.player2_roll,o=e.winner_id?String(e.winner_id):null,c=e.is_tie,r=this.players.find(n=>String(n.id||n.user_id)===t),d=this.players.find(n=>String(n.id||n.user_id)===a);if(c||this.roundHistory.push({round:this.roundHistory.length+1,player1:{id:t,name:r?.name||r?.username||"Player 1",roll:s},player2:{id:a,name:d?.name||d?.username||"Player 2",roll:i},winnerId:o,winnerName:o?String(r?.id||r?.user_id)===o?r?.name||r?.username:d?.name||d?.username:null}),c)console.log(`[BiggerDice] Tie! Both rolled ${s}. Roll again!`);else if(o){const n=r&&String(r.id||r.user_id)===o?r:d,m=n?n.name||n.username:"Unknown",h=String(r?.id||r?.user_id)===o?s:i;console.log(`[BiggerDice] ${m} wins the round with ${h}!`),n&&(n.score=(n.score||0)+1,console.log(`[BiggerDice] Updated ${m}'s score to ${n.score}`))}this.updateGameUI()}handleTurnChanged(e){console.log("[BiggerDice] Turn changed:",e),this.currentTurn=String(e.current_turn),this.round=e.turn_number||this.round,this.updateTurnIndicator(),this.updateButtons()}handleRoundComplete(e){if(e.scores){const t=this.players.find(s=>s.id===e.scores.player1_id),a=this.players.find(s=>s.id===e.scores.player2_id);t&&(t.score=e.scores.player1_score),a&&(a.score=e.scores.player2_score)}this.round=e.round,this.currentTurn=e.next_turn,this.showRoundResult(e),this.updateGameUI()}handleGameOver(e){if(this.gameStatus=g.FINISHED,e.scores){const t=this.players.find(s=>s.id===e.scores.player1_id),a=this.players.find(s=>s.id===e.scores.player2_id);t&&(t.score=e.scores.player1_score),a&&(a.score=e.scores.player2_score)}this.updateChatTabAccess(),this.showGameOverResult(e),this.updateGameUI()}handleGameError(e){if(e.code==="wrong_password"&&this.pendingJoinRoomId){this.elements.joinPasswordError.textContent=e.message||"Incorrect password",this.elements.joinPasswordError.classList.remove("hidden"),this.elements.joinPasswordInput.value="",this.elements.joinPasswordInput.focus();return}if(e.code==="user_banned"){this.pendingJoinRoomId&&this.hideJoinPasswordModal(),this.dispatchEvent(new CustomEvent("game-error",{detail:{code:"user_banned",message:"You are banned from this room. Please contact the admin to unban you."}}));return}this.dispatchEvent(new CustomEvent("game-error",{detail:{code:e.code,message:e.message||"An error occurred"}}))}handleNotInRoom(e){console.log("[BiggerDice] Not in room:",e),this.notInRoomInfo={room_id:e.room_id,room_name:e.room_name,is_password_protected:e.is_password_protected,status:e.status},this.showNotInRoomUI()}showNotInRoomUI(){this.notInRoomInfo&&(this.elements.waitingForAdmin.classList.add("hidden"),this.elements.adminLobby.classList.add("hidden"),this.elements.waitingState.classList.add("hidden"),this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState.classList.remove("hidden"),this.wantsToSpectate?(this.elements.enterRoomBtnText.textContent="Watch as Spectator",this.elements.notInRoomHint.textContent="You will join as a spectator and watch the game."):this.notInRoomInfo.is_password_protected?(this.elements.enterRoomBtnText.textContent="Enter Room (Password Required)",this.elements.notInRoomHint.textContent="This room is password protected."):(this.elements.enterRoomBtnText.textContent="Enter Room",this.elements.notInRoomHint.textContent=""),this.elements.headerTitle.textContent=this.notInRoomInfo.room_name||"Bigger Dice",this.elements.gameStatus.textContent=this.formatStatus(this.notInRoomInfo.status))}handleEnterRoomClick(){if(this.notInRoomInfo)if(this.notInRoomInfo.is_password_protected&&!this.wantsToSpectate)this.showJoinPasswordModal(this.notInRoomInfo.room_id,this.notInRoomInfo.room_name);else{const e=this.wantsToSpectate?"games.command.join_as_spectator":"games.command.join_room";this.send({type:e,room_name:this.notInRoomInfo.room_name})}}sendReady(){this.send({type:"games.command.ready",room_id:this.roomId}),this.elements.readyBtn.disabled=!0}sendRoll(){this.send({type:"games.command.bigger_dice.roll",room_id:this.roomId}),this.elements.rollBtn.disabled=!0}leaveGame(){this.send({type:"games.command.leave_room",room_id:this.roomId}),this.chatHistoryRequested={lobby:!1,players:!1,spectators:!1},this.chatMessages={lobby:[],players:[],spectators:[]},this.dispatchEvent(new CustomEvent("game-leave"))}selectPlayer(e){this.isAdmin&&this.send({type:"games.command.select_player",room_id:this.roomId,target_user_id:String(e)})}kickPlayer(e){this.isAdmin&&this.send({type:"games.command.kick_player",room_id:this.roomId,target_user_id:String(e)})}banPlayer(e){this.isAdmin&&this.send({type:"games.command.ban_player",room_id:this.roomId,target_user_id:String(e)})}unbanPlayer(e){this.isAdmin&&this.send({type:"games.command.unban_player",room_id:this.roomId,target_user_id:String(e)})}updateGameUI(){const e=this.elements.gameStatus,t=this.elements.waitingForAdmin,a=this.elements.adminLobby,s=this.elements.waitingState,i=this.elements.notInRoomState,o=this.elements.gameBoard;if(this.notInRoomInfo)return;e.textContent=this.formatStatus(this.gameStatus),e.className=`game-status game-status--${this.gameStatus}`;const c=this.players.length<2,r=this.lobby.some(n=>String(n.user_id)===String(this.myPlayerId)),d=this.players.some(n=>String(n.user_id||n.id)===String(this.myPlayerId));t.classList.add("hidden"),a.classList.add("hidden"),s.classList.add("hidden"),i.classList.add("hidden"),o.classList.add("hidden"),c?this.isAdmin?(a.classList.remove("hidden"),this.renderAdminLobby()):r?(t.classList.remove("hidden"),this.renderWaitingPlayersList()):s.classList.remove("hidden"):o.classList.remove("hidden"),this.renderPlayersArea(),this.renderDisconnectOverlay(),this.updateTurnIndicator(),this.updateButtons(),this.elements.roundInfo.textContent=`Round ${this.round} / First to 10`}renderAdminLobby(){const e=this.elements.lobbyPlayersList,t=this.elements.lobbyCount,a=this.lobby.length,s=this.spectators.length,i=a+s;if(t.textContent=s>0?`${a} waiting, ${s} spectator${s>1?"s":""}`:`${a} waiting`,i===0)e.innerHTML=`
+      `}).join("")}requestToPlay(){console.log("[BiggerDice] Requesting to play"),this.send({type:"games.command.request_to_play",room_id:this.roomId}),this.elements.requestToPlayBtn&&(this.elements.requestToPlayBtn.disabled=!0,this.elements.requestToPlayBtn.textContent="Requested...")}handleSpectatorJoined(e){console.log("[BiggerDice] Spectator joined:",e);const t=e.spectator||e,s={user_id:t.user_id,username:t.username,avatar_id:t.avatar_id,joined_at:t.joined_at};this.spectators.find(i=>String(i.user_id)===String(s.user_id))||this.spectators.push(s),String(s.user_id)===String(this.myPlayerId)&&(this.isSpectator=!0,this.isPlayer=!1,console.log("[BiggerDice] Current user joined as spectator, updating chat tabs and game UI"),this.updateChatTabAccess(),this.updateGameUI()),this.updateSpectatorUI(),this.isAdmin&&this.elements.adminLobby&&!this.elements.adminLobby.classList.contains("hidden")&&this.renderAdminLobby()}handleSpectatorLeft(e){console.log("[BiggerDice] Spectator left:",e);const t=String(e.user_id);this.spectators=this.spectators.filter(s=>String(s.user_id)!==t),this.updateSpectatorUI()}handleRequestToPlayAccepted(e){console.log("[BiggerDice] Request to play accepted:",e),String(e.user_id)===String(this.myPlayerId)&&(this.isSpectator=!1);const t=String(e.user_id);this.spectators=this.spectators.filter(s=>String(s.user_id)!==t),this.updateSpectatorUI(),this.updateChatTabAccess()}joinRoom(e,t=!1){this.dispatchEvent(new CustomEvent("room-joined",{detail:{room_id:e,game_type:"bigger_dice"}}))}handleRoomState(e){this.notInRoomInfo=null,this.hasSentDisconnectIntent=!1,this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.chatPanel&&this.elements.chatPanel.classList.remove("hidden"),this.pendingJoinRoomId&&this.hideJoinPasswordModal(),this.roomId=e.room_id,this.roomName=e.room_name;const t=e.status==="waiting"&&e.selected_players&&e.selected_players.length>0&&(!e.players||e.players.length===0);t?(this.players=e.lobby||[],this.lobby=e.lobby||[],console.log(`[BiggerDice] handleRoomState: READY PHASE - using lobby as players, players.length=${this.players.length}`)):(this.players=e.players||[],this.lobby=e.lobby||[]),this.hostId=e.host_id,this.isAdmin=String(e.host_id)===String(this.myPlayerId),this.maxPlayers=e.player_count||e.max_players||2,console.log(`[BiggerDice] handleRoomState: maxPlayers=${this.maxPlayers}, players.length=${this.players.length}, player_count=${e.player_count}, max_players=${e.max_players}, isReadyPhase=${t}`),this.allowSpectators=e.allow_spectators===!0,this.gameStatus=e.status==="in_progress"?g.PLAYING:e.status,this.currentTurn=e.current_turn,this.round=e.round||e.turn_number||0,e.banned_users&&Array.isArray(e.banned_users)?this.bannedPlayers=e.banned_users.map(r=>typeof r=="object"&&r!==null?{user_id:r.user_id,username:r.username||`User #${r.user_id}`}:{user_id:r,username:`User #${r}`}):this.bannedPlayers=[],this.spectators=e.spectators_data||e.spectators||[],this.autoPlayers=new Set((e.auto_players||[]).map(r=>String(r))),this.stopDisconnectTickerIfNeeded();const s=String(this.myPlayerId),i=this.players.some(r=>String(r.id||r.user_id)===s),a=this.lobby.some(r=>String(r.user_id)===s);this.isPlayer=i||a,this.isSpectator=this.spectators.some(r=>typeof r=="object"&&r!==null?String(r.user_id||r.id)===s:String(r)===s),console.log("[BiggerDice] handleRoomState role check:",{myPlayerId:this.myPlayerId,userIdStr:s,inPlayers:i,inLobby:a,isPlayer:this.isPlayer,isSpectator:this.isSpectator,spectatorsCount:this.spectators.length,spectatorsFormat:this.spectators.length>0?typeof this.spectators[0]:"empty",spectatorIds:this.spectators.map(r=>typeof r=="object"?r.user_id||r.id:r)}),this.updateChatTabAccess(),this.updateSpectatorUI(),!this.chatHistoryRequested.lobby&&this.chatMessages.lobby.length===0&&(this.chatHistoryRequested.lobby=!0,this.requestChatHistory("lobby")),["playing","in_progress","starting"].includes((this.gameStatus||"").toLowerCase())&&(!this.chatHistoryRequested.players&&this.chatMessages.players.length===0&&(this.chatHistoryRequested.players=!0,this.requestChatHistory("players")),this.isSpectator&&!this.chatHistoryRequested.spectators&&this.chatMessages.spectators.length===0&&(this.chatHistoryRequested.spectators=!0,this.requestChatHistory("spectators"))),this.updateGameUI(),this.applyDiceState(),this.rollEventQueue.length>0&&(console.log("[BiggerDice] handleRoomState: clearing event queue (room_state has authoritative state)"),this.rollEventQueue=[],this.roundEndedWithWinner=!1),this.checkAutoRollNeeded()}handlePlayerJoined(e){const t={id:e.player_id,name:e.player_name,score:0,is_ready:!1};this.players.find(s=>s.id===t.id)||this.players.push(t),this.updateGameUI()}handlePlayerLeft(e){const t=String(e.player_id);if(t===String(this.hostId)){this.showRoomClosedMessage();return}this.players=this.players.filter(s=>String(s.id)!==t),this.lobby=this.lobby.filter(s=>String(s.user_id)!==t),this.disconnectedPlayers.delete(t),this.autoPlayers.delete(t),this.kickVotes.delete(t),this.stopDisconnectTickerIfNeeded(),this.updateGameUI()}handlePlayerDisconnected(e){const t=String(e.user_id),s=e.timeout_at?new Date(e.timeout_at):null;s&&!Number.isNaN(s.getTime())&&(this.disconnectedPlayers.set(t,{timeoutAt:s}),this.kickVotes.delete(t),this.startDisconnectTicker(),this.updateGameUI())}handlePlayerRejoined(e){const t=String(e.user_id);this.disconnectedPlayers.delete(t),this.kickVotes.delete(t),this.autoPlayers.delete(t),this.stopDisconnectTickerIfNeeded(),this.updateGameUI()}handlePlayerAutoEnabled(e){console.log("[BiggerDice] handlePlayerAutoEnabled:",e);const t=String(e.user_id);console.log("[BiggerDice] handlePlayerAutoEnabled: adding user to autoPlayers:",t,"currentTurn:",this.currentTurn),this.autoPlayers.add(t),this.disconnectedPlayers.delete(t),this.kickVotes.delete(t),this.stopDisconnectTickerIfNeeded(),this.updateGameUI(),this.checkAutoRollNeeded()}handlePlayerAutoDisabled(e){const t=String(e.user_id);this.autoPlayers.delete(t),this.updateGameUI()}showRoomClosedMessage(){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin){const e=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),s=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__message");e&&(e.textContent="🚪"),t&&(t.textContent="Room Closed"),s&&(s.textContent="This room has been closed. The admin has left the game."),this.elements.waitingForAdmin.classList.remove("hidden")}this.elements.leaveBtn&&(this.elements.leaveBtn.textContent="Return to Lobby")}handleLobbyJoined(e){const t=e.player||{user_id:e.user_id,username:e.username,avatar_id:e.avatar_id,score:0,is_ready:!1};this.lobby.findIndex(i=>String(i.user_id)===String(t.user_id))===-1&&this.lobby.push(t),this.updateGameUI()}handlePlayerSelected(e){const t=e.player;console.log(`[BiggerDice] handlePlayerSelected: player=${t.username}, current players.length=${this.players.length}, maxPlayers=${this.maxPlayers}`),this.lobby=this.lobby.filter(r=>String(r.user_id)!==String(t.user_id)),this.players.findIndex(r=>String(r.user_id||r.id)===String(t.user_id))===-1&&this.players.push(t),console.log(`[BiggerDice] handlePlayerSelected: after push, players.length=${this.players.length}, maxPlayers=${this.maxPlayers}, needsMore=${this.players.length<this.maxPlayers}`);const i=String(this.myPlayerId),a=this.players.some(r=>String(r.id||r.user_id)===i),n=this.lobby.some(r=>String(r.user_id)===i);this.isPlayer=a||n,this.updateGameUI(),this.players.length===this.maxPlayers&&(console.log("[BiggerDice] All players selected, starting ready timer"),this.startReadyTimer())}handlePlayerKicked(e){const t=e.player_id||e.user_id;if(e.player_name,this.lobby=this.lobby.filter(s=>String(s.user_id)!==String(t)),String(t)===String(this.myPlayerId)){this.showKickedMessage();return}this.updateGameUI()}showKickedMessage(){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin){const e=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),s=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__text");e&&(e.textContent="🚫"),t&&(t.textContent="You have been kicked"),s&&(s.textContent="The host has kicked you from the lobby."),this.elements.waitingForAdmin.classList.remove("hidden")}setTimeout(()=>{this.dispatchEvent(new CustomEvent("game-leave"))},3e3)}handlePlayerBanned(e){const t=e.player_id||e.user_id,s=e.player_name||e.username||"Unknown";if(this.lobby=this.lobby.filter(i=>String(i.user_id)!==String(t)),this.players=this.players.filter(i=>String(i.user_id||i.id)!==String(t)),this.bannedPlayers.some(i=>String(i.user_id)===String(t))||this.bannedPlayers.push({user_id:t,username:s}),String(t)===String(this.myPlayerId)){this.showBannedMessage();return}this.updateGameUI()}handlePlayerUnbanned(e){const t=e.player_id||e.user_id;this.bannedPlayers=this.bannedPlayers.filter(s=>String(s.user_id)!==String(t)),this.updateGameUI()}handleUserBanned(e){this.showUserBannedState(e.room_name)}showUserBannedState(e){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.waitingForAdmin&&this.elements.waitingForAdmin.classList.add("hidden"),this.elements.notInRoomState){const t=this.elements.notInRoomState.querySelector(".not-in-room__icon"),s=this.elements.notInRoomState.querySelector(".not-in-room__title"),i=this.elements.notInRoomState.querySelector(".not-in-room__text"),a=this.elements.notInRoomState.querySelector(".not-in-room__actions");t&&(t.textContent="⛔"),s&&(s.textContent="You are banned from this room"),i&&(i.textContent="The host has banned you from this room. You cannot join it."),a&&a.classList.add("hidden"),this.elements.notInRoomState.classList.remove("hidden")}}showBannedMessage(){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin){const e=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),s=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__text");e&&(e.textContent="⛔"),t&&(t.textContent="You have been banned"),s&&(s.textContent="The host has banned you from this room. You cannot rejoin."),this.elements.waitingForAdmin.classList.remove("hidden")}setTimeout(()=>{this.dispatchEvent(new CustomEvent("game-leave"))},3e3)}handleLobbyUpdated(e){this.lobby=e.lobby||[],this.updateGameUI()}handleGameStarted(e){console.log("[BiggerDice] Game started:",e),this.stopReadyTimer(),this.gameStatus=g.PLAYING,this.players=e.players,this.currentTurn=e.first_turn,this.round=1,this.roundHistory=[],this.lastDiceState=null,this.disconnectedPlayers.clear(),this.kickVotes.clear(),this.autoPlayers.clear(),this.pendingAutoRoll=null,this.autoRollTimeoutId&&(clearTimeout(this.autoRollTimeoutId),this.autoRollTimeoutId=null),this.roundEndedWithWinner=!1,this.stopDisconnectTickerIfNeeded(),this.players.forEach(t=>{t.score=0,t.is_ready=!1}),this.updateChatTabAccess(),this.updateGameUI()}handleGameStarting(e){console.log("[BiggerDice] Game starting (ready phase):",e),console.log("[BiggerDice] handleGameStarting: message.players=",e.players),console.log("[BiggerDice] handleGameStarting: maxPlayers=",this.maxPlayers),this.players=e.players||[],this.lobby=e.players||[],this.gameStatus=g.WAITING,this.disconnectedPlayers.clear(),this.kickVotes.clear(),this.autoPlayers.clear(),this.pendingAutoRoll=null,this.autoRollTimeoutId&&(clearTimeout(this.autoRollTimeoutId),this.autoRollTimeoutId=null),this.roundEndedWithWinner=!1,this.stopDisconnectTickerIfNeeded(),console.log("[BiggerDice] handleGameStarting: After update - players.length=",this.players.length,"needsMorePlayers=",this.players.length<this.maxPlayers),this.updateChatTabAccess(),this.updateGameUI()}handleRemovedFromGame(e){console.log("[BiggerDice] Removed from game:",e),this.players=[],this.lobby=[],this.spectators=[],this.showRemovedFromGameMessage(e.message||"You were not selected to play.")}showRemovedFromGameMessage(e){if(this.elements.waitingState&&this.elements.waitingState.classList.add("hidden"),this.elements.adminLobby&&this.elements.adminLobby.classList.add("hidden"),this.elements.gameBoard&&this.elements.gameBoard.classList.add("hidden"),this.elements.notInRoomState&&this.elements.notInRoomState.classList.add("hidden"),this.elements.waitingForAdmin&&this.elements.waitingForAdmin.classList.add("hidden"),this.elements.waitingForAdmin){const t=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__icon"),s=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__title"),i=this.elements.waitingForAdmin.querySelector(".waiting-for-admin__message");t&&(t.textContent="👋"),s&&(s.textContent="Not Selected for This Game"),i&&(i.textContent=e),this.elements.waitingForAdmin.classList.remove("hidden")}setTimeout(()=>{this.dispatchEvent(new CustomEvent("game-leave"))},5e3)}handleDiceRolled(e){const t=String(e.player_id),s=e.roll;console.log("[BiggerDice] handleDiceRolled:",{playerId:t,roll:s,isAnimating:this.isAnimating,queueLength:this.rollEventQueue.length,playersCount:this.players.length,diceElementsCount:this.diceElements.length}),this.updateLastDiceState(t,s);const i={playerId:t,roll:s,message:e};if(this.players.length===0||this.diceElements.length===0){console.log("[BiggerDice] handleDiceRolled: no players/dice elements yet, queuing event"),this.rollEventQueue.push(i);return}if(this.isAnimating||this.rollEventQueue.length>0){console.log("[BiggerDice] handleDiceRolled: animation/queue in progress, queuing event for player",t),this.rollEventQueue.push(i);return}this.processRollEvent(i)}processRollEvent(e){const{playerId:t,roll:s}=e;console.log("[BiggerDice] processRollEvent:",{playerId:t,roll:s,queueLength:this.rollEventQueue.length});const i=this.players.findIndex(n=>String(n.id||n.user_id)===t),a=i>=0&&i<this.diceElements.length?this.diceElements[i]:null;a?(this.animationPromise=this.animateDiceRoll(a,s),this.animationPromise.then(()=>{console.log("[BiggerDice] processRollEvent: animation complete for player",t),this.processNextRollEvent()})):(console.warn(`[BiggerDice] processRollEvent: No dice element for playerIndex=${i}`),this.processNextRollEvent())}processNextRollEvent(){if(console.log("[BiggerDice] processNextRollEvent:",{queueLength:this.rollEventQueue.length,isAnimating:this.isAnimating,roundEndedWithWinner:this.roundEndedWithWinner}),this.roundEndedWithWinner){this.roundEndedWithWinner=!1,console.log("[BiggerDice] processNextRollEvent: round ended with winner, delaying 1 second before next round"),this.applyDiceState(),setTimeout(()=>{if(this.gameStatus!==g.PLAYING){console.log("[BiggerDice] processNextRollEvent: game state changed during delay, aborting");return}console.log("[BiggerDice] processNextRollEvent: delay complete, continuing"),this.processNextRollEventContinue()},1e3);return}this.processNextRollEventContinue()}processNextRollEventContinue(){if(this.rollEventQueue.length>0){const e=this.rollEventQueue.shift();if(e.type==="round_result"){console.log("[BiggerDice] processNextRollEventContinue: processing queued round result"),this.processRoundResult(e.message),this.processNextRollEvent();return}if(e.type==="game_over"){console.log("[BiggerDice] processNextRollEventContinue: processing queued game_over"),this.processGameOver(e.message);return}console.log("[BiggerDice] processNextRollEventContinue: processing queued dice event for player",e.playerId),this.processRollEvent(e);return}console.log("[BiggerDice] processNextRollEventContinue: queue empty, refreshing dice area"),this.applyDiceState(),console.log("[BiggerDice] processNextRollEventContinue: checking for auto-roll"),this.checkAutoRollNeeded()}updateLastDiceState(e,t){const s=String(e);if(this.lastDiceState||(this.lastDiceState={players:[]}),!this.lastDiceState.players){const a=[];this.lastDiceState.player1_id&&this.lastDiceState.player1_roll!==null&&a.push({player_id:this.lastDiceState.player1_id,roll:this.lastDiceState.player1_roll}),this.lastDiceState.player2_id&&this.lastDiceState.player2_roll!==null&&a.push({player_id:this.lastDiceState.player2_id,roll:this.lastDiceState.player2_roll}),this.lastDiceState={players:a}}const i=this.lastDiceState.players.findIndex(a=>a.player_id===s);i>=0?this.lastDiceState.players[i].roll=t:this.lastDiceState.players.push({player_id:s,roll:t})}handleBiggerDiceState(e){if(console.log("[BiggerDice] Received dice state:",e),e.round_history&&Array.isArray(e.round_history)&&e.round_history.length>0&&(console.log(`[BiggerDice] Loading ${e.round_history.length} rounds from server history`),this.roundHistory=e.round_history),e.current_rolls&&Array.isArray(e.current_rolls)){if(this.lastDiceState={players:e.current_rolls.map(([t,s])=>({player_id:String(t),roll:s}))},e.round_number&&(this.round=e.round_number),e.is_tiebreaker){const t=(e.pending_rollers||[]).map(s=>String(s));this.showTiebreakerMessage(t)}}else this.lastDiceState={player1_id:e.player1_id?String(e.player1_id):null,player2_id:e.player2_id?String(e.player2_id):null,player1_roll:Number.isInteger(e.player1_roll)?e.player1_roll:null,player2_roll:Number.isInteger(e.player2_roll)?e.player2_roll:null};this.applyDiceState()}applyDiceState(){if(!(!this.lastDiceState||this.players.length===0))if(this.lastDiceState.players&&Array.isArray(this.lastDiceState.players))this.lastDiceState.players.forEach(({player_id:e,roll:t})=>{if(!e)return;const s=this.players.findIndex(a=>String(a.id||a.user_id)===String(e)),i=s>=0&&s<this.diceElements.length?this.diceElements[s]:null;this.setDiceValue(i,t)});else{const{player1_id:e,player2_id:t,player1_roll:s,player2_roll:i}=this.lastDiceState;[{playerId:e,roll:s},{playerId:t,roll:i}].forEach(({playerId:n,roll:r})=>{if(!n)return;const o=this.players.findIndex(l=>String(l.id||l.user_id)===n),d=o>=0&&o<this.diceElements.length?this.diceElements[o]:null;this.setDiceValue(d,r)})}}setDiceValue(e,t){if(!e)return;const s=Number.isInteger(t)?t:0;e.dataset.value=String(s)}handlePlayerReady(e){console.log("[BiggerDice] Player ready:",e);const t=String(e.user_id),s=e.username,i=this.lobby.find(n=>String(n.user_id)===t);i&&(i.is_ready=!0,console.log(`[BiggerDice] Lobby player ${s} is now ready`));const a=this.players.find(n=>String(n.user_id||n.id)===t);a&&(a.is_ready=!0,console.log(`[BiggerDice] Game player ${s} is now ready`)),this.updateGameUI()}handleRoundResult(e){if(console.log("[BiggerDice] Round result:",e),console.log("[DEBUG] handleRoundResult ENTRY:",{isAnimating:this.isAnimating,queueLength:this.rollEventQueue.length,playersCount:this.players.length,diceElementsCount:this.diceElements.length}),this.players.length===0||this.diceElements.length===0||this.isAnimating||this.rollEventQueue.length>0){console.log("[BiggerDice] handleRoundResult: queuing round result (waiting for dice/animation)"),this.rollEventQueue.push({type:"round_result",message:e});return}this.processRoundResult(e)}processRoundResult(e){console.log("[BiggerDice] processRoundResult:",e),console.log("[DEBUG] processRoundResult ENTRY - scores before:",this.players.map(o=>({id:o.user_id||o.id,score:o.score})));const t=e.rolls||[],s=e.winner_id?String(e.winner_id):null,i=e.is_tiebreaker||!1,a=(e.tiebreaker_players||[]).map(o=>String(o)),n=a.length>0,r=e.scores||[];if(t.forEach(([o,d])=>{const l=String(o),c=this.players.findIndex(m=>String(m.id||m.user_id)===l);this.updateLastDiceState(l,d),c>=0&&c<this.diceElements.length&&this.setDiceValue(this.diceElements[c],d)}),r.length>0&&r.forEach(([o,d])=>{const l=String(o),c=this.players.find(m=>String(m.id||m.user_id)===l);if(c){const m=c.score||0;c.score=d,m!==d&&console.log(`[BiggerDice] Score sync: ${c.username||c.name} ${m} -> ${d}`)}}),s&&!n){const o=this.players.find(c=>String(c.id||c.user_id)===s),d=o?.username||o?.name||"Unknown",l=t.map(([c,m])=>{const h=this.players.find(u=>String(u.id||u.user_id)===String(c));return{id:String(c),name:h?.name||h?.username||"Player",roll:m}});this.roundHistory.push({round:this.roundHistory.length+1,rolls:l,winnerId:s,winnerName:d,isTiebreaker:i}),console.log(`[BiggerDice] ${d} wins the round with score ${o?.score||0}`)}if(n){const o=a.map(d=>{const l=this.players.find(c=>String(c.id||c.user_id)===d);return l?.username||l?.name||d}).join(", ");console.log(`[BiggerDice] Tie! ${o} go to tiebreaker!`),this.showTiebreakerMessage(a)}else s&&(this.roundEndedWithWinner=!0);console.log("[DEBUG] processRoundResult - about to call updateGameUI, scores:",this.players.map(o=>({id:o.user_id||o.id,score:o.score}))),this.updateGameUI(),this.forceImmediateRender(),console.log("[DEBUG] handleRoundResult EXIT - final scores:",this.players.map(o=>({id:o.user_id||o.id,score:o.score})))}forceImmediateRender(){const e=this.elements.playersArea;if(!e)return;e.offsetHeight;const t=e.querySelectorAll(".player-score"),i=Math.min(t.length,10);for(let a=0;a<i;a++)window.getComputedStyle(t[a]).opacity}showTiebreakerMessage(e){const t=e.map(i=>{const a=this.players.find(n=>String(n.id||n.user_id)===i);return a?.username||a?.name||"Player"}).join(" vs "),s=this.elements.turnIndicator;s&&(s.textContent=`Tiebreaker: ${t}`,s.style.borderColor="var(--warning-color)")}handleTiebreakerStarted(e){console.log("[BiggerDice] Tiebreaker started:",e);const t=(e.tiebreaker_players||[]).map(i=>String(i)),s=e.first_roller?String(e.first_roller):null;s&&(this.currentTurn=s),this.showTiebreakerMessage(t),this.updateGameUI(),this.checkAutoRollNeeded()}handleTurnChanged(e){console.log("[BiggerDice] Turn changed:",e),console.log("[DEBUG] handleTurnChanged - current player scores:",this.players.map(t=>({id:t.user_id||t.id,score:t.score}))),this.currentTurn=String(e.current_turn),this.round=e.turn_number||this.round,this.updateTurnIndicator(),this.updateButtons(),this.startTurnTimer(),this.checkAutoRollNeeded()}checkAutoRollNeeded(){if(console.log("[BiggerDice] checkAutoRollNeeded called:",{gameStatus:this.gameStatus,currentTurn:this.currentTurn,autoPlayers:[...this.autoPlayers],myPlayerId:this.myPlayerId,playersCount:this.players.length,isAnimating:this.isAnimating,queueLength:this.rollEventQueue.length}),this.gameStatus!==g.PLAYING){console.log("[BiggerDice] checkAutoRollNeeded: exiting - gameStatus not PLAYING:",this.gameStatus);return}if(!this.currentTurn){console.log("[BiggerDice] checkAutoRollNeeded: exiting - no currentTurn");return}const e=String(this.currentTurn);if(!this.autoPlayers.has(e)){console.log("[BiggerDice] checkAutoRollNeeded: exiting - currentTurn not in autoPlayers:",e);return}if(e===String(this.myPlayerId)){console.log("[BiggerDice] checkAutoRollNeeded: exiting - currentTurn is myself");return}if(this.pendingAutoRoll===e){console.log("[BiggerDice] checkAutoRollNeeded: exiting - auto-roll already pending for:",e);return}if(this.isAnimating||this.rollEventQueue.length>0){console.log("[BiggerDice] checkAutoRollNeeded: animation/queue in progress, deferring auto-roll");return}console.log("[BiggerDice] checkAutoRollNeeded: will auto-roll for kicked player:",e),this.pendingAutoRoll=e,this.autoRollTimeoutId&&(clearTimeout(this.autoRollTimeoutId),this.autoRollTimeoutId=null);const t=this.roomId;this.autoRollTimeoutId=setTimeout(()=>{if(this.autoRollTimeoutId=null,this.pendingAutoRoll=null,console.log("[BiggerDice] checkAutoRollNeeded setTimeout callback:",{gameStatus:this.gameStatus,currentTurn:this.currentTurn,expectedTurn:e,autoPlayers:[...this.autoPlayers],isAnimating:this.isAnimating,roomId:this.roomId,capturedRoomId:t}),this.roomId!==t){console.log("[BiggerDice] checkAutoRollNeeded setTimeout: exiting - roomId changed (parallel game switched)");return}if(this.gameStatus!==g.PLAYING){console.log("[BiggerDice] checkAutoRollNeeded setTimeout: exiting - gameStatus changed");return}if(String(this.currentTurn)!==e){console.log("[BiggerDice] checkAutoRollNeeded setTimeout: exiting - turn already changed (backend handled it)");return}if(!this.autoPlayers.has(e)){console.log("[BiggerDice] checkAutoRollNeeded setTimeout: exiting - player no longer auto");return}if(this.isAnimating||this.rollEventQueue.length>0){console.log("[BiggerDice] checkAutoRollNeeded setTimeout: animation/queue active during delay, re-queuing"),this.pendingAutoRoll=null;return}console.log("[BiggerDice] checkAutoRollNeeded setTimeout: sending auto-roll for:",e),this.sendAutoRoll(e)},200)}sendAutoRoll(e){console.log("[BiggerDice] Sending auto-roll for player:",e),this.send({type:"games.command.bigger_dice.auto_roll",room_id:this.roomId,target_user_id:e})}handleRoundComplete(e){if(e.scores){const t=this.players.find(i=>i.id===e.scores.player1_id),s=this.players.find(i=>i.id===e.scores.player2_id);t&&(t.score=e.scores.player1_score),s&&(s.score=e.scores.player2_score)}this.round=e.round,this.currentTurn=e.next_turn,this.showRoundResult(e),this.updateGameUI(),this.checkAutoRollNeeded()}handleGameOver(e){if(console.log("[BiggerDice] handleGameOver:",e),console.log("[DEBUG] handleGameOver ENTRY:",{isAnimating:this.isAnimating,queueLength:this.rollEventQueue.length,playersCount:this.players.length,diceElementsCount:this.diceElements.length}),this.players.length===0||this.diceElements.length===0||this.isAnimating||this.rollEventQueue.length>0){console.log("[BiggerDice] handleGameOver: queuing game_over (waiting for dice/animation)"),this.rollEventQueue.push({type:"game_over",message:e});return}this.processGameOver(e)}processGameOver(e){if(console.log("[BiggerDice] processGameOver:",e),this.gameStatus=g.FINISHED,this.autoRollTimeoutId&&(clearTimeout(this.autoRollTimeoutId),this.autoRollTimeoutId=null),this.pendingAutoRoll=null,e.final_scores&&Array.isArray(e.final_scores))e.final_scores.forEach(([t,s,i])=>{const a=this.players.find(n=>String(n.id||n.user_id)===String(t));a&&(a.score=i)});else if(e.scores){const t=this.players.find(i=>i.id===e.scores.player1_id),s=this.players.find(i=>i.id===e.scores.player2_id);t&&(t.score=e.scores.player1_score),s&&(s.score=e.scores.player2_score)}this.elements.chatPanel?.classList.add("hidden"),this.elements.gameFooter?.classList.add("hidden"),this.stopTurnTimer(),this.showGameOverResult(e),this.updateGameUI()}handleGameError(e){if(e.code==="wrong_password"&&this.pendingJoinRoomId){this.elements.joinPasswordError.textContent=e.message||"Incorrect password",this.elements.joinPasswordError.classList.remove("hidden"),this.elements.joinPasswordInput.value="",this.elements.joinPasswordInput.focus();return}if(e.code==="user_banned"){this.pendingJoinRoomId&&this.hideJoinPasswordModal(),this.dispatchEvent(new CustomEvent("game-error",{detail:{code:"user_banned",message:"You are banned from this room. Please contact the admin to unban you."}}));return}this.dispatchEvent(new CustomEvent("game-error",{detail:{code:e.code,message:e.message||"An error occurred"}}))}handleNotInRoom(e){console.log("[BiggerDice] Not in room:",e),this.notInRoomInfo={room_id:e.room_id,room_name:e.room_name,is_password_protected:e.is_password_protected,status:e.status,allow_spectators:e.allow_spectators===!0},this.showNotInRoomUI()}showNotInRoomUI(){this.notInRoomInfo&&(this.elements.waitingForAdmin.classList.add("hidden"),this.elements.adminLobby.classList.add("hidden"),this.elements.waitingState.classList.add("hidden"),this.elements.gameBoard.classList.add("hidden"),this.elements.chatPanel&&this.elements.chatPanel.classList.add("hidden"),this.elements.notInRoomState.classList.remove("hidden"),this.notInRoomInfo.allow_spectators&&this.elements.spectatorOptionContainer?(this.elements.spectatorOptionContainer.classList.remove("hidden"),this.elements.joinAsSpectatorCheckbox&&(this.elements.joinAsSpectatorCheckbox.checked=this.wantsToSpectate||!1)):this.elements.spectatorOptionContainer&&(this.elements.spectatorOptionContainer.classList.add("hidden"),this.wantsToSpectate=!1),this.updateEnterRoomButton(),this.elements.headerTitle.textContent=this.notInRoomInfo.room_name||"Bigger Dice",this.elements.gameStatus.textContent=this.formatStatus(this.notInRoomInfo.status))}updateEnterRoomButton(){this.notInRoomInfo&&(this.wantsToSpectate?this.notInRoomInfo.is_password_protected?(this.elements.enterRoomBtnText.textContent="Watch as Spectator (Password Required)",this.elements.notInRoomHint.textContent="This room is password protected. You will join as a spectator."):(this.elements.enterRoomBtnText.textContent="Watch as Spectator",this.elements.notInRoomHint.textContent="You will join as a spectator and watch the game."):this.notInRoomInfo.is_password_protected?(this.elements.enterRoomBtnText.textContent="Enter Room (Password Required)",this.elements.notInRoomHint.textContent="This room is password protected."):(this.elements.enterRoomBtnText.textContent="Enter Room",this.elements.notInRoomHint.textContent=""))}handleEnterRoomClick(){if(this.notInRoomInfo){if(this.wantsToSpectate){this.notInRoomInfo.is_password_protected?this.showJoinPasswordModal(this.notInRoomInfo.room_id,this.notInRoomInfo.room_name,!0):this.send({type:"games.command.join_as_spectator",room_name:this.notInRoomInfo.room_name});return}this.showJoinConfirmModal(this.notInRoomInfo.room_id,this.notInRoomInfo.room_name,this.notInRoomInfo.is_password_protected)}}executeJoinRoom(){this.notInRoomInfo&&(this.notInRoomInfo.is_password_protected?this.showJoinPasswordModal(this.notInRoomInfo.room_id,this.notInRoomInfo.room_name):this.send({type:"games.command.join_room",room_name:this.notInRoomInfo.room_name}))}sendReady(){this.stopReadyTimer(),this.send({type:"games.command.ready",room_id:this.roomId}),this.elements.readyBtn.disabled=!0}sendRoll(){this.stopTurnTimer(),this.send({type:"games.command.bigger_dice.roll",room_id:this.roomId}),this.elements.rollBtn.disabled=!0}startTurnTimer(){this.gameStatus===g.PLAYING&&String(this.currentTurn)===String(this.myPlayerId)&&(this.autoPlayers.has(String(this.myPlayerId))||this.isSpectator||(this.stopTurnTimer(),this.turnTimeRemaining=this.turnTimerDuration,this.updateTurnTimerUI(),this.elements.turnTimer?.classList.remove("hidden"),this.turnTimer=setInterval(()=>{this.turnTimeRemaining-=.1,this.turnTimeRemaining<=0?this.onTurnTimerExpired():this.updateTurnTimerUI()},100),console.log("[BiggerDice] Turn timer started")))}stopTurnTimer(){this.turnTimer&&(clearInterval(this.turnTimer),this.turnTimer=null),this.turnTimeRemaining=0,this.elements.turnTimer?.classList.add("hidden")}updateTurnTimerUI(){const e=this.elements.turnTimerProgress,t=this.elements.turnTimerText,s=this.elements.turnTimer;if(!e||!t||!s)return;const i=this.turnTimeRemaining/this.turnTimerDuration*100;e.style.width=`${Math.max(0,i)}%`;const a=Math.ceil(this.turnTimeRemaining);t.textContent=a,this.turnTimeRemaining<=2?s.classList.add("turn-timer--warning"):s.classList.remove("turn-timer--warning")}onTurnTimerExpired(){console.log("[BiggerDice] Turn timer expired - auto-rolling"),this.stopTurnTimer(),String(this.currentTurn)===String(this.myPlayerId)&&this.gameStatus===g.PLAYING&&!this.autoPlayers.has(String(this.myPlayerId))&&this.sendRoll()}sendEnableAutoPlay(){this.roomId&&(this.stopTurnTimer(),this.send({type:"games.command.bigger_dice.enable_auto_play",room_id:this.roomId}),this.elements.autoPlayBtn?.classList.add("hidden"))}startReadyTimer(){if(this.gameStatus!==g.WAITING||this.isSpectator)return;const e=this.players.find(t=>String(t.user_id||t.id)===String(this.myPlayerId));e&&(e.is_ready||(this.stopReadyTimer(),this.readyTimeRemaining=this.readyTimerDuration,this.updateReadyTimerUI(),this.elements.readyTimer?.classList.remove("hidden"),this.readyTimer=setInterval(()=>{this.readyTimeRemaining-=.1,this.readyTimeRemaining<=0?this.onReadyTimerExpired():this.updateReadyTimerUI()},100),console.log("[BiggerDice] Ready timer started, duration:",this.readyTimerDuration)))}stopReadyTimer(){this.readyTimer&&(clearInterval(this.readyTimer),this.readyTimer=null),this.readyTimeRemaining=0,this.elements.readyTimer?.classList.add("hidden"),this.elements.readyTimer?.classList.remove("ready-timer--warning")}updateReadyTimerUI(){const e=this.elements.readyTimerProgress,t=this.elements.readyTimerText,s=this.elements.readyTimer;if(!e||!t||!s)return;const i=this.readyTimeRemaining/this.readyTimerDuration*100;e.style.width=`${Math.max(0,i)}%`;const a=Math.ceil(this.readyTimeRemaining);t.textContent=a,this.readyTimeRemaining<=5?s.classList.add("ready-timer--warning"):s.classList.remove("ready-timer--warning")}onReadyTimerExpired(){if(console.log("[BiggerDice] Ready timer expired - auto-ready"),this.stopReadyTimer(),this.gameStatus!==g.WAITING||this.isSpectator)return;const e=this.players.find(t=>String(t.user_id||t.id)===String(this.myPlayerId));!e||e.is_ready||this.sendReady()}leaveGame(){this.send({type:"games.command.leave_room",room_id:this.roomId}),this.chatHistoryRequested={lobby:!1,players:!1,spectators:!1},this.chatMessages={lobby:[],players:[],spectators:[]},this.dispatchEvent(new CustomEvent("game-leave"))}selectPlayer(e){this.isAdmin&&this.send({type:"games.command.select_player",room_id:this.roomId,target_user_id:String(e)})}kickPlayer(e){this.isAdmin&&this.send({type:"games.command.kick_player",room_id:this.roomId,target_user_id:String(e)})}banPlayer(e){this.isAdmin&&this.send({type:"games.command.ban_player",room_id:this.roomId,target_user_id:String(e)})}unbanPlayer(e){this.isAdmin&&this.send({type:"games.command.unban_player",room_id:this.roomId,target_user_id:String(e)})}updateGameUI(){const e=this.elements.gameStatus,t=this.elements.waitingForAdmin,s=this.elements.adminLobby,i=this.elements.waitingState,a=this.elements.notInRoomState,n=this.elements.gameBoard;if(this.notInRoomInfo)return;e.textContent=this.formatStatus(this.gameStatus),e.className=`game-status game-status--${this.gameStatus}`;const r=this.players.length<this.maxPlayers,o=this.lobby.some(l=>String(l.user_id)===String(this.myPlayerId)),d=this.players.some(l=>String(l.user_id||l.id)===String(this.myPlayerId));console.log("[BiggerDice] updateGameUI: players.length=",this.players.length,"maxPlayers=",this.maxPlayers,"needsMorePlayers=",r,"isAdmin=",this.isAdmin,"amInLobby=",o,"amAPlayer=",d),t.classList.add("hidden"),s.classList.add("hidden"),i.classList.add("hidden"),a.classList.add("hidden"),n.classList.add("hidden"),r?this.isAdmin?(s.classList.remove("hidden"),this.renderAdminLobby()):o?(t.classList.remove("hidden"),this.renderWaitingPlayersList()):this.isSpectator?(t.classList.remove("hidden"),this.renderWaitingPlayersList()):i.classList.remove("hidden"):n.classList.remove("hidden"),this.renderPlayersArea(),this.renderDiceArea(),this.renderDisconnectOverlay(),this.updateTurnIndicator(),this.updateButtons(),this.elements.roundInfo.textContent=`Round ${this.round} / First to 10`}renderAdminLobby(){const e=this.elements.lobbyPlayersList,t=this.elements.lobbyCount,s=this.lobby.length,i=this.spectators.length,a=s+i;if(t.textContent=i>0?`${s} waiting, ${i} spectator${i>1?"s":""}`:`${s} waiting`,a===0)e.innerHTML=`
         <div class="lobby-empty">
           <div class="lobby-empty__icon">👥</div>
           <p>No players waiting. Share the room link to invite players!</p>
         </div>
-      `;else{const o=this.lobby.map(r=>{const d=(r.username||"U").charAt(0).toUpperCase(),n=r.is_ready===!0,m=String(r.user_id)===String(this.hostId),h=String(r.user_id)===String(this.myPlayerId);let p="";m&&(p+='<span class="admin-badge">👑 Admin</span> '),n?p+='<span class="ready-badge">✓ Ready</span>':p+='<span class="waiting-badge">Waiting...</span>';let l="";return h?l=`
-            <button class="select-btn" data-action="select" data-user-id="${r.user_id}">Select Myself</button>
-            ${this.allowSpectators?`<button class="kick-btn" data-action="become-spectator" data-user-id="${r.user_id}">Become Spectator</button>`:""}
-          `:l=`
-            <button class="select-btn" data-action="select" data-user-id="${r.user_id}">Select</button>
-            <button class="kick-btn" data-action="kick" data-user-id="${r.user_id}">Kick</button>
-            <button class="ban-btn" data-action="ban" data-user-id="${r.user_id}">Ban</button>
+      `;else{const n=this.lobby.map(o=>{const d=(o.username||"U").charAt(0).toUpperCase(),l=o.is_ready===!0,c=String(o.user_id)===String(this.hostId),m=String(o.user_id)===String(this.myPlayerId);let h="";c&&(h+='<span class="admin-badge">👑 Admin</span> '),l?h+='<span class="ready-badge">✓ Ready</span>':h+='<span class="waiting-badge">Waiting...</span>';let u="";return m?u=`
+            <button class="select-btn" data-action="select" data-user-id="${o.user_id}">Select Myself</button>
+            ${this.allowSpectators?`<button class="kick-btn" data-action="become-spectator" data-user-id="${o.user_id}">Become Spectator</button>`:""}
+          `:u=`
+            <button class="select-btn" data-action="select" data-user-id="${o.user_id}">Select</button>
+            <button class="kick-btn" data-action="kick" data-user-id="${o.user_id}">Kick</button>
+            <button class="ban-btn" data-action="ban" data-user-id="${o.user_id}">Ban</button>
           `,`
-          <div class="lobby-player ${n?"lobby-player--ready":""} ${m?"lobby-player--admin":""}" data-user-id="${r.user_id}">
+          <div class="lobby-player ${l?"lobby-player--ready":""} ${c?"lobby-player--admin":""}" data-user-id="${o.user_id}">
             <div class="lobby-player__info">
-              <div class="lobby-player__avatar ${m?"lobby-player__avatar--admin":""}">${d}</div>
+              <div class="lobby-player__avatar ${c?"lobby-player__avatar--admin":""}">${d}</div>
               <div>
-                <div class="lobby-player__name">${this.escapeHtml(r.username)} ${p}</div>
-                <div class="lobby-player__joined">${n?"Player is ready to start":m?"Room host - select players to start":"Waiting for player to ready up"}</div>
+                <div class="lobby-player__name">${this.escapeHtml(o.username)} ${h}</div>
+                <div class="lobby-player__joined">${l?"Player is ready to start":c?"Room host - select players to start":"Waiting for player to ready up"}</div>
               </div>
             </div>
             <div class="lobby-player__actions">
-              ${l}
+              ${u}
             </div>
           </div>
-        `}).join(""),c=this.spectators.map(r=>{const d=(r.username||"U").charAt(0).toUpperCase(),n=String(r.user_id)===String(this.hostId),m=String(r.user_id)===String(this.myPlayerId);let h="";n&&(h+='<span class="admin-badge">👑 Admin</span> '),h+='<span class="spectator-badge">👁 Spectator</span>';let p="";return m?p=`
-            <button class="select-btn" data-action="become-player" data-user-id="${r.user_id}">Join as Player</button>
-          `:p=`
-            <button class="select-btn" data-action="select-spectator" data-user-id="${r.user_id}">Select to Play</button>
-            <button class="kick-btn" data-action="kick-spectator" data-user-id="${r.user_id}">Remove</button>
-            <button class="ban-btn" data-action="ban" data-user-id="${r.user_id}">Ban</button>
+        `}).join(""),r=this.spectators.map(o=>{const d=(o.username||"U").charAt(0).toUpperCase(),l=String(o.user_id)===String(this.hostId),c=String(o.user_id)===String(this.myPlayerId);let m="";l&&(m+='<span class="admin-badge">👑 Admin</span> '),m+='<span class="spectator-badge">👁 Spectator</span>';let h="";return c?h=`
+            <button class="select-btn" data-action="become-player" data-user-id="${o.user_id}">Join as Player</button>
+          `:h=`
+            <button class="select-btn" data-action="select-spectator" data-user-id="${o.user_id}">Select to Play</button>
+            <button class="kick-btn" data-action="kick-spectator" data-user-id="${o.user_id}">Remove</button>
+            <button class="ban-btn" data-action="ban" data-user-id="${o.user_id}">Ban</button>
           `,`
-          <div class="lobby-player lobby-player--spectator ${n?"lobby-player--admin":""}" data-user-id="${r.user_id}">
+          <div class="lobby-player lobby-player--spectator ${l?"lobby-player--admin":""}" data-user-id="${o.user_id}">
             <div class="lobby-player__info">
-              <div class="lobby-player__avatar lobby-player__avatar--spectator ${n?"lobby-player__avatar--admin":""}">${d}</div>
+              <div class="lobby-player__avatar lobby-player__avatar--spectator ${l?"lobby-player__avatar--admin":""}">${d}</div>
               <div>
-                <div class="lobby-player__name">${this.escapeHtml(r.username)} ${h}</div>
-                <div class="lobby-player__joined">${n?"Room host - watching as spectator":"Watching the game (can be selected to play)"}</div>
+                <div class="lobby-player__name">${this.escapeHtml(o.username)} ${m}</div>
+                <div class="lobby-player__joined">${l?"Room host - watching as spectator":"Watching the game (can be selected to play)"}</div>
               </div>
             </div>
             <div class="lobby-player__actions">
-              ${p}
+              ${h}
             </div>
           </div>
-        `}).join("");e.innerHTML=o+c,e.querySelectorAll("[data-action]").forEach(r=>{r.addEventListener("click",d=>{const n=d.target.dataset.action,m=parseInt(d.target.dataset.userId,10);n==="select"?this.selectPlayer(m):n==="select-spectator"?this.selectSpectator(m):n==="kick"?this.kickPlayer(m):n==="kick-spectator"?this.kickSpectator(m):n==="ban"?this.banPlayer(m):n==="become-spectator"?this.becomeSpectator():n==="become-player"&&this.becomePlayer()})})}this.renderBannedPlayersList()}kickSpectator(e){console.log("[BiggerDice] Kicking spectator:",e),this.send({type:"games.command.kick_spectator",room_id:this.roomId,target_user_id:e})}selectSpectator(e){console.log("[BiggerDice] Selecting spectator to play:",e),this.send({type:"games.command.select_spectator",room_id:this.roomId,target_user_id:e})}becomeSpectator(){console.log("[BiggerDice] Admin becoming spectator"),this.send({type:"games.command.become_spectator",room_id:this.roomId})}becomePlayer(){console.log("[BiggerDice] Admin becoming player from spectator"),this.send({type:"games.command.become_player",room_id:this.roomId})}renderBannedPlayersList(){const e=this.elements.bannedPlayersSection,t=this.elements.bannedCount,a=this.elements.bannedPlayersList;if(!e||!a)return;const s=this.bannedPlayers.length;if(s===0){e.classList.add("hidden");return}e.classList.remove("hidden"),t.textContent=`${s} banned`,a.innerHTML=this.bannedPlayers.map(i=>{const o=(i.username||"U").charAt(0).toUpperCase();return`
-        <div class="banned-player" data-user-id="${i.user_id}">
+        `}).join("");e.innerHTML=n+r,e.querySelectorAll("[data-action]").forEach(o=>{o.addEventListener("click",d=>{const l=d.target.dataset.action,c=parseInt(d.target.dataset.userId,10);l==="select"?this.selectPlayer(c):l==="select-spectator"?this.selectSpectator(c):l==="kick"?this.kickPlayer(c):l==="kick-spectator"?this.kickSpectator(c):l==="ban"?this.banPlayer(c):l==="become-spectator"?this.becomeSpectator():l==="become-player"&&this.becomePlayer()})})}this.renderBannedPlayersList()}kickSpectator(e){console.log("[BiggerDice] Kicking spectator:",e),this.send({type:"games.command.kick_spectator",room_id:this.roomId,target_user_id:e})}selectSpectator(e){console.log("[BiggerDice] Selecting spectator to play:",e),this.send({type:"games.command.select_spectator",room_id:this.roomId,target_user_id:e})}becomeSpectator(){console.log("[BiggerDice] Admin becoming spectator"),this.send({type:"games.command.become_spectator",room_id:this.roomId})}becomePlayer(){console.log("[BiggerDice] Admin becoming player from spectator"),this.send({type:"games.command.become_player",room_id:this.roomId})}renderBannedPlayersList(){const e=this.elements.bannedPlayersSection,t=this.elements.bannedCount,s=this.elements.bannedPlayersList;if(!e||!s)return;const i=this.bannedPlayers.length;if(i===0){e.classList.add("hidden");return}e.classList.remove("hidden"),t.textContent=`${i} banned`,s.innerHTML=this.bannedPlayers.map(a=>{const n=(a.username||"U").charAt(0).toUpperCase();return`
+        <div class="banned-player" data-user-id="${a.user_id}">
           <div class="banned-player__info">
-            <div class="banned-player__avatar">${o}</div>
-            <span class="banned-player__name">${this.escapeHtml(i.username)}</span>
+            <div class="banned-player__avatar">${n}</div>
+            <span class="banned-player__name">${this.escapeHtml(a.username)}</span>
           </div>
-          <button class="unban-btn" data-action="unban" data-user-id="${i.user_id}">Unban</button>
+          <button class="unban-btn" data-action="unban" data-user-id="${a.user_id}">Unban</button>
         </div>
-      `}).join(""),a.querySelectorAll('[data-action="unban"]').forEach(i=>{i.addEventListener("click",o=>{const c=parseInt(o.target.dataset.userId,10);this.unbanPlayer(c)})})}renderWaitingPlayersList(){const e=this.elements.waitingPlayersList;if(e){if(this.lobby.length===0){e.innerHTML="";return}e.innerHTML=`
+      `}).join(""),s.querySelectorAll('[data-action="unban"]').forEach(a=>{a.addEventListener("click",n=>{const r=parseInt(n.target.dataset.userId,10);this.unbanPlayer(r)})})}renderWaitingPlayersList(){const e=this.elements.waitingPlayersList;if(e){if(this.lobby.length===0){e.innerHTML="";return}e.innerHTML=`
       <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.875rem;">Players in lobby:</div>
-      ${this.lobby.map(t=>{const a=t.is_ready===!0,s=String(t.user_id)===String(this.myPlayerId),i=String(t.user_id)===String(this.hostId);let o="";return i&&(o+='<span class="admin-badge" style="margin-right: 0.25rem;">👑 Admin</span>'),s&&(o+='<span style="color: var(--primary-color);">(you)</span>'),`
-          <div class="waiting-player ${a?"waiting-player--ready":""} ${i?"waiting-player--admin":""}">
-            <span class="waiting-player__name">${this.escapeHtml(t.username)} ${o}</span>
-            <span class="waiting-player__status ${a?"waiting-player__status--ready":"waiting-player__status--waiting"}">
-              ${a?"✓ Ready":i?"Host":"Waiting..."}
+      ${this.lobby.map(t=>{const s=t.is_ready===!0,i=String(t.user_id)===String(this.myPlayerId),a=String(t.user_id)===String(this.hostId);let n="";return a&&(n+='<span class="admin-badge" style="margin-right: 0.25rem;">👑 Admin</span>'),i&&(n+='<span style="color: var(--primary-color);">(you)</span>'),`
+          <div class="waiting-player ${s?"waiting-player--ready":""} ${a?"waiting-player--admin":""}">
+            <span class="waiting-player__name">${this.escapeHtml(t.username)} ${n}</span>
+            <span class="waiting-player__status ${s?"waiting-player__status--ready":"waiting-player__status--waiting"}">
+              ${s?"✓ Ready":a?"Host":"Waiting..."}
             </span>
           </div>
         `}).join("")}
-    `}}renderPlayersArea(){const e=this.elements.playersArea;if(!e)return;const t=[];for(let a=0;a<this.maxPlayers;a++){const s=this.players[a];if(s){const i=s.username||s.name||"Player",o=s.user_id||s.id,c=String(o),r=String(this.currentTurn)===String(o),d=s.is_ready===!0,n=s.score||0,m=i.charAt(0)?.toUpperCase()||"?",h=this.disconnectedPlayers.get(c),p=!!h,l=this.autoPlayers.has(c),u=p?this.getDisconnectSecondsLeft(h.timeoutAt):0,v=p&&this.canKickDisconnected(c,h.timeoutAt);t.push(`
-          <div class="player-card ${r?"player-card--active":""} ${p?"player-card--disconnected":""} ${l?"player-card--auto":""}" data-player-id="${o}">
-            <div class="player-avatar">${this.escapeHtml(m)}</div>
-            <div class="player-name">${this.escapeHtml(i)}</div>
-            <div class="player-score">${n}</div>
+    `}}renderPlayersArea(){const e=this.elements.playersArea;if(!e)return;console.log("[DEBUG] renderPlayersArea - START, scores:",this.players.map(s=>({id:s.user_id||s.id,score:s.score})));const t=[];for(let s=0;s<this.maxPlayers;s++){const i=this.players[s];if(i){const a=i.username||i.name||"Player",n=i.user_id||i.id,r=String(n),o=String(this.currentTurn)===String(n),d=i.is_ready===!0,l=i.score||0;console.log("[DEBUG] renderPlayersArea - rendering player:",n,"with score:",l);const c=a.charAt(0)?.toUpperCase()||"?",m=this.disconnectedPlayers.get(r),h=!!m,u=this.autoPlayers.has(r),y=h?this.getDisconnectSecondsLeft(m.timeoutAt):0,f=h&&this.canKickDisconnected(r,m.timeoutAt);t.push(`
+          <div class="player-card ${o?"player-card--active":""} ${h?"player-card--disconnected":""} ${u?"player-card--auto":""}" data-player-id="${n}">
+            <div class="player-avatar">${this.escapeHtml(c)}</div>
+            <div class="player-name">${this.escapeHtml(a)}</div>
+            <div class="player-score">${l}</div>
             <div class="player-label">Points</div>
             <div class="player-ready ${d?"":"hidden"}">Ready!</div>
-            ${l?'<div class="player-card__auto">Auto</div>':""}
-            ${p?`
+            ${u?'<div class="player-card__auto">Auto</div>':""}
+            ${h?`
               <div class="player-card__disconnect">
                 <div class="disconnect-spinner" aria-hidden="true"></div>
                 <div class="disconnect-timer">
-                  ${u>0?`Reconnecting... ${u}s`:"Disconnected"}
+                  ${y>0?`Reconnecting... ${y}s`:"Disconnected"}
                 </div>
-                ${v?`
-                  <button class="kick-btn" data-action="kick-disconnected" data-user-id="${c}">Kick</button>
+                ${f?`
+                  <button class="kick-btn" data-action="kick-disconnected" data-user-id="${r}">Kick</button>
                 `:""}
               </div>
             `:""}
@@ -2445,7 +2817,22 @@
             <div class="player-label">Points</div>
             <div class="player-ready hidden">Ready!</div>
           </div>
-        `);a<this.maxPlayers-1&&t.push('<div class="vs-indicator">VS</div>')}e.innerHTML=t.join("")}renderDisconnectOverlay(){const e=this.elements.disconnectOverlay;if(!e)return;const t=String(this.myPlayerId),a=this.players.some(d=>String(d.user_id||d.id)===t),s=Array.from(this.disconnectedPlayers.entries()).filter(([d])=>d!==t&&!this.autoPlayers.has(d)),i=this.gameStatus===g.PLAYING&&a&&!this.isSpectator&&s.length>0;if(e.classList.toggle("active",i),e.setAttribute("aria-hidden",String(!i)),!i)return;e.querySelector(".disconnect-modal")||(e.innerHTML=`
+        `);s<this.maxPlayers-1&&t.push('<div class="vs-indicator">VS</div>')}e.innerHTML=t.join(""),console.log("[DEBUG] renderPlayersArea - END, innerHTML updated")}updateScoresOnly(){const e=this.elements.playersArea;if(!e)return;const s=Math.min(this.players.length,10);for(let i=0;i<s;i++){const a=this.players[i],n=a.user_id||a.id,r=e.querySelector(`.player-card[data-player-id="${n}"]`);if(r){const o=r.querySelector(".player-score");if(o){const d=a.score||0;o.textContent!==String(d)&&(o.textContent=d,o.classList.add("score-updated"),setTimeout(()=>o.classList.remove("score-updated"),300))}}}}renderDiceArea(){const e=this.elements.diceContainer;if(!e)return;if(this.isAnimating||this.rollEventQueue.length>0){console.log("[BiggerDice] renderDiceArea: skipping - animation in progress or queue not empty");return}if(this.players.length===0){e.innerHTML="",this.diceElements=[];return}const s=this.players.map((i,a)=>{const n=i.username||i.name||`Player ${a+1}`;return`
+        <div class="dice-wrapper" data-player-index="${a}">
+          <div class="dice-label">${this.escapeHtml(n)}</div>
+          <div class="dice dice--player-${a}" id="dice-${a}" data-value="0">
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+          </div>
+        </div>
+      `}).join("");e.innerHTML=s,this.diceElements=this.players.map((i,a)=>e.querySelector(`#dice-${a}`)),console.log(`[BiggerDice] renderDiceArea: created ${this.diceElements.length} dice elements`),this.applyDiceState()}renderDisconnectOverlay(){const e=this.elements.disconnectOverlay;if(!e)return;const t=String(this.myPlayerId),s=this.players.some(d=>String(d.user_id||d.id)===t),i=Array.from(this.disconnectedPlayers.entries()).filter(([d])=>d!==t&&!this.autoPlayers.has(d)),a=this.gameStatus===g.PLAYING&&s&&!this.isSpectator&&i.length>0;if(e.classList.toggle("active",a),e.setAttribute("aria-hidden",String(!a)),!a)return;e.querySelector(".disconnect-modal")||(e.innerHTML=`
         <div class="disconnect-modal" role="dialog" aria-modal="true" aria-label="Player disconnected">
           <div class="disconnect-modal__header">
             <div class="disconnect-spinner" aria-hidden="true"></div>
@@ -2457,45 +2844,39 @@
           <div class="disconnect-list"></div>
           <div class="disconnect-hint">Game is paused until the player returns or is kicked.</div>
         </div>
-      `);const o=e.querySelector(".disconnect-list");if(!o)return;const c=new Set(s.map(([d])=>d));(c.size!==this.disconnectOverlayIds.size||Array.from(c).some(d=>!this.disconnectOverlayIds.has(d)))&&(o.innerHTML=s.map(([d])=>{const n=this.players.find(h=>String(h.user_id||h.id)===d),m=n?.username||n?.name||`User #${d}`;return`
+      `);const n=e.querySelector(".disconnect-list");if(!n)return;const r=new Set(i.map(([d])=>d));(r.size!==this.disconnectOverlayIds.size||Array.from(r).some(d=>!this.disconnectOverlayIds.has(d)))&&(n.innerHTML=i.map(([d])=>{const l=this.players.find(m=>String(m.user_id||m.id)===d),c=l?.username||l?.name||`User #${d}`;return`
           <div class="disconnect-item" data-user-id="${d}">
             <div class="disconnect-item__left">
-              <div class="disconnect-item__name">${this.escapeHtml(m)}</div>
+              <div class="disconnect-item__name">${this.escapeHtml(c)}</div>
               <div class="disconnect-item__timer" data-role="timer">Disconnected</div>
             </div>
             <div data-role="action"></div>
           </div>
-        `}).join(""),this.disconnectOverlayIds=c),s.forEach(([d,n])=>{const m=o.querySelector(`.disconnect-item[data-user-id="${d}"]`);if(!m)return;const h=m.querySelector('[data-role="timer"]'),p=m.querySelector('[data-role="action"]'),l=this.getDisconnectSecondsLeft(n.timeoutAt),u=this.canKickDisconnected(d,n.timeoutAt),v=this.kickVotes.has(d);h&&(h.textContent=l>0?`Reconnecting... ${l}s`:"Disconnected"),p&&(l>0?p.innerHTML='<div class="disconnect-item__status">Waiting</div>':v?p.innerHTML='<div class="disconnect-voted">Vote sent</div>':u?p.innerHTML=`<button class="kick-btn" data-action="kick-disconnected" data-user-id="${d}">Kick disconnected</button>`:p.innerHTML="")})}updateTurnIndicator(){const e=this.elements.turnIndicator;if(this.gameStatus!==g.PLAYING){e.classList.add("hidden");return}if(e.classList.remove("hidden"),String(this.currentTurn)===String(this.myPlayerId))e.textContent="Your turn - Roll the dice!",e.style.borderColor="var(--success-color)";else{const t=this.players.find(s=>String(s.user_id||s.id)===String(this.currentTurn)),a=t?.username||t?.name||"Opponent";e.textContent=`${a}'s turn...`,e.style.borderColor="var(--primary-color)"}}updateButtons(){const e=this.elements.readyBtn,t=this.elements.rollBtn;if(this.isSpectator||this.autoPlayers.has(String(this.myPlayerId))){e?.classList.add("hidden"),t?.classList.add("hidden");return}const a=this.players.find(i=>String(i.user_id||i.id)===String(this.myPlayerId));if(!!!a){e?.classList.add("hidden"),t?.classList.add("hidden");return}this.gameStatus===g.WAITING?(t?.classList.add("hidden"),a&&!a.is_ready?(e?.classList.remove("hidden"),e.disabled=!1):e?.classList.add("hidden")):this.gameStatus===g.PLAYING?(e?.classList.add("hidden"),t?.classList.remove("hidden"),t.disabled=String(this.currentTurn)!==String(this.myPlayerId)):(e?.classList.add("hidden"),t?.classList.add("hidden"))}startDisconnectTicker(){this.disconnectTicker||(this.disconnectTicker=setInterval(()=>{if(this.disconnectedPlayers.size===0){this.stopDisconnectTickerIfNeeded();return}this.renderPlayersArea(),this.renderDisconnectOverlay()},1e3))}stopDisconnectTickerIfNeeded(){this.disconnectedPlayers.size===0&&this.disconnectTicker&&(clearInterval(this.disconnectTicker),this.disconnectTicker=null)}getDisconnectSecondsLeft(e){if(!e)return 0;const t=e.getTime()-Date.now();return Math.max(0,Math.ceil(t/1e3))}canKickDisconnected(e,t){const a=String(e);return!this.isPlayer||this.isSpectator||String(this.myPlayerId)===a||this.kickVotes.has(a)||this.gameStatus!==g.PLAYING?!1:this.getDisconnectSecondsLeft(t)===0}sendKickDisconnected(e){const t=String(e);this.roomId&&(this.kickVotes.has(t)||(this.kickVotes.add(t),this.send({type:"games.command.vote_kick_disconnected",room_id:this.roomId,target_user_id:t}),this.updateGameUI()))}animateDiceRoll(e,t){e.classList.add("dice--rolling");let a=0;const s=10,i=setInterval(()=>{const o=Math.floor(Math.random()*6)+1;e.dataset.value=o,a++,a>=s&&(clearInterval(i),e.classList.remove("dice--rolling"),e.dataset.value=t)},100)}showRoundResult(e){const t=this.elements.resultOverlay,a=this.players[0],s=this.players[1],i=a?.username||a?.name||"Player 1",o=s?.username||s?.name||"Player 2",c=String(e.winner_id)===String(this.myPlayerId);this.elements.resultIcon.textContent=c?"🎉":e.winner_id?"😢":"🤝",this.elements.resultTitle.textContent=c?"You Won!":e.winner_id?"You Lost":"Tie!",this.elements.resultScore1.textContent=a?.score||0,this.elements.resultLabel1.textContent=i,this.elements.resultScore2.textContent=s?.score||0,this.elements.resultLabel2.textContent=o,this.elements.resultMessage.textContent=`Round ${this.round} complete`,t.classList.add("active")}showGameOverResult(e){const t=this.elements.gameBoard,a=String(this.myPlayerId),s=e.winner_id||e.winner,i=this.players.find(l=>String(l.id||l.user_id)===String(s)),o=e.winner_name||i?.username||i?.name||"Winner",c=String(s)===a,r=Math.max(...this.players.map(l=>l.score||0));this.players.forEach(l=>l.is_ready=!1);const d=this.players.findIndex(l=>String(l.user_id||l.id)===a),n=this.players.map((l,u)=>{const v=l.username||l.name||`Player ${u+1}`,f=l.score||0;return`
-        <div class="game-over__player ${f===r&&f>0?"game-over__player--winner":""}">
-          <div class="game-over__player-name">${this.escapeHtml(v)}</div>
-          <div class="game-over__player-score">${f}</div>
-          <div class="game-over__ready-indicator" id="player${u}ReadyIndicator">
-            <span class="game-over__ready-dot"></span>
-            <span class="game-over__ready-text">Waiting...</span>
-          </div>
+        `}).join(""),this.disconnectOverlayIds=r),i.forEach(([d,l])=>{const c=n.querySelector(`.disconnect-item[data-user-id="${d}"]`);if(!c)return;const m=c.querySelector('[data-role="timer"]'),h=c.querySelector('[data-role="action"]'),u=this.getDisconnectSecondsLeft(l.timeoutAt),y=this.canKickDisconnected(d,l.timeoutAt),f=this.kickVotes.has(d);m&&(m.textContent=u>0?`Reconnecting... ${u}s`:"Disconnected"),h&&(u>0?h.innerHTML='<div class="disconnect-item__status">Waiting</div>':f?h.innerHTML='<div class="disconnect-voted">Vote sent</div>':y?h.innerHTML=`<button class="kick-btn" data-action="kick-disconnected" data-user-id="${d}">Kick disconnected</button>`:h.innerHTML="")})}updateTurnIndicator(){const e=this.elements.turnIndicator;if(this.gameStatus!==g.PLAYING){e.classList.add("hidden");return}if(e.classList.remove("hidden"),String(this.currentTurn)===String(this.myPlayerId))e.textContent="Your turn - Roll the dice!",e.style.borderColor="var(--success-color)";else{const t=this.players.find(i=>String(i.user_id||i.id)===String(this.currentTurn)),s=t?.username||t?.name||"Opponent";e.textContent=`${s}'s turn...`,e.style.borderColor="var(--primary-color)"}}updateButtons(){const e=this.elements.readyBtn,t=this.elements.rollBtn,s=this.elements.autoPlayBtn;if(this.isSpectator||this.autoPlayers.has(String(this.myPlayerId))){e?.classList.add("hidden"),t?.classList.add("hidden"),s?.classList.add("hidden");return}const i=this.players.find(n=>String(n.user_id||n.id)===String(this.myPlayerId));if(!!!i){e?.classList.add("hidden"),t?.classList.add("hidden"),s?.classList.add("hidden");return}this.gameStatus===g.WAITING?(t?.classList.add("hidden"),s?.classList.add("hidden"),i&&!i.is_ready?(e?.classList.remove("hidden"),e.disabled=!1):e?.classList.add("hidden")):this.gameStatus===g.PLAYING?(e?.classList.add("hidden"),t?.classList.remove("hidden"),t.disabled=String(this.currentTurn)!==String(this.myPlayerId),s?.classList.remove("hidden")):(e?.classList.add("hidden"),t?.classList.add("hidden"),s?.classList.add("hidden"))}startDisconnectTicker(){this.disconnectTicker||(this.disconnectTicker=setInterval(()=>{if(this.disconnectedPlayers.size===0){this.stopDisconnectTickerIfNeeded();return}this.renderPlayersArea(),this.renderDisconnectOverlay()},1e3))}stopDisconnectTickerIfNeeded(){this.disconnectedPlayers.size===0&&this.disconnectTicker&&(clearInterval(this.disconnectTicker),this.disconnectTicker=null)}getDisconnectSecondsLeft(e){if(!e)return 0;const t=e.getTime()-Date.now();return Math.max(0,Math.ceil(t/1e3))}canKickDisconnected(e,t){const s=String(e);return!this.isPlayer||this.isSpectator||String(this.myPlayerId)===s||this.kickVotes.has(s)||this.gameStatus!==g.PLAYING?!1:this.getDisconnectSecondsLeft(t)===0}sendKickDisconnected(e){const t=String(e);this.roomId&&(this.kickVotes.has(t)||(this.kickVotes.add(t),this.send({type:"games.command.vote_kick_disconnected",room_id:this.roomId,target_user_id:t}),this.updateGameUI()))}animateDiceRoll(e,t){return new Promise(s=>{this.isAnimating=!0,e.classList.add("dice--rolling");let i=0;const a=10,r=setInterval(()=>{const o=Math.floor(Math.random()*6)+1;e.dataset.value=o,i++,i>=a&&(clearInterval(r),e.classList.remove("dice--rolling"),e.dataset.value=t,this.isAnimating=!1,s())},100)})}showRoundResult(e){const t=this.elements.resultOverlay,s=this.players[0],i=this.players[1],a=s?.username||s?.name||"Player 1",n=i?.username||i?.name||"Player 2",r=String(e.winner_id)===String(this.myPlayerId);this.elements.resultIcon.textContent=r?"🎉":e.winner_id?"😢":"🤝",this.elements.resultTitle.textContent=r?"You Won!":e.winner_id?"You Lost":"Tie!",this.elements.resultScore1.textContent=s?.score||0,this.elements.resultLabel1.textContent=a,this.elements.resultScore2.textContent=i?.score||0,this.elements.resultLabel2.textContent=n,this.elements.resultMessage.textContent=`Round ${this.round} complete`,t.classList.add("active")}showGameOverResult(e){const t=this.elements.gameBoard,s=String(this.myPlayerId),i=e.winner_id||e.winner,a=this.players.find(m=>String(m.id||m.user_id)===String(i)),n=e.winner_username||e.winner_name||a?.username||a?.name||"Winner",r=String(i)===s,o=Math.max(...this.players.map(m=>m.score||0)),d=this.players.map((m,h)=>{const u=m.username||m.name||`Player ${h+1}`,y=m.score||0;return`
+        <div class="game-over__player ${y===o&&y>0?"game-over__player--winner":""}">
+          <div class="game-over__player-name">${this.escapeHtml(u)}</div>
+          <div class="game-over__player-score">${y}</div>
         </div>
-      `}).join(this.players.length===2?'<div class="game-over__vs">vs</div>':""),m=this.roundHistory.length>0?`
+      `}).join(this.players.length===2?'<div class="game-over__vs">vs</div>':""),l=this.roundHistory.length>0?`
       <div class="game-over__history">
         <h4 class="game-over__history-title">Round Results</h4>
         <table class="game-over__table">
           <thead>
             <tr>
               <th>Round</th>
-              ${this.players.map((l,u)=>`<th>${this.escapeHtml(l.username||l.name||`P${u+1}`)}</th>`).join("")}
+              ${this.players.map((m,h)=>`<th>${this.escapeHtml(m.username||m.name||`P${h+1}`)}</th>`).join("")}
               <th>Winner</th>
             </tr>
           </thead>
           <tbody>
-            ${this.roundHistory.map(l=>`
-              <tr class="${l.winnerId===a?"game-over__row--win":""}">
-                <td>${l.round}</td>
-                ${l.rolls?l.rolls.map((u,v)=>`
-                  <td class="${l.winnerId===String(this.players[v]?.id||this.players[v]?.user_id)?"game-over__cell--winner":""}">${u}</td>
-                `).join(""):`
-                  <td class="${l.winnerId===l.player1?.id?"game-over__cell--winner":""}">${l.player1?.roll||"-"}</td>
-                  <td class="${l.winnerId===l.player2?.id?"game-over__cell--winner":""}">${l.player2?.roll||"-"}</td>
+            ${this.roundHistory.map(m=>`
+              <tr class="${m.winnerId===s?"game-over__row--win":""}">
+                <td>${m.round}</td>
+                ${m.rolls?this.players.map((h,u)=>{const y=String(h.user_id||h.id),f=m.rolls.find(x=>String(x.id)===y),w=f?f.roll!==void 0?f.roll:f:"-";return`<td class="${m.winnerId===y?"game-over__cell--winner":""}">${w}</td>`}).join(""):`
+                  <td class="${m.winnerId===m.player1?.id?"game-over__cell--winner":""}">${m.player1?.roll||"-"}</td>
+                  <td class="${m.winnerId===m.player2?.id?"game-over__cell--winner":""}">${m.player2?.roll||"-"}</td>
                 `}
-                <td>${l.winnerName?this.escapeHtml(l.winnerName):"-"}</td>
+                <td>${m.winnerName?this.escapeHtml(m.winnerName):"-"}</td>
               </tr>
             `).join("")}
           </tbody>
@@ -2504,20 +2885,19 @@
     `:"";t.innerHTML=`
       <div class="game-over">
         <div class="game-over__header">
-          <div class="game-over__icon">${c?"🏆":"🥈"}</div>
-          <h2 class="game-over__title">${c?"Victory!":"Game Over"}</h2>
-          <p class="game-over__subtitle">${this.escapeHtml(o)} wins the game!</p>
+          <div class="game-over__icon">${r?"🏆":"🥈"}</div>
+          <h2 class="game-over__title">${r?"Victory!":"Game Over"}</h2>
+          <p class="game-over__subtitle">${this.escapeHtml(n)} wins the game!</p>
         </div>
 
         <div class="game-over__scores ${this.players.length>2?"game-over__scores--multi":""}">
-          ${n}
+          ${d}
         </div>
 
-        ${m}
+        ${l}
 
         <div class="game-over__actions">
-          <button class="game-over__btn game-over__btn--primary" id="playAgainBtn">Play Again</button>
-          <button class="game-over__btn game-over__btn--secondary" id="returnToLobbyBtn">Return to Lobby</button>
+          <button class="game-over__btn game-over__btn--primary" id="returnToLobbyBtn">Return to Lobby</button>
         </div>
       </div>
-    `;const h=t.querySelector("#playAgainBtn"),p=t.querySelector("#returnToLobbyBtn");h&&h.addEventListener("click",()=>{this.send({type:"games.command.ready",room_id:this.roomId});const l=this.players.find(u=>String(u.user_id||u.id)===a);if(l&&(l.is_ready=!0),h.disabled=!0,h.textContent=`Waiting for ${this.players.length-1} player(s)...`,d!==-1){const u=t.querySelector(`#player${d}ReadyIndicator`);u&&(u.classList.add("game-over__ready-indicator--ready"),u.querySelector(".game-over__ready-text").textContent="Ready!")}console.log("[BiggerDice] Sent play again ready signal")}),p&&p.addEventListener("click",()=>{this.leaveGame()}),t.classList.remove("hidden")}hideResultOverlay(){this.elements.resultOverlay.classList.remove("active")}escapeHtml(e){if(!e)return"";const t=document.createElement("div");return t.textContent=e,t.innerHTML}formatStatus(e){return{waiting:"Waiting",playing:"Playing",in_progress:"In Progress",finished:"Finished",abandoned:"Abandoned"}[e]||e}}customElements.get("bigger-dice")||customElements.define("bigger-dice",w),console.log("[BIGGER_DICE] Web component registered")})();
+    `;const c=t.querySelector("#returnToLobbyBtn");c&&c.addEventListener("click",()=>{this.leaveGame()}),t.classList.remove("hidden")}hideResultOverlay(){this.elements.resultOverlay.classList.remove("active")}escapeHtml(e){if(!e)return"";const t=document.createElement("div");return t.textContent=e,t.innerHTML}formatStatus(e){return{waiting:"Waiting",playing:"Playing",in_progress:"In Progress",finished:"Finished",abandoned:"Abandoned"}[e]||e}}customElements.get("bigger-dice")||customElements.define("bigger-dice",_),console.log("[BIGGER_DICE] Web component registered")})();

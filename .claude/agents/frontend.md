@@ -1,7 +1,7 @@
 ---
 name: frontend
 description: HTML/CSS/JavaScript and Tera template development. Use for web pages, styling, and frontend functionality.
-tools: Read, Glob, Grep, Edit, Bash, Write
+tools: Read, Glob, Grep, Edit, Bash, Write, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 skills: fontend
 color: pink

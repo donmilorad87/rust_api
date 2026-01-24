@@ -297,3 +297,175 @@ pub async fn fetch_transactions_by_user(
 
     Ok(transactions)
 }
+
+/// Create a Bigger Dice participation transaction (deduction from balance for playing)
+/// Amount is negative (expense), completed immediately with status 'game_participation'
+pub async fn create_bigger_dice_participation(
+    pool: &PgPool,
+    request_id: &str,
+    user_id: i64,
+    amount_cents: i64,
+    room_id: &str,
+    room_name: &str,
+    metadata: &Value,
+) -> Result<bool, sqlx::Error> {
+    let row = sqlx::query(
+        r#"
+        INSERT INTO checkout_transactions (
+            request_id,
+            user_id,
+            amount_cents,
+            currency,
+            purpose,
+            status,
+            metadata,
+            completed_at
+        )
+        VALUES ($1, $2, $3, 'eur', 'PAY BIGGER DICE GAME', 'game_participation', $4, NOW())
+        ON CONFLICT (request_id) DO NOTHING
+        RETURNING id
+        "#,
+    )
+    .bind(request_id)
+    .bind(user_id)
+    .bind(amount_cents)
+    .bind(Json(serde_json::json!({
+        "game_type": "bigger_dice",
+        "room_id": room_id,
+        "room_name": room_name,
+        "original_metadata": metadata,
+    })))
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.is_some())
+}
+
+/// Create a Bigger Dice prize win transaction (credit to winner's balance)
+/// Amount is positive (income), completed immediately with status 'game_prize_won'
+pub async fn create_bigger_dice_prize_win(
+    pool: &PgPool,
+    request_id: &str,
+    user_id: i64,
+    amount_cents: i64,
+    room_id: &str,
+    room_name: &str,
+    metadata: &Value,
+) -> Result<bool, sqlx::Error> {
+    let row = sqlx::query(
+        r#"
+        INSERT INTO checkout_transactions (
+            request_id,
+            user_id,
+            amount_cents,
+            currency,
+            purpose,
+            status,
+            metadata,
+            completed_at
+        )
+        VALUES ($1, $2, $3, 'eur', 'BIGGER DICE GAME PRIZE WIN', 'game_prize_won', $4, NOW())
+        ON CONFLICT (request_id) DO NOTHING
+        RETURNING id
+        "#,
+    )
+    .bind(request_id)
+    .bind(user_id)
+    .bind(amount_cents)
+    .bind(Json(serde_json::json!({
+        "game_type": "bigger_dice",
+        "room_id": room_id,
+        "room_name": room_name,
+        "original_metadata": metadata,
+    })))
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.is_some())
+}
+
+/// Create a Tic Tac Toe participation transaction (deduction from balance for playing)
+/// Amount is negative (expense), completed immediately with status 'game_participation'
+pub async fn create_tic_tac_toe_participation(
+    pool: &PgPool,
+    request_id: &str,
+    user_id: i64,
+    amount_cents: i64,
+    room_id: &str,
+    room_name: &str,
+    metadata: &Value,
+) -> Result<bool, sqlx::Error> {
+    let row = sqlx::query(
+        r#"
+        INSERT INTO checkout_transactions (
+            request_id,
+            user_id,
+            amount_cents,
+            currency,
+            purpose,
+            status,
+            metadata,
+            completed_at
+        )
+        VALUES ($1, $2, $3, 'eur', 'PAY TIC TAC TOE GAME', 'game_participation', $4, NOW())
+        ON CONFLICT (request_id) DO NOTHING
+        RETURNING id
+        "#,
+    )
+    .bind(request_id)
+    .bind(user_id)
+    .bind(amount_cents)
+    .bind(Json(serde_json::json!({
+        "game_type": "tic_tac_toe",
+        "room_id": room_id,
+        "room_name": room_name,
+        "original_metadata": metadata,
+    })))
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.is_some())
+}
+
+/// Create a Tic Tac Toe prize win transaction (credit to winner's balance)
+/// Amount is positive (income), completed immediately with status 'game_prize_won'
+pub async fn create_tic_tac_toe_prize_win(
+    pool: &PgPool,
+    request_id: &str,
+    user_id: i64,
+    amount_cents: i64,
+    room_id: &str,
+    room_name: &str,
+    metadata: &Value,
+) -> Result<bool, sqlx::Error> {
+    let row = sqlx::query(
+        r#"
+        INSERT INTO checkout_transactions (
+            request_id,
+            user_id,
+            amount_cents,
+            currency,
+            purpose,
+            status,
+            metadata,
+            completed_at
+        )
+        VALUES ($1, $2, $3, 'eur', 'TIC TAC TOE GAME PRIZE WIN', 'game_prize_won', $4, NOW())
+        ON CONFLICT (request_id) DO NOTHING
+        RETURNING id
+        "#,
+    )
+    .bind(request_id)
+    .bind(user_id)
+    .bind(amount_cents)
+    .bind(Json(serde_json::json!({
+        "game_type": "tic_tac_toe",
+        "room_id": room_id,
+        "room_name": room_name,
+        "original_metadata": metadata,
+    })))
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.is_some())
+}

@@ -797,6 +797,87 @@ pub static DATABASE: Lazy<DatabaseConfig> = Lazy::new(|| {
 | created_at | TIMESTAMPTZ | DEFAULT NOW() | Creation timestamp |
 | updated_at | TIMESTAMPTZ | DEFAULT NOW() | Last update |
 
+### Galleries Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Auto-increment ID |
+| user_id | BIGINT | FK to users | Gallery owner |
+| name | VARCHAR(255) | NOT NULL | Gallery name |
+| description | TEXT | | Optional description |
+| is_public | BOOLEAN | DEFAULT false | Public visibility |
+| gallery_type | VARCHAR(32) | NOT NULL, CHECK | `regular_galleries` or `geo_galleries` |
+| gallery_uuid | UUID | NOT NULL, UNIQUE | Public identifier for URLs |
+| display_order | INTEGER | DEFAULT 0 | Sort order |
+| latitude | DOUBLE PRECISION | CHECK -90 to 90 | Gallery location |
+| longitude | DOUBLE PRECISION | CHECK -180 to 180 | Gallery location |
+| tags | TEXT[] | | Array of tags |
+| cover_image_id | BIGINT | FK to uploads | Cover image |
+| cover_image_uuid | UUID | | Cover image UUID |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMPTZ | DEFAULT NOW() | Last update |
+
+### Gallery Likes Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Auto-increment ID |
+| gallery_id | BIGINT | FK to galleries, CASCADE | Liked gallery |
+| user_id | BIGINT | FK to users, CASCADE | User who liked |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() | Like timestamp |
+
+### Geo Places Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Auto-increment ID |
+| name | VARCHAR(255) | NOT NULL | Place name |
+| place_type | VARCHAR(20) | CHECK: restaurant/cafe/lodging | Place type |
+| description | TEXT | | Optional description |
+| latitude | DOUBLE PRECISION | NOT NULL, CHECK | Location |
+| longitude | DOUBLE PRECISION | NOT NULL, CHECK | Location |
+| created_by | BIGINT | FK to users | Admin who created |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMPTZ | DEFAULT NOW() | Last update |
+
+### Competitions Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Auto-increment ID |
+| title | VARCHAR(255) | NOT NULL | Competition title |
+| description | TEXT | NOT NULL | Description |
+| start_date | TIMESTAMPTZ | NOT NULL | Start date |
+| end_date | TIMESTAMPTZ | NOT NULL | End date |
+| prize_cents | BIGINT | DEFAULT 10000, CHECK >= 0 | Prize in cents |
+| rules | TEXT | NOT NULL | Competition rules |
+| created_by | BIGINT | FK to users | Admin who created |
+| winner_gallery_id | BIGINT | FK to galleries | Winning gallery |
+| winner_user_id | BIGINT | FK to users | Winner |
+| awarded_at | TIMESTAMPTZ | | Award timestamp |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() | Creation timestamp |
+| updated_at | TIMESTAMPTZ | DEFAULT NOW() | Last update |
+
+### Competition Entries Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Auto-increment ID |
+| competition_id | BIGINT | FK to competitions, CASCADE | Competition |
+| gallery_id | BIGINT | FK to galleries, CASCADE | Submitted gallery |
+| user_id | BIGINT | FK to users, CASCADE | User |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() | Submission time |
+
+### Competition Admin Votes Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | BIGSERIAL | PRIMARY KEY | Auto-increment ID |
+| competition_id | BIGINT | FK to competitions, CASCADE | Competition |
+| gallery_id | BIGINT | FK to galleries, CASCADE | Voted gallery |
+| admin_id | BIGINT | FK to users, CASCADE | Admin who voted |
+| created_at | TIMESTAMPTZ | DEFAULT NOW() | Vote timestamp |
+
 ---
 
 ## Development Workflow
@@ -859,3 +940,4 @@ cargo sqlx prepare
 - [Uploads](../Uploads/UPLOADS.md) - File storage and upload system
 - [Controllers](../Controllers/CONTROLLERS.md) - Using database in controllers
 - [API Routes](../Routes/Api/API_ROUTES.md) - API endpoints that use database
+- [Geo Galleries](../GeoGalleries/GEO_GALLERIES.md) - Geo galleries, places, and competitions

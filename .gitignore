@@ -5,3 +5,9 @@ blazing_sun/**/node_modules/
 
 # Auto Claude data directory
 .auto-claude/
+
+checkout/target
+checkout/.env
+
+ws_gateway/target
+ws_gateway/.env

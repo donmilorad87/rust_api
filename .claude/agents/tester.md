@@ -1,7 +1,7 @@
 ---
 name: tester
 description: Unit and integration testing with TDD. Use for writing tests, test coverage, and test reports.
-tools: Read, Glob, Grep, Edit, Bash, Write
+tools: Read, Glob, Grep, Edit, Bash, Write, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 color: pink
 ---

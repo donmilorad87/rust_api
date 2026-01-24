@@ -993,6 +993,549 @@ Base path: `/api/v1/admin/users`
 
 ---
 
+## Gallery Routes (Protected)
+
+Base path: `/api/v1/galleries`
+
+All routes require JWT authentication.
+
+### List User's Galleries
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/galleries` |
+| **Named Route** | `galleries.list` |
+| **Handler** | `gallery::get_user_galleries` |
+| **Auth Required** | Yes |
+
+**Success Response (200 OK):**
+```json
+{
+    "galleries": [
+        {
+            "id": 1,
+            "user_id": 123,
+            "name": "My Gallery",
+            "description": "Photos from my trip",
+            "is_public": true,
+            "gallery_type": "geo_galleries",
+            "display_order": 0,
+            "picture_count": 15,
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+            "tags": ["travel", "city"],
+            "cover_image_id": 456,
+            "cover_image_url": "/api/v1/upload/download/public/abc123-...",
+            "created_at": "2026-01-15T10:30:00Z",
+            "updated_at": "2026-01-15T10:30:00Z"
+        }
+    ]
+}
+```
+
+---
+
+### Create Gallery
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/galleries` |
+| **Named Route** | `galleries.create` |
+| **Handler** | `gallery::create_gallery` |
+| **Auth Required** | Yes |
+
+**Request Body:**
+```json
+{
+    "name": "My Geo Gallery",
+    "description": "Photos from my trip",
+    "is_public": true,
+    "gallery_type": "geo_galleries",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "tags": ["travel", "city"],
+    "cover_image_id": 456
+}
+```
+
+**Gallery Type Values:**
+- `regular_galleries` - Standard gallery (default)
+- `geo_galleries` - Location-based gallery (requires latitude, longitude, cover_image_id)
+
+**Success Response (201 Created):**
+Returns the created gallery object.
+
+**Error Responses:**
+- `400 Bad Request` - Validation errors
+- `409 Conflict` - Gallery name already exists for user
+
+---
+
+### Get Gallery
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/galleries/{id}` |
+| **Named Route** | `galleries.show` |
+| **Handler** | `gallery::get_gallery` |
+| **Auth Required** | Yes |
+
+**Access Control:**
+- User can access own galleries
+- User can access public galleries from other users
+- `403 Forbidden` for private galleries owned by others
+
+---
+
+### Update Gallery
+
+| Property | Value |
+|----------|-------|
+| **Route** | `PUT /api/v1/galleries/{id}` |
+| **Named Route** | `galleries.update` |
+| **Handler** | `gallery::update_gallery` |
+| **Auth Required** | Yes |
+
+**Request Body (all fields optional):**
+```json
+{
+    "name": "Updated Name",
+    "description": "Updated description",
+    "is_public": true,
+    "gallery_type": "geo_galleries",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "tags": ["updated", "tags"],
+    "cover_image_id": 789
+}
+```
+
+---
+
+### Delete Gallery
+
+| Property | Value |
+|----------|-------|
+| **Route** | `DELETE /api/v1/galleries/{id}` |
+| **Named Route** | `galleries.delete` |
+| **Handler** | `gallery::delete_gallery` |
+| **Auth Required** | Yes |
+
+**Note:** Cascade deletes all pictures in the gallery.
+
+---
+
+### Like Gallery
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/galleries/{id}/likes` |
+| **Named Route** | `galleries.likes` |
+| **Handler** | `gallery_like::like_gallery` |
+| **Auth Required** | Yes |
+
+**Success Response (201 Created):**
+```json
+{
+    "message": "Gallery liked"
+}
+```
+
+---
+
+### Unlike Gallery
+
+| Property | Value |
+|----------|-------|
+| **Route** | `DELETE /api/v1/galleries/{id}/likes` |
+| **Named Route** | `galleries.likes` |
+| **Handler** | `gallery_like::unlike_gallery` |
+| **Auth Required** | Yes |
+
+---
+
+### Reorder Galleries
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/galleries/reorder` |
+| **Named Route** | `galleries.reorder` |
+| **Handler** | `gallery::reorder_galleries` |
+| **Auth Required** | Yes |
+
+**Request Body:**
+```json
+{
+    "gallery_ids": [3, 1, 2]
+}
+```
+
+---
+
+## Geo Gallery Routes (Protected)
+
+Base path: `/api/v1/geo-galleries`
+
+### List Geo Galleries for Map
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/geo-galleries` |
+| **Named Route** | `geo_galleries.list` |
+| **Handler** | `gallery::get_geo_galleries` |
+| **Auth Required** | Yes |
+
+Returns all geo galleries with coordinates for map display.
+
+**Success Response (200 OK):**
+```json
+{
+    "galleries": [
+        {
+            "id": 1,
+            "gallery_uuid": "550e8400-e29b-41d4-a716-446655440000",
+            "title": "New York Trip",
+            "description": "Photos from NYC",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+            "tags": ["travel", "city"],
+            "cover_image_url": "/api/v1/upload/download/public/abc123-...",
+            "picture_count": 15
+        }
+    ]
+}
+```
+
+---
+
+### Get Geo Gallery by UUID
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/geo-galleries/{gallery_uuid}` |
+| **Named Route** | `geo_galleries.show` |
+| **Handler** | `gallery::get_geo_gallery` |
+| **Auth Required** | Yes |
+
+**Success Response (200 OK):**
+```json
+{
+    "id": 1,
+    "gallery_uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "user_id": 123,
+    "name": "New York Trip",
+    "is_public": true,
+    "gallery_type": "geo_galleries",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "tags": ["travel"],
+    "cover_image_url": "/api/v1/upload/download/public/...",
+    "picture_count": 15,
+    "is_owner": false
+}
+```
+
+---
+
+## Geo Places Routes (Mixed Auth)
+
+Base path: `/api/v1/geo-places`
+
+### List Geo Places (Public)
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/geo-places` |
+| **Named Route** | `geo_places.list` |
+| **Handler** | `geo_place::list_public` |
+| **Auth Required** | No |
+
+**Query Parameters:**
+- `place_type` - Optional filter: `restaurant`, `cafe`, or `lodging`
+
+**Success Response (200 OK):**
+```json
+{
+    "places": [
+        {
+            "id": 1,
+            "name": "Central Cafe",
+            "place_type": "cafe",
+            "description": "Great coffee downtown",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+            "created_at": "2026-01-15T10:30:00Z",
+            "image_count": 5
+        }
+    ]
+}
+```
+
+---
+
+### List Place Images (Public)
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/geo-places/{id}/images` |
+| **Handler** | `geo_place::list_place_images` |
+| **Auth Required** | No |
+
+**Success Response (200 OK):**
+```json
+{
+    "images": [
+        {
+            "id": 1,
+            "place_id": 1,
+            "url": "/api/v1/upload/download/public/abc123-...",
+            "title": "Interior",
+            "description": "Main seating area",
+            "tag": "interior",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+            "created_at": "2026-01-15T10:30:00Z"
+        }
+    ]
+}
+```
+
+---
+
+### Admin: List All Places
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/admin/geo-places` |
+| **Named Route** | `geo_places.admin` |
+| **Handler** | `geo_place::list_admin` |
+| **Auth Required** | Yes |
+| **Permission Required** | Admin (>= 10) |
+
+---
+
+### Admin: Create Place
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/admin/geo-places` |
+| **Handler** | `geo_place::create_place` |
+| **Auth Required** | Yes |
+| **Permission Required** | Admin (>= 10) |
+
+**Request Body:**
+```json
+{
+    "name": "Central Cafe",
+    "place_type": "cafe",
+    "description": "Great coffee downtown",
+    "latitude": 40.7128,
+    "longitude": -74.0060
+}
+```
+
+**Place Types:** `restaurant`, `cafe`, `lodging`
+
+**Success Response (201 Created):**
+```json
+{
+    "id": 1
+}
+```
+
+---
+
+### Admin: Add Place Image
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/admin/geo-places/{id}/images` |
+| **Handler** | `geo_place::add_place_image` |
+| **Auth Required** | Yes |
+| **Permission Required** | Admin (>= 10) |
+
+**Request Body:**
+```json
+{
+    "upload_id": 456,
+    "title": "Interior",
+    "description": "Main seating area",
+    "tag": "interior",
+    "latitude": 40.7128,
+    "longitude": -74.0060
+}
+```
+
+---
+
+## Competition Routes (Mixed Auth)
+
+Base path: `/api/v1/competitions`
+
+### List Competitions (Public)
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/competitions` |
+| **Named Route** | `competitions.list` |
+| **Handler** | `competitions::list_competitions` |
+| **Auth Required** | No |
+
+**Success Response (200 OK):**
+```json
+{
+    "competitions": [
+        {
+            "id": 1,
+            "title": "Summer Photo Contest",
+            "description": "Share your best summer photos",
+            "start_date": "2026-06-01T00:00:00Z",
+            "end_date": "2026-08-31T23:59:59Z",
+            "prize_cents": 10000,
+            "rules": "All photos must be original...",
+            "status": "active",
+            "winner_gallery_id": null,
+            "winner_user_id": null,
+            "awarded_at": null
+        }
+    ]
+}
+```
+
+**Status Values:**
+- `upcoming` - Not started yet
+- `active` - Currently running
+- `ended` - Has ended (may not be finalized)
+
+---
+
+### Get Competition with Entries (Public)
+
+| Property | Value |
+|----------|-------|
+| **Route** | `GET /api/v1/competitions/{id}` |
+| **Named Route** | `competitions.show` |
+| **Handler** | `competitions::get_competition` |
+| **Auth Required** | No |
+
+**Success Response (200 OK):**
+```json
+{
+    "competition": { ... },
+    "entries": [
+        {
+            "gallery_id": 10,
+            "user_id": 123,
+            "likes_count": 50,
+            "admin_votes_count": 3,
+            "score": 0.75
+        }
+    ]
+}
+```
+
+**Scoring:** `score = (likes_score * 0.5) + (admin_score * 0.5)`
+
+---
+
+### Admin: Create Competition
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/competitions` |
+| **Named Route** | `competitions.create` |
+| **Handler** | `competitions::create_competition` |
+| **Auth Required** | Yes |
+| **Permission Required** | Admin (>= 10) |
+
+**Request Body:**
+```json
+{
+    "title": "Summer Photo Contest",
+    "description": "Share your best summer photos",
+    "start_date": "2026-06-01T00:00:00Z",
+    "end_date": "2026-08-31T23:59:59Z",
+    "rules": "All photos must be original..."
+}
+```
+
+**Note:** Prize is automatically set to 10000 cents ($100).
+
+---
+
+### Join Competition (User)
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/competitions/{id}/entries` |
+| **Named Route** | `competitions.entries.create` |
+| **Handler** | `competitions::join_competition` |
+| **Auth Required** | Yes |
+
+**Request Body:**
+```json
+{
+    "gallery_id": 10
+}
+```
+
+**Validation:**
+- Competition must be active
+- Gallery must be owned by user, public, geo_galleries type, with coordinates
+
+**Error Responses:**
+- `400 Bad Request` - Validation errors
+- `409 Conflict` - Gallery already submitted
+
+---
+
+### Admin: Cast Vote
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/competitions/{id}/admin-votes` |
+| **Named Route** | `competitions.admin_vote` |
+| **Handler** | `competitions::admin_vote` |
+| **Auth Required** | Yes |
+| **Permission Required** | Admin (>= 10) |
+
+**Request Body:**
+```json
+{
+    "gallery_id": 10
+}
+```
+
+---
+
+### Admin: Finalize Competition
+
+| Property | Value |
+|----------|-------|
+| **Route** | `POST /api/v1/competitions/{id}/finalize` |
+| **Named Route** | `competitions.finalize` |
+| **Handler** | `competitions::finalize_competition` |
+| **Auth Required** | Yes |
+| **Permission Required** | Admin (>= 10) |
+
+**Validation:**
+- End date must have passed
+- Must not be already finalized
+- Must have at least one entry
+
+**Success Response (200 OK):**
+```json
+{
+    "winner_gallery_id": 10,
+    "winner_user_id": 123,
+    "score": 0.85,
+    "likes_count": 50,
+    "admin_votes_count": 5
+}
+```
+
+---
+
 ## Complete Route Summary
 
 ### Public Routes (No Auth)
@@ -1008,6 +1551,10 @@ Base path: `/api/v1/admin/users`
 | GET | `/api/v1/account/set-password-when-needed` | `account.set_password_when_needed` | Verify set password link |
 | POST | `/api/v1/account/set-password-when-needed` | - | Set password |
 | GET | `/api/v1/upload/download/public/{uuid}` | `upload.download.public` | Download public file |
+| GET | `/api/v1/geo-places` | `geo_places.list` | List geo places |
+| GET | `/api/v1/geo-places/{id}/images` | - | List place images |
+| GET | `/api/v1/competitions` | `competitions.list` | List competitions |
+| GET | `/api/v1/competitions/{id}` | `competitions.show` | Get competition with entries |
 
 ### Protected Routes (JWT Required)
 
@@ -1035,6 +1582,17 @@ Base path: `/api/v1/admin/users`
 | POST | `/api/v1/upload/chunked/{uuid}/chunk/{index}` | `upload.chunked.chunk` | Upload chunk |
 | POST | `/api/v1/upload/chunked/{uuid}/complete` | `upload.chunked.complete` | Complete chunked upload |
 | DELETE | `/api/v1/upload/chunked/{uuid}` | `upload.chunked.cancel` | Cancel chunked upload |
+| GET | `/api/v1/galleries` | `galleries.list` | List user's galleries |
+| POST | `/api/v1/galleries` | `galleries.create` | Create gallery |
+| POST | `/api/v1/galleries/reorder` | `galleries.reorder` | Reorder galleries |
+| GET | `/api/v1/galleries/{id}` | `galleries.show` | Get gallery |
+| PUT | `/api/v1/galleries/{id}` | `galleries.update` | Update gallery |
+| DELETE | `/api/v1/galleries/{id}` | `galleries.delete` | Delete gallery |
+| POST | `/api/v1/galleries/{id}/likes` | `galleries.likes` | Like gallery |
+| DELETE | `/api/v1/galleries/{id}/likes` | `galleries.likes` | Unlike gallery |
+| GET | `/api/v1/geo-galleries` | `geo_galleries.list` | List geo galleries for map |
+| GET | `/api/v1/geo-galleries/{uuid}` | `geo_galleries.show` | Get geo gallery by UUID |
+| POST | `/api/v1/competitions/{id}/entries` | `competitions.entries.create` | Join competition |
 
 ### Admin Routes (JWT + Admin Permission >= 10)
 
@@ -1043,6 +1601,12 @@ Base path: `/api/v1/admin/users`
 | GET | `/api/v1/admin/uploads` | `admin.uploads` | List all uploads |
 | GET | `/api/v1/admin/assets` | `admin.assets` | List all assets |
 | DELETE | `/api/v1/admin/users/{id}/avatar` | `admin.delete_user_avatar` | Delete user's avatar |
+| GET | `/api/v1/admin/geo-places` | `geo_places.admin` | List all geo places |
+| POST | `/api/v1/admin/geo-places` | - | Create geo place |
+| POST | `/api/v1/admin/geo-places/{id}/images` | - | Add place image |
+| POST | `/api/v1/competitions` | `competitions.create` | Create competition |
+| POST | `/api/v1/competitions/{id}/admin-votes` | `competitions.admin_vote` | Cast admin vote |
+| POST | `/api/v1/competitions/{id}/finalize` | `competitions.finalize` | Finalize competition |
 
 ### Super Admin Routes (JWT + Super Admin Permission >= 100)
 
@@ -1110,3 +1674,4 @@ let url = route("upload.chunked.chunk", Some(&params));
 - [Permissions](../../Permissions/PERMISSIONS.md) - Permission system
 - [Uploads](../../Uploads/UPLOADS.md) - Upload system details
 - [Controllers](../../Controllers/CONTROLLERS.md) - Controller implementations
+- [Geo Galleries](../../GeoGalleries/GEO_GALLERIES.md) - Geo galleries, places, and competitions

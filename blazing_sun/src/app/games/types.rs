@@ -59,7 +59,7 @@ where
 #[serde(rename_all = "snake_case")]
 pub enum GameType {
     BiggerDice,
-    // Future games can be added here
+    TicTacToe,
 }
 
 impl Default for GameType {
@@ -72,27 +72,33 @@ impl GameType {
     pub fn as_str(&self) -> &'static str {
         match self {
             GameType::BiggerDice => "bigger_dice",
+            GameType::TicTacToe => "tic_tac_toe",
         }
     }
 
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "bigger_dice" => Some(GameType::BiggerDice),
+            "tic_tac_toe" => Some(GameType::TicTacToe),
             _ => None,
         }
     }
 
     /// Get the win score for this game type
+    /// For BiggerDice: first to 10 points wins
+    /// For TicTacToe: first to 5 game wins in match
     pub fn win_score(&self) -> i32 {
         match self {
             GameType::BiggerDice => 10,
+            GameType::TicTacToe => 5,
         }
     }
 
     /// Get max players for this game type
     pub fn max_players(&self) -> usize {
         match self {
-            GameType::BiggerDice => 2,
+            GameType::BiggerDice => 10,
+            GameType::TicTacToe => 2,
         }
     }
 
@@ -100,6 +106,7 @@ impl GameType {
     pub fn min_players(&self) -> usize {
         match self {
             GameType::BiggerDice => 2,
+            GameType::TicTacToe => 2,
         }
     }
 }
@@ -960,6 +967,7 @@ pub enum GameEvent {
         room_name: String,
         is_password_protected: bool,
         status: RoomStatus,
+        allow_spectators: bool,
         socket_id: String,
     },
     /// Player joined the room lobby (waiting to be selected)
@@ -1018,24 +1026,147 @@ pub enum GameEvent {
         roll: i32,
         new_score: i32,
     },
+    /// Round result for N-player Bigger Dice
     #[serde(rename = "bigger_dice.round_result")]
     BiggerDiceRoundResult {
         room_id: String,
-        player1_id: i64,
-        player1_roll: i32,
-        player2_id: i64,
-        player2_roll: i32,
+        /// All rolls for this round: (player_id, roll)
+        rolls: Vec<(i64, i32)>,
+        /// Winner if exactly one player had highest roll, None if tie
         winner_id: Option<i64>,
+        /// True if multiple players tied for highest
         is_tie: bool,
+        /// True if this was a tiebreaker round
+        is_tiebreaker: bool,
+        /// Players going to tiebreaker (only set when is_tie=true)
+        tiebreaker_players: Vec<i64>,
+        /// Authoritative scores for all players after this round: (player_id, score)
+        /// This ensures spectators and players see synchronized scores
+        scores: Vec<(i64, i32)>,
     },
+    /// Tiebreaker started for N-player Bigger Dice
+    #[serde(rename = "bigger_dice.tiebreaker_started")]
+    BiggerDiceTiebreakerStarted {
+        room_id: String,
+        /// Players participating in the tiebreaker
+        tied_players: Vec<i64>,
+        /// The roll value they all tied on
+        tied_roll: i32,
+    },
+    /// Current round state for N-player Bigger Dice (for rejoin/sync)
     #[serde(rename = "bigger_dice.state")]
     BiggerDiceState {
         room_id: String,
-        player1_id: i64,
-        player1_roll: Option<i32>,
-        player2_id: i64,
-        player2_roll: Option<i32>,
+        /// Current round number
+        round_number: i32,
+        /// Rolls so far this round: (player_id, roll)
+        current_rolls: Vec<(i64, i32)>,
+        /// Players who still need to roll
+        pending_rollers: Vec<i64>,
+        /// Whether we are in a tiebreaker
+        is_tiebreaker: bool,
+        /// Complete round history for rejoining players (from MongoDB)
+        /// Each entry: { round, rolls: [{id, roll, username}], winnerId, winnerName, isTiebreaker }
+        #[serde(default)]
+        round_history: Vec<serde_json::Value>,
     },
+    /// Game over for Bigger Dice (first to 10 points)
+    #[serde(rename = "bigger_dice.game_over")]
+    BiggerDiceGameOver {
+        room_id: String,
+        winner_id: i64,
+        winner_username: String,
+        final_scores: Vec<(i64, String, i32)>, // (user_id, username, score)
+    },
+
+    // ========== Tic Tac Toe Events ==========
+
+    /// Move made on the board
+    #[serde(rename = "tic_tac_toe.moved")]
+    TicTacToeMoved {
+        room_id: String,
+        player_id: i64,
+        player_username: String,
+        position: u8,
+        mark: char,
+        board: Vec<Option<char>>,
+    },
+    /// Single game ended within match (winner or draw)
+    #[serde(rename = "tic_tac_toe.game_result")]
+    TicTacToeGameResult {
+        room_id: String,
+        /// Winner of this game (None if draw)
+        winner_id: Option<i64>,
+        winner_username: Option<String>,
+        /// Winning line positions (None if draw)
+        winning_line: Option<Vec<u8>>,
+        /// True if game was a draw
+        is_draw: bool,
+        /// Current match scores after this game
+        scores: Vec<(i64, i32)>,
+        /// Current game number in match
+        game_number: i32,
+        /// Next player to start (X in next game)
+        next_first_player: i64,
+    },
+    /// Match ended (first to 5 wins)
+    #[serde(rename = "tic_tac_toe.match_ended")]
+    TicTacToeMatchEnded {
+        room_id: String,
+        winner_id: i64,
+        winner_username: String,
+        final_scores: Vec<(i64, String, i32)>,
+        prize_amount: i64,
+    },
+    /// Full state sync (for rejoin/spectators)
+    #[serde(rename = "tic_tac_toe.state")]
+    TicTacToeState {
+        room_id: String,
+        board: Vec<Option<char>>,
+        player_x_id: i64,
+        player_o_id: i64,
+        current_turn: i64,
+        scores: Vec<(i64, i32)>,
+        game_number: i32,
+        move_deadline: Option<String>,
+        is_paused: bool,
+        disconnected_player: Option<i64>,
+    },
+    /// Player forfeited game due to turn timeout
+    #[serde(rename = "tic_tac_toe.turn_timeout")]
+    TicTacToeTurnTimeout {
+        room_id: String,
+        player_id: i64,
+        player_username: String,
+        /// Opponent who wins this game
+        winner_id: i64,
+        winner_username: String,
+        scores: Vec<(i64, i32)>,
+        game_number: i32,
+    },
+    /// Match cancelled (both players disconnected > 10 min)
+    #[serde(rename = "tic_tac_toe.match_cancelled")]
+    TicTacToeMatchCancelled {
+        room_id: String,
+        reason: String,
+        refund_amount: i64,
+    },
+    /// Game paused due to player disconnect
+    #[serde(rename = "tic_tac_toe.game_paused")]
+    TicTacToeGamePaused {
+        room_id: String,
+        disconnected_player_id: i64,
+        disconnected_player_username: String,
+        timeout_at: String,
+    },
+    /// Game resumed after player reconnect
+    #[serde(rename = "tic_tac_toe.game_resumed")]
+    TicTacToeGameResumed {
+        room_id: String,
+        reconnected_player_id: i64,
+        reconnected_player_username: String,
+    },
+
     /// List of available rooms (sent in response to list_rooms command)
     #[serde(rename = "room_list")]
     RoomList {
@@ -1052,7 +1183,7 @@ pub enum GameEvent {
 
     // ========== Enhanced Game Room Events ==========
 
-    /// Chat message sent
+    /// Chat message sent (generic - deprecated, use game-specific variants)
     #[serde(rename = "chat_message")]
     ChatMessage {
         room_id: String,
@@ -1064,11 +1195,68 @@ pub enum GameEvent {
         is_system: bool,
         timestamp: String,
     },
-    /// Chat history response
+    /// Chat history response (generic - deprecated, use game-specific variants)
     #[serde(rename = "chat_history")]
     ChatHistory {
         room_id: String,
         channel: String,
+        messages: Vec<serde_json::Value>,
+        socket_id: String,
+    },
+
+    // ========== Bigger Dice Game-Specific Chat Events ==========
+
+    /// Bigger Dice lobby chat message
+    #[serde(rename = "bigger_dice.lobby_chat")]
+    BiggerDiceLobbyChat {
+        room_id: String,
+        user_id: i64,
+        username: String,
+        avatar_id: Option<i64>,
+        content: String,
+        is_system: bool,
+        timestamp: String,
+    },
+    /// Bigger Dice player chat message
+    #[serde(rename = "bigger_dice.player_chat")]
+    BiggerDicePlayerChat {
+        room_id: String,
+        user_id: i64,
+        username: String,
+        avatar_id: Option<i64>,
+        content: String,
+        is_system: bool,
+        timestamp: String,
+    },
+    /// Bigger Dice spectator chat message
+    #[serde(rename = "bigger_dice.spectator_chat")]
+    BiggerDiceSpectatorChat {
+        room_id: String,
+        user_id: i64,
+        username: String,
+        avatar_id: Option<i64>,
+        content: String,
+        is_system: bool,
+        timestamp: String,
+    },
+    /// Bigger Dice lobby chat history
+    #[serde(rename = "bigger_dice.lobby_chat_history")]
+    BiggerDiceLobbyChatHistory {
+        room_id: String,
+        messages: Vec<serde_json::Value>,
+        socket_id: String,
+    },
+    /// Bigger Dice player chat history
+    #[serde(rename = "bigger_dice.player_chat_history")]
+    BiggerDicePlayerChatHistory {
+        room_id: String,
+        messages: Vec<serde_json::Value>,
+        socket_id: String,
+    },
+    /// Bigger Dice spectator chat history
+    #[serde(rename = "bigger_dice.spectator_chat_history")]
+    BiggerDiceSpectatorChatHistory {
+        room_id: String,
         messages: Vec<serde_json::Value>,
         socket_id: String,
     },
@@ -1180,12 +1368,30 @@ impl GameEvent {
             GameEvent::LobbyUpdated { .. } => "lobby_updated",
             GameEvent::BiggerDiceRolled { .. } => "bigger_dice.rolled",
             GameEvent::BiggerDiceRoundResult { .. } => "bigger_dice.round_result",
+            GameEvent::BiggerDiceTiebreakerStarted { .. } => "bigger_dice.tiebreaker_started",
             GameEvent::BiggerDiceState { .. } => "bigger_dice.state",
+            GameEvent::BiggerDiceGameOver { .. } => "bigger_dice.game_over",
+            // Tic Tac Toe events
+            GameEvent::TicTacToeMoved { .. } => "tic_tac_toe.moved",
+            GameEvent::TicTacToeGameResult { .. } => "tic_tac_toe.game_result",
+            GameEvent::TicTacToeMatchEnded { .. } => "tic_tac_toe.match_ended",
+            GameEvent::TicTacToeState { .. } => "tic_tac_toe.state",
+            GameEvent::TicTacToeTurnTimeout { .. } => "tic_tac_toe.turn_timeout",
+            GameEvent::TicTacToeMatchCancelled { .. } => "tic_tac_toe.match_cancelled",
+            GameEvent::TicTacToeGamePaused { .. } => "tic_tac_toe.game_paused",
+            GameEvent::TicTacToeGameResumed { .. } => "tic_tac_toe.game_resumed",
             GameEvent::RoomList { .. } => "room_list",
             GameEvent::RoomRemoved { .. } => "room_removed",
-            // Enhanced game room events
+            // Enhanced game room events (generic - deprecated)
             GameEvent::ChatMessage { .. } => "chat_message",
             GameEvent::ChatHistory { .. } => "chat_history",
+            // Bigger Dice game-specific chat events
+            GameEvent::BiggerDiceLobbyChat { .. } => "bigger_dice.lobby_chat",
+            GameEvent::BiggerDicePlayerChat { .. } => "bigger_dice.player_chat",
+            GameEvent::BiggerDiceSpectatorChat { .. } => "bigger_dice.spectator_chat",
+            GameEvent::BiggerDiceLobbyChatHistory { .. } => "bigger_dice.lobby_chat_history",
+            GameEvent::BiggerDicePlayerChatHistory { .. } => "bigger_dice.player_chat_history",
+            GameEvent::BiggerDiceSpectatorChatHistory { .. } => "bigger_dice.spectator_chat_history",
             GameEvent::UserMuted { .. } => "user_muted",
             GameEvent::UserUnmuted { .. } => "user_unmuted",
             GameEvent::PlayerDeselected { .. } => "player_deselected",
@@ -1233,6 +1439,36 @@ pub struct GameTurn {
     pub player_id: i64,
     pub action: serde_json::Value,
     pub timestamp: DateTime<Utc>,
+}
+
+/// Roll data for a single player in a round
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BiggerDicePlayerRoll {
+    pub user_id: i64,
+    pub username: String,
+    pub roll: i32,
+}
+
+/// Individual round result for BiggerDice (stored in MongoDB during gameplay)
+/// This allows rejoining players to see the full round history on the game over screen
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BiggerDiceRoundResult {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<mongodb::bson::oid::ObjectId>,
+    /// Room ID this round belongs to
+    pub room_id: String,
+    /// Sequential round number (1, 2, 3, ...)
+    pub round_number: i32,
+    /// Roll results for each player in this round
+    pub rolls: Vec<BiggerDicePlayerRoll>,
+    /// ID of the player who won this round (None if tie went to tiebreaker)
+    pub winner_id: Option<i64>,
+    /// Username of the winner
+    pub winner_username: Option<String>,
+    /// Whether this was a tiebreaker round
+    pub is_tiebreaker: bool,
+    /// When this round completed
+    pub completed_at: DateTime<Utc>,
 }
 
 /// Event envelope for Kafka messages (matches ws_gateway protocol)

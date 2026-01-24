@@ -12,6 +12,7 @@ pub mod email;
 pub mod gallery;
 pub mod gallery_like;
 pub mod game_chat_config;
+pub mod game_config;
 pub mod geo_place;
 pub mod localization;
 pub mod oauth;

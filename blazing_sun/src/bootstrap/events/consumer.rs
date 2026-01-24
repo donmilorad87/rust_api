@@ -181,7 +181,6 @@ impl EventConsumer {
         let is_gateway_topic = topic == super::topics::topic::GAMES_COMMANDS
             || topic == super::topics::topic::CHAT_COMMANDS
             || topic == super::topics::topic::GATEWAY_PRESENCE
-            || topic == super::topics::topic::CHECKOUT_EVENTS
             || topic == super::topics::topic::CHECKOUT_FINISHED;
 
         let event = if is_gateway_topic {

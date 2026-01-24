@@ -302,3 +302,70 @@ pub async fn add_balance(
 
     Ok(())
 }
+
+/// Deduct balance from user if they have sufficient funds.
+/// Returns Ok(new_balance) if successful, Err if insufficient funds or user not found.
+/// This is atomic - checks and deducts in a single query.
+pub async fn deduct_balance_if_sufficient(
+    db: &Pool<Postgres>,
+    user_id: i64,
+    amount_cents: i64,
+) -> Result<i64, DeductBalanceError> {
+    // Atomic check-and-deduct using WHERE clause
+    let result = sqlx::query!(
+        r#"
+        UPDATE users
+        SET balance = balance - $1, updated_at = NOW()
+        WHERE id = $2 AND balance >= $1
+        RETURNING balance
+        "#,
+        amount_cents,
+        user_id
+    )
+    .fetch_optional(db)
+    .await
+    .map_err(|e| DeductBalanceError::DatabaseError(e.to_string()))?;
+
+    match result {
+        Some(row) => Ok(row.balance),
+        None => {
+            // Check if user exists and their current balance
+            let user = sqlx::query!(
+                "SELECT balance FROM users WHERE id = $1",
+                user_id
+            )
+            .fetch_optional(db)
+            .await
+            .map_err(|e| DeductBalanceError::DatabaseError(e.to_string()))?;
+
+            match user {
+                Some(u) => Err(DeductBalanceError::InsufficientBalance {
+                    current: u.balance,
+                    required: amount_cents,
+                }),
+                None => Err(DeductBalanceError::UserNotFound),
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum DeductBalanceError {
+    InsufficientBalance { current: i64, required: i64 },
+    UserNotFound,
+    DatabaseError(String),
+}
+
+impl std::fmt::Display for DeductBalanceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DeductBalanceError::InsufficientBalance { current, required } => {
+                write!(f, "Insufficient balance: has {}, needs {}", current, required)
+            }
+            DeductBalanceError::UserNotFound => write!(f, "User not found"),
+            DeductBalanceError::DatabaseError(e) => write!(f, "Database error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for DeductBalanceError {}

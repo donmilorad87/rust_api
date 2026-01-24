@@ -53,6 +53,8 @@ services:
       - SESSION_COOKIE_PATH=${SESSION_COOKIE_PATH}
       - SESSION_KEY_PREFIX=${SESSION_KEY_PREFIX}
       - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
+      # Bigger Dice Game Configuration
+      - BIGGER_DICE_WINNING_PERCENTAGE=${BIGGER_DICE_WINNING_PERCENTAGE}
     volumes:
       - ./blazing_sun:/home/rust/blazing_sun
       - cargo-cache:/usr/local/cargo/registry
@@ -143,6 +145,14 @@ services:
     restart: unless-stopped
     depends_on:
       - rust
+      - grafana
+      - prometheus
+      - kafka-ui
+      - pgadmin
+      - pgadmin_checkout
+      - mongo-express
+      - checkout
+      - ws_gateway
     networks:
       devnet:
         ipv4_address: 172.28.0.12

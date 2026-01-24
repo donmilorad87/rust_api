@@ -36,6 +36,7 @@
                 data-room-name="{{ room_name | default(value='Bigger Dice') }}"
                 data-user-id="{{ user_id }}"
                 data-username="{{ user.first_name | default(value='Guest') }}"
+                data-balance="{{ user.balance | default(value=0) }}"
                 {% if user.avatar_url %}data-avatar-id="{{ user.avatar_url }}"{% endif %}
                 {% if is_lobby %}data-mode="lobby"{% else %}data-mode="game"{% endif %}
                 {% if is_spectator %}data-spectate="true"{% endif %}

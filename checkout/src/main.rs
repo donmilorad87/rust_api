@@ -20,15 +20,15 @@ mod stripe;
 mod types;
 
 use auth::{decode_token, extract_token};
-use types::{CheckoutCommand, CheckoutEvent, CheckoutFinishedEvent, CheckoutRequestEvent};
+use types::{CheckoutCommand, CheckoutFinishedEvent, CheckoutRequestEvent};
 
-// Existing topics (checkout.commands/checkout.events flow)
-const CHECKOUT_COMMANDS_TOPIC: &str = "checkout.commands";
-const CHECKOUT_EVENTS_TOPIC: &str = "checkout.events";
-
-// New topics (checkout/checkout_finished flow)
-const CHECKOUT_TOPIC: &str = "checkout";
-const CHECKOUT_FINISHED_TOPIC: &str = "checkout_finished";
+// Kafka topics
+const CHECKOUT_REQUESTS_TOPIC: &str = "checkout.requests";
+const CHECKOUT_FINISHED_TOPIC: &str = "checkout.finished";
+const BIGGER_DICE_PARTICIPATION_TOPIC: &str = "bigger_dice.participation_payed";
+const BIGGER_DICE_WIN_PRIZE_TOPIC: &str = "bigger_dice.win_prize";
+const TIC_TAC_TOE_PARTICIPATION_TOPIC: &str = "tic_tac_toe.participation_payed";
+const TIC_TAC_TOE_WIN_PRIZE_TOPIC: &str = "tic_tac_toe.win_prize";
 
 #[derive(Clone)]
 struct AppConfig {
@@ -115,26 +115,7 @@ impl KafkaProducer {
         Ok(Self { producer })
     }
 
-    async fn send_event(
-        &self,
-        event: &CheckoutEvent,
-        key: Option<&str>,
-    ) -> Result<(), String> {
-        let payload = serde_json::to_vec(event).map_err(|e| e.to_string())?;
-        let mut record = FutureRecord::to(CHECKOUT_EVENTS_TOPIC).payload(&payload);
-
-        if let Some(k) = key {
-            record = record.key(k);
-        }
-
-        self.producer
-            .send(record, Timeout::After(Duration::from_secs(5)))
-            .await
-            .map(|_| ())
-            .map_err(|(err, _)| err.to_string())
-    }
-
-    /// Send a CheckoutFinishedEvent to the checkout_finished topic
+    /// Send a CheckoutFinishedEvent to the checkout.finished topic
     async fn send_finished_event(
         &self,
         event: &CheckoutFinishedEvent,
@@ -220,12 +201,6 @@ struct TransactionsResponse {
     transactions: Vec<db::CheckoutTransaction>,
 }
 
-fn command_service_token(command: &CheckoutCommand) -> &str {
-    match command {
-        CheckoutCommand::CreateSession { service_token, .. } => service_token,
-    }
-}
-
 fn validate_service_token_value(expected: &str, actual: &str) -> Result<(), String> {
     if expected.is_empty() {
         return Err("Checkout service token not configured".to_string());
@@ -236,10 +211,6 @@ fn validate_service_token_value(expected: &str, actual: &str) -> Result<(), Stri
     }
 
     Ok(())
-}
-
-fn validate_service_token(state: &ServiceState, command: &CheckoutCommand) -> Result<(), String> {
-    validate_service_token_value(&state.service_token, command_service_token(command))
 }
 
 fn request_base_url(req: &HttpRequest) -> String {
@@ -426,88 +397,8 @@ async fn create_checkout_session(
     Ok(session)
 }
 
-async fn handle_command(state: &ServiceState, command: CheckoutCommand) {
-    let request_id = match &command {
-        CheckoutCommand::CreateSession { request_id, .. } => request_id.clone(),
-    };
-    let metadata = match &command {
-        CheckoutCommand::CreateSession { metadata, .. } => metadata.clone(),
-    };
-    let (user_id, amount_cents, currency, purpose) = match &command {
-        CheckoutCommand::CreateSession {
-            user_id,
-            amount_cents,
-            currency,
-            purpose,
-            ..
-        } => (*user_id, *amount_cents, currency.clone(), purpose.clone()),
-    };
-
-    let event = match create_checkout_session(state, &command).await {
-        Ok(session) => {
-            if let Err(err) = db::upsert_session_created(
-                &state.db,
-                &request_id,
-                user_id,
-                amount_cents,
-                &currency,
-                &purpose,
-                &session.id,
-                session.url.as_deref(),
-                &metadata,
-            )
-            .await
-            {
-                warn!("Failed to record checkout session: {}", err);
-            }
-
-            CheckoutEvent::SessionCreated {
-                request_id: request_id.clone(),
-                user_id,
-                amount_cents,
-                currency,
-                session_id: session.id,
-                session_url: session.url.unwrap_or_default(),
-                purpose,
-                metadata,
-                created_at: Utc::now().to_rfc3339(),
-            }
-        }
-        Err(error_message) => {
-            if let Err(err) = db::upsert_session_failed(
-                &state.db,
-                &request_id,
-                user_id,
-                amount_cents,
-                &currency,
-                &purpose,
-                &error_message,
-                &metadata,
-            )
-            .await
-            {
-                warn!("Failed to record checkout failure: {}", err);
-            }
-
-            CheckoutEvent::SessionFailed {
-                request_id: request_id.clone(),
-                user_id,
-                amount_cents,
-                currency,
-                error: error_message,
-                purpose,
-                failed_at: Utc::now().to_rfc3339(),
-            }
-        }
-    };
-
-    if let Err(err) = state.producer.send_event(&event, Some(&request_id)).await {
-        warn!("Failed to publish checkout event: {}", err);
-    }
-}
-
-/// Handle a checkout request from the new "checkout" topic
-/// Creates a Stripe session and publishes result to "checkout_finished" topic
+/// Handle a checkout request from the "checkout.requests" topic
+/// Creates a Stripe session and publishes result to "checkout.finished" topic
 async fn handle_checkout_request(state: &ServiceState, request: CheckoutRequestEvent) {
     let request_id = request.request_id.clone();
     let user_id = request.user_id;
@@ -568,7 +459,7 @@ async fn handle_checkout_request(state: &ServiceState, request: CheckoutRequestE
     }
 }
 
-/// Process a message from the "checkout" topic (new flow)
+/// Process a message from the "checkout.requests" topic
 async fn process_checkout_request(
     state: &ServiceState,
     msg: &BorrowedMessage<'_>,
@@ -581,57 +472,333 @@ async fn process_checkout_request(
         request_id = %request.request_id,
         user_id = %request.user_id,
         amount_cents = %request.amount_cents,
-        "Processing checkout request from checkout topic"
+        "Processing checkout request from checkout.requests topic"
     );
 
     handle_checkout_request(state, request).await;
     Ok(())
 }
 
-async fn process_message(
+/// Event received from game.participation topic when a player is selected for a game
+#[derive(Debug, Deserialize)]
+struct GameParticipationEvent {
+    event_id: String,
+    user_id: i64,
+    amount_cents: i64,
+    game_type: String,
+    room_id: String,
+    room_name: String,
+    username: Option<String>,
+    description: String,
+    timestamp: String,
+}
+
+/// Handle a Bigger Dice participation event from the "bigger_dice.participation_payed" topic
+/// Creates a transaction record for the balance deduction
+async fn handle_bigger_dice_participation(state: &ServiceState, event: GameParticipationEvent) {
+    let request_id = event.event_id.clone();
+
+    // Amount should be stored as negative since it's a deduction
+    let amount_cents = -(event.amount_cents.abs());
+
+    let metadata = json!({
+        "username": event.username,
+        "timestamp": event.timestamp,
+        "description": event.description,
+    });
+
+    match db::create_bigger_dice_participation(
+        &state.db,
+        &request_id,
+        event.user_id,
+        amount_cents,
+        &event.room_id,
+        &event.room_name,
+        &metadata,
+    )
+    .await
+    {
+        Ok(created) => {
+            if created {
+                info!(
+                    request_id = %request_id,
+                    user_id = %event.user_id,
+                    amount = %amount_cents,
+                    room_id = %event.room_id,
+                    "Created Bigger Dice participation transaction"
+                );
+            } else {
+                warn!(
+                    request_id = %request_id,
+                    "Bigger Dice participation transaction already exists (duplicate event)"
+                );
+            }
+        }
+        Err(err) => {
+            error!(
+                request_id = %request_id,
+                user_id = %event.user_id,
+                error = %err,
+                "Failed to create Bigger Dice participation transaction"
+            );
+        }
+    }
+}
+
+/// Process a message from the "bigger_dice.participation_payed" topic
+async fn process_bigger_dice_participation(
     state: &ServiceState,
     msg: &BorrowedMessage<'_>,
 ) -> Result<(), String> {
     let payload = msg.payload().ok_or_else(|| "Empty payload".to_string())?;
-    let command: CheckoutCommand =
+    let event: GameParticipationEvent =
         serde_json::from_slice(payload).map_err(|err| err.to_string())?;
 
-    if let Err(error_message) = validate_service_token(state, &command) {
-        warn!("Rejected checkout command: {}", error_message);
+    info!(
+        event_id = %event.event_id,
+        user_id = %event.user_id,
+        amount_cents = %event.amount_cents,
+        room_id = %event.room_id,
+        "Processing Bigger Dice participation event"
+    );
 
-        if let CheckoutCommand::CreateSession {
-            request_id,
-            user_id,
-            amount_cents,
-            currency,
-            purpose,
-            ..
-        } = &command
-        {
-            let event = CheckoutEvent::SessionFailed {
-                request_id: request_id.clone(),
-                user_id: *user_id,
-                amount_cents: *amount_cents,
-                currency: currency.clone(),
-                error: error_message.clone(),
-                purpose: purpose.clone(),
-                failed_at: Utc::now().to_rfc3339(),
-            };
+    handle_bigger_dice_participation(state, event).await;
+    Ok(())
+}
 
-            if let Err(err) = state.producer.send_event(&event, Some(request_id)).await {
-                warn!("Failed to publish checkout auth failure: {}", err);
+/// Event received from bigger_dice.win_prize topic when a player wins a game
+#[derive(Debug, Deserialize)]
+struct GamePrizeWinEvent {
+    event_id: String,
+    user_id: i64,
+    amount_cents: i64,
+    game_type: String,
+    room_id: String,
+    room_name: String,
+    username: Option<String>,
+    total_players: usize,
+    description: String,
+    timestamp: String,
+}
+
+/// Handle a Bigger Dice prize win event from the "bigger_dice.win_prize" topic
+/// Creates a transaction record for the prize awarded to the winner
+async fn handle_bigger_dice_prize_win(state: &ServiceState, event: GamePrizeWinEvent) {
+    let request_id = event.event_id.clone();
+
+    // Amount is positive since it's a prize (credit to user)
+    let amount_cents = event.amount_cents.abs();
+
+    let metadata = json!({
+        "username": event.username,
+        "timestamp": event.timestamp,
+        "description": event.description,
+        "total_players": event.total_players,
+    });
+
+    match db::create_bigger_dice_prize_win(
+        &state.db,
+        &request_id,
+        event.user_id,
+        amount_cents,
+        &event.room_id,
+        &event.room_name,
+        &metadata,
+    )
+    .await
+    {
+        Ok(created) => {
+            if created {
+                info!(
+                    request_id = %request_id,
+                    user_id = %event.user_id,
+                    amount = %amount_cents,
+                    room_id = %event.room_id,
+                    "Created Bigger Dice prize win transaction"
+                );
+            } else {
+                warn!(
+                    request_id = %request_id,
+                    "Bigger Dice prize win transaction already exists (duplicate event)"
+                );
             }
         }
-
-        return Ok(());
-    }
-
-    match command {
-        CheckoutCommand::CreateSession { .. } => {
-            handle_command(state, command).await;
+        Err(err) => {
+            error!(
+                request_id = %request_id,
+                user_id = %event.user_id,
+                error = %err,
+                "Failed to create Bigger Dice prize win transaction"
+            );
         }
     }
+}
 
+/// Process a message from the "bigger_dice.win_prize" topic
+async fn process_bigger_dice_prize_win(
+    state: &ServiceState,
+    msg: &BorrowedMessage<'_>,
+) -> Result<(), String> {
+    let payload = msg.payload().ok_or_else(|| "Empty payload".to_string())?;
+    let event: GamePrizeWinEvent =
+        serde_json::from_slice(payload).map_err(|err| err.to_string())?;
+
+    info!(
+        event_id = %event.event_id,
+        user_id = %event.user_id,
+        amount_cents = %event.amount_cents,
+        room_id = %event.room_id,
+        "Processing Bigger Dice prize win event"
+    );
+
+    handle_bigger_dice_prize_win(state, event).await;
+    Ok(())
+}
+
+/// Handle a Tic Tac Toe participation event from the "tic_tac_toe.participation_payed" topic
+/// Creates a transaction record for the balance deduction
+async fn handle_tic_tac_toe_participation(state: &ServiceState, event: GameParticipationEvent) {
+    let request_id = event.event_id.clone();
+
+    // Amount should be stored as negative since it's a deduction
+    let amount_cents = -(event.amount_cents.abs());
+
+    let metadata = json!({
+        "username": event.username,
+        "timestamp": event.timestamp,
+        "description": event.description,
+    });
+
+    match db::create_tic_tac_toe_participation(
+        &state.db,
+        &request_id,
+        event.user_id,
+        amount_cents,
+        &event.room_id,
+        &event.room_name,
+        &metadata,
+    )
+    .await
+    {
+        Ok(created) => {
+            if created {
+                info!(
+                    request_id = %request_id,
+                    user_id = %event.user_id,
+                    amount = %amount_cents,
+                    room_id = %event.room_id,
+                    "Created Tic Tac Toe participation transaction"
+                );
+            } else {
+                warn!(
+                    request_id = %request_id,
+                    "Tic Tac Toe participation transaction already exists (duplicate event)"
+                );
+            }
+        }
+        Err(err) => {
+            error!(
+                request_id = %request_id,
+                user_id = %event.user_id,
+                error = %err,
+                "Failed to create Tic Tac Toe participation transaction"
+            );
+        }
+    }
+}
+
+/// Process a message from the "tic_tac_toe.participation_payed" topic
+async fn process_tic_tac_toe_participation(
+    state: &ServiceState,
+    msg: &BorrowedMessage<'_>,
+) -> Result<(), String> {
+    let payload = msg.payload().ok_or_else(|| "Empty payload".to_string())?;
+    let event: GameParticipationEvent =
+        serde_json::from_slice(payload).map_err(|err| err.to_string())?;
+
+    info!(
+        event_id = %event.event_id,
+        user_id = %event.user_id,
+        amount_cents = %event.amount_cents,
+        room_id = %event.room_id,
+        "Processing Tic Tac Toe participation event"
+    );
+
+    handle_tic_tac_toe_participation(state, event).await;
+    Ok(())
+}
+
+/// Handle a Tic Tac Toe prize win event from the "tic_tac_toe.win_prize" topic
+/// Creates a transaction record for the prize awarded to the winner
+async fn handle_tic_tac_toe_prize_win(state: &ServiceState, event: GamePrizeWinEvent) {
+    let request_id = event.event_id.clone();
+
+    // Amount is positive since it's a prize (credit to user)
+    let amount_cents = event.amount_cents.abs();
+
+    let metadata = json!({
+        "username": event.username,
+        "timestamp": event.timestamp,
+        "description": event.description,
+        "total_players": event.total_players,
+    });
+
+    match db::create_tic_tac_toe_prize_win(
+        &state.db,
+        &request_id,
+        event.user_id,
+        amount_cents,
+        &event.room_id,
+        &event.room_name,
+        &metadata,
+    )
+    .await
+    {
+        Ok(created) => {
+            if created {
+                info!(
+                    request_id = %request_id,
+                    user_id = %event.user_id,
+                    amount = %amount_cents,
+                    room_id = %event.room_id,
+                    "Created Tic Tac Toe prize win transaction"
+                );
+            } else {
+                warn!(
+                    request_id = %request_id,
+                    "Tic Tac Toe prize win transaction already exists (duplicate event)"
+                );
+            }
+        }
+        Err(err) => {
+            error!(
+                request_id = %request_id,
+                user_id = %event.user_id,
+                error = %err,
+                "Failed to create Tic Tac Toe prize win transaction"
+            );
+        }
+    }
+}
+
+/// Process a message from the "tic_tac_toe.win_prize" topic
+async fn process_tic_tac_toe_prize_win(
+    state: &ServiceState,
+    msg: &BorrowedMessage<'_>,
+) -> Result<(), String> {
+    let payload = msg.payload().ok_or_else(|| "Empty payload".to_string())?;
+    let event: GamePrizeWinEvent =
+        serde_json::from_slice(payload).map_err(|err| err.to_string())?;
+
+    info!(
+        event_id = %event.event_id,
+        user_id = %event.user_id,
+        amount_cents = %event.amount_cents,
+        room_id = %event.room_id,
+        "Processing Tic Tac Toe prize win event"
+    );
+
+    handle_tic_tac_toe_prize_win(state, event).await;
     Ok(())
 }
 
@@ -645,33 +812,49 @@ async fn run_consumer(state: Arc<ServiceState>, config: &AppConfig) -> Result<()
         .create()
         .map_err(|err| err.to_string())?;
 
-    // Subscribe to both old and new checkout topics
+    // Subscribe to checkout requests and game event topics
     consumer
-        .subscribe(&[CHECKOUT_COMMANDS_TOPIC, CHECKOUT_TOPIC])
+        .subscribe(&[
+            CHECKOUT_REQUESTS_TOPIC,
+            BIGGER_DICE_PARTICIPATION_TOPIC,
+            BIGGER_DICE_WIN_PRIZE_TOPIC,
+            TIC_TAC_TOE_PARTICIPATION_TOPIC,
+            TIC_TAC_TOE_WIN_PRIZE_TOPIC,
+        ])
         .map_err(|err| err.to_string())?;
 
     info!(
-        "Checkout consumer subscribed to {} and {}",
-        CHECKOUT_COMMANDS_TOPIC, CHECKOUT_TOPIC
+        "Checkout consumer subscribed to topics: {}, {}, {}, {}, {}",
+        CHECKOUT_REQUESTS_TOPIC,
+        BIGGER_DICE_PARTICIPATION_TOPIC,
+        BIGGER_DICE_WIN_PRIZE_TOPIC,
+        TIC_TAC_TOE_PARTICIPATION_TOPIC,
+        TIC_TAC_TOE_WIN_PRIZE_TOPIC
     );
 
     loop {
         match consumer.recv().await {
             Ok(msg) => {
+                // Route message to appropriate handler based on topic
                 let topic = msg.topic();
-
-                let result = if topic == CHECKOUT_TOPIC {
-                    // New flow: checkout -> checkout_finished
+                let result = if topic == CHECKOUT_REQUESTS_TOPIC {
                     process_checkout_request(&state, &msg).await
+                } else if topic == BIGGER_DICE_PARTICIPATION_TOPIC {
+                    process_bigger_dice_participation(&state, &msg).await
+                } else if topic == BIGGER_DICE_WIN_PRIZE_TOPIC {
+                    process_bigger_dice_prize_win(&state, &msg).await
+                } else if topic == TIC_TAC_TOE_PARTICIPATION_TOPIC {
+                    process_tic_tac_toe_participation(&state, &msg).await
+                } else if topic == TIC_TAC_TOE_WIN_PRIZE_TOPIC {
+                    process_tic_tac_toe_prize_win(&state, &msg).await
                 } else {
-                    // Existing flow: checkout.commands -> checkout.events
-                    process_message(&state, &msg).await
+                    warn!("Unknown topic: {}", topic);
+                    Ok(())
                 };
 
                 if let Err(err) = result {
                     error!("Failed to process message from {}: {}", topic, err);
                 }
-
                 let _ = consumer.commit_message(&msg, CommitMode::Async);
             }
             Err(err) => {
@@ -961,23 +1144,6 @@ async fn stripe_webhook(
         {
             Ok(should_emit) => {
                 if should_emit {
-                    // Publish to existing checkout.events topic
-                    let event = CheckoutEvent::PaymentFailed {
-                        request_id: request_id.clone(),
-                        user_id,
-                        amount_cents,
-                        currency: currency.clone(),
-                        session_id: session_id.clone(),
-                        error: failure_reason.clone(),
-                        purpose: purpose.clone(),
-                        failed_at: Utc::now().to_rfc3339(),
-                    };
-
-                    if let Err(err) = state.producer.send_event(&event, Some(&request_id)).await {
-                        warn!("Failed to publish checkout failure event: {}", err);
-                    }
-
-                    // Also publish to new checkout_finished topic
                     let finished_event = CheckoutFinishedEvent::failed(
                         request_id.clone(),
                         user_id,
@@ -1043,24 +1209,6 @@ async fn stripe_webhook(
     };
 
     if should_emit {
-        // Publish to existing checkout.events topic
-        let event = CheckoutEvent::PaymentSucceeded {
-            request_id: request_id.clone(),
-            user_id,
-            amount_cents,
-            currency: currency.clone(),
-            session_id: session_id.clone(),
-            payment_intent_id: payment_intent_id.clone(),
-            purpose: purpose.clone(),
-            metadata,
-            paid_at: Utc::now().to_rfc3339(),
-        };
-
-        if let Err(err) = state.producer.send_event(&event, Some(&request_id)).await {
-            warn!("Failed to publish checkout payment event: {}", err);
-        }
-
-        // Also publish to new checkout_finished topic
         let finished_event = CheckoutFinishedEvent::success(
             request_id.clone(),
             user_id,
@@ -1076,7 +1224,7 @@ async fn stripe_webhook(
             .send_finished_event(&finished_event, Some(&request_id))
             .await
         {
-            warn!("Failed to publish checkout_finished success event: {}", err);
+            warn!("Failed to publish checkout_finished event: {}", err);
         }
     } else {
         return HttpResponse::Ok().json(BaseResponse::success("Payment already processed"));

@@ -1,42 +1,112 @@
 //! Bigger Dice game logic
 //!
 //! Rules:
-//! - 2 players take turns rolling a single die (1-6)
-//! - Each round, both players roll once
-//! - Higher roll wins the round and gets 1 point
-//! - Ties: both players re-roll until there's a winner
+//! - N players (2-10) take turns rolling a single die (1-6)
+//! - Each round, all active players roll once
+//! - After all players roll, compare all rolls to find highest
+//! - If ONE player has highest roll, they get 1 point and new round starts
+//! - If MULTIPLE players tie for highest, only those players enter a tiebreaker
+//! - In tiebreaker, only tied players roll again
+//! - Repeat tiebreaker until one clear winner emerges
+//! - Award the point to the tiebreaker winner
 //! - First to reach 10 points wins the game
 
 use super::types::{GameEvent, GameRoom, GameTurn, RoomStatus};
 use chrono::Utc;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use tracing::info;
 
 /// Win score for Bigger Dice
 pub const WIN_SCORE: i32 = 10;
 
-/// Bigger Dice round state
+/// Maximum number of tiebreaker iterations to prevent infinite loops
+const MAX_TIEBREAKER_ITERATIONS: i32 = 100;
+
+/// Bigger Dice round state for N players
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BiggerDiceRoundState {
+    /// Current round number (increments after each point is awarded)
     pub round_number: i32,
-    pub player1_roll: Option<i32>,
-    pub player2_roll: Option<i32>,
-    pub waiting_for_player: Option<i64>,
-    pub last_player1_roll: Option<i32>,
-    pub last_player2_roll: Option<i32>,
+    /// Rolls for current round: player_id -> roll value
+    pub current_round_rolls: HashMap<i64, i32>,
+    /// Players who need to roll in this round (all players or tiebreaker subset)
+    pub active_rollers: Vec<i64>,
+    /// Index of current roller in active_rollers
+    pub current_roller_index: usize,
+    /// Whether we are in a tiebreaker sub-round
+    pub is_tiebreaker: bool,
+    /// Tiebreaker iteration count (for safety limit)
+    pub tiebreaker_iteration: i32,
+    /// Last completed round's rolls for display (player_id -> roll)
+    pub last_round_rolls: HashMap<i64, i32>,
 }
 
 impl Default for BiggerDiceRoundState {
     fn default() -> Self {
         Self {
             round_number: 1,
-            player1_roll: None,
-            player2_roll: None,
-            waiting_for_player: None,
-            last_player1_roll: None,
-            last_player2_roll: None,
+            current_round_rolls: HashMap::new(),
+            active_rollers: Vec::new(),
+            current_roller_index: 0,
+            is_tiebreaker: false,
+            tiebreaker_iteration: 0,
+            last_round_rolls: HashMap::new(),
         }
+    }
+}
+
+impl BiggerDiceRoundState {
+    /// Initialize round state with all players as active rollers
+    pub fn initialize(&mut self, players: &[i64]) {
+        self.current_round_rolls.clear();
+        self.active_rollers = players.to_vec();
+        self.current_roller_index = 0;
+        self.is_tiebreaker = false;
+        self.tiebreaker_iteration = 0;
+    }
+
+    /// Start a new round (after point is awarded)
+    pub fn start_new_round(&mut self, players: &[i64]) {
+        self.round_number += 1;
+        self.last_round_rolls = self.current_round_rolls.clone();
+        self.current_round_rolls.clear();
+        self.active_rollers = players.to_vec();
+        self.current_roller_index = 0;
+        self.is_tiebreaker = false;
+        self.tiebreaker_iteration = 0;
+    }
+
+    /// Start a tiebreaker with only the tied players
+    pub fn start_tiebreaker(&mut self, tied_players: Vec<i64>) {
+        self.last_round_rolls = self.current_round_rolls.clone();
+        self.current_round_rolls.clear();
+        self.active_rollers = tied_players;
+        self.current_roller_index = 0;
+        self.is_tiebreaker = true;
+        self.tiebreaker_iteration += 1;
+    }
+
+    /// Get current roller (the player whose turn it is)
+    pub fn current_roller(&self) -> Option<i64> {
+        self.active_rollers.get(self.current_roller_index).copied()
+    }
+
+    /// Record a roll and advance to next roller
+    pub fn record_roll(&mut self, player_id: i64, roll: i32) {
+        self.current_round_rolls.insert(player_id, roll);
+        self.current_roller_index += 1;
+    }
+
+    /// Check if all active rollers have rolled
+    pub fn all_rolled(&self) -> bool {
+        self.current_roller_index >= self.active_rollers.len()
+    }
+
+    /// Check if tiebreaker safety limit exceeded
+    pub fn tiebreaker_limit_exceeded(&self) -> bool {
+        self.tiebreaker_iteration >= MAX_TIEBREAKER_ITERATIONS
     }
 }
 
@@ -46,7 +116,27 @@ pub fn roll_die() -> i32 {
     rng.gen_range(1..=6)
 }
 
-/// Process a dice roll for a player
+/// Find players with the highest roll from a set of rolls
+/// Returns (highest_roll, vec of player_ids who rolled that value)
+/// The returned players are in the same order as `roll_order` (original roll sequence)
+fn find_highest_rollers(rolls: &HashMap<i64, i32>, roll_order: &[i64]) -> (i32, Vec<i64>) {
+    if rolls.is_empty() {
+        return (0, Vec::new());
+    }
+
+    let max_roll = rolls.values().copied().max().unwrap_or(0);
+
+    // Filter players who have the highest roll, preserving original roll order
+    let highest_players: Vec<i64> = roll_order
+        .iter()
+        .filter(|&player_id| rolls.get(player_id).copied() == Some(max_roll))
+        .copied()
+        .collect();
+
+    (max_roll, highest_players)
+}
+
+/// Process a dice roll for a player in N-player mode
 /// Returns (events, game_ended)
 pub fn process_roll(
     room: &mut GameRoom,
@@ -60,26 +150,22 @@ pub fn process_roll(
         return (events, false);
     }
 
-    // Roll the die
-    let roll = roll_die();
-
-    // Get player info
-    let player = room.get_player_mut(player_id);
-    if player.is_none() {
+    // Validate player is in active rollers
+    if !round_state.active_rollers.contains(&player_id) {
         return (events, false);
     }
 
-    // Record the roll
-    let is_player1 = room.players.get(0).map(|p| p.user_id) == Some(player_id);
-    let player_username = room.get_player(player_id).map(|p| p.username.clone()).unwrap_or_default();
+    // Get player info
+    let player_username = match room.get_player(player_id) {
+        Some(p) => p.username.clone(),
+        None => return (events, false),
+    };
 
-    if is_player1 {
-        round_state.player1_roll = Some(roll);
-        round_state.last_player1_roll = Some(roll);
-    } else {
-        round_state.player2_roll = Some(roll);
-        round_state.last_player2_roll = Some(roll);
-    }
+    // Roll the die
+    let roll = roll_die();
+
+    // Record the roll
+    round_state.record_roll(player_id, roll);
 
     // Emit roll event
     events.push(GameEvent::BiggerDiceRolled {
@@ -94,108 +180,30 @@ pub fn process_roll(
         room_id = %room.room_id,
         player_id = %player_id,
         roll = %roll,
+        is_tiebreaker = %round_state.is_tiebreaker,
+        active_rollers = ?round_state.active_rollers,
+        rolls_so_far = ?round_state.current_round_rolls,
         "Bigger Dice: Player rolled"
     );
 
-    // Check if both players have rolled
-    if round_state.player1_roll.is_some() && round_state.player2_roll.is_some() {
-        let p1_roll = round_state.player1_roll.unwrap();
-        let p2_roll = round_state.player2_roll.unwrap();
-        let player1_id = room.players.get(0).map(|p| p.user_id).unwrap_or(0);
-        let player2_id = room.players.get(1).map(|p| p.user_id).unwrap_or(0);
+    // Check if all active rollers have rolled
+    if round_state.all_rolled() {
+        // Evaluate the round
+        let (round_events, game_ended) = evaluate_round(room, round_state);
+        events.extend(round_events);
 
-        let (winner_id, is_tie) = if p1_roll > p2_roll {
-            (Some(player1_id), false)
-        } else if p2_roll > p1_roll {
-            (Some(player2_id), false)
-        } else {
-            (None, true)
-        };
-
-        // Emit round result
-        events.push(GameEvent::BiggerDiceRoundResult {
-            room_id: room.room_id.clone(),
-            player1_id,
-            player1_roll: p1_roll,
-            player2_id,
-            player2_roll: p2_roll,
-            winner_id,
-            is_tie,
-        });
-
-        if let Some(winner) = winner_id {
-            // Award point to winner
-            if let Some(p) = room.get_player_mut(winner) {
-                p.score += 1;
-            }
-
-            // Check for game end
-            let winner_score = room.get_player(winner).map(|p| p.score).unwrap_or(0);
-            if winner_score >= WIN_SCORE {
-                // Game over!
-                room.status = RoomStatus::Finished;
-                room.winner_id = Some(winner);
-                room.finished_at = Some(Utc::now());
-
-                let winner_username = room.get_player(winner).map(|p| p.username.clone()).unwrap_or_default();
-                let final_scores: Vec<(i64, String, i32)> = room.players
-                    .iter()
-                    .map(|p| (p.user_id, p.username.clone(), p.score))
-                    .collect();
-
-                events.push(GameEvent::GameEnded {
-                    room_id: room.room_id.clone(),
-                    winner_id: winner,
-                    winner_username,
-                    final_scores,
-                });
-
-                return (events, true);
-            }
-
-            // Start new round - winner goes first
-            round_state.round_number += 1;
-            round_state.player1_roll = None;
-            round_state.player2_roll = None;
-            round_state.waiting_for_player = None;
-
-            room.turn_number += 1;
-            room.current_turn = Some(player1_id); // Player 1 always starts each round
-
-            events.push(GameEvent::TurnChanged {
-                room_id: room.room_id.clone(),
-                current_turn: player1_id,
-                turn_number: room.turn_number,
-            });
-        } else {
-            // Tie - both players re-roll
-            round_state.player1_roll = None;
-            round_state.player2_roll = None;
-            round_state.waiting_for_player = None;
-
-            room.current_turn = Some(player1_id);
-
-            events.push(GameEvent::TurnChanged {
-                room_id: room.room_id.clone(),
-                current_turn: player1_id,
-                turn_number: room.turn_number,
-            });
+        if game_ended {
+            return (events, true);
         }
     } else {
-        // Switch to other player
-        let other_player = if is_player1 {
-            room.players.get(1).map(|p| p.user_id)
-        } else {
-            room.players.get(0).map(|p| p.user_id)
-        };
-
-        if let Some(other_id) = other_player {
-            room.current_turn = Some(other_id);
-            round_state.waiting_for_player = Some(other_id);
+        // Move to next roller
+        if let Some(next_roller) = round_state.current_roller() {
+            room.current_turn = Some(next_roller);
+            room.turn_number += 1;
 
             events.push(GameEvent::TurnChanged {
                 room_id: room.room_id.clone(),
-                current_turn: other_id,
+                current_turn: next_roller,
                 turn_number: room.turn_number,
             });
         }
@@ -204,12 +212,188 @@ pub fn process_roll(
     (events, false)
 }
 
-/// Start a new Bigger Dice game
-pub fn start_game(room: &mut GameRoom) -> Vec<GameEvent> {
+/// Evaluate the round after all active rollers have rolled
+/// Returns (events, game_ended)
+fn evaluate_round(
+    room: &mut GameRoom,
+    round_state: &mut BiggerDiceRoundState,
+) -> (Vec<GameEvent>, bool) {
     let mut events = Vec::new();
 
-    if room.players.len() != 2 {
-        return events;
+    // Find the highest rollers (preserving original roll order for tiebreakers)
+    let (highest_roll, highest_players) = find_highest_rollers(
+        &round_state.current_round_rolls,
+        &round_state.active_rollers,
+    );
+
+    // Build rolls data for the event
+    let rolls: Vec<(i64, i32)> = round_state
+        .current_round_rolls
+        .iter()
+        .map(|(&pid, &roll)| (pid, roll))
+        .collect();
+
+    // Determine result
+    let is_tie = highest_players.len() > 1;
+    let winner_id = if highest_players.len() == 1 {
+        Some(highest_players[0])
+    } else {
+        None
+    };
+
+    // If there's a single winner, award the point BEFORE creating the event
+    // This ensures the scores in the event reflect the updated state
+    if let Some(winner) = winner_id {
+        if let Some(p) = room.get_player_mut(winner) {
+            p.score += 1;
+        }
+    }
+
+    // Build authoritative scores for all players (after point is awarded)
+    let scores: Vec<(i64, i32)> = room
+        .players
+        .iter()
+        .map(|p| (p.user_id, p.score))
+        .collect();
+
+    // Emit round result event with authoritative scores
+    events.push(GameEvent::BiggerDiceRoundResult {
+        room_id: room.room_id.clone(),
+        rolls: rolls.clone(),
+        winner_id,
+        is_tie,
+        is_tiebreaker: round_state.is_tiebreaker,
+        tiebreaker_players: if is_tie { highest_players.clone() } else { Vec::new() },
+        scores,
+    });
+
+    info!(
+        room_id = %room.room_id,
+        highest_roll = %highest_roll,
+        highest_players = ?highest_players,
+        is_tie = %is_tie,
+        is_tiebreaker = %round_state.is_tiebreaker,
+        "Bigger Dice: Round evaluated"
+    );
+
+    if let Some(winner) = winner_id {
+        // Point was already awarded before creating the round result event
+        let winner_score = room.get_player(winner).map(|p| p.score).unwrap_or(0);
+
+        info!(
+            room_id = %room.room_id,
+            winner_id = %winner,
+            winner_score = %winner_score,
+            "Bigger Dice: Point awarded"
+        );
+
+        // Check for game end
+        if winner_score >= WIN_SCORE {
+            // Game over
+            room.status = RoomStatus::Finished;
+            room.winner_id = Some(winner);
+            room.finished_at = Some(Utc::now());
+
+            let winner_username = room
+                .get_player(winner)
+                .map(|p| p.username.clone())
+                .unwrap_or_default();
+            let final_scores: Vec<(i64, String, i32)> = room
+                .players
+                .iter()
+                .map(|p| (p.user_id, p.username.clone(), p.score))
+                .collect();
+
+            events.push(GameEvent::BiggerDiceGameOver {
+                room_id: room.room_id.clone(),
+                winner_id: winner,
+                winner_username,
+                final_scores,
+            });
+
+            return (events, true);
+        }
+
+        // Start new round with all players
+        let all_players: Vec<i64> = room.players.iter().map(|p| p.user_id).collect();
+        round_state.start_new_round(&all_players);
+
+        // First player in list starts the new round
+        if let Some(first_roller) = round_state.current_roller() {
+            room.current_turn = Some(first_roller);
+            room.turn_number += 1;
+
+            events.push(GameEvent::TurnChanged {
+                room_id: room.room_id.clone(),
+                current_turn: first_roller,
+                turn_number: room.turn_number,
+            });
+        }
+    } else {
+        // Tie - start tiebreaker with only the tied players
+        if round_state.tiebreaker_limit_exceeded() {
+            // Safety limit exceeded - pick random winner from tied players
+            let random_winner = highest_players[0]; // Just pick first one
+            if let Some(p) = room.get_player_mut(random_winner) {
+                p.score += 1;
+            }
+
+            info!(
+                room_id = %room.room_id,
+                random_winner = %random_winner,
+                "Bigger Dice: Tiebreaker limit exceeded, random winner selected"
+            );
+
+            // Start new round
+            let all_players: Vec<i64> = room.players.iter().map(|p| p.user_id).collect();
+            round_state.start_new_round(&all_players);
+
+            if let Some(first_roller) = round_state.current_roller() {
+                room.current_turn = Some(first_roller);
+                room.turn_number += 1;
+
+                events.push(GameEvent::TurnChanged {
+                    room_id: room.room_id.clone(),
+                    current_turn: first_roller,
+                    turn_number: room.turn_number,
+                });
+            }
+        } else {
+            // Start tiebreaker
+            events.push(GameEvent::BiggerDiceTiebreakerStarted {
+                room_id: room.room_id.clone(),
+                tied_players: highest_players.clone(),
+                tied_roll: highest_roll,
+            });
+
+            round_state.start_tiebreaker(highest_players);
+
+            // First tied player rolls
+            if let Some(first_roller) = round_state.current_roller() {
+                room.current_turn = Some(first_roller);
+                room.turn_number += 1;
+
+                events.push(GameEvent::TurnChanged {
+                    room_id: room.room_id.clone(),
+                    current_turn: first_roller,
+                    turn_number: room.turn_number,
+                });
+            }
+        }
+    }
+
+    (events, false)
+}
+
+/// Start a new Bigger Dice game
+/// Returns (events, round_state) - caller must store the round_state
+pub fn start_game(room: &mut GameRoom) -> (Vec<GameEvent>, BiggerDiceRoundState) {
+    let mut events = Vec::new();
+    let mut round_state = BiggerDiceRoundState::default();
+
+    // Require minimum 2 players to start (supports 2+ players)
+    if room.players.len() < 2 {
+        return (events, round_state);
     }
 
     // Reset scores
@@ -221,10 +405,12 @@ pub fn start_game(room: &mut GameRoom) -> Vec<GameEvent> {
     room.started_at = Some(Utc::now());
     room.turn_number = 1;
 
-    // Randomly pick who goes first
-    let mut rng = rand::thread_rng();
-    let first_player_idx = rng.gen_range(0..2);
-    let first_player = room.players[first_player_idx].user_id;
+    // Initialize round state with all players
+    let all_player_ids: Vec<i64> = room.players.iter().map(|p| p.user_id).collect();
+    round_state.initialize(&all_player_ids);
+
+    // First player in list goes first
+    let first_player = round_state.current_roller().unwrap_or(all_player_ids[0]);
     room.current_turn = Some(first_player);
 
     events.push(GameEvent::GameStarted {
@@ -242,10 +428,11 @@ pub fn start_game(room: &mut GameRoom) -> Vec<GameEvent> {
     info!(
         room_id = %room.room_id,
         first_player = %first_player,
-        "Bigger Dice game started"
+        num_players = %room.players.len(),
+        "Bigger Dice game started with N players"
     );
 
-    events
+    (events, round_state)
 }
 
 /// Create a game turn record for history

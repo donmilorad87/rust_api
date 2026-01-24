@@ -14,12 +14,17 @@ for topic in \
   category.events \
   system.events \
   events.dead_letter \
-  checkout.commands \
-  checkout.events \
+  checkout.requests \
+  checkout.finished \
   chat.commands \
   chat.events \
   games.commands \
   games.events \
-  gateway.presence; do
+  gateway.presence \
+  bigger_dice.participation_payed \
+  bigger_dice.win_prize \
+  tic_tac_toe.participation_payed \
+  tic_tac_toe.win_prize \
+  tic_tac_toe.match_cancelled; do
   echo "$topics" | grep -Fxq "$topic" || exit 1
 done

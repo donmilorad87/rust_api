@@ -288,7 +288,9 @@ export class BalancePage {
     transactions.forEach((transaction) => {
       const amountCents = Number(transaction.amount_cents || 0);
       const coins = amountCents / 100;
-      const coinsLabel = Number.isInteger(coins) ? coins.toString() : coins.toFixed(2);
+      const absCoins = Math.abs(coins);
+      const coinsLabel = Number.isInteger(absCoins) ? absCoins.toString() : absCoins.toFixed(2);
+      const amountPrefix = amountCents >= 0 ? '+' : '-';
       const purpose = this.formatPurpose(transaction.purpose);
       const { label: statusLabel, className: statusClass } = this.formatStatus(
         transaction.status
@@ -300,7 +302,7 @@ export class BalancePage {
       row.className = 'balance__transactions-row';
       row.innerHTML = `
         <div class="balance__transactions-main">
-          <div class="balance__transactions-amount">+${coinsLabel} coins</div>
+          <div class="balance__transactions-amount">${amountPrefix}${coinsLabel} coins</div>
           <div class="balance__transactions-meta">${purpose} · ${amountCents} balance</div>
           ${checkoutId ? `<div class="balance__transactions-id">Checkout ${checkoutId}</div>` : ''}
         </div>
@@ -337,6 +339,10 @@ export class BalancePage {
         return { label: 'Failed', className: 'failed' };
       case 'session_created':
         return { label: 'Pending', className: 'pending' };
+      case 'game_participation':
+        return { label: 'Game', className: 'success' };
+      case 'game_prize_won':
+        return { label: 'Won', className: 'success' };
       default:
         return { label: 'Unknown', className: 'pending' };
     }

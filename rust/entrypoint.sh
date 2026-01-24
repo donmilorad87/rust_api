@@ -121,6 +121,11 @@ sync_env_vars() {
     sync_env_var "SESSION_COOKIE_PATH" "$SESSION_COOKIE_PATH"
     sync_env_var "SESSION_KEY_PREFIX" "$SESSION_KEY_PREFIX"
 
+    # Sync Bigger Dice Game Configuration
+    sync_env_var "BIGGER_DICE_WINNING_PERCENTAGE" "$BIGGER_DICE_WINNING_PERCENTAGE"
+    sync_env_var "BIGGER_DICE_ENTRY_FEE_CENTS" "$BIGGER_DICE_ENTRY_FEE_CENTS"
+    sync_env_var "BIGGER_DICE_READY_TIMEOUT_SECONDS" "$BIGGER_DICE_READY_TIMEOUT_SECONDS"
+
     echo ""
 }
 

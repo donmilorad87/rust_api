@@ -724,3 +724,94 @@ pub async fn start_game_with_state(
 
     Ok(())
 }
+
+// =============================================================================
+// Auto Players Functions
+// =============================================================================
+
+/// Add a player to auto_players (mark as auto-controlled)
+pub async fn add_auto_player(
+    db: &Pool<Postgres>,
+    room_id: &str,
+    user_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+        UPDATE game_rooms
+        SET auto_players = array_append(auto_players, $2),
+            updated_at = NOW()
+        WHERE room_id = $1
+        AND NOT ($2 = ANY(auto_players))
+        "#,
+        room_id,
+        user_id
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}
+
+/// Remove a player from auto_players (disable auto-control)
+pub async fn remove_auto_player(
+    db: &Pool<Postgres>,
+    room_id: &str,
+    user_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+        UPDATE game_rooms
+        SET auto_players = array_remove(auto_players, $2),
+            updated_at = NOW()
+        WHERE room_id = $1
+        "#,
+        room_id,
+        user_id
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}
+
+/// Update auto_players array (full replacement)
+pub async fn update_auto_players(
+    db: &Pool<Postgres>,
+    room_id: &str,
+    auto_players: &[i64],
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+        UPDATE game_rooms
+        SET auto_players = $2,
+            updated_at = NOW()
+        WHERE room_id = $1
+        "#,
+        room_id,
+        auto_players
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}
+
+/// Clear all auto_players (reset auto-control state)
+pub async fn clear_auto_players(
+    db: &Pool<Postgres>,
+    room_id: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+        UPDATE game_rooms
+        SET auto_players = '{}',
+            updated_at = NOW()
+        WHERE room_id = $1
+        "#,
+        room_id
+    )
+    .execute(db)
+    .await?;
+
+    Ok(())
+}

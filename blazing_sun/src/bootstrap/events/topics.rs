@@ -6,8 +6,8 @@
 /// - transaction.events: Financial transaction events
 /// - category.events: Category management events
 /// - system.events: System-level events (health, metrics)
-/// - checkout.commands: Checkout commands from main service
-/// - checkout.events: Checkout events from payment service
+/// - checkout.requests: Checkout requests to payment service
+/// - checkout.finished: Checkout completion events from payment service
 /// - chat.commands: Chat commands from WebSocket gateway
 /// - chat.events: Chat events to send to WebSocket gateway
 /// - games.commands: Game commands from WebSocket gateway
@@ -34,17 +34,11 @@ pub mod topic {
     /// Dead letter topic for failed event processing
     pub const DEAD_LETTER: &str = "events.dead_letter";
 
-    /// Checkout commands from main service (create_session, etc.)
-    pub const CHECKOUT_COMMANDS: &str = "checkout.commands";
+    /// Checkout request topic (user_id, amount_cents, success_url, cancel_url)
+    pub const CHECKOUT_REQUESTS: &str = "checkout.requests";
 
-    /// Checkout events from payment service (session_created, payment_succeeded, etc.)
-    pub const CHECKOUT_EVENTS: &str = "checkout.events";
-
-    /// New checkout request topic (user_id, amount_cents)
-    pub const CHECKOUT: &str = "checkout";
-
-    /// New checkout finished topic (success/failed status after Stripe webhook)
-    pub const CHECKOUT_FINISHED: &str = "checkout_finished";
+    /// Checkout finished topic (session_created/success/failed status)
+    pub const CHECKOUT_FINISHED: &str = "checkout.finished";
 
     // === WebSocket Gateway Topics ===
 
@@ -63,6 +57,26 @@ pub mod topic {
     /// Presence updates from WebSocket gateway (user online/offline)
     pub const GATEWAY_PRESENCE: &str = "gateway.presence";
 
+    /// Bigger Dice participation payment events (player selected for game, balance deducted)
+    /// Consumed by checkout service to create transaction records
+    pub const BIGGER_DICE_PARTICIPATION_PAYED: &str = "bigger_dice.participation_payed";
+
+    /// Bigger Dice prize win events (game finished, winner receives prize)
+    /// Consumed by checkout service to create transaction records
+    pub const BIGGER_DICE_WIN_PRIZE: &str = "bigger_dice.win_prize";
+
+    /// Tic Tac Toe participation payment events (player selected for game, balance deducted)
+    /// Consumed by checkout service to create transaction records
+    pub const TIC_TAC_TOE_PARTICIPATION_PAYED: &str = "tic_tac_toe.participation_payed";
+
+    /// Tic Tac Toe prize win events (match finished, winner receives prize)
+    /// Consumed by checkout service to create transaction records
+    pub const TIC_TAC_TOE_WIN_PRIZE: &str = "tic_tac_toe.win_prize";
+
+    /// Tic Tac Toe match cancelled events (both players disconnected, refunds issued)
+    /// Consumed by checkout service to create refund transaction records
+    pub const TIC_TAC_TOE_MATCH_CANCELLED: &str = "tic_tac_toe.match_cancelled";
+
     /// Get all topics for initialization
     pub fn all() -> Vec<&'static str> {
         vec![
@@ -72,15 +86,18 @@ pub mod topic {
             CATEGORY_EVENTS,
             SYSTEM_EVENTS,
             DEAD_LETTER,
-            CHECKOUT_COMMANDS,
-            CHECKOUT_EVENTS,
-            CHECKOUT,
+            CHECKOUT_REQUESTS,
             CHECKOUT_FINISHED,
             CHAT_COMMANDS,
             CHAT_EVENTS,
             GAMES_COMMANDS,
             GAMES_EVENTS,
             GATEWAY_PRESENCE,
+            BIGGER_DICE_PARTICIPATION_PAYED,
+            BIGGER_DICE_WIN_PRIZE,
+            TIC_TAC_TOE_PARTICIPATION_PAYED,
+            TIC_TAC_TOE_WIN_PRIZE,
+            TIC_TAC_TOE_MATCH_CANCELLED,
         ]
     }
 }

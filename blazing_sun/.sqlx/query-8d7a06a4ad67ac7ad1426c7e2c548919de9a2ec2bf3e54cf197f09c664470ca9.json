@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET auto_players = array_remove(auto_players, $2),\n            updated_at = NOW()\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8d7a06a4ad67ac7ad1426c7e2c548919de9a2ec2bf3e54cf197f09c664470ca9"
+}

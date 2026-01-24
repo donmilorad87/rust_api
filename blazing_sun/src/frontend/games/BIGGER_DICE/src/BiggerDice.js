@@ -516,6 +516,51 @@ template.innerHTML = `
       animation: scaleIn 0.2s;
     }
 
+    .modal-content--small {
+      max-width: 340px;
+      padding: 1.5rem;
+    }
+
+    .modal-body {
+      margin-bottom: 1.5rem;
+    }
+
+    .confirm-message {
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: var(--text-color);
+    }
+
+    .confirm-message--error {
+      color: var(--danger-color);
+    }
+
+    .confirm-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 0;
+    }
+
+    .loader-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .loader-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -857,6 +902,12 @@ template.innerHTML = `
       font-size: 2.5rem;
       font-weight: 700;
       color: var(--primary-color);
+      transition: transform 0.15s ease-out, color 0.15s ease-out;
+    }
+
+    .player-score.score-updated {
+      transform: scale(1.2);
+      color: var(--success-color);
     }
 
     .player-label {
@@ -888,8 +939,28 @@ template.innerHTML = `
 
     .dice-container {
       display: flex;
-      gap: 3rem;
+      gap: 2rem;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .dice-wrapper {
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dice-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      max-width: 80px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      text-align: center;
     }
 
     .dice {
@@ -917,12 +988,44 @@ template.innerHTML = `
       75% { transform: translate(-3px, -3px) rotate(-3deg); }
     }
 
-    .dice--player-1 {
+    .dice--player-0 {
       border: 3px solid var(--primary-color);
     }
 
-    .dice--player-2 {
+    .dice--player-1 {
       border: 3px solid var(--warning-color);
+    }
+
+    .dice--player-2 {
+      border: 3px solid var(--success-color);
+    }
+
+    .dice--player-3 {
+      border: 3px solid #e879f9;
+    }
+
+    .dice--player-4 {
+      border: 3px solid #38bdf8;
+    }
+
+    .dice--player-5 {
+      border: 3px solid #fb7185;
+    }
+
+    .dice--player-6 {
+      border: 3px solid #a78bfa;
+    }
+
+    .dice--player-7 {
+      border: 3px solid #34d399;
+    }
+
+    .dice--player-8 {
+      border: 3px solid #fbbf24;
+    }
+
+    .dice--player-9 {
+      border: 3px solid #f472b6;
     }
 
     .dice-dot {
@@ -955,7 +1058,14 @@ template.innerHTML = `
     .dice[data-value="6"] .dice-dot:nth-child(7),
     .dice[data-value="6"] .dice-dot:nth-child(9) { background: #1e1e2e; }
 
-    .ready-btn, .roll-btn {
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ready-btn, .roll-btn, .auto-play-btn {
       padding: 1rem 2.5rem;
       font-size: 1.125rem;
       font-weight: 600;
@@ -990,6 +1100,218 @@ template.innerHTML = `
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
+    }
+
+    .auto-play-btn {
+      background: linear-gradient(135deg, var(--warning-color, #f59e0b), #d97706);
+      color: white;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .auto-play-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Turn Timer */
+    .turn-timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      border-radius: 2rem;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+      animation: timer-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes timer-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .turn-timer__icon {
+      font-size: 1.5rem;
+      animation: icon-swing 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes icon-swing {
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(5deg); }
+    }
+
+    .turn-timer__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .turn-timer__label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary-color, #6366f1);
+      opacity: 0.8;
+    }
+
+    .turn-timer__bar {
+      width: 120px;
+      height: 6px;
+      background: rgba(99, 102, 241, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .turn-timer__progress {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+
+    .turn-timer__text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--primary-color, #6366f1);
+      min-width: 2rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Warning state - last 2 seconds */
+    .turn-timer--warning {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      animation: timer-shake 0.3s ease-in-out infinite;
+    }
+
+    @keyframes timer-shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+    }
+
+    .turn-timer--warning .turn-timer__icon {
+      animation: icon-shake 0.2s ease-in-out infinite;
+    }
+
+    @keyframes icon-shake {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-10deg); }
+      75% { transform: rotate(10deg); }
+    }
+
+    .turn-timer--warning .turn-timer__progress {
+      background: linear-gradient(90deg, #ef4444, #f97316, #eab308);
+    }
+
+    .turn-timer--warning .turn-timer__text {
+      color: #ef4444;
+      text-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    .turn-timer--warning .turn-timer__label {
+      color: #ef4444;
+    }
+
+    /* Ready Timer - similar to turn timer but for ready phase */
+    .ready-timer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(16, 185, 129, 0.15));
+      border: 2px solid rgba(34, 197, 94, 0.4);
+      border-radius: 2rem;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+      animation: ready-timer-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes ready-timer-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .ready-timer__icon {
+      font-size: 1.5rem;
+      animation: icon-swing 0.5s ease-in-out infinite alternate;
+    }
+
+    .ready-timer__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .ready-timer__label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--success-color, #22c55e);
+      opacity: 0.8;
+    }
+
+    .ready-timer__bar {
+      width: 120px;
+      height: 6px;
+      background: rgba(34, 197, 94, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .ready-timer__progress {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #22c55e, #10b981, #14b8a6);
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+
+    .ready-timer__text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--success-color, #22c55e);
+      min-width: 2rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+    }
+
+    /* Warning state - last 5 seconds */
+    .ready-timer--warning {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      animation: timer-shake 0.3s ease-in-out infinite;
+    }
+
+    .ready-timer--warning .ready-timer__icon {
+      animation: icon-shake 0.2s ease-in-out infinite;
+    }
+
+    .ready-timer--warning .ready-timer__progress {
+      background: linear-gradient(90deg, #ef4444, #f97316, #eab308);
+    }
+
+    .ready-timer--warning .ready-timer__text {
+      color: #ef4444;
+      text-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    }
+
+    .ready-timer--warning .ready-timer__label {
+      color: #ef4444;
     }
 
     .turn-indicator {
@@ -1047,6 +1369,42 @@ template.innerHTML = `
       font-size: 0.875rem;
       color: var(--text-muted);
       margin-top: 1rem;
+    }
+
+    .not-in-room__spectator-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--primary-color-alpha, rgba(99, 102, 241, 0.1));
+      border-radius: 0.5rem;
+      border: 1px solid var(--primary-color, #6366f1);
+    }
+
+    .not-in-room__spectator-option .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .not-in-room__spectator-option .form-checkbox input[type="checkbox"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      cursor: pointer;
+      accent-color: var(--primary-color, #6366f1);
+    }
+
+    .not-in-room__spectator-option .form-checkbox__label {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    .not-in-room__spectator-option .form-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
     /* ============================================
@@ -1425,42 +1783,6 @@ template.innerHTML = `
       font-size: 2.5rem;
       font-weight: 700;
       color: var(--primary-color);
-    }
-
-    .game-over__ready-indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 0.75rem;
-      padding: 0.375rem 0.75rem;
-      background: var(--bg-color);
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .game-over__ready-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      animation: pulse 1.5s infinite;
-    }
-
-    .game-over__ready-indicator--ready .game-over__ready-dot {
-      background: var(--success-color, #22c55e);
-      animation: none;
-    }
-
-    .game-over__ready-indicator--ready .game-over__ready-text {
-      color: var(--success-color, #22c55e);
-      font-weight: 600;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
     }
 
     .game-over__btn:disabled {
@@ -2048,7 +2370,6 @@ template.innerHTML = `
         <div class="empty-state__icon">🎲</div>
         <h3 class="empty-state__title">No Active Rooms</h3>
         <p class="empty-state__message">Create a new room to start playing!</p>
-        <button class="create-room-btn" id="emptyCreateBtn">Create Room</button>
       </div>
 
       <div id="roomsGrid" class="rooms-grid hidden"></div>
@@ -2096,6 +2417,13 @@ template.innerHTML = `
         <div class="not-in-room__icon">🚪</div>
         <h3 class="not-in-room__title">You are not in this room</h3>
         <p class="not-in-room__text">This room already has players. You can request to join the game.</p>
+        <div id="spectatorOptionContainer" class="not-in-room__spectator-option hidden">
+          <label class="form-checkbox">
+            <input type="checkbox" id="joinAsSpectatorCheckbox">
+            <span class="form-checkbox__label">Join as Spectator</span>
+          </label>
+          <span class="form-hint">Watch the game without participating</span>
+        </div>
         <div class="not-in-room__actions">
           <button id="enterRoomBtn" class="game-btn game-btn--primary">
             <span id="enterRoomBtnText">Enter Room</span>
@@ -2134,33 +2462,35 @@ template.innerHTML = `
         </div>
 
         <div class="dice-area">
-          <div class="dice-container">
-            <div class="dice dice--player-1" id="dice1" data-value="0">
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-            </div>
-            <div class="dice dice--player-2" id="dice2" data-value="0">
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-              <span class="dice-dot"></span>
-            </div>
+          <div class="dice-container" id="diceContainer">
+            <!-- Dice are rendered dynamically based on player count -->
           </div>
 
           <button class="ready-btn hidden" id="readyBtn">Ready!</button>
-          <button class="roll-btn hidden" id="rollBtn" disabled>Roll Dice</button>
+          <div class="ready-timer hidden" id="readyTimer">
+            <span class="ready-timer__icon">⏱️</span>
+            <div class="ready-timer__content">
+              <span class="ready-timer__label">Auto-ready in</span>
+              <div class="ready-timer__bar">
+                <div class="ready-timer__progress" id="readyTimerProgress"></div>
+              </div>
+            </div>
+            <span class="ready-timer__text" id="readyTimerText">30</span>
+          </div>
+          <div class="turn-timer hidden" id="turnTimer">
+            <span class="turn-timer__icon">⏱️</span>
+            <div class="turn-timer__content">
+              <span class="turn-timer__label">Auto-roll in</span>
+              <div class="turn-timer__bar">
+                <div class="turn-timer__progress" id="turnTimerProgress"></div>
+              </div>
+            </div>
+            <span class="turn-timer__text" id="turnTimerText">5</span>
+          </div>
+          <div class="action-buttons" id="actionButtons">
+            <button class="roll-btn hidden" id="rollBtn" disabled>Roll Dice</button>
+            <button class="auto-play-btn hidden" id="autoPlayBtn">Auto Play</button>
+          </div>
         </div>
       </div>
 
@@ -2172,13 +2502,13 @@ template.innerHTML = `
               <span class="chat-tab__label">Lobby</span>
               <span class="chat-tab__badge hidden" id="lobbyBadge">0</span>
             </button>
-            <button class="chat-tab" data-channel="players" id="chatTabPlayers">
-              <span class="chat-tab__label">Players</span>
-              <span class="chat-tab__badge hidden" id="playersBadge">0</span>
-            </button>
             <button class="chat-tab" data-channel="spectators" id="chatTabSpectators">
               <span class="chat-tab__label">Spectators</span>
               <span class="chat-tab__badge hidden" id="spectatorsBadge">0</span>
+            </button>
+            <button class="chat-tab" data-channel="players" id="chatTabPlayers">
+              <span class="chat-tab__label">Players</span>
+              <span class="chat-tab__badge hidden" id="playersBadge">0</span>
             </button>
           </div>
           <button class="chat-toggle" id="chatToggle" title="Toggle chat">
@@ -2203,7 +2533,7 @@ template.innerHTML = `
         </div>
       </div>
 
-      <footer class="game-footer">
+      <footer class="game-footer" id="gameFooter">
         <span class="round-info" id="roundInfo">Round 0 / First to 10</span>
         <button class="leave-btn" id="leaveBtn">Leave Game</button>
       </footer>
@@ -2275,6 +2605,48 @@ template.innerHTML = `
           <button type="submit" class="btn-primary">Join Room</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Create Room Confirmation Modal -->
+  <div id="createConfirmModal" class="modal-overlay">
+    <div class="modal-content modal-content--small">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Game Room</h3>
+        <button class="modal-close" id="createConfirmCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-loader" id="createConfirmLoader">
+          <div class="loader-spinner"></div>
+          <p class="loader-text">Checking balance...</p>
+        </div>
+        <p class="confirm-message hidden" id="createConfirmMessage"></p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="createConfirmCancelBtn">Cancel</button>
+        <button type="button" class="btn-primary hidden" id="createConfirmBtn">Create Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join Room Confirmation Modal -->
+  <div id="joinConfirmModal" class="modal-overlay">
+    <div class="modal-content modal-content--small">
+      <div class="modal-header">
+        <h3 class="modal-title">Join Game Room</h3>
+        <button class="modal-close" id="joinConfirmCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-loader" id="joinConfirmLoader">
+          <div class="loader-spinner"></div>
+          <p class="loader-text">Checking balance...</p>
+        </div>
+        <p class="confirm-message hidden" id="joinConfirmMessage"></p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="joinConfirmCancelBtn">Cancel</button>
+        <button type="button" class="btn-primary hidden" id="joinConfirmBtn">Join Room</button>
+      </div>
     </div>
   </div>
 
@@ -2356,6 +2728,7 @@ export class BiggerDice extends HTMLElement {
     // Pending join state for password-protected rooms
     this.pendingJoinRoomId = null;
     this.pendingJoinRoomName = null;
+    this.pendingJoinAsSpectator = false;
     // Not-in-room state (when user visits room URL but isn't a member)
     this.notInRoomInfo = null;
     this.wantsToSpectate = false;  // Whether user wants to join as spectator
@@ -2377,9 +2750,16 @@ export class BiggerDice extends HTMLElement {
     this.myPlayerId = null;
     this.roundHistory = [];    // Track all round results for game over screen
     this.lastDiceState = null;
+    this.diceElements = [];    // Array of dice DOM elements (one per player)
     this.disconnectedPlayers = new Map(); // user_id -> { timeoutAt }
     this.kickVotes = new Set();           // user_id values already voted to kick
     this.autoPlayers = new Set();         // user_id values auto-controlled
+    this.pendingAutoRoll = null;          // Tracks pending auto-roll to prevent duplicates
+    this.autoRollTimeoutId = null;        // Tracks setTimeout ID for auto-roll (for cleanup)
+    this.isAnimating = false;             // Flag to track dice animation in progress
+    this.animationPromise = null;         // Promise that resolves when current animation completes
+    this.rollEventQueue = [];             // Queue of roll events waiting to be animated
+    this.roundEndedWithWinner = false;    // Flag to add delay after round ends before next auto-roll
     this.disconnectTicker = null;
     this.disconnectOverlayIds = new Set();
     this.windowEventsBound = false;
@@ -2387,6 +2767,23 @@ export class BiggerDice extends HTMLElement {
     this.handlePageHide = null;
     this.handleBeforeUnload = null;
     this.handleOffline = null;
+
+    // Turn timer state (5 second auto-roll for manual players)
+    this.turnTimer = null;              // Timer interval reference
+    this.turnTimeRemaining = 0;         // Seconds remaining
+    this.turnTimerDuration = 5;         // Total seconds for turn timer
+
+    // Game config state (loaded from API)
+    this.gameConfig = {
+      entry_fee_cents: 1000,            // Default: 10 coins
+      ready_timeout_seconds: 30,        // Default: 30 seconds
+      winning_percentage: 60            // Default: 60%
+    };
+
+    // Ready timer state (auto-ready when all players selected)
+    this.readyTimer = null;             // Timer interval reference
+    this.readyTimeRemaining = 0;        // Seconds remaining
+    this.readyTimerDuration = 30;       // Total seconds (loaded from config)
 
     // Chat state
     this.chatChannel = 'lobby';           // Current chat channel (lobby, players, spectators)
@@ -2415,7 +2812,7 @@ export class BiggerDice extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['data-ws-url', 'data-room-id', 'data-room-name', 'data-user-id', 'data-username', 'data-avatar-id', 'data-mode', 'data-spectate'];
+    return ['data-ws-url', 'data-room-id', 'data-room-name', 'data-user-id', 'data-username', 'data-avatar-id', 'data-balance', 'data-mode', 'data-spectate'];
   }
 
   connectedCallback() {
@@ -2429,6 +2826,9 @@ export class BiggerDice extends HTMLElement {
     this.mode = this.dataset.mode === 'lobby' ? ComponentMode.LOBBY : ComponentMode.GAME;
     this.wantsToSpectate = this.dataset.spectate === 'true';
 
+    // Fetch game config from API (async, doesn't block connection)
+    this.fetchGameConfig();
+
     // Set up UI based on mode
     this.setupModeUI();
     this.bindWindowEvents();
@@ -2441,6 +2841,14 @@ export class BiggerDice extends HTMLElement {
   disconnectedCallback() {
     this.unbindWindowEvents();
     this.disconnect();
+    // Clear any pending auto-roll timeout (parallel games fix)
+    if (this.autoRollTimeoutId) {
+      clearTimeout(this.autoRollTimeoutId);
+      this.autoRollTimeoutId = null;
+    }
+    this.pendingAutoRoll = null;
+    // Stop ready timer if running
+    this.stopReadyTimer();
   }
 
   cacheElements() {
@@ -2460,7 +2868,6 @@ export class BiggerDice extends HTMLElement {
       // Lobby elements
       lobbySection: $('lobbySection'),
       createRoomBtn: $('createRoomBtn'),
-      emptyCreateBtn: $('emptyCreateBtn'),
       loadingState: $('loadingState'),
       emptyState: $('emptyState'),
       roomsGrid: $('roomsGrid'),
@@ -2480,6 +2887,20 @@ export class BiggerDice extends HTMLElement {
       joinPasswordError: $('joinPasswordError'),
       joinPasswordCloseBtn: $('joinPasswordCloseBtn'),
       joinPasswordCancelBtn: $('joinPasswordCancelBtn'),
+      // Create confirmation modal elements
+      createConfirmModal: $('createConfirmModal'),
+      createConfirmLoader: $('createConfirmLoader'),
+      createConfirmMessage: $('createConfirmMessage'),
+      createConfirmCloseBtn: $('createConfirmCloseBtn'),
+      createConfirmCancelBtn: $('createConfirmCancelBtn'),
+      createConfirmBtn: $('createConfirmBtn'),
+      // Join confirmation modal elements
+      joinConfirmModal: $('joinConfirmModal'),
+      joinConfirmLoader: $('joinConfirmLoader'),
+      joinConfirmMessage: $('joinConfirmMessage'),
+      joinConfirmCloseBtn: $('joinConfirmCloseBtn'),
+      joinConfirmCancelBtn: $('joinConfirmCancelBtn'),
+      joinConfirmBtn: $('joinConfirmBtn'),
       // Game elements
       gameSection: $('gameSection'),
       waitingForAdmin: $('waitingForAdmin'),
@@ -2495,13 +2916,22 @@ export class BiggerDice extends HTMLElement {
       enterRoomBtn: $('enterRoomBtn'),
       enterRoomBtnText: $('enterRoomBtnText'),
       notInRoomHint: $('notInRoomHint'),
+      spectatorOptionContainer: $('spectatorOptionContainer'),
+      joinAsSpectatorCheckbox: $('joinAsSpectatorCheckbox'),
       gameBoard: $('gameBoard'),
       turnIndicator: $('turnIndicator'),
       playersArea: $('playersArea'),
-      dice1: $('dice1'),
-      dice2: $('dice2'),
+      diceContainer: $('diceContainer'),
       readyBtn: $('readyBtn'),
+      actionButtons: $('actionButtons'),
       rollBtn: $('rollBtn'),
+      autoPlayBtn: $('autoPlayBtn'),
+      turnTimer: $('turnTimer'),
+      turnTimerProgress: $('turnTimerProgress'),
+      turnTimerText: $('turnTimerText'),
+      readyTimer: $('readyTimer'),
+      readyTimerProgress: $('readyTimerProgress'),
+      readyTimerText: $('readyTimerText'),
       roundInfo: $('roundInfo'),
       leaveBtn: $('leaveBtn'),
       disconnectOverlay: $('disconnectOverlay'),
@@ -2521,6 +2951,7 @@ export class BiggerDice extends HTMLElement {
       spectatorsPanel: $('spectatorsPanel'),
       spectatorsCount: $('spectatorsCount'),
       spectatorsList: $('spectatorsList'),
+      gameFooter: $('gameFooter'),
       // Chat elements
       chatPanel: $('chatPanel'),
       chatTabLobby: $('chatTabLobby'),
@@ -2548,12 +2979,6 @@ export class BiggerDice extends HTMLElement {
         this.showCreateRoomModal();
       });
     }
-    if (this.elements.emptyCreateBtn) {
-      this.elements.emptyCreateBtn.addEventListener('click', () => {
-        console.log('[BiggerDice] Empty create button clicked');
-        this.showCreateRoomModal();
-      });
-    }
     if (this.elements.modalCloseBtn) {
       this.elements.modalCloseBtn.addEventListener('click', () => {
         console.log('[BiggerDice] Modal close button clicked');
@@ -2571,7 +2996,7 @@ export class BiggerDice extends HTMLElement {
         console.log('[BiggerDice] Form submitted');
         e.preventDefault();
         e.stopPropagation();
-        this.createRoom();
+        this.showCreateConfirmModal();
       });
     }
     // Also bind direct click on create button as fallback
@@ -2580,7 +3005,7 @@ export class BiggerDice extends HTMLElement {
         console.log('[BiggerDice] Create button clicked directly');
         e.preventDefault();
         e.stopPropagation();
-        this.createRoom();
+        this.showCreateConfirmModal();
       });
     }
     if (this.elements.createRoomModal) {
@@ -2613,12 +3038,57 @@ export class BiggerDice extends HTMLElement {
       });
     }
 
+    // Create confirmation modal events
+    if (this.elements.createConfirmCloseBtn) {
+      this.elements.createConfirmCloseBtn.addEventListener('click', () => this.hideCreateConfirmModal());
+    }
+    if (this.elements.createConfirmCancelBtn) {
+      this.elements.createConfirmCancelBtn.addEventListener('click', () => this.hideCreateConfirmModal());
+    }
+    if (this.elements.createConfirmBtn) {
+      this.elements.createConfirmBtn.addEventListener('click', () => {
+        this.hideCreateConfirmModal();
+        this.createRoom();
+      });
+    }
+    if (this.elements.createConfirmModal) {
+      this.elements.createConfirmModal.addEventListener('click', (e) => {
+        if (e.target === this.elements.createConfirmModal) {
+          this.hideCreateConfirmModal();
+        }
+      });
+    }
+
+    // Join confirmation modal events
+    if (this.elements.joinConfirmCloseBtn) {
+      this.elements.joinConfirmCloseBtn.addEventListener('click', () => this.hideJoinConfirmModal());
+    }
+    if (this.elements.joinConfirmCancelBtn) {
+      this.elements.joinConfirmCancelBtn.addEventListener('click', () => this.hideJoinConfirmModal());
+    }
+    if (this.elements.joinConfirmBtn) {
+      this.elements.joinConfirmBtn.addEventListener('click', () => {
+        this.hideJoinConfirmModal();
+        this.executeJoinRoom();
+      });
+    }
+    if (this.elements.joinConfirmModal) {
+      this.elements.joinConfirmModal.addEventListener('click', (e) => {
+        if (e.target === this.elements.joinConfirmModal) {
+          this.hideJoinConfirmModal();
+        }
+      });
+    }
+
     // Game events
     if (this.elements.readyBtn) {
       this.elements.readyBtn.addEventListener('click', () => this.sendReady());
     }
     if (this.elements.rollBtn) {
       this.elements.rollBtn.addEventListener('click', () => this.sendRoll());
+    }
+    if (this.elements.autoPlayBtn) {
+      this.elements.autoPlayBtn.addEventListener('click', () => this.sendEnableAutoPlay());
     }
     if (this.elements.leaveBtn) {
       this.elements.leaveBtn.addEventListener('click', () => this.leaveGame());
@@ -2633,6 +3103,14 @@ export class BiggerDice extends HTMLElement {
     // Enter Room button (for not-in-room state)
     if (this.elements.enterRoomBtn) {
       this.elements.enterRoomBtn.addEventListener('click', () => this.handleEnterRoomClick());
+    }
+
+    // Join as Spectator checkbox (for not-in-room state)
+    if (this.elements.joinAsSpectatorCheckbox) {
+      this.elements.joinAsSpectatorCheckbox.addEventListener('change', (e) => {
+        this.wantsToSpectate = e.target.checked;
+        this.updateEnterRoomButton();
+      });
     }
 
     // Spectator "Request to Play" button
@@ -2805,75 +3283,73 @@ export class BiggerDice extends HTMLElement {
         case 'games.event.room_list':
           this.handleRoomList(message.rooms);
           break;
-        case 'room_created':
-        case 'games.event.room_created':
+        // Room created - bigger_dice prefixed only
+        case 'games.event.bigger_dice.room_created':
           this.handleRoomCreated(message);
           break;
-        case 'room_joined':
-        case 'games.event.room_joined':
+        case 'games.event.bigger_dice.room_joined':
           this.handleRoomJoined(message);
           break;
-        case 'room_removed':
-        case 'games.event.room_removed':
+        // Room removed - bigger_dice prefixed only
+        case 'games.event.bigger_dice.room_removed':
           this.handleRoomRemoved(message);
           break;
 
-        // Game messages
-        case 'games.event.room_state':
+        // Game messages - bigger_dice prefixed only
+        case 'games.event.bigger_dice.room_state':
           this.handleRoomState(message.room);
           break;
-        case 'games.event.player_joined':
+        case 'games.event.bigger_dice.player_joined':
           this.handlePlayerJoined(message);
           break;
-        case 'games.event.player_left':
+        // Player left - bigger_dice prefixed only
+        case 'games.event.bigger_dice.player_left':
           this.handlePlayerLeft(message);
           break;
-        case 'games.event.player_disconnected':
+        case 'games.event.bigger_dice.player_disconnected':
           this.handlePlayerDisconnected(message);
           break;
-        case 'games.event.player_rejoined':
+        case 'games.event.bigger_dice.player_rejoined':
           this.handlePlayerRejoined(message);
           break;
-        case 'games.event.player_auto_enabled':
+        case 'games.event.bigger_dice.player_auto_enabled':
           this.handlePlayerAutoEnabled(message);
           break;
-        case 'games.event.player_auto_disabled':
+        case 'games.event.bigger_dice.player_auto_disabled':
           this.handlePlayerAutoDisabled(message);
           break;
-        // Lobby events (admin/player selection system)
-        case 'lobby_joined':
-        case 'games.event.lobby_joined':
+        // Lobby events (admin/player selection system) - bigger_dice prefixed only
+        case 'games.event.bigger_dice.lobby_joined':
           this.handleLobbyJoined(message);
           break;
-        case 'player_selected':
-        case 'games.event.player_selected':
+        // Player selected - bigger_dice prefixed only
+        case 'games.event.bigger_dice.player_selected':
           this.handlePlayerSelected(message);
           break;
-        case 'player_kicked':
-        case 'games.event.player_kicked':
+        // Player kicked - bigger_dice prefixed only
+        case 'games.event.bigger_dice.player_kicked':
           this.handlePlayerKicked(message);
           break;
-        case 'player_banned':
-        case 'games.event.player_banned':
+        // Player banned - bigger_dice prefixed only
+        case 'games.event.bigger_dice.player_banned':
           this.handlePlayerBanned(message);
           break;
-        case 'player_unbanned':
-        case 'games.event.player_unbanned':
+        // Player unbanned - bigger_dice prefixed only
+        case 'games.event.bigger_dice.player_unbanned':
           this.handlePlayerUnbanned(message);
           break;
-        case 'user_banned':
-        case 'games.event.user_banned':
+        case 'games.event.bigger_dice.user_banned':
           this.handleUserBanned(message);
           break;
-        case 'lobby_updated':
-        case 'games.event.lobby_updated':
+        case 'games.event.bigger_dice.lobby_updated':
           this.handleLobbyUpdated(message);
           break;
-        case 'games.event.game_started':
+        // Game started - bigger_dice prefixed only
+        case 'games.event.bigger_dice.game_started':
           this.handleGameStarted(message);
           break;
-        case 'player_ready':
-        case 'games.event.player_ready':
+        // Player ready - bigger_dice prefixed only
+        case 'games.event.bigger_dice.player_ready':
           this.handlePlayerReady(message);
           break;
         case 'games.event.bigger_dice.rolled':
@@ -2885,15 +3361,15 @@ export class BiggerDice extends HTMLElement {
         case 'games.event.bigger_dice.round_result':
           this.handleRoundResult(message);
           break;
-        case 'turn_changed':
-        case 'games.event.turn_changed':
+        case 'games.event.bigger_dice.tiebreaker_started':
+          this.handleTiebreakerStarted(message);
+          break;
+        case 'games.event.bigger_dice.turn_changed':
           this.handleTurnChanged(message);
           break;
-        case 'games.event.round_complete':
         case 'games.event.bigger_dice.round_complete':
           this.handleRoundComplete(message);
           break;
-        case 'games.event.game_over':
         case 'games.event.bigger_dice.game_over':
           this.handleGameOver(message);
           break;
@@ -2901,53 +3377,62 @@ export class BiggerDice extends HTMLElement {
         case 'games.event.error':
           this.handleGameError(message);
           break;
-        case 'games.event.not_in_room':
+        case 'games.event.bigger_dice.not_in_room':
           this.handleNotInRoom(message);
           break;
 
-        // Chat events
-        case 'chat_message':
-        case 'games.event.chat_message':
-          this.handleChatMessage(message);
+        // Chat events - bigger_dice channel-specific
+        case 'games.event.bigger_dice.lobby_chat':
+          this.handleChatMessage(message, 'lobby');
           break;
-        case 'chat_history':
-        case 'games.event.chat_history':
-          this.handleChatHistory(message);
+        case 'games.event.bigger_dice.player_chat':
+          this.handleChatMessage(message, 'players');
           break;
-        case 'user_muted':
-        case 'games.event.user_muted':
+        case 'games.event.bigger_dice.spectator_chat':
+          this.handleChatMessage(message, 'spectators');
+          break;
+        case 'games.event.bigger_dice.lobby_chat_history':
+          this.handleChatHistory(message, 'lobby');
+          break;
+        case 'games.event.bigger_dice.player_chat_history':
+          this.handleChatHistory(message, 'players');
+          break;
+        case 'games.event.bigger_dice.spectator_chat_history':
+          this.handleChatHistory(message, 'spectators');
+          break;
+        // Legacy generic chat events (fallback)
+        case 'games.event.bigger_dice.chat_message':
+          this.handleChatMessage(message, message.channel || 'lobby');
+          break;
+        case 'games.event.bigger_dice.chat_history':
+          this.handleChatHistory(message, message.channel || 'lobby');
+          break;
+        case 'games.event.bigger_dice.user_muted':
           // Server confirmed user was muted
           console.log('[Chat] User muted:', message.target_user_id);
           break;
-        case 'user_unmuted':
-        case 'games.event.user_unmuted':
+        case 'games.event.bigger_dice.user_unmuted':
           // Server confirmed user was unmuted
           console.log('[Chat] User unmuted:', message.target_user_id);
           break;
 
-        // Spectator events
-        case 'spectator_joined':
-        case 'games.event.spectator_joined':
-        case 'spectator_data_joined':
-        case 'games.event.spectator_data_joined':
+        // Spectator events - bigger_dice prefixed only
+        case 'games.event.bigger_dice.spectator_joined':
+        case 'games.event.bigger_dice.spectator_data_joined':
           this.handleSpectatorJoined(message);
           break;
-        case 'spectator_left':
-        case 'games.event.spectator_left':
+        case 'games.event.bigger_dice.spectator_left':
           this.handleSpectatorLeft(message);
           break;
-        case 'request_to_play_accepted':
-        case 'games.event.request_to_play_accepted':
+        case 'games.event.bigger_dice.request_to_play_accepted':
           this.handleRequestToPlayAccepted(message);
           break;
 
-        // Game transition events
-        case 'removed_from_game':
-        case 'games.event.removed_from_game':
+        // Game transition events - bigger_dice prefixed only
+        case 'games.event.bigger_dice.removed_from_game':
           this.handleRemovedFromGame(message);
           break;
-        case 'game_starting':
-        case 'games.event.game_starting':
+        case 'games.event.bigger_dice.game_starting':
           this.handleGameStarting(message);
           break;
 
@@ -3110,6 +3595,12 @@ export class BiggerDice extends HTMLElement {
   handleRoomCreated(message) {
     console.log('[BiggerDice] handleRoomCreated:', message);
 
+    // Filter events that aren't for bigger_dice
+    if (message.game_type && message.game_type !== 'bigger_dice') {
+      console.log('[BiggerDice] Ignoring room_created for different game:', message.game_type);
+      return;
+    }
+
     // Normalize to strings for comparison
     const hostIdStr = String(message.host_id);
     const userIdStr = String(this.userId);
@@ -3132,9 +3623,11 @@ export class BiggerDice extends HTMLElement {
         game_type: message.game_type || 'bigger_dice',
         host_name: message.host_name || message.host_username || 'Unknown',
         status: 'waiting',
+        // player_count here means "current number of players" (1 for newly created room)
         player_count: 1,
         spectator_count: 0,
-        max_players: message.max_players || 2,
+        // max_players comes from backend's player_count field or message.max_players
+        max_players: message.player_count || message.max_players || 2,
         allow_spectators: message.allow_spectators === true,
         is_password_protected: message.is_password_protected || false,
       };
@@ -3217,7 +3710,8 @@ export class BiggerDice extends HTMLElement {
 
     grid.innerHTML = this.availableRooms.map(room => {
       const currentPlayers = room.players?.length || 0;
-      const maxPlayers = room.max_players || 2;
+      // Support both player_count (room_state) and max_players (room_list) field names
+      const maxPlayers = room.player_count || room.max_players || 2;
       const spectatorCount = room.spectator_count || 0;
       // Check allow_spectators - must be explicitly true to allow spectators
       const allowSpectators = room.allow_spectators === true;
@@ -3338,6 +3832,238 @@ export class BiggerDice extends HTMLElement {
     }
   }
 
+  // ============================================
+  // Game Config Methods
+  // ============================================
+
+  /**
+   * Fetch game configuration from API.
+   * Updates gameConfig state and readyTimerDuration.
+   */
+  async fetchGameConfig() {
+    try {
+      const response = await fetch('/api/v1/games/config', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.bigger_dice) {
+          this.gameConfig = {
+            entry_fee_cents: data.bigger_dice.entry_fee_cents || 1000,
+            ready_timeout_seconds: data.bigger_dice.ready_timeout_seconds || 30,
+            winning_percentage: data.bigger_dice.winning_percentage || 60
+          };
+          // Update ready timer duration from config
+          this.readyTimerDuration = this.gameConfig.ready_timeout_seconds;
+          console.log('[BiggerDice] Game config loaded:', this.gameConfig);
+        }
+      }
+    } catch (e) {
+      console.error('[BiggerDice] Failed to fetch game config:', e);
+      // Keep defaults on error
+    }
+  }
+
+  /**
+   * Get display cost in coins from entry fee in cents.
+   * @returns {number} Cost in coins (cents / 100)
+   */
+  getDisplayCost() {
+    return this.gameConfig.entry_fee_cents / 100;
+  }
+
+  // Create confirmation modal methods
+  async showCreateConfirmModal() {
+    console.log('[BiggerDice] showCreateConfirmModal called');
+
+    // Show modal with loader
+    if (this.elements.createConfirmModal) {
+      this.elements.createConfirmModal.classList.add('active');
+    }
+
+    // Show loader, hide message and button
+    if (this.elements.createConfirmLoader) {
+      this.elements.createConfirmLoader.classList.remove('hidden');
+    }
+    if (this.elements.createConfirmMessage) {
+      this.elements.createConfirmMessage.classList.add('hidden');
+    }
+    if (this.elements.createConfirmBtn) {
+      this.elements.createConfirmBtn.classList.add('hidden');
+    }
+
+    try {
+      // Fetch user balance from API
+      const response = await fetch('/api/v1/user', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const data = await response.json();
+      const balance = data.user?.balance ?? 0;
+      const requiredBalance = this.gameConfig.entry_fee_cents;
+      const displayCost = this.getDisplayCost();
+      const hasEnoughBalance = balance >= requiredBalance;
+
+      console.log('[BiggerDice] User balance:', balance, 'Required:', requiredBalance, 'Has enough:', hasEnoughBalance);
+
+      // Hide loader
+      if (this.elements.createConfirmLoader) {
+        this.elements.createConfirmLoader.classList.add('hidden');
+      }
+
+      // Show message
+      const messageEl = this.elements.createConfirmMessage;
+      if (messageEl) {
+        if (hasEnoughBalance) {
+          messageEl.textContent = `To create a room, you need at least ${displayCost} coins (${requiredBalance} balance). Creating the room is free, but if you are selected to play, it will cost ${displayCost} coins.`;
+          messageEl.classList.remove('confirm-message--error');
+        } else {
+          messageEl.textContent = `You do not have enough credits to create a game. You need at least ${requiredBalance} balance (${displayCost} coins).`;
+          messageEl.classList.add('confirm-message--error');
+        }
+        messageEl.classList.remove('hidden');
+      }
+
+      // Show/hide confirm button based on balance
+      const confirmBtn = this.elements.createConfirmBtn;
+      if (confirmBtn) {
+        if (hasEnoughBalance) {
+          confirmBtn.classList.remove('hidden');
+        } else {
+          confirmBtn.classList.add('hidden');
+        }
+      }
+
+    } catch (error) {
+      console.error('[BiggerDice] Error fetching balance:', error);
+
+      // Hide loader
+      if (this.elements.createConfirmLoader) {
+        this.elements.createConfirmLoader.classList.add('hidden');
+      }
+
+      // Show error message
+      if (this.elements.createConfirmMessage) {
+        this.elements.createConfirmMessage.textContent = 'Failed to check balance. Please try again.';
+        this.elements.createConfirmMessage.classList.add('confirm-message--error');
+        this.elements.createConfirmMessage.classList.remove('hidden');
+      }
+    }
+  }
+
+  hideCreateConfirmModal() {
+    console.log('[BiggerDice] hideCreateConfirmModal called');
+    if (this.elements.createConfirmModal) {
+      this.elements.createConfirmModal.classList.remove('active');
+    }
+  }
+
+  // Join confirmation modal methods
+  async showJoinConfirmModal(roomId, roomName, hasPassword = false) {
+    console.log('[BiggerDice] showJoinConfirmModal called for room:', roomId);
+
+    // Show modal with loader
+    if (this.elements.joinConfirmModal) {
+      this.elements.joinConfirmModal.classList.add('active');
+    }
+
+    // Show loader, hide message and button
+    if (this.elements.joinConfirmLoader) {
+      this.elements.joinConfirmLoader.classList.remove('hidden');
+    }
+    if (this.elements.joinConfirmMessage) {
+      this.elements.joinConfirmMessage.classList.add('hidden');
+    }
+    if (this.elements.joinConfirmBtn) {
+      this.elements.joinConfirmBtn.classList.add('hidden');
+    }
+
+    try {
+      // Fetch user balance from API
+      const response = await fetch('/api/v1/user', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const data = await response.json();
+      const balance = data.user?.balance ?? 0;
+      const requiredBalance = this.gameConfig.entry_fee_cents;
+      const displayCost = this.getDisplayCost();
+      const hasEnoughBalance = balance >= requiredBalance;
+
+      console.log('[BiggerDice] User balance:', balance, 'Required:', requiredBalance, 'Has enough:', hasEnoughBalance);
+
+      // Hide loader
+      if (this.elements.joinConfirmLoader) {
+        this.elements.joinConfirmLoader.classList.add('hidden');
+      }
+
+      // Show message
+      const messageEl = this.elements.joinConfirmMessage;
+      if (messageEl) {
+        if (hasEnoughBalance) {
+          messageEl.textContent = `Joining the room is free. However, if the admin selects you to play, it will cost ${displayCost} coins (${requiredBalance} balance).`;
+          messageEl.classList.remove('confirm-message--error');
+        } else {
+          messageEl.textContent = `You do not have enough credits to join this room. You need at least ${requiredBalance} balance (${displayCost} coins) to be eligible for selection.`;
+          messageEl.classList.add('confirm-message--error');
+        }
+        messageEl.classList.remove('hidden');
+      }
+
+      // Show/hide confirm button based on balance
+      const confirmBtn = this.elements.joinConfirmBtn;
+      if (confirmBtn) {
+        if (hasEnoughBalance) {
+          confirmBtn.classList.remove('hidden');
+        } else {
+          confirmBtn.classList.add('hidden');
+        }
+      }
+
+    } catch (error) {
+      console.error('[BiggerDice] Error fetching balance:', error);
+
+      // Hide loader
+      if (this.elements.joinConfirmLoader) {
+        this.elements.joinConfirmLoader.classList.add('hidden');
+      }
+
+      // Show error message
+      if (this.elements.joinConfirmMessage) {
+        this.elements.joinConfirmMessage.textContent = 'Failed to check balance. Please try again.';
+        this.elements.joinConfirmMessage.classList.add('confirm-message--error');
+        this.elements.joinConfirmMessage.classList.remove('hidden');
+      }
+    }
+  }
+
+  hideJoinConfirmModal() {
+    console.log('[BiggerDice] hideJoinConfirmModal called');
+    if (this.elements.joinConfirmModal) {
+      this.elements.joinConfirmModal.classList.remove('active');
+    }
+  }
+
   createRoom() {
     console.log('[BiggerDice] createRoom called');
     const roomName = this.elements.roomNameInput?.value.trim() || `Room ${Date.now()}`;
@@ -3366,9 +4092,10 @@ export class BiggerDice extends HTMLElement {
   }
 
   // Password modal methods
-  showJoinPasswordModal(roomId, roomName) {
+  showJoinPasswordModal(roomId, roomName, asSpectator = false) {
     this.pendingJoinRoomId = roomId;
     this.pendingJoinRoomName = roomName;
+    this.pendingJoinAsSpectator = asSpectator;
     this.elements.joinPasswordInput.value = '';
     this.elements.joinPasswordError.classList.add('hidden');
     this.elements.joinPasswordModal.classList.add('active');
@@ -3379,18 +4106,27 @@ export class BiggerDice extends HTMLElement {
     this.elements.joinPasswordModal.classList.remove('active');
     this.pendingJoinRoomId = null;
     this.pendingJoinRoomName = null;
+    this.pendingJoinAsSpectator = false;
   }
 
   submitJoinWithPassword() {
     const password = this.elements.joinPasswordInput.value;
     if (!password) return;
 
-    // Send join request with password
-    this.send({
-      type: 'games.command.join_room',
-      room_name: this.pendingJoinRoomName,
-      password: password
-    });
+    // Send appropriate join request with password based on join type
+    if (this.pendingJoinAsSpectator) {
+      this.send({
+        type: 'games.command.join_as_spectator',
+        room_name: this.pendingJoinRoomName,
+        password: password
+      });
+    } else {
+      this.send({
+        type: 'games.command.join_room',
+        room_name: this.pendingJoinRoomName,
+        password: password
+      });
+    }
   }
 
   // ============================================
@@ -3398,24 +4134,48 @@ export class BiggerDice extends HTMLElement {
   // ============================================
 
   switchChatChannel(channel) {
-    // Check if lobby chat is disabled (during ready phase)
+    // Determine if current user is a playing player (in players array)
+    const amIAPlayer = this.players.some(p =>
+      String(p.user_id || p.id) === String(this.myPlayerId)
+    );
+
+    console.log('[Chat] switchChatChannel called:', {
+      channel,
+      isPlayer: this.isPlayer,
+      isSpectator: this.isSpectator,
+      amIAPlayer,
+      currentChannel: this.chatChannel,
+      messagesInChannel: this.chatMessages[channel]?.length || 0
+    });
+
+    // THREE-CHAT SYSTEM ACCESS RULES:
+    // Phase 1 (Lobby): Only lobby chat available
+    // Phase 2 (Ready/Playing):
+    //   - Players: Can access players chat only (not spectators chat)
+    //   - Spectators: Can access both players chat (read-only) and spectators chat
+
+    // Check if lobby chat is disabled (during ready/playing phase)
     if (channel === 'lobby' && this.isLobbyChatDisabled()) {
-      console.log('[Chat] Lobby chat is disabled during ready phase');
+      console.log('[Chat] Lobby chat is disabled during ready/playing phase');
       return;
     }
 
-    // Check if user can access this channel
-    // Players can access players channel
-    // Spectators can view players channel (read-only) but cannot access spectators channel restriction lifted
-    if (channel === 'players' && !this.isPlayer && !this.isSpectator) {
+    // Check if user can access players channel
+    // Both players AND spectators can view players channel during game
+    if (channel === 'players' && !this.isPlayer && !this.isSpectator && !amIAPlayer) {
       console.log('[Chat] Cannot access players channel - not a player or spectator');
       return;
     }
-    if (channel === 'spectators' && !this.isSpectator) {
-      console.log('[Chat] Cannot access spectators channel - not a spectator');
+
+    // Check if user can access spectators channel
+    // Only spectators (who are NOT players) can access spectators channel
+    // Players CANNOT see spectators chat at all
+    if (channel === 'spectators' && (amIAPlayer || !this.isSpectator)) {
+      console.log('[Chat] Cannot access spectators channel - players cannot see spectator chat');
       return;
     }
 
+    console.log('[Chat] Access granted, setting chatChannel to:', channel);
     this.chatChannel = channel;
 
     // Update tab styles
@@ -3428,6 +4188,7 @@ export class BiggerDice extends HTMLElement {
     this.updateChatBadges();
 
     // Render messages for this channel
+    console.log('[Chat] About to renderChatMessages, chatChannel is:', this.chatChannel);
     this.renderChatMessages();
 
     // Update chat input visibility based on channel and role
@@ -3461,23 +4222,28 @@ export class BiggerDice extends HTMLElement {
   }
 
   updateChatInputAccess() {
-    const chatInputArea = this.elements.chatInputArea;
+    const chatForm = this.elements.chatForm;
     const chatInput = this.elements.chatInput;
-    const sendBtn = this.elements.chatSendBtn;
+    const sendBtn = this.elements.chatSend;
+
+    // Determine if current user is a playing player
+    const amIAPlayer = this.players.some(p =>
+      String(p.user_id || p.id) === String(this.myPlayerId)
+    );
 
     // Spectators viewing players chat cannot send messages
-    const isSpectatorViewingPlayersChat = this.isSpectator && !this.isPlayer && this.chatChannel === 'players';
+    const isSpectatorViewingPlayersChat = this.isSpectator && !amIAPlayer && this.chatChannel === 'players';
 
-    if (chatInputArea) {
+    if (chatForm) {
       if (isSpectatorViewingPlayersChat) {
-        chatInputArea.classList.add('chat-input--disabled');
+        chatForm.classList.add('chat-input--disabled');
         if (chatInput) {
           chatInput.disabled = true;
           chatInput.placeholder = 'Spectators cannot send messages in players chat';
         }
         if (sendBtn) sendBtn.disabled = true;
       } else {
-        chatInputArea.classList.remove('chat-input--disabled');
+        chatForm.classList.remove('chat-input--disabled');
         if (chatInput) {
           chatInput.disabled = false;
           chatInput.placeholder = 'Type a message...';
@@ -3521,7 +4287,18 @@ export class BiggerDice extends HTMLElement {
     });
   }
 
-  handleChatMessage(message) {
+  handleChatMessage(message, channelOverride) {
+    // Channel can come from parameter (channel-specific events) or message payload (legacy)
+    const channel = channelOverride || message.channel || 'lobby';
+
+    console.log('[Chat] handleChatMessage received:', {
+      channel: channel,
+      username: message.username,
+      content: message.content?.substring(0, 50),
+      currentChannel: this.chatChannel,
+      isSpectator: this.isSpectator
+    });
+
     const chatMsg = {
       id: message.message_id || Date.now(),
       userId: message.user_id,
@@ -3533,13 +4310,12 @@ export class BiggerDice extends HTMLElement {
       timestamp: message.created_at ? new Date(message.created_at) : new Date(),
     };
 
-    const channel = message.channel || 'lobby';
-
     // Add to messages array
     if (!this.chatMessages[channel]) {
       this.chatMessages[channel] = [];
     }
     this.chatMessages[channel].push(chatMsg);
+    console.log('[Chat] Added message to channel', channel, '- now has', this.chatMessages[channel].length, 'messages');
 
     // Keep only last 100 messages per channel
     if (this.chatMessages[channel].length > 100) {
@@ -3548,20 +4324,24 @@ export class BiggerDice extends HTMLElement {
 
     // If this is the active channel, render
     if (channel === this.chatChannel) {
+      console.log('[Chat] Channel matches current, rendering');
       this.renderChatMessages();
     } else {
       // Increment unread count for other channels
+      console.log('[Chat] Channel does not match current (' + this.chatChannel + '), incrementing badge');
       this.chatUnreadCounts[channel]++;
       this.updateChatBadges();
     }
   }
 
-  handleChatHistory(message) {
-    const channel = message.channel || 'lobby';
-    const messages = message.messages || [];
+  handleChatHistory(message, channelOverride) {
+    // Channel can come from parameter (channel-specific events) or message payload (legacy)
+    const channel = channelOverride || message.channel || 'lobby';
+    const historyMessages = message.messages || [];
+    console.log('[Chat] handleChatHistory received for channel:', channel, 'messages count:', historyMessages.length);
 
-    // Replace messages for this channel
-    this.chatMessages[channel] = messages.map(m => ({
+    // Convert history messages to our internal format
+    const historyMapped = historyMessages.map(m => ({
       id: m.message_id || m._id || Date.now(),
       userId: m.user_id,
       username: m.username || 'Unknown',
@@ -3572,19 +4352,49 @@ export class BiggerDice extends HTMLElement {
       timestamp: m.created_at ? new Date(m.created_at) : new Date(),
     }));
 
+    // Get existing real-time messages that arrived before history response
+    const existingMessages = this.chatMessages[channel] || [];
+    const existingIds = new Set(existingMessages.map(m => String(m.id)));
+
+    // Merge: history messages + any real-time messages not in history (by ID)
+    // This preserves real-time messages that arrived after history was requested
+    const newMessagesFromHistory = historyMapped.filter(m => !existingIds.has(String(m.id)));
+    const merged = [...newMessagesFromHistory, ...existingMessages];
+
+    // Sort by timestamp (oldest first)
+    merged.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Keep only last 100 messages
+    const previousCount = existingMessages.length;
+    this.chatMessages[channel] = merged.slice(-100);
+
+    console.log('[Chat] handleChatHistory: merged', historyMapped.length, 'history +', existingMessages.length, 'existing =', this.chatMessages[channel].length, 'messages for channel', channel);
+
     // Render if this is the active channel
     if (channel === this.chatChannel) {
+      console.log('[Chat] handleChatHistory: channel matches current, rendering');
       this.renderChatMessages();
     }
   }
 
   renderChatMessages() {
     const container = this.elements.chatMessages;
-    if (!container) return;
+    console.log('[Chat] renderChatMessages called, chatChannel:', this.chatChannel, 'container exists:', !!container);
+    if (!container) {
+      console.log('[Chat] renderChatMessages: No container element, returning');
+      return;
+    }
 
     const messages = this.chatMessages[this.chatChannel] || [];
+    console.log('[Chat] renderChatMessages: Found', messages.length, 'messages for channel', this.chatChannel);
+    console.log('[Chat] All chatMessages state:', {
+      lobby: this.chatMessages.lobby?.length || 0,
+      players: this.chatMessages.players?.length || 0,
+      spectators: this.chatMessages.spectators?.length || 0
+    });
 
     if (messages.length === 0) {
+      console.log('[Chat] renderChatMessages: No messages, showing empty state');
       container.innerHTML = '<div class="chat-empty">No messages yet. Say hello!</div>';
       return;
     }
@@ -3617,6 +4427,8 @@ export class BiggerDice extends HTMLElement {
         </div>
       `;
     }).join('');
+
+    console.log('[Chat] renderChatMessages: rendered', messages.length, 'messages to container');
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
@@ -3674,14 +4486,20 @@ export class BiggerDice extends HTMLElement {
     const spectatorsTab = this.elements.chatTabSpectators;
 
     const lobbyChatDisabled = this.isLobbyChatDisabled();
-    const hasSpectators = this.spectators && this.spectators.length > 0;
 
     // Determine if current user is a playing player (in players array)
     const amIAPlayer = this.players.some(p =>
       String(p.user_id || p.id) === String(this.myPlayerId)
     );
 
-    // Lobby tab - hidden when lobby chat is disabled (ready phase or game in progress)
+    // THREE-CHAT SYSTEM:
+    // Phase 1 (Lobby/Selecting): Single "Lobby Chat" visible to ALL users
+    // Phase 2 (Ready/Playing):
+    //   - Lobby chat REMOVED for all users
+    //   - Players Chat: Players CAN see/send; Spectators CAN see (read-only) but CANNOT send
+    //   - Spectators Chat: Spectators CAN see/send; Players CANNOT see at all
+
+    // Lobby tab - visible during lobby/selecting phase, hidden during ready/playing phase
     if (lobbyTab) {
       if (lobbyChatDisabled) {
         lobbyTab.classList.add('hidden');
@@ -3692,11 +4510,11 @@ export class BiggerDice extends HTMLElement {
       }
     }
 
-    // Players tab - visible when lobby chat is disabled
-    // Players can send messages, spectators can view (read-only)
+    // Players tab - visible during ready/playing phase for BOTH players and spectators
+    // Players can send; Spectators can view (read-only)
     if (playersTab) {
       if (lobbyChatDisabled) {
-        // During ready phase or game: show players tab for players and spectators
+        // Show players tab for both players and spectators
         playersTab.classList.remove('hidden');
         playersTab.classList.remove('disabled');
         playersTab.disabled = false;
@@ -3714,17 +4532,16 @@ export class BiggerDice extends HTMLElement {
       }
     }
 
-    // Spectators tab - only accessible by spectators, hidden from players
-    // Only show if there are spectators in the game
+    // Spectators tab - visible to spectators at ALL times (lobby phase and game phase)
+    // Players CANNOT see this tab at all
     if (spectatorsTab) {
-      if (lobbyChatDisabled && this.isSpectator && hasSpectators) {
-        // Spectators can access spectators chat during ready phase/game if there are spectators
+      if (this.isSpectator && !amIAPlayer) {
+        // Spectators can always access spectators chat
         spectatorsTab.classList.remove('hidden');
         spectatorsTab.classList.remove('disabled');
         spectatorsTab.disabled = false;
       } else {
         // Players cannot see spectators tab at all
-        // Also hide during lobby phase or if no spectators
         spectatorsTab.classList.add('hidden');
         spectatorsTab.disabled = true;
       }
@@ -3732,25 +4549,32 @@ export class BiggerDice extends HTMLElement {
 
     // If current channel is no longer accessible, switch to appropriate channel
     if (this.chatChannel === 'lobby' && lobbyChatDisabled) {
-      // Lobby chat disabled - switch to players or spectators
-      if (amIAPlayer) {
+      // Lobby chat disabled - switch based on user role
+      // Spectators default to spectators chat, players default to players chat
+      console.log('[Chat] updateChatTabAccess: lobby disabled, auto-switching. isSpectator:', this.isSpectator, 'amIAPlayer:', amIAPlayer);
+      if (this.isSpectator && !amIAPlayer) {
+        console.log('[Chat] updateChatTabAccess: switching spectator to spectators channel');
+        this.switchChatChannel('spectators');
+      } else {
+        console.log('[Chat] updateChatTabAccess: switching to players channel');
         this.switchChatChannel('players');
-      } else if (this.isSpectator) {
-        // Spectators can use either, prefer spectators if available
-        if (hasSpectators) {
-          this.switchChatChannel('spectators');
-        } else {
-          this.switchChatChannel('players');
-        }
       }
     }
 
-    // If spectators channel is selected but no longer accessible
-    if (this.chatChannel === 'spectators' && (!this.isSpectator || !hasSpectators)) {
+    // If spectators channel is selected but user is not a spectator (or is a player)
+    if (this.chatChannel === 'spectators' && (!this.isSpectator || amIAPlayer)) {
       if (lobbyChatDisabled) {
         this.switchChatChannel('players');
       } else {
         this.switchChatChannel('lobby');
+      }
+    }
+
+    // For spectators, also request players chat history so they can view it
+    if (this.isSpectator && !amIAPlayer && lobbyChatDisabled) {
+      if (!this.chatHistoryRequested['players'] && this.chatMessages['players'].length === 0 && this.roomId) {
+        this.chatHistoryRequested['players'] = true;
+        this.requestChatHistory('players');
       }
     }
 
@@ -3851,6 +4675,16 @@ export class BiggerDice extends HTMLElement {
       this.spectators.push(spectator);
     }
 
+    // If this is the current user, set isSpectator flag and update chat tabs
+    if (String(spectator.user_id) === String(this.myPlayerId)) {
+      this.isSpectator = true;
+      this.isPlayer = false;
+      console.log('[BiggerDice] Current user joined as spectator, updating chat tabs and game UI');
+      this.updateChatTabAccess();
+      // Update game UI so spectator sees correct lobby view
+      this.updateGameUI();
+    }
+
     // Update spectator UI and admin lobby (to show spectator with badge)
     this.updateSpectatorUI();
 
@@ -3908,6 +4742,11 @@ export class BiggerDice extends HTMLElement {
       this.elements.notInRoomState.classList.add('hidden');
     }
 
+    // Show chat panel now that user has joined the room
+    if (this.elements.chatPanel) {
+      this.elements.chatPanel.classList.remove('hidden');
+    }
+
     // Close password modal if open (successful join)
     if (this.pendingJoinRoomId) {
       this.hideJoinPasswordModal();
@@ -3915,11 +4754,28 @@ export class BiggerDice extends HTMLElement {
 
     this.roomId = room.room_id;
     this.roomName = room.room_name;
-    this.players = room.players || [];
-    this.lobby = room.lobby || [];
+    // During ready phase (status=waiting, selected_players present), players are in lobby not players array
+    // Check if we're in ready phase: lobby has players but players array is empty
+    const isReadyPhase = room.status === 'waiting' &&
+                         room.selected_players && room.selected_players.length > 0 &&
+                         (!room.players || room.players.length === 0);
+
+    if (isReadyPhase) {
+      // In ready phase, selected players are in lobby - use them as players
+      this.players = room.lobby || [];
+      this.lobby = room.lobby || [];
+      console.log(`[BiggerDice] handleRoomState: READY PHASE - using lobby as players, players.length=${this.players.length}`);
+    } else {
+      this.players = room.players || [];
+      this.lobby = room.lobby || [];
+    }
+
     this.hostId = room.host_id;
     this.isAdmin = String(room.host_id) === String(this.myPlayerId);
-    this.maxPlayers = room.max_players || 2;
+    // Backend sends player_count in room_state, but max_players in room_list
+    // Support both field names for compatibility
+    this.maxPlayers = room.player_count || room.max_players || 2;
+    console.log(`[BiggerDice] handleRoomState: maxPlayers=${this.maxPlayers}, players.length=${this.players.length}, player_count=${room.player_count}, max_players=${room.max_players}, isReadyPhase=${isReadyPhase}`);
     this.allowSpectators = room.allow_spectators === true;
     this.gameStatus = room.status === 'in_progress' ? GameStatus.PLAYING : room.status;
     this.currentTurn = room.current_turn;
@@ -3946,14 +4802,37 @@ export class BiggerDice extends HTMLElement {
     }
 
     // Initialize spectators from room state
-    this.spectators = room.spectators || [];
+    // Use spectators_data (full objects with user_id) instead of spectators (just IDs)
+    this.spectators = room.spectators_data || room.spectators || [];
     this.autoPlayers = new Set((room.auto_players || []).map(id => String(id)));
     this.stopDisconnectTickerIfNeeded();
 
     // Determine if current user is a player or spectator
+    // During waiting/selection phase, players are in lobby, not players array
     const userIdStr = String(this.myPlayerId);
-    this.isPlayer = this.players.some(p => String(p.id || p.user_id) === userIdStr);
-    this.isSpectator = this.spectators.some(s => String(s.user_id) === userIdStr);
+    const inPlayers = this.players.some(p => String(p.id || p.user_id) === userIdStr);
+    const inLobby = this.lobby.some(p => String(p.user_id) === userIdStr);
+    this.isPlayer = inPlayers || inLobby;
+    // Check spectators - handle both object format (spectators_data) and plain ID format (legacy)
+    this.isSpectator = this.spectators.some(s => {
+      if (typeof s === 'object' && s !== null) {
+        return String(s.user_id || s.id) === userIdStr;
+      }
+      // Legacy format: spectators is just an array of user IDs
+      return String(s) === userIdStr;
+    });
+
+    console.log('[BiggerDice] handleRoomState role check:', {
+      myPlayerId: this.myPlayerId,
+      userIdStr,
+      inPlayers,
+      inLobby,
+      isPlayer: this.isPlayer,
+      isSpectator: this.isSpectator,
+      spectatorsCount: this.spectators.length,
+      spectatorsFormat: this.spectators.length > 0 ? (typeof this.spectators[0]) : 'empty',
+      spectatorIds: this.spectators.map(s => typeof s === 'object' ? (s.user_id || s.id) : s)
+    });
 
     // Update chat tab access based on role
     this.updateChatTabAccess();
@@ -3967,8 +4846,41 @@ export class BiggerDice extends HTMLElement {
       this.requestChatHistory('lobby');
     }
 
+    // Request chat history for active game channels on rejoin
+    const isGameActive = ['playing', 'in_progress', 'starting'].includes(
+      (this.gameStatus || '').toLowerCase()
+    );
+
+    if (isGameActive) {
+      // Request players chat history (both players and spectators can read)
+      if (!this.chatHistoryRequested.players && this.chatMessages.players.length === 0) {
+        this.chatHistoryRequested.players = true;
+        this.requestChatHistory('players');
+      }
+
+      // Request spectators chat history (spectators only)
+      if (this.isSpectator && !this.chatHistoryRequested.spectators && this.chatMessages.spectators.length === 0) {
+        this.chatHistoryRequested.spectators = true;
+        this.requestChatHistory('spectators');
+      }
+    }
+
     this.updateGameUI();
     this.applyDiceState();
+
+    // IMPORTANT: Clear any queued events when receiving room_state.
+    // The room_state contains the authoritative game state from the server,
+    // including current scores. Any events that arrived before room_state
+    // (e.g., for spectators joining mid-game) are already reflected in the
+    // room_state's data. Processing them again would cause double-counting.
+    if (this.rollEventQueue.length > 0) {
+      console.log('[BiggerDice] handleRoomState: clearing event queue (room_state has authoritative state)');
+      this.rollEventQueue = [];
+      this.roundEndedWithWinner = false;
+    }
+
+    // Check if auto-roll is needed (in case an auto-player's turn when we receive state)
+    this.checkAutoRollNeeded();
   }
 
   handlePlayerJoined(message) {
@@ -4031,12 +4943,17 @@ export class BiggerDice extends HTMLElement {
   }
 
   handlePlayerAutoEnabled(message) {
+    console.log('[BiggerDice] handlePlayerAutoEnabled:', message);
     const userId = String(message.user_id);
+    console.log('[BiggerDice] handlePlayerAutoEnabled: adding user to autoPlayers:', userId, 'currentTurn:', this.currentTurn);
     this.autoPlayers.add(userId);
     this.disconnectedPlayers.delete(userId);
     this.kickVotes.delete(userId);
     this.stopDisconnectTickerIfNeeded();
     this.updateGameUI();
+
+    // Check if auto-roll is needed (in case it's already this player's turn)
+    this.checkAutoRollNeeded();
   }
 
   handlePlayerAutoDisabled(message) {
@@ -4099,6 +5016,7 @@ export class BiggerDice extends HTMLElement {
   handlePlayerSelected(message) {
     // A player was selected from lobby to play
     const player = message.player;
+    console.log(`[BiggerDice] handlePlayerSelected: player=${player.username}, current players.length=${this.players.length}, maxPlayers=${this.maxPlayers}`);
 
     // Remove from lobby
     this.lobby = this.lobby.filter(p =>
@@ -4113,7 +5031,21 @@ export class BiggerDice extends HTMLElement {
       this.players.push(player);
     }
 
+    console.log(`[BiggerDice] handlePlayerSelected: after push, players.length=${this.players.length}, maxPlayers=${this.maxPlayers}, needsMore=${this.players.length < this.maxPlayers}`);
+
+    // Recalculate isPlayer status - user is a player if in players array OR in lobby
+    const userIdStr = String(this.myPlayerId);
+    const inPlayers = this.players.some(p => String(p.id || p.user_id) === userIdStr);
+    const inLobby = this.lobby.some(p => String(p.user_id) === userIdStr);
+    this.isPlayer = inPlayers || inLobby;
+
     this.updateGameUI();
+
+    // Start ready timer when all players are selected
+    if (this.players.length === this.maxPlayers) {
+      console.log('[BiggerDice] All players selected, starting ready timer');
+      this.startReadyTimer();
+    }
   }
 
   handlePlayerKicked(message) {
@@ -4268,14 +5200,26 @@ export class BiggerDice extends HTMLElement {
 
   handleGameStarted(message) {
     console.log('[BiggerDice] Game started:', message);
+
+    // Stop ready timer when game starts
+    this.stopReadyTimer();
+
     this.gameStatus = GameStatus.PLAYING;
     this.players = message.players;
     this.currentTurn = message.first_turn;
     this.round = 1;
     this.roundHistory = []; // Reset round history for new game
+    this.lastDiceState = null; // Clear dice state for new game - dice start at 0
     this.disconnectedPlayers.clear();
     this.kickVotes.clear();
     this.autoPlayers.clear();
+    this.pendingAutoRoll = null;
+    // Clear any pending auto-roll timeout (parallel games fix)
+    if (this.autoRollTimeoutId) {
+      clearTimeout(this.autoRollTimeoutId);
+      this.autoRollTimeoutId = null;
+    }
+    this.roundEndedWithWinner = false;
     this.stopDisconnectTickerIfNeeded();
 
     // Reset player scores and ready states for new game/rematch
@@ -4292,6 +5236,9 @@ export class BiggerDice extends HTMLElement {
 
   handleGameStarting(message) {
     console.log('[BiggerDice] Game starting (ready phase):', message);
+    console.log('[BiggerDice] handleGameStarting: message.players=', message.players);
+    console.log('[BiggerDice] handleGameStarting: maxPlayers=', this.maxPlayers);
+
     // Game has transitioned to ready phase - selected players need to click ready
     // Update players list with the selected players
     this.players = message.players || [];
@@ -4300,7 +5247,16 @@ export class BiggerDice extends HTMLElement {
     this.disconnectedPlayers.clear();
     this.kickVotes.clear();
     this.autoPlayers.clear();
+    this.pendingAutoRoll = null;
+    // Clear any pending auto-roll timeout (parallel games fix)
+    if (this.autoRollTimeoutId) {
+      clearTimeout(this.autoRollTimeoutId);
+      this.autoRollTimeoutId = null;
+    }
+    this.roundEndedWithWinner = false;
     this.stopDisconnectTickerIfNeeded();
+
+    console.log('[BiggerDice] handleGameStarting: After update - players.length=', this.players.length, 'needsMorePlayers=', this.players.length < this.maxPlayers);
 
     // Update chat tabs - lobby chat disabled during ready phase
     this.updateChatTabAccess();
@@ -4347,40 +5303,277 @@ export class BiggerDice extends HTMLElement {
     }, 5000);
   }
 
+  /**
+   * Handle a dice rolled event from the server.
+   * Queues roll events and processes them sequentially to ensure animations
+   * play one at a time (fixing the issue where multiple rolls animate simultaneously).
+   * @param {Object} message - The dice rolled message
+   */
   handleDiceRolled(message) {
-    const playerIndex = this.players.findIndex(p =>
-      String(p.id || p.user_id) === String(message.player_id)
-    );
-    const diceEl = playerIndex === 0 ? this.elements.dice1 : this.elements.dice2;
+    const playerId = String(message.player_id);
+    const roll = message.roll;
 
-    this.animateDiceRoll(diceEl, message.roll);
+    console.log('[BiggerDice] handleDiceRolled:', {
+      playerId,
+      roll,
+      isAnimating: this.isAnimating,
+      queueLength: this.rollEventQueue.length,
+      playersCount: this.players.length,
+      diceElementsCount: this.diceElements.length
+    });
+
+    // Always persist the roll in lastDiceState so it survives UI re-renders
+    this.updateLastDiceState(playerId, roll);
+
+    // Create the roll event object
+    const rollEvent = { playerId, roll, message };
+
+    // If we don't have players or dice elements yet (spectator joined mid-game
+    // and room_state hasn't been processed), queue the event to process later
+    if (this.players.length === 0 || this.diceElements.length === 0) {
+      console.log('[BiggerDice] handleDiceRolled: no players/dice elements yet, queuing event');
+      this.rollEventQueue.push(rollEvent);
+      return;
+    }
+
+    // If animation is in progress or queue has events, queue this event for later
+    if (this.isAnimating || this.rollEventQueue.length > 0) {
+      console.log('[BiggerDice] handleDiceRolled: animation/queue in progress, queuing event for player', playerId);
+      this.rollEventQueue.push(rollEvent);
+      return;
+    }
+
+    // No animation in progress and have dice elements, process this event immediately
+    this.processRollEvent(rollEvent);
+  }
+
+  /**
+   * Process a single roll event by animating the dice.
+   * After animation completes, processes the next queued event or checks for auto-roll.
+   * @param {Object} rollEvent - The roll event { playerId, roll, message }
+   */
+  processRollEvent(rollEvent) {
+    const { playerId, roll } = rollEvent;
+
+    console.log('[BiggerDice] processRollEvent:', {
+      playerId,
+      roll,
+      queueLength: this.rollEventQueue.length
+    });
+
+    const playerIndex = this.players.findIndex(p =>
+      String(p.id || p.user_id) === playerId
+    );
+
+    // Use dynamic dice elements array (supports N players)
+    const diceEl = playerIndex >= 0 && playerIndex < this.diceElements.length
+      ? this.diceElements[playerIndex]
+      : null;
+
+    if (diceEl) {
+      // Store the animation promise so checkAutoRollNeeded can wait for it
+      this.animationPromise = this.animateDiceRoll(diceEl, roll);
+
+      // After animation completes, process next queued event or check auto-roll
+      this.animationPromise.then(() => {
+        console.log('[BiggerDice] processRollEvent: animation complete for player', playerId);
+        this.processNextRollEvent();
+      });
+    } else {
+      console.warn(`[BiggerDice] processRollEvent: No dice element for playerIndex=${playerIndex}`);
+      // No dice element to animate, move to next event
+      this.processNextRollEvent();
+    }
+  }
+
+  /**
+   * Process the next event in the queue (dice roll or round result).
+   * If queue is empty, checks if auto-roll is needed for frontend fallback.
+   * When a round just ended with a winner, adds a 1-second delay before processing
+   * the next round's events to allow players to see the round result.
+   */
+  processNextRollEvent() {
+    console.log('[BiggerDice] processNextRollEvent:', {
+      queueLength: this.rollEventQueue.length,
+      isAnimating: this.isAnimating,
+      roundEndedWithWinner: this.roundEndedWithWinner
+    });
+
+    // If a round just ended with a winner, add a delay before continuing
+    // This allows players to see the round result (winner highlighted, scores updated)
+    // before the next round's dice start rolling
+    if (this.roundEndedWithWinner) {
+      this.roundEndedWithWinner = false;
+      console.log('[BiggerDice] processNextRollEvent: round ended with winner, delaying 1 second before next round');
+
+      // Refresh dice display to show final values
+      this.applyDiceState();
+
+      setTimeout(() => {
+        // Re-check that we're still in a valid game state after the delay
+        if (this.gameStatus !== GameStatus.PLAYING) {
+          console.log('[BiggerDice] processNextRollEvent: game state changed during delay, aborting');
+          return;
+        }
+        console.log('[BiggerDice] processNextRollEvent: delay complete, continuing');
+        // Continue processing after delay
+        this.processNextRollEventContinue();
+      }, 1000);
+      return;
+    }
+
+    // No delay needed, continue immediately
+    this.processNextRollEventContinue();
+  }
+
+  /**
+   * Continue processing the next event in the queue after any required delays.
+   */
+  processNextRollEventContinue() {
+    // Check if there are queued events - process them
+    if (this.rollEventQueue.length > 0) {
+      const nextEvent = this.rollEventQueue.shift();
+
+      // Handle different event types
+      if (nextEvent.type === 'round_result') {
+        console.log('[BiggerDice] processNextRollEventContinue: processing queued round result');
+        this.processRoundResult(nextEvent.message);
+        // After processing round result, continue to next event (with potential delay if winner)
+        this.processNextRollEvent();
+        return;
+      }
+
+      if (nextEvent.type === 'game_over') {
+        console.log('[BiggerDice] processNextRollEventContinue: processing queued game_over');
+        this.processGameOver(nextEvent.message);
+        // Game is over, no need to continue processing
+        return;
+      }
+
+      // It's a dice roll event
+      console.log('[BiggerDice] processNextRollEventContinue: processing queued dice event for player', nextEvent.playerId);
+      this.processRollEvent(nextEvent);
+      return;
+    }
+
+    // No more queued events - all animations from this round are complete.
+    // Trigger a dice area refresh since renderDiceArea() may have been skipped
+    // during animation (to protect ongoing animations from being destroyed).
+    console.log('[BiggerDice] processNextRollEventContinue: queue empty, refreshing dice area');
+    this.applyDiceState();
+
+    // Check if auto-roll is needed (frontend fallback)
+    console.log('[BiggerDice] processNextRollEventContinue: checking for auto-roll');
+    this.checkAutoRollNeeded();
+  }
+
+  /**
+   * Update lastDiceState with a player's roll value.
+   * This ensures dice values persist across UI re-renders.
+   * @param {string} playerId - The player ID
+   * @param {number} roll - The dice roll value (1-6)
+   */
+  updateLastDiceState(playerId, roll) {
+    const playerIdStr = String(playerId);
+
+    // Initialize lastDiceState if needed (N-player format)
+    if (!this.lastDiceState) {
+      this.lastDiceState = { players: [] };
+    }
+
+    // Ensure we're using the N-player format
+    if (!this.lastDiceState.players) {
+      // Convert legacy format to N-player format if needed
+      const players = [];
+      if (this.lastDiceState.player1_id && this.lastDiceState.player1_roll !== null) {
+        players.push({ player_id: this.lastDiceState.player1_id, roll: this.lastDiceState.player1_roll });
+      }
+      if (this.lastDiceState.player2_id && this.lastDiceState.player2_roll !== null) {
+        players.push({ player_id: this.lastDiceState.player2_id, roll: this.lastDiceState.player2_roll });
+      }
+      this.lastDiceState = { players };
+    }
+
+    // Find existing entry for this player or add new one
+    const existingIndex = this.lastDiceState.players.findIndex(p => p.player_id === playerIdStr);
+    if (existingIndex >= 0) {
+      this.lastDiceState.players[existingIndex].roll = roll;
+    } else {
+      this.lastDiceState.players.push({ player_id: playerIdStr, roll: roll });
+    }
   }
 
   handleBiggerDiceState(message) {
-    this.lastDiceState = {
-      player1_id: message.player1_id ? String(message.player1_id) : null,
-      player2_id: message.player2_id ? String(message.player2_id) : null,
-      player1_roll: Number.isInteger(message.player1_roll) ? message.player1_roll : null,
-      player2_roll: Number.isInteger(message.player2_roll) ? message.player2_roll : null
-    };
+    console.log('[BiggerDice] Received dice state:', message);
+
+    // Load round history from server if provided (for rejoining players)
+    // This ensures rejoining players see complete game history in game over screen
+    if (message.round_history && Array.isArray(message.round_history) && message.round_history.length > 0) {
+      console.log(`[BiggerDice] Loading ${message.round_history.length} rounds from server history`);
+      this.roundHistory = message.round_history;
+    }
+
+    // Support both legacy 2-player format and new N-player format
+    if (message.current_rolls && Array.isArray(message.current_rolls)) {
+      // New N-player format
+      this.lastDiceState = {
+        players: message.current_rolls.map(([playerId, roll]) => ({
+          player_id: String(playerId),
+          roll: roll
+        }))
+      };
+
+      // Update round number if provided
+      if (message.round_number) {
+        this.round = message.round_number;
+      }
+
+      // Show tiebreaker indicator if in tiebreaker mode
+      if (message.is_tiebreaker) {
+        const pendingRollers = (message.pending_rollers || []).map(id => String(id));
+        this.showTiebreakerMessage(pendingRollers);
+      }
+    } else {
+      // Legacy 2-player format
+      this.lastDiceState = {
+        player1_id: message.player1_id ? String(message.player1_id) : null,
+        player2_id: message.player2_id ? String(message.player2_id) : null,
+        player1_roll: Number.isInteger(message.player1_roll) ? message.player1_roll : null,
+        player2_roll: Number.isInteger(message.player2_roll) ? message.player2_roll : null
+      };
+    }
+
     this.applyDiceState();
   }
 
   applyDiceState() {
     if (!this.lastDiceState || this.players.length === 0) return;
 
-    const { player1_id, player2_id, player1_roll, player2_roll } = this.lastDiceState;
-    const pairs = [
-      { playerId: player1_id, roll: player1_roll },
-      { playerId: player2_id, roll: player2_roll }
-    ];
+    // Support N players - lastDiceState may have player1_id/player2_id (legacy)
+    // or players array (new format for N players)
+    if (this.lastDiceState.players && Array.isArray(this.lastDiceState.players)) {
+      // New N-player format
+      this.lastDiceState.players.forEach(({ player_id, roll }) => {
+        if (!player_id) return;
+        const index = this.players.findIndex(p => String(p.id || p.user_id) === String(player_id));
+        const diceEl = index >= 0 && index < this.diceElements.length ? this.diceElements[index] : null;
+        this.setDiceValue(diceEl, roll);
+      });
+    } else {
+      // Legacy 2-player format
+      const { player1_id, player2_id, player1_roll, player2_roll } = this.lastDiceState;
+      const pairs = [
+        { playerId: player1_id, roll: player1_roll },
+        { playerId: player2_id, roll: player2_roll }
+      ];
 
-    pairs.forEach(({ playerId, roll }) => {
-      if (!playerId) return;
-      const index = this.players.findIndex(p => String(p.id || p.user_id) === playerId);
-      const diceEl = index === 0 ? this.elements.dice1 : index === 1 ? this.elements.dice2 : null;
-      this.setDiceValue(diceEl, roll);
-    });
+      pairs.forEach(({ playerId, roll }) => {
+        if (!playerId) return;
+        const index = this.players.findIndex(p => String(p.id || p.user_id) === playerId);
+        const diceEl = index >= 0 && index < this.diceElements.length ? this.diceElements[index] : null;
+        this.setDiceValue(diceEl, roll);
+      });
+    }
   }
 
   setDiceValue(diceEl, roll) {
@@ -4408,101 +5601,362 @@ export class BiggerDice extends HTMLElement {
       console.log(`[BiggerDice] Game player ${username} is now ready`);
     }
 
-    // Handle ready state during FINISHED state (Play Again feature)
-    if (this.gameStatus === GameStatus.FINISHED) {
-      // Update the game over screen ready indicator for this player
-      const board = this.elements.gameBoard;
-      if (board) {
-        // Find the player index to get the correct indicator
-        const playerIndex = this.players.findIndex(p => String(p.id || p.user_id) === userId);
-        if (playerIndex !== -1) {
-          const indicator = board.querySelector(`#player${playerIndex}ReadyIndicator`);
-          if (indicator) {
-            indicator.classList.add('game-over__ready-indicator--ready');
-            const textEl = indicator.querySelector('.game-over__ready-text');
-            if (textEl) textEl.textContent = 'Ready!';
-            console.log(`[BiggerDice] Updated game over ready indicator for ${username} (player ${playerIndex})`);
-          }
-        }
-      }
-
-      // Check if all players are now ready for rematch
-      const allReady = this.players.every(p => p.is_ready === true);
-      if (allReady && this.players.length >= this.maxPlayers) {
-        console.log('[BiggerDice] All players ready for rematch! Waiting for server to restart game...');
-        // The server should send a game_started event when all players are ready
-        // The game will reset when we receive that event
-      }
-
-      return; // Don't call updateGameUI when in FINISHED state, we have custom game over screen
-    }
-
     // Update UI to show player is ready
     this.updateGameUI();
   }
 
   handleRoundResult(message) {
     console.log('[BiggerDice] Round result:', message);
+    console.log('[DEBUG] handleRoundResult ENTRY:', {
+      isAnimating: this.isAnimating,
+      queueLength: this.rollEventQueue.length,
+      playersCount: this.players.length,
+      diceElementsCount: this.diceElements.length
+    });
 
-    // Extract data from the round result
-    const player1Id = String(message.player1_id);
-    const player2Id = String(message.player2_id);
-    const player1Roll = message.player1_roll;
-    const player2Roll = message.player2_roll;
+    // If we don't have players or dice elements yet (spectator joined mid-game),
+    // or animation is in progress, or queue has events - queue this round result
+    if (this.players.length === 0 || this.diceElements.length === 0 ||
+        this.isAnimating || this.rollEventQueue.length > 0) {
+      console.log('[BiggerDice] handleRoundResult: queuing round result (waiting for dice/animation)');
+      this.rollEventQueue.push({ type: 'round_result', message });
+      return;
+    }
+
+    // Process the round result immediately
+    this.processRoundResult(message);
+  }
+
+  /**
+   * Process a round result event.
+   * This can be called directly or from the queue after dice animations complete.
+   * Uses server-provided authoritative scores to ensure all clients (players and spectators)
+   * see synchronized scores regardless of animation timing.
+   * @param {Object} message - The round result message
+   */
+  processRoundResult(message) {
+    console.log('[BiggerDice] processRoundResult:', message);
+    console.log('[DEBUG] processRoundResult ENTRY - scores before:', this.players.map(p => ({id: p.user_id || p.id, score: p.score})));
+
+    // Support both legacy 2-player format and new N-player format
+    const rolls = message.rolls || [];
     const winnerId = message.winner_id ? String(message.winner_id) : null;
-    const isTie = message.is_tie;
+    const isTiebreaker = message.is_tiebreaker || false;
+    const tiebreakerPlayers = (message.tiebreaker_players || []).map(id => String(id));
+    const hasTie = tiebreakerPlayers.length > 0;
+    // Server-provided authoritative scores - ensures spectators and players are in sync
+    const serverScores = message.scores || [];
 
-    // Find players and update UI with roll results
-    const p1 = this.players.find(p => String(p.id || p.user_id) === player1Id);
-    const p2 = this.players.find(p => String(p.id || p.user_id) === player2Id);
+    // Update dice display with all rolls and persist to lastDiceState
+    rolls.forEach(([playerId, roll]) => {
+      const playerIdStr = String(playerId);
+      const playerIndex = this.players.findIndex(p =>
+        String(p.id || p.user_id) === playerIdStr
+      );
 
-    // Store round in history (only if not a tie - ties don't count as rounds)
-    if (!isTie) {
-      this.roundHistory.push({
-        round: this.roundHistory.length + 1,
-        player1: {
-          id: player1Id,
-          name: p1?.name || p1?.username || 'Player 1',
-          roll: player1Roll
-        },
-        player2: {
-          id: player2Id,
-          name: p2?.name || p2?.username || 'Player 2',
-          roll: player2Roll
-        },
-        winnerId: winnerId,
-        winnerName: winnerId ? (String(p1?.id || p1?.user_id) === winnerId ? (p1?.name || p1?.username) : (p2?.name || p2?.username)) : null
+      // Persist roll in lastDiceState so it survives UI re-renders
+      this.updateLastDiceState(playerIdStr, roll);
+
+      if (playerIndex >= 0 && playerIndex < this.diceElements.length) {
+        this.setDiceValue(this.diceElements[playerIndex], roll);
+      }
+    });
+
+    // Apply authoritative scores from server (ensures spectator/player sync)
+    if (serverScores.length > 0) {
+      serverScores.forEach(([playerId, score]) => {
+        const playerIdStr = String(playerId);
+        const player = this.players.find(p => String(p.id || p.user_id) === playerIdStr);
+        if (player) {
+          const oldScore = player.score || 0;
+          player.score = score;
+          if (oldScore !== score) {
+            console.log(`[BiggerDice] Score sync: ${player.username || player.name} ${oldScore} -> ${score}`);
+          }
+        }
       });
     }
 
-    // Log the result
-    if (isTie) {
-      console.log(`[BiggerDice] Tie! Both rolled ${player1Roll}. Roll again!`);
-    } else if (winnerId) {
-      const winner = p1 && String(p1.id || p1.user_id) === winnerId ? p1 : p2;
-      const winnerName = winner ? winner.name || winner.username : 'Unknown';
-      const winnerRoll = String(p1?.id || p1?.user_id) === winnerId ? player1Roll : player2Roll;
-      console.log(`[BiggerDice] ${winnerName} wins the round with ${winnerRoll}!`);
+    // Store round in history (only if there's a winner - ties go to tiebreaker)
+    if (winnerId && !hasTie) {
+      const winner = this.players.find(p => String(p.id || p.user_id) === winnerId);
+      const winnerDisplayName = winner?.username || winner?.name || 'Unknown';
 
-      // Update winner's score locally (will be synced with full state later)
-      if (winner) {
-        winner.score = (winner.score || 0) + 1;
-        console.log(`[BiggerDice] Updated ${winnerName}'s score to ${winner.score}`);
-      }
+      const rollsData = rolls.map(([playerId, roll]) => {
+        const player = this.players.find(p => String(p.id || p.user_id) === String(playerId));
+        return {
+          id: String(playerId),
+          name: player?.name || player?.username || `Player`,
+          roll: roll
+        };
+      });
+
+      this.roundHistory.push({
+        round: this.roundHistory.length + 1,
+        rolls: rollsData,
+        winnerId: winnerId,
+        winnerName: winnerDisplayName,
+        isTiebreaker: isTiebreaker
+      });
+
+      console.log(`[BiggerDice] ${winnerDisplayName} wins the round with score ${winner?.score || 0}`);
     }
 
-    // Update the game UI to reflect new state
+    // Log the result
+    if (hasTie) {
+      const tiedNames = tiebreakerPlayers.map(id => {
+        const p = this.players.find(p => String(p.id || p.user_id) === id);
+        return p?.username || p?.name || id;
+      }).join(', ');
+      console.log(`[BiggerDice] Tie! ${tiedNames} go to tiebreaker!`);
+      this.showTiebreakerMessage(tiebreakerPlayers);
+    } else if (winnerId) {
+      // Set flag to delay next round - allows players to see the round result
+      this.roundEndedWithWinner = true;
+    }
+
+    // Update scores immediately - this ensures scores are visible even during rapid auto-play
+    console.log('[DEBUG] processRoundResult - about to call updateGameUI, scores:', this.players.map(p => ({id: p.user_id || p.id, score: p.score})));
+
+    // Update the game UI to reflect new state (renderPlayersArea uses this.players which now has updated scores)
     this.updateGameUI();
+
+    // CRITICAL: Force synchronous layout/paint to ensure score is visible before next round
+    // Without this, rapid auto-play can cause browser to batch DOM updates, making scores
+    // appear to lag behind by several rounds.
+    this.forceImmediateRender();
+
+    console.log('[DEBUG] handleRoundResult EXIT - final scores:', this.players.map(p => ({id: p.user_id || p.id, score: p.score})));
+  }
+
+  /**
+   * Force the browser to immediately render any pending DOM changes.
+   * This is critical for rapid auto-play where multiple rounds happen quickly.
+   * Without this, browsers may batch DOM updates and scores appear to lag.
+   */
+  forceImmediateRender() {
+    const container = this.elements.playersArea;
+    if (!container) return;
+
+    // Reading offsetHeight forces the browser to perform synchronous layout calculation,
+    // which ensures any pending DOM changes are flushed.
+    void container.offsetHeight;
+
+    // Additionally, find and highlight the score elements that changed
+    // This provides visual feedback and forces the browser to repaint
+    const scoreElements = container.querySelectorAll('.player-score');
+    const MAX_ELEMENTS = 10; // Safety bound
+    const count = Math.min(scoreElements.length, MAX_ELEMENTS);
+    for (let i = 0; i < count; i++) {
+      // Force style recalculation by reading computed style
+      void window.getComputedStyle(scoreElements[i]).opacity;
+    }
+  }
+
+  showTiebreakerMessage(tiebreakerPlayerIds) {
+    // Show a brief message about tiebreaker
+    const tiedNames = tiebreakerPlayerIds.map(id => {
+      const p = this.players.find(p => String(p.id || p.user_id) === id);
+      return p?.username || p?.name || 'Player';
+    }).join(' vs ');
+
+    // Update turn indicator to show tiebreaker
+    const indicator = this.elements.turnIndicator;
+    if (indicator) {
+      indicator.textContent = `Tiebreaker: ${tiedNames}`;
+      indicator.style.borderColor = 'var(--warning-color)';
+    }
+  }
+
+  handleTiebreakerStarted(message) {
+    console.log('[BiggerDice] Tiebreaker started:', message);
+
+    const tiebreakerPlayers = (message.tiebreaker_players || []).map(id => String(id));
+    const firstRoller = message.first_roller ? String(message.first_roller) : null;
+
+    // Update current turn to the first tiebreaker roller
+    if (firstRoller) {
+      this.currentTurn = firstRoller;
+    }
+
+    // Show tiebreaker message
+    this.showTiebreakerMessage(tiebreakerPlayers);
+
+    // Keep dice values visible - they only reset when player rolls again
+    // (handleDiceRolled will update the dice when player actually rolls)
+
+    this.updateGameUI();
+
+    // Check if auto-roll is needed (first roller might be an auto-player)
+    this.checkAutoRollNeeded();
   }
 
   handleTurnChanged(message) {
     console.log('[BiggerDice] Turn changed:', message);
+    console.log('[DEBUG] handleTurnChanged - current player scores:', this.players.map(p => ({id: p.user_id || p.id, score: p.score})));
     this.currentTurn = String(message.current_turn);
     this.round = message.turn_number || this.round;
 
     // Update UI to show whose turn it is
     this.updateTurnIndicator();
     this.updateButtons();
+
+    // Start turn timer for manual players
+    this.startTurnTimer();
+
+    // Check if we need to trigger auto-roll for kicked players
+    this.checkAutoRollNeeded();
+  }
+
+  /**
+   * Check if the current turn player is an auto-player (kicked) and trigger auto-roll.
+   * This is a frontend fallback mechanism to ensure kicked players' turns are handled
+   * even if the backend auto-roll fails (e.g., due to cache miss).
+   *
+   * The backend normally handles auto-rolling, but this provides resilience for
+   * games with 3+ players where a kicked player's turn may not be auto-rolled
+   * if the backend's auto_players state is lost.
+   *
+   * IMPORTANT: This function waits for any ongoing dice animation to complete
+   * before triggering the auto-roll, ensuring proper visual sequencing.
+   */
+  checkAutoRollNeeded() {
+    console.log('[BiggerDice] checkAutoRollNeeded called:', {
+      gameStatus: this.gameStatus,
+      currentTurn: this.currentTurn,
+      autoPlayers: [...this.autoPlayers],
+      myPlayerId: this.myPlayerId,
+      playersCount: this.players.length,
+      isAnimating: this.isAnimating,
+      queueLength: this.rollEventQueue.length
+    });
+
+    // Only check during active gameplay
+    if (this.gameStatus !== GameStatus.PLAYING) {
+      console.log('[BiggerDice] checkAutoRollNeeded: exiting - gameStatus not PLAYING:', this.gameStatus);
+      return;
+    }
+
+    // Don't auto-roll if no current turn set
+    if (!this.currentTurn) {
+      console.log('[BiggerDice] checkAutoRollNeeded: exiting - no currentTurn');
+      return;
+    }
+
+    const currentTurnStr = String(this.currentTurn);
+
+    // Check if current turn player is in the auto-players set (kicked players)
+    if (!this.autoPlayers.has(currentTurnStr)) {
+      console.log('[BiggerDice] checkAutoRollNeeded: exiting - currentTurn not in autoPlayers:', currentTurnStr);
+      return;
+    }
+
+    // Don't auto-roll for ourselves (shouldn't happen, but safety check)
+    if (currentTurnStr === String(this.myPlayerId)) {
+      console.log('[BiggerDice] checkAutoRollNeeded: exiting - currentTurn is myself');
+      return;
+    }
+
+    // Note: We removed the check for auto-player being in this.players because:
+    // 1. After handleGameStarted, players have .id property
+    // 2. After handleRoomState, players have .user_id property
+    // 3. This inconsistency caused the check to fail
+    // 4. The autoPlayers set is the authoritative source for who needs auto-rolling
+    // 5. The backend validates the auto-roll request anyway
+
+    // Prevent duplicate auto-roll scheduling for the same player
+    if (this.pendingAutoRoll === currentTurnStr) {
+      console.log('[BiggerDice] checkAutoRollNeeded: exiting - auto-roll already pending for:', currentTurnStr);
+      return;
+    }
+
+    // If animation is in progress or queue has events, wait for them to complete
+    // This ensures proper visual sequencing: all animations complete -> auto-roll
+    if (this.isAnimating || this.rollEventQueue.length > 0) {
+      console.log('[BiggerDice] checkAutoRollNeeded: animation/queue in progress, deferring auto-roll');
+      // The processNextRollEvent will call checkAutoRollNeeded when queue is empty
+      return;
+    }
+
+    console.log('[BiggerDice] checkAutoRollNeeded: will auto-roll for kicked player:', currentTurnStr);
+    this.pendingAutoRoll = currentTurnStr;
+
+    // Clear any existing timeout to prevent multiple timers (parallel games fix)
+    if (this.autoRollTimeoutId) {
+      clearTimeout(this.autoRollTimeoutId);
+      this.autoRollTimeoutId = null;
+    }
+
+    // Capture room ID for validation in callback (parallel games isolation)
+    const capturedRoomId = this.roomId;
+
+    // Use a small delay to avoid race conditions with backend auto-roll
+    // The backend should handle this, but this is a fallback
+    // Delay is 200ms since we already waited for animation to complete
+    this.autoRollTimeoutId = setTimeout(() => {
+      // Clear the timeout ID
+      this.autoRollTimeoutId = null;
+
+      // Clear the pending flag
+      this.pendingAutoRoll = null;
+
+      console.log('[BiggerDice] checkAutoRollNeeded setTimeout callback:', {
+        gameStatus: this.gameStatus,
+        currentTurn: this.currentTurn,
+        expectedTurn: currentTurnStr,
+        autoPlayers: [...this.autoPlayers],
+        isAnimating: this.isAnimating,
+        roomId: this.roomId,
+        capturedRoomId: capturedRoomId
+      });
+
+      // Validate room ID hasn't changed (parallel games isolation)
+      if (this.roomId !== capturedRoomId) {
+        console.log('[BiggerDice] checkAutoRollNeeded setTimeout: exiting - roomId changed (parallel game switched)');
+        return;
+      }
+
+      // Re-check conditions after delay (state may have changed)
+      if (this.gameStatus !== GameStatus.PLAYING) {
+        console.log('[BiggerDice] checkAutoRollNeeded setTimeout: exiting - gameStatus changed');
+        return;
+      }
+      if (String(this.currentTurn) !== currentTurnStr) {
+        // Turn already changed (backend handled it)
+        console.log('[BiggerDice] checkAutoRollNeeded setTimeout: exiting - turn already changed (backend handled it)');
+        return;
+      }
+      if (!this.autoPlayers.has(currentTurnStr)) {
+        // Player is no longer auto
+        console.log('[BiggerDice] checkAutoRollNeeded setTimeout: exiting - player no longer auto');
+        return;
+      }
+
+      // Final check - if animation/queue is active during the delay, wait for them
+      if (this.isAnimating || this.rollEventQueue.length > 0) {
+        console.log('[BiggerDice] checkAutoRollNeeded setTimeout: animation/queue active during delay, re-queuing');
+        // Re-queue the check - it will be called again when queue empties
+        this.pendingAutoRoll = null; // Clear so we can re-schedule
+        return;
+      }
+
+      // Send auto-roll command for the kicked player
+      console.log('[BiggerDice] checkAutoRollNeeded setTimeout: sending auto-roll for:', currentTurnStr);
+      this.sendAutoRoll(currentTurnStr);
+    }, 200);
+  }
+
+  /**
+   * Send an auto-roll command for a kicked player.
+   * This triggers the backend to roll for the specified player.
+   */
+  sendAutoRoll(playerId) {
+    console.log('[BiggerDice] Sending auto-roll for player:', playerId);
+    this.send({
+      type: 'games.command.bigger_dice.auto_roll',
+      room_id: this.roomId,
+      target_user_id: playerId
+    });
   }
 
   handleRoundComplete(message) {
@@ -4518,20 +5972,74 @@ export class BiggerDice extends HTMLElement {
 
     this.showRoundResult(message);
     this.updateGameUI();
+
+    // Check if auto-roll is needed (next turn might be an auto-player)
+    this.checkAutoRollNeeded();
   }
 
   handleGameOver(message) {
+    console.log('[BiggerDice] handleGameOver:', message);
+    console.log('[DEBUG] handleGameOver ENTRY:', {
+      isAnimating: this.isAnimating,
+      queueLength: this.rollEventQueue.length,
+      playersCount: this.players.length,
+      diceElementsCount: this.diceElements.length
+    });
+
+    // If we don't have players/dice elements yet, or animation is in progress,
+    // or queue has events - queue the game_over event
+    if (this.players.length === 0 || this.diceElements.length === 0 ||
+        this.isAnimating || this.rollEventQueue.length > 0) {
+      console.log('[BiggerDice] handleGameOver: queuing game_over (waiting for dice/animation)');
+      this.rollEventQueue.push({ type: 'game_over', message });
+      return;
+    }
+
+    // Process the game over immediately
+    this.processGameOver(message);
+  }
+
+  /**
+   * Process a game over event.
+   * This can be called directly or from the queue after all animations complete.
+   * @param {Object} message - The game over message
+   */
+  processGameOver(message) {
+    console.log('[BiggerDice] processGameOver:', message);
     this.gameStatus = GameStatus.FINISHED;
 
-    if (message.scores) {
+    // Clear any pending auto-roll timeout (parallel games fix)
+    if (this.autoRollTimeoutId) {
+      clearTimeout(this.autoRollTimeoutId);
+      this.autoRollTimeoutId = null;
+    }
+    this.pendingAutoRoll = null;
+
+    // Support new format with final_scores (array of [user_id, username, score])
+    if (message.final_scores && Array.isArray(message.final_scores)) {
+      message.final_scores.forEach(([userId, username, score]) => {
+        const player = this.players.find(p =>
+          String(p.id || p.user_id) === String(userId)
+        );
+        if (player) {
+          player.score = score;
+        }
+      });
+    }
+    // Support legacy format with scores object
+    else if (message.scores) {
       const p1 = this.players.find(p => p.id === message.scores.player1_id);
       const p2 = this.players.find(p => p.id === message.scores.player2_id);
       if (p1) p1.score = message.scores.player1_score;
       if (p2) p2.score = message.scores.player2_score;
     }
 
-    // Re-enable lobby chat when game ends
-    this.updateChatTabAccess();
+    // Hide chat panel and game footer when game ends
+    this.elements.chatPanel?.classList.add('hidden');
+    this.elements.gameFooter?.classList.add('hidden');
+
+    // Stop turn timer if running
+    this.stopTurnTimer();
 
     this.showGameOverResult(message);
     this.updateGameUI();
@@ -4577,7 +6085,8 @@ export class BiggerDice extends HTMLElement {
       room_id: message.room_id,
       room_name: message.room_name,
       is_password_protected: message.is_password_protected,
-      status: message.status
+      status: message.status,
+      allow_spectators: message.allow_spectators === true
     };
     // Update the UI to show the not-in-room state
     this.showNotInRoomUI();
@@ -4592,13 +6101,46 @@ export class BiggerDice extends HTMLElement {
     this.elements.waitingState.classList.add('hidden');
     this.elements.gameBoard.classList.add('hidden');
 
+    // Hide chat panel until user confirms joining
+    if (this.elements.chatPanel) {
+      this.elements.chatPanel.classList.add('hidden');
+    }
+
     // Show not-in-room state
     this.elements.notInRoomState.classList.remove('hidden');
 
-    // Update button text based on spectate mode and password protection
+    // Show/hide spectator option based on allow_spectators setting
+    if (this.notInRoomInfo.allow_spectators && this.elements.spectatorOptionContainer) {
+      this.elements.spectatorOptionContainer.classList.remove('hidden');
+      // Reset checkbox to match current wantsToSpectate state
+      if (this.elements.joinAsSpectatorCheckbox) {
+        this.elements.joinAsSpectatorCheckbox.checked = this.wantsToSpectate || false;
+      }
+    } else if (this.elements.spectatorOptionContainer) {
+      this.elements.spectatorOptionContainer.classList.add('hidden');
+      // If spectators not allowed, ensure wantsToSpectate is false
+      this.wantsToSpectate = false;
+    }
+
+    // Update button text and hint based on spectate mode and password protection
+    this.updateEnterRoomButton();
+
+    // Update room name in title
+    this.elements.headerTitle.textContent = this.notInRoomInfo.room_name || 'Bigger Dice';
+    this.elements.gameStatus.textContent = this.formatStatus(this.notInRoomInfo.status);
+  }
+
+  updateEnterRoomButton() {
+    if (!this.notInRoomInfo) return;
+
     if (this.wantsToSpectate) {
-      this.elements.enterRoomBtnText.textContent = 'Watch as Spectator';
-      this.elements.notInRoomHint.textContent = 'You will join as a spectator and watch the game.';
+      if (this.notInRoomInfo.is_password_protected) {
+        this.elements.enterRoomBtnText.textContent = 'Watch as Spectator (Password Required)';
+        this.elements.notInRoomHint.textContent = 'This room is password protected. You will join as a spectator.';
+      } else {
+        this.elements.enterRoomBtnText.textContent = 'Watch as Spectator';
+        this.elements.notInRoomHint.textContent = 'You will join as a spectator and watch the game.';
+      }
     } else if (this.notInRoomInfo.is_password_protected) {
       this.elements.enterRoomBtnText.textContent = 'Enter Room (Password Required)';
       this.elements.notInRoomHint.textContent = 'This room is password protected.';
@@ -4606,27 +6148,48 @@ export class BiggerDice extends HTMLElement {
       this.elements.enterRoomBtnText.textContent = 'Enter Room';
       this.elements.notInRoomHint.textContent = '';
     }
-
-    // Update room name in title
-    this.elements.headerTitle.textContent = this.notInRoomInfo.room_name || 'Bigger Dice';
-    this.elements.gameStatus.textContent = this.formatStatus(this.notInRoomInfo.status);
   }
 
   handleEnterRoomClick() {
     if (!this.notInRoomInfo) return;
 
-    if (this.notInRoomInfo.is_password_protected && !this.wantsToSpectate) {
-      // Password protected rooms require password for players (not spectators)
+    // Spectators don't need balance check - they can watch for free
+    if (this.wantsToSpectate) {
+      // But they still need password if room is protected
+      if (this.notInRoomInfo.is_password_protected) {
+        this.showJoinPasswordModal(
+          this.notInRoomInfo.room_id,
+          this.notInRoomInfo.room_name,
+          true // asSpectator = true
+        );
+      } else {
+        this.send({
+          type: 'games.command.join_as_spectator',
+          room_name: this.notInRoomInfo.room_name
+        });
+      }
+      return;
+    }
+
+    // Players need balance check before joining
+    this.showJoinConfirmModal(
+      this.notInRoomInfo.room_id,
+      this.notInRoomInfo.room_name,
+      this.notInRoomInfo.is_password_protected
+    );
+  }
+
+  // Called after user confirms they want to join (has enough balance)
+  executeJoinRoom() {
+    if (!this.notInRoomInfo) return;
+
+    if (this.notInRoomInfo.is_password_protected) {
+      // Password protected rooms require password
       this.showJoinPasswordModal(this.notInRoomInfo.room_id, this.notInRoomInfo.room_name);
     } else {
       // Send join command directly via WebSocket
-      // Use different command for spectators vs players
-      const messageType = this.wantsToSpectate
-        ? 'games.command.join_as_spectator'
-        : 'games.command.join_room';
-
       this.send({
-        type: messageType,
+        type: 'games.command.join_room',
         room_name: this.notInRoomInfo.room_name
       });
     }
@@ -4637,6 +6200,9 @@ export class BiggerDice extends HTMLElement {
   // ============================================
 
   sendReady() {
+    // Stop ready timer when player manually clicks ready
+    this.stopReadyTimer();
+
     this.send({
       type: 'games.command.ready',
       room_id: this.roomId
@@ -4645,11 +6211,234 @@ export class BiggerDice extends HTMLElement {
   }
 
   sendRoll() {
+    // Stop the turn timer when player rolls
+    this.stopTurnTimer();
+
     this.send({
       type: 'games.command.bigger_dice.roll',
       room_id: this.roomId
     });
     this.elements.rollBtn.disabled = true;
+  }
+
+  // ============================================
+  // Turn Timer Methods (5 second auto-roll)
+  // ============================================
+
+  /**
+   * Start the turn timer when it's the player's turn.
+   * Only starts if player is not on auto-play.
+   */
+  startTurnTimer() {
+    // Don't start timer if:
+    // - Not playing
+    // - Not my turn
+    // - I'm on auto-play
+    // - I'm a spectator
+    if (this.gameStatus !== GameStatus.PLAYING) return;
+    if (String(this.currentTurn) !== String(this.myPlayerId)) return;
+    if (this.autoPlayers.has(String(this.myPlayerId))) return;
+    if (this.isSpectator) return;
+
+    // Stop any existing timer
+    this.stopTurnTimer();
+
+    // Initialize timer
+    this.turnTimeRemaining = this.turnTimerDuration;
+    this.updateTurnTimerUI();
+
+    // Show timer
+    this.elements.turnTimer?.classList.remove('hidden');
+
+    // Start countdown
+    this.turnTimer = setInterval(() => {
+      this.turnTimeRemaining -= 0.1; // Decrement by 100ms for smooth progress
+
+      if (this.turnTimeRemaining <= 0) {
+        this.onTurnTimerExpired();
+      } else {
+        this.updateTurnTimerUI();
+      }
+    }, 100);
+
+    console.log('[BiggerDice] Turn timer started');
+  }
+
+  /**
+   * Stop the turn timer.
+   */
+  stopTurnTimer() {
+    if (this.turnTimer) {
+      clearInterval(this.turnTimer);
+      this.turnTimer = null;
+    }
+    this.turnTimeRemaining = 0;
+
+    // Hide timer
+    this.elements.turnTimer?.classList.add('hidden');
+  }
+
+  /**
+   * Update the turn timer UI.
+   */
+  updateTurnTimerUI() {
+    const progress = this.elements.turnTimerProgress;
+    const text = this.elements.turnTimerText;
+    const timer = this.elements.turnTimer;
+
+    if (!progress || !text || !timer) return;
+
+    // Update progress bar width
+    const percentage = (this.turnTimeRemaining / this.turnTimerDuration) * 100;
+    progress.style.width = `${Math.max(0, percentage)}%`;
+
+    // Update text (show whole seconds)
+    const seconds = Math.ceil(this.turnTimeRemaining);
+    text.textContent = seconds;
+
+    // Add warning class when time is low
+    if (this.turnTimeRemaining <= 2) {
+      timer.classList.add('turn-timer--warning');
+    } else {
+      timer.classList.remove('turn-timer--warning');
+    }
+  }
+
+  /**
+   * Handle turn timer expiration - auto-roll for the player.
+   */
+  onTurnTimerExpired() {
+    console.log('[BiggerDice] Turn timer expired - auto-rolling');
+    this.stopTurnTimer();
+
+    // Double-check it's still my turn
+    if (String(this.currentTurn) === String(this.myPlayerId) &&
+        this.gameStatus === GameStatus.PLAYING &&
+        !this.autoPlayers.has(String(this.myPlayerId))) {
+      // Send roll command
+      this.sendRoll();
+    }
+  }
+
+  sendEnableAutoPlay() {
+    if (!this.roomId) return;
+
+    // Stop turn timer when enabling auto-play
+    this.stopTurnTimer();
+
+    this.send({
+      type: 'games.command.bigger_dice.enable_auto_play',
+      room_id: this.roomId
+    });
+    // Hide the button immediately after clicking (will be handled by server event)
+    this.elements.autoPlayBtn?.classList.add('hidden');
+  }
+
+  // ============================================
+  // Ready Timer Methods (auto-ready when all players selected)
+  // ============================================
+
+  /**
+   * Start the ready timer when all players are selected.
+   * Only starts if player is not already ready.
+   */
+  startReadyTimer() {
+    // Don't start timer if:
+    // - Game not in waiting state
+    // - I'm a spectator
+    // - I'm already ready
+    if (this.gameStatus !== GameStatus.WAITING) return;
+    if (this.isSpectator) return;
+
+    // Check if I'm a selected player and not ready yet
+    const myPlayer = this.players.find(p =>
+      String(p.user_id || p.id) === String(this.myPlayerId)
+    );
+    if (!myPlayer) return; // Not a selected player
+    if (myPlayer.is_ready) return; // Already ready
+
+    // Stop any existing ready timer
+    this.stopReadyTimer();
+
+    // Initialize timer from config
+    this.readyTimeRemaining = this.readyTimerDuration;
+    this.updateReadyTimerUI();
+
+    // Show timer
+    this.elements.readyTimer?.classList.remove('hidden');
+
+    // Start countdown
+    this.readyTimer = setInterval(() => {
+      this.readyTimeRemaining -= 0.1; // Decrement by 100ms for smooth progress
+
+      if (this.readyTimeRemaining <= 0) {
+        this.onReadyTimerExpired();
+      } else {
+        this.updateReadyTimerUI();
+      }
+    }, 100);
+
+    console.log('[BiggerDice] Ready timer started, duration:', this.readyTimerDuration);
+  }
+
+  /**
+   * Stop the ready timer.
+   */
+  stopReadyTimer() {
+    if (this.readyTimer) {
+      clearInterval(this.readyTimer);
+      this.readyTimer = null;
+    }
+    this.readyTimeRemaining = 0;
+
+    // Hide timer
+    this.elements.readyTimer?.classList.add('hidden');
+    this.elements.readyTimer?.classList.remove('ready-timer--warning');
+  }
+
+  /**
+   * Update the ready timer UI.
+   */
+  updateReadyTimerUI() {
+    const progress = this.elements.readyTimerProgress;
+    const text = this.elements.readyTimerText;
+    const timer = this.elements.readyTimer;
+
+    if (!progress || !text || !timer) return;
+
+    // Update progress bar width
+    const percentage = (this.readyTimeRemaining / this.readyTimerDuration) * 100;
+    progress.style.width = `${Math.max(0, percentage)}%`;
+
+    // Update text (show whole seconds)
+    const seconds = Math.ceil(this.readyTimeRemaining);
+    text.textContent = seconds;
+
+    // Add warning class when time is low (last 5 seconds)
+    if (this.readyTimeRemaining <= 5) {
+      timer.classList.add('ready-timer--warning');
+    } else {
+      timer.classList.remove('ready-timer--warning');
+    }
+  }
+
+  /**
+   * Handle ready timer expiration - auto-ready for the player.
+   */
+  onReadyTimerExpired() {
+    console.log('[BiggerDice] Ready timer expired - auto-ready');
+    this.stopReadyTimer();
+
+    // Double-check conditions
+    if (this.gameStatus !== GameStatus.WAITING || this.isSpectator) return;
+
+    const myPlayer = this.players.find(p =>
+      String(p.user_id || p.id) === String(this.myPlayerId)
+    );
+    if (!myPlayer || myPlayer.is_ready) return;
+
+    // Send ready command
+    this.sendReady();
   }
 
   leaveGame() {
@@ -4725,11 +6514,14 @@ export class BiggerDice extends HTMLElement {
     status.className = `game-status game-status--${this.gameStatus}`;
 
     // Determine which view to show based on player count, role, and game status
-    const needsSecondPlayer = this.players.length < 2;
+    // Use maxPlayers (not hardcoded 2) to support N-player games
+    const needsMorePlayers = this.players.length < this.maxPlayers;
     const amInLobby = this.lobby.some(p => String(p.user_id) === String(this.myPlayerId));
     const amAPlayer = this.players.some(p =>
       String(p.user_id || p.id) === String(this.myPlayerId)
     );
+
+    console.log('[BiggerDice] updateGameUI: players.length=', this.players.length, 'maxPlayers=', this.maxPlayers, 'needsMorePlayers=', needsMorePlayers, 'isAdmin=', this.isAdmin, 'amInLobby=', amInLobby, 'amAPlayer=', amAPlayer);
 
     // Hide all views first
     waitingForAdmin.classList.add('hidden');
@@ -4738,7 +6530,7 @@ export class BiggerDice extends HTMLElement {
     notInRoomState.classList.add('hidden');
     board.classList.add('hidden');
 
-    if (needsSecondPlayer) {
+    if (needsMorePlayers) {
       // Still waiting for players to be selected
       if (this.isAdmin) {
         // Admin always sees the admin lobby interface (regardless of being in players or lobby)
@@ -4748,20 +6540,25 @@ export class BiggerDice extends HTMLElement {
         // Non-admin in lobby: waiting to be selected
         waitingForAdmin.classList.remove('hidden');
         this.renderWaitingPlayersList();
+      } else if (this.isSpectator) {
+        // Spectators see the same lobby view as players waiting to be selected
+        waitingForAdmin.classList.remove('hidden');
+        this.renderWaitingPlayersList();
       } else if (amAPlayer) {
-        // Non-admin but is a player: waiting for second player
+        // Non-admin but is a player: waiting for more players
         waitingState.classList.remove('hidden');
       } else {
         // Unknown state, show generic waiting
         waitingState.classList.remove('hidden');
       }
     } else {
-      // Both players are ready, show the game board
+      // All players are selected, show the game board
       board.classList.remove('hidden');
     }
 
-    // Render player cards dynamically
+    // Render player cards and dice dynamically
     this.renderPlayersArea();
+    this.renderDiceArea();
     this.renderDisconnectOverlay();
 
     // Update turn indicator
@@ -5040,6 +6837,8 @@ export class BiggerDice extends HTMLElement {
     const container = this.elements.playersArea;
     if (!container) return;
 
+    console.log('[DEBUG] renderPlayersArea - START, scores:', this.players.map(p => ({id: p.user_id || p.id, score: p.score})));
+
     // Build HTML for all player slots
     const playerCards = [];
 
@@ -5053,6 +6852,7 @@ export class BiggerDice extends HTMLElement {
         const isActive = String(this.currentTurn) === String(playerId);
         const isReady = player.is_ready === true;
         const score = player.score || 0;
+        console.log('[DEBUG] renderPlayersArea - rendering player:', playerId, 'with score:', score);
         const initial = playerName.charAt(0)?.toUpperCase() || '?';
         const disconnectInfo = this.disconnectedPlayers.get(playerIdStr);
         const isDisconnected = Boolean(disconnectInfo);
@@ -5101,6 +6901,96 @@ export class BiggerDice extends HTMLElement {
     }
 
     container.innerHTML = playerCards.join('');
+    console.log('[DEBUG] renderPlayersArea - END, innerHTML updated');
+  }
+
+  /**
+   * Update only the score display elements without re-rendering the entire player area.
+   * This is useful for incremental updates where a full re-render is not desired.
+   * Note: Currently not used - handleRoundResult calls updateGameUI which does a full render.
+   * Kept for potential future optimization use cases.
+   */
+  updateScoresOnly() {
+    const container = this.elements.playersArea;
+    if (!container) return;
+
+    const MAX_PLAYERS = 10; // Safety bound for loop
+    const playerCount = Math.min(this.players.length, MAX_PLAYERS);
+
+    for (let i = 0; i < playerCount; i++) {
+      const player = this.players[i];
+      const playerId = player.user_id || player.id;
+      const playerCard = container.querySelector(`.player-card[data-player-id="${playerId}"]`);
+      if (playerCard) {
+        const scoreEl = playerCard.querySelector('.player-score');
+        if (scoreEl) {
+          const newScore = player.score || 0;
+          if (scoreEl.textContent !== String(newScore)) {
+            scoreEl.textContent = newScore;
+            // Add a brief highlight effect to indicate score change
+            scoreEl.classList.add('score-updated');
+            setTimeout(() => scoreEl.classList.remove('score-updated'), 300);
+          }
+        }
+      }
+    }
+  }
+
+  renderDiceArea() {
+    const container = this.elements.diceContainer;
+    if (!container) return;
+
+    // IMPORTANT: Skip rendering if animation is in progress or queue has pending events.
+    // Re-rendering during animation destroys the dice elements being animated,
+    // which breaks the animation for the last player to roll.
+    // The dice values are persisted in lastDiceState and will be restored after
+    // animation completes via applyDiceState().
+    if (this.isAnimating || this.rollEventQueue.length > 0) {
+      console.log('[BiggerDice] renderDiceArea: skipping - animation in progress or queue not empty');
+      return;
+    }
+
+    // Only render dice when we have players
+    const playerCount = this.players.length;
+    if (playerCount === 0) {
+      container.innerHTML = '';
+      this.diceElements = [];
+      return;
+    }
+
+    // Build dice HTML for each player
+    const diceHtml = this.players.map((player, index) => {
+      const playerName = player.username || player.name || `Player ${index + 1}`;
+      return `
+        <div class="dice-wrapper" data-player-index="${index}">
+          <div class="dice-label">${this.escapeHtml(playerName)}</div>
+          <div class="dice dice--player-${index}" id="dice-${index}" data-value="0">
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+            <span class="dice-dot"></span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = diceHtml;
+
+    // Cache dice elements
+    this.diceElements = this.players.map((_, index) =>
+      container.querySelector(`#dice-${index}`)
+    );
+
+    console.log(`[BiggerDice] renderDiceArea: created ${this.diceElements.length} dice elements`);
+
+    // Restore dice values from lastDiceState after re-rendering
+    // This ensures dice values persist across UI updates
+    this.applyDiceState();
   }
 
   renderDisconnectOverlay() {
@@ -5219,11 +7109,13 @@ export class BiggerDice extends HTMLElement {
   updateButtons() {
     const readyBtn = this.elements.readyBtn;
     const rollBtn = this.elements.rollBtn;
+    const autoPlayBtn = this.elements.autoPlayBtn;
 
     // Check if user is a spectator - spectators never see action buttons
     if (this.isSpectator || this.autoPlayers.has(String(this.myPlayerId))) {
       readyBtn?.classList.add('hidden');
       rollBtn?.classList.add('hidden');
+      autoPlayBtn?.classList.add('hidden');
       return;
     }
 
@@ -5237,12 +7129,14 @@ export class BiggerDice extends HTMLElement {
     if (!amIAPlayer) {
       readyBtn?.classList.add('hidden');
       rollBtn?.classList.add('hidden');
+      autoPlayBtn?.classList.add('hidden');
       return;
     }
 
     // During WAITING phase: show ready button if not ready yet
     if (this.gameStatus === GameStatus.WAITING) {
       rollBtn?.classList.add('hidden');
+      autoPlayBtn?.classList.add('hidden');
 
       // Show ready button only if player hasn't clicked ready
       if (myPlayerData && !myPlayerData.is_ready) {
@@ -5252,16 +7146,20 @@ export class BiggerDice extends HTMLElement {
         readyBtn?.classList.add('hidden');
       }
     }
-    // During PLAYING phase: show roll button when it's my turn
+    // During PLAYING phase: show roll button when it's my turn, auto-play button always
     else if (this.gameStatus === GameStatus.PLAYING) {
       readyBtn?.classList.add('hidden');
       rollBtn?.classList.remove('hidden');
       rollBtn.disabled = String(this.currentTurn) !== String(this.myPlayerId);
+
+      // Show Auto Play button during game (allows player to go AFK)
+      autoPlayBtn?.classList.remove('hidden');
     }
-    // Hide both when game is finished or other states
+    // Hide all when game is finished or other states
     else {
       readyBtn?.classList.add('hidden');
       rollBtn?.classList.add('hidden');
+      autoPlayBtn?.classList.add('hidden');
     }
   }
 
@@ -5316,22 +7214,44 @@ export class BiggerDice extends HTMLElement {
     this.updateGameUI();
   }
 
+  /**
+   * Animate a dice roll for a specific dice element.
+   * Returns a Promise that resolves when the animation completes.
+   * Only the specified dice element will animate - other dice remain static.
+   * @param {HTMLElement} diceEl - The dice element to animate
+   * @param {number} finalValue - The final dice value (1-6)
+   * @returns {Promise<void>} Resolves when animation is complete
+   */
   animateDiceRoll(diceEl, finalValue) {
-    diceEl.classList.add('dice--rolling');
+    return new Promise((resolve) => {
+      // Set animation flag
+      this.isAnimating = true;
 
-    let rollCount = 0;
-    const maxRolls = 10;
-    const rollInterval = setInterval(() => {
-      const randomValue = Math.floor(Math.random() * 6) + 1;
-      diceEl.dataset.value = randomValue;
-      rollCount++;
+      // Add rolling class only to this specific dice
+      diceEl.classList.add('dice--rolling');
 
-      if (rollCount >= maxRolls) {
-        clearInterval(rollInterval);
-        diceEl.classList.remove('dice--rolling');
-        diceEl.dataset.value = finalValue;
-      }
-    }, 100);
+      let rollCount = 0;
+      const maxRolls = 10;
+      const rollIntervalMs = 100;
+
+      const rollInterval = setInterval(() => {
+        const randomValue = Math.floor(Math.random() * 6) + 1;
+        diceEl.dataset.value = randomValue;
+        rollCount++;
+
+        if (rollCount >= maxRolls) {
+          clearInterval(rollInterval);
+          diceEl.classList.remove('dice--rolling');
+          diceEl.dataset.value = finalValue;
+
+          // Clear animation flag
+          this.isAnimating = false;
+
+          // Resolve the promise - animation is complete
+          resolve();
+        }
+      }, rollIntervalMs);
+    });
   }
 
   showRoundResult(message) {
@@ -5360,17 +7280,11 @@ export class BiggerDice extends HTMLElement {
     // Find the winner's info
     const winnerId = message.winner_id || message.winner;
     const winner = this.players.find(p => String(p.id || p.user_id) === String(winnerId));
-    const winnerName = message.winner_name || winner?.username || winner?.name || 'Winner';
+    const winnerName = message.winner_username || message.winner_name || winner?.username || winner?.name || 'Winner';
     const isWinner = String(winnerId) === myId;
 
     // Find the max score to determine winner(s)
     const maxScore = Math.max(...this.players.map(p => p.score || 0));
-
-    // Reset ready states for rematch tracking
-    this.players.forEach(p => p.is_ready = false);
-
-    // Find my player index for ready indicator update
-    const myPlayerIndex = this.players.findIndex(p => String(p.user_id || p.id) === myId);
 
     // Generate player scores HTML for all players
     const playersScoreHtml = this.players.map((player, index) => {
@@ -5382,10 +7296,6 @@ export class BiggerDice extends HTMLElement {
         <div class="game-over__player ${isPlayerWinner ? 'game-over__player--winner' : ''}">
           <div class="game-over__player-name">${this.escapeHtml(playerName)}</div>
           <div class="game-over__player-score">${playerScore}</div>
-          <div class="game-over__ready-indicator" id="player${index}ReadyIndicator">
-            <span class="game-over__ready-dot"></span>
-            <span class="game-over__ready-text">Waiting...</span>
-          </div>
         </div>
       `;
     }).join(this.players.length === 2 ? '<div class="game-over__vs">vs</div>' : '');
@@ -5406,9 +7316,13 @@ export class BiggerDice extends HTMLElement {
             ${this.roundHistory.map(round => `
               <tr class="${round.winnerId === myId ? 'game-over__row--win' : ''}">
                 <td>${round.round}</td>
-                ${round.rolls ? round.rolls.map((roll, i) => `
-                  <td class="${round.winnerId === String(this.players[i]?.id || this.players[i]?.user_id) ? 'game-over__cell--winner' : ''}">${roll}</td>
-                `).join('') : `
+                ${round.rolls ? this.players.map((player, i) => {
+                  const playerId = String(player.user_id || player.id);
+                  const rollData = round.rolls.find(r => String(r.id) === playerId);
+                  const rollValue = rollData ? (rollData.roll !== undefined ? rollData.roll : rollData) : '-';
+                  const isWinner = round.winnerId === playerId;
+                  return `<td class="${isWinner ? 'game-over__cell--winner' : ''}">${rollValue}</td>`;
+                }).join('') : `
                   <td class="${round.winnerId === round.player1?.id ? 'game-over__cell--winner' : ''}">${round.player1?.roll || '-'}</td>
                   <td class="${round.winnerId === round.player2?.id ? 'game-over__cell--winner' : ''}">${round.player2?.roll || '-'}</td>
                 `}
@@ -5436,46 +7350,13 @@ export class BiggerDice extends HTMLElement {
         ${roundHistoryHtml}
 
         <div class="game-over__actions">
-          <button class="game-over__btn game-over__btn--primary" id="playAgainBtn">Play Again</button>
-          <button class="game-over__btn game-over__btn--secondary" id="returnToLobbyBtn">Return to Lobby</button>
+          <button class="game-over__btn game-over__btn--primary" id="returnToLobbyBtn">Return to Lobby</button>
         </div>
       </div>
     `;
 
     // Bind button events
-    const playAgainBtn = board.querySelector('#playAgainBtn');
     const returnToLobbyBtn = board.querySelector('#returnToLobbyBtn');
-
-    if (playAgainBtn) {
-      playAgainBtn.addEventListener('click', () => {
-        // Send ready command to signal willingness to rematch
-        this.send({
-          type: 'games.command.ready',
-          room_id: this.roomId
-        });
-
-        // Mark myself as ready locally
-        const me = this.players.find(p => String(p.user_id || p.id) === myId);
-        if (me) {
-          me.is_ready = true;
-        }
-
-        // Update UI to show I'm ready
-        playAgainBtn.disabled = true;
-        playAgainBtn.textContent = `Waiting for ${this.players.length - 1} player(s)...`;
-
-        // Update ready indicator for myself
-        if (myPlayerIndex !== -1) {
-          const myIndicator = board.querySelector(`#player${myPlayerIndex}ReadyIndicator`);
-          if (myIndicator) {
-            myIndicator.classList.add('game-over__ready-indicator--ready');
-            myIndicator.querySelector('.game-over__ready-text').textContent = 'Ready!';
-          }
-        }
-
-        console.log('[BiggerDice] Sent play again ready signal');
-      });
-    }
 
     if (returnToLobbyBtn) {
       returnToLobbyBtn.addEventListener('click', () => {

@@ -1,7 +1,7 @@
 ---
 name: database
 description: PostgreSQL and MongoDB database design. Use for schema design, stored procedures, queries, and document collections.
-tools: Read, Glob, Grep, Edit, Bash, Write
+tools: Read, Glob, Grep, Edit, Bash, Write, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 skill: database
 color: red

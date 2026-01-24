@@ -24,7 +24,7 @@
 #                  GLOBAL, OAUTH_APPLICATIONS, OAUTH_CONSENT, PROFILE,
 #                  REGISTERED_USERS, SIGN_IN, SIGN_UP, THEME, UPLOADS, GAMES
 #
-# Available games: BIGGER_DICE
+# Available games: BIGGER_DICE, TIC_TAC_TOE
 
 TARGET="${1:-all}"
 MODE="${2:-prod}"

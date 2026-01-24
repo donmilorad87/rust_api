@@ -3,26 +3,23 @@
 //! Handles balance top-ups via checkout service (Kafka-driven).
 
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
-use chrono::Utc;
 use serde::Serialize;
-use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;
 use tracing::{error, warn};
+use uuid::Uuid;
 use validator::Validate;
 
 use crate::app::checkout::{
-    euros_to_cents, register_pending, remove_pending, CheckoutCommand, CheckoutKafkaRequest,
+    euros_to_cents, register_pending, remove_pending, CheckoutKafkaRequest,
 };
 use crate::app::http::api::controllers::responses::{
     BaseResponse, MissingFieldsResponse, ValidationErrorResponse,
 };
 use crate::app::http::api::validators::{BalanceCheckoutRequest, BalanceCheckoutRequestRaw};
 use crate::config::AppConfig;
-use crate::database::read::user as db_user_read;
 use crate::database::AppState;
 use crate::events::topic;
-use uuid::Uuid;
 
 /// Balance Controller
 pub struct BalanceController;
@@ -36,185 +33,11 @@ pub struct CheckoutSessionResponse {
 }
 
 impl BalanceController {
-    /// POST /api/v1/balance/checkout - Create checkout session via checkout service
-    pub async fn create_checkout_session(
-        state: web::Data<AppState>,
-        req: HttpRequest,
-        body: web::Json<BalanceCheckoutRequestRaw>,
-    ) -> HttpResponse {
-        let user_id = match req.extensions().get::<i64>() {
-            Some(id) => *id,
-            None => {
-                return HttpResponse::Unauthorized().json(BaseResponse::error("Unauthorized"));
-            }
-        };
-
-        let event_bus = match state.event_bus() {
-            Some(bus) => bus,
-            None => {
-                return HttpResponse::ServiceUnavailable()
-                    .json(BaseResponse::error("Checkout service unavailable"));
-            }
-        };
-
-        let raw = body.into_inner();
-        let mut missing_fields = Vec::new();
-
-        if raw.amount.is_none() {
-            missing_fields.push("amount is required".to_string());
-        }
-
-        if !missing_fields.is_empty() {
-            return HttpResponse::BadRequest().json(MissingFieldsResponse::new(missing_fields));
-        }
-
-        let request = BalanceCheckoutRequest {
-            amount: raw.amount.unwrap(),
-        };
-
-        if let Err(validation_errors) = request.validate() {
-            let mut errors: HashMap<String, Vec<String>> = HashMap::new();
-            for (field, field_errors) in validation_errors.field_errors() {
-                let messages: Vec<String> = field_errors
-                    .iter()
-                    .map(|e| {
-                        e.message
-                            .as_ref()
-                            .map(|m| m.to_string())
-                            .unwrap_or_else(|| e.code.to_string())
-                    })
-                    .collect();
-                errors.insert(field.to_string(), messages);
-            }
-
-            return HttpResponse::BadRequest().json(ValidationErrorResponse::new(errors));
-        }
-
-        let amount_cents = match euros_to_cents(request.amount) {
-            Ok(amount) => amount,
-            Err(message) => {
-                return HttpResponse::BadRequest().json(BaseResponse::error(message));
-            }
-        };
-
-        let service_token = AppConfig::checkout_service_token();
-        if service_token.is_empty() {
-            return HttpResponse::ServiceUnavailable()
-                .json(BaseResponse::error("Checkout service token not configured"));
-        }
-
-        let db = state.db.lock().await;
-        let user = match db_user_read::get_by_id(&db, user_id).await {
-            Ok(user) => user,
-            Err(_) => {
-                return HttpResponse::NotFound().json(BaseResponse::error("User not found"));
-            }
-        };
-        drop(db);
-
-        let app_url = AppConfig::app_url().trim_end_matches('/');
-        let success_url = format!(
-            "{}/balance?status=success&session_id={{CHECKOUT_SESSION_ID}}",
-            app_url
-        );
-        let cancel_url = format!("{}/balance?status=cancel", app_url);
-
-        let request_id = Uuid::new_v4().to_string();
-        let receiver = register_pending(request_id.clone()).await;
-
-        let metadata = json!({
-            "coins": request.amount,
-            "balance_cents": amount_cents,
-            "product_name": "Coins",
-            "description": "Account top-up",
-            "source": "balance",
-        });
-
-        let command = CheckoutCommand::CreateSession {
-            request_id: request_id.clone(),
-            service_token: service_token.to_string(),
-            user_id,
-            amount_cents,
-            currency: "eur".to_string(),
-            success_url,
-            cancel_url,
-            purpose: "balance_topup".to_string(),
-            metadata,
-            requested_at: Utc::now().to_rfc3339(),
-            customer_email: if user.email.is_empty() {
-                None
-            } else {
-                Some(user.email.clone())
-            },
-        };
-
-        let payload = match serde_json::to_vec(&command) {
-            Ok(payload) => payload,
-            Err(err) => {
-                remove_pending(&request_id).await;
-                error!("Failed to serialize checkout command: {}", err);
-                return HttpResponse::InternalServerError()
-                    .json(BaseResponse::error("Checkout request failed"));
-            }
-        };
-
-        if let Err(err) = event_bus
-            .producer()
-            .send_raw(topic::CHECKOUT_COMMANDS, Some(&request_id), &payload)
-            .await
-        {
-            remove_pending(&request_id).await;
-            warn!("Failed to publish checkout command: {}", err);
-            return HttpResponse::BadGateway()
-                .json(BaseResponse::error("Checkout service unavailable"));
-        }
-
-        let response = match tokio::time::timeout(Duration::from_secs(10), receiver).await {
-            Ok(Ok(response)) => response,
-            Ok(Err(_)) => {
-                return HttpResponse::BadGateway()
-                    .json(BaseResponse::error("Checkout service failed"));
-            }
-            Err(_) => {
-                remove_pending(&request_id).await;
-                return HttpResponse::GatewayTimeout()
-                    .json(BaseResponse::error("Checkout timed out"));
-            }
-        };
-
-        if let Some(error_message) = response.error {
-            warn!("Checkout session failed: {}", error_message);
-            return HttpResponse::BadGateway().json(BaseResponse::error("Checkout failed"));
-        }
-
-        let session_id = match response.session_id {
-            Some(session_id) => session_id,
-            None => {
-                return HttpResponse::BadGateway()
-                    .json(BaseResponse::error("Checkout session missing"));
-            }
-        };
-
-        let session_url = match response.session_url {
-            Some(session_url) => session_url,
-            None => {
-                return HttpResponse::BadGateway()
-                    .json(BaseResponse::error("Checkout session URL missing"));
-            }
-        };
-
-        HttpResponse::Ok().json(CheckoutSessionResponse {
-            base: BaseResponse::success("Checkout session created"),
-            session_id,
-            url: session_url,
-        })
-    }
-
-    /// POST /api/v1/balance/checkout-kafka - Create checkout via new Kafka flow
+    /// POST /api/v1/balance/checkout - Create checkout session via Kafka
     ///
-    /// This endpoint uses the new `checkout` and `checkout_finished` topics
-    /// instead of the existing `checkout.commands` and `checkout.events` topics.
-    pub async fn create_checkout_kafka(
+    /// This endpoint uses the `checkout` and `checkout_finished` Kafka topics.
+    /// The checkout service creates a Stripe session and returns the URL.
+    pub async fn create_checkout_session(
         state: web::Data<AppState>,
         req: HttpRequest,
         body: web::Json<BalanceCheckoutRequestRaw>,
@@ -312,7 +135,7 @@ impl BalanceController {
 
         if let Err(err) = event_bus
             .producer()
-            .send_raw(topic::CHECKOUT, Some(&request_id), &payload)
+            .send_raw(topic::CHECKOUT_REQUESTS, Some(&request_id), &payload)
             .await
         {
             remove_pending(&request_id).await;

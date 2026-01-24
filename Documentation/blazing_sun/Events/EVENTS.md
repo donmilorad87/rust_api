@@ -135,8 +135,12 @@ impl KafkaConfig {
 | `category.events` | Category management | created, updated, deleted |
 | `system.events` | System-level events | health_check, error, warning |
 | `events.dead_letter` | Failed events | All types (for reprocessing) |
-| `checkout.commands` | Checkout commands (raw JSON) | create_session |
-| `checkout.events` | Checkout events (raw JSON) | session_created, session_failed, payment_succeeded |
+| `checkout.requests` | Checkout requests (raw JSON) | CheckoutKafkaRequest |
+| `checkout.finished` | Checkout completion events (raw JSON) | session_created, success, failed |
+| `games.commands` | Game commands from WebSocket gateway | create_room, join_room, roll_dice |
+| `games.events` | Game events to WebSocket gateway | room_created, player_joined, game_over |
+| `bigger_dice.participation_payed` | Player selected for game (balance deducted) | game.participation.deducted |
+| `bigger_dice.win_prize` | Player won game (prize awarded) | game.prize.won |
 
 ### Topics Module (`bootstrap/events/topics.rs`)
 
@@ -148,8 +152,12 @@ pub mod topic {
     pub const CATEGORY_EVENTS: &str = "category.events";
     pub const SYSTEM_EVENTS: &str = "system.events";
     pub const DEAD_LETTER: &str = "events.dead_letter";
-    pub const CHECKOUT_COMMANDS: &str = "checkout.commands";
-    pub const CHECKOUT_EVENTS: &str = "checkout.events";
+    pub const CHECKOUT_REQUESTS: &str = "checkout.requests";
+    pub const CHECKOUT_FINISHED: &str = "checkout.finished";
+    pub const GAMES_COMMANDS: &str = "games.commands";
+    pub const GAMES_EVENTS: &str = "games.events";
+    pub const BIGGER_DICE_PARTICIPATION_PAYED: &str = "bigger_dice.participation_payed";
+    pub const BIGGER_DICE_WIN_PRIZE: &str = "bigger_dice.win_prize";
 }
 
 pub mod consumer_groups {

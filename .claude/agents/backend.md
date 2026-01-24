@@ -1,7 +1,7 @@
 ---
 name: backend
 description: Rust/Actix-web backend development. Use for API routes, controllers, validators, database queries, and Kafka events.
-tools: Read, Glob, Grep, Edit, Bash, Write, LSP
+tools: Read, Glob, Grep, Edit, Bash, Write, LSP, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 skill: backend
 color: blue

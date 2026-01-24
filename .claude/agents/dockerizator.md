@@ -1,7 +1,7 @@
 ---
 name: dockerizator
 description: Docker infrastructure management. Use for container operations, service management, debugging, and infrastructure tasks.
-tools: Read, Glob, Grep, Edit, Bash, Write
+tools: Read, Glob, Grep, Edit, Bash, Write, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 color: purple
 ---

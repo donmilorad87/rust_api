@@ -1,12 +1,12 @@
 ---
 name: kafka
-description: Kafka event streaming skill for game development. Defines topics, event patterns, and Kafka integration.
+description: Kafka event streaming skill for game development. Defines topics, event patterns, checkout integration, and Kafka integration.
 invocable: false
 ---
 
 # Kafka Event Streaming Skill
 
-This skill provides knowledge about Kafka event streaming patterns used in the Blazing Sun project for real-time game communication.
+This skill provides knowledge about Kafka event streaming patterns used in the Blazing Sun project for real-time game communication and payment processing.
 
 ## Project Context
 
@@ -20,18 +20,23 @@ This skill provides knowledge about Kafka event streaming patterns used in the B
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                       KAFKA EVENT FLOW FOR GAMES                                  │
-│                                                                                   │
-│  ┌──────────┐     ┌───────────┐     ┌─────────┐     ┌───────────┐               │
-│  │  Browser │◄───►│ ws_gateway│◄───►│  Kafka  │◄───►│blazing_sun│               │
-│  │ (Client) │ WS  │  (Rust)   │     │ Topics  │     │  (Rust)   │               │
-│  └──────────┘     └───────────┘     └─────────┘     └───────────┘               │
-│                                                                                   │
-│  Flow: Client → WebSocket → ws_gateway → Kafka commands → blazing_sun           │
-│        blazing_sun → Kafka events → ws_gateway → WebSocket → Client             │
-│                                                                                   │
-└─────────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------------+
+|                       KAFKA EVENT FLOW FOR GAMES                                   |
+|                                                                                    |
+|  +----------+     +-----------+     +---------+     +-----------+                 |
+|  |  Browser |<-->| ws_gateway|<-->|  Kafka  |<-->|blazing_sun|                 |
+|  | (Client) | WS  |  (Rust)   |     | Topics  |     |  (Rust)   |                 |
+|  +----------+     +-----------+     +---------+     +-----------+                 |
+|                                          |                |                        |
+|                                          |          +-----v-----+                  |
+|                                          |          |  checkout |                  |
+|                                          +--------->|  service  |                  |
+|                                                     +-----------+                  |
+|                                                                                    |
+|  Flow: Client -> WebSocket -> ws_gateway -> Kafka commands -> blazing_sun        |
+|        blazing_sun -> Kafka events -> ws_gateway -> WebSocket -> Client          |
+|        blazing_sun -> Kafka payment events -> checkout service                    |
++-----------------------------------------------------------------------------------+
 ```
 
 ---
@@ -42,17 +47,31 @@ This skill provides knowledge about Kafka event streaming patterns used in the B
 
 | Topic | Direction | Purpose |
 |-------|-----------|---------|
-| `games.commands` | ws_gateway → blazing_sun | Commands from players (create_room, join_room, roll, etc.) |
-| `games.events` | blazing_sun → ws_gateway | Events back to players (room_created, rolled, etc.) |
+| `games.commands` | ws_gateway -> blazing_sun | Commands from players (create_room, join_room, roll, etc.) |
+| `games.events` | blazing_sun -> ws_gateway | Events back to players (room_created, rolled, etc.) |
 
-### Other Topics
+### Chat Topics
 
 | Topic | Direction | Purpose |
 |-------|-----------|---------|
-| `chat.commands` | ws_gateway → blazing_sun | Chat messages from users |
-| `chat.events` | blazing_sun → ws_gateway | Chat events to users |
+| `chat.commands` | ws_gateway -> blazing_sun | Chat messages from users |
+| `chat.events` | blazing_sun -> ws_gateway | Chat events to users |
+
+### System Topics
+
+| Topic | Direction | Purpose |
+|-------|-----------|---------|
 | `system.events` | bidirectional | System events (presence, connection status) |
-| `gateway.presence` | ws_gateway → blazing_sun | User presence updates |
+| `gateway.presence` | ws_gateway -> blazing_sun | User presence updates |
+
+### Checkout/Payment Topics
+
+| Topic | Direction | Purpose |
+|-------|-----------|---------|
+| `checkout.requests` | blazing_sun -> checkout | Request Stripe checkout session |
+| `checkout.finished` | checkout -> blazing_sun | Payment completed/failed notification |
+| `bigger_dice.participation_payed` | blazing_sun -> checkout | Game entry fee deducted |
+| `bigger_dice.win_prize` | blazing_sun -> checkout | Prize awarded to winner |
 
 ---
 
@@ -90,10 +109,17 @@ pub struct Actor {
 pub enum AudienceType {
     User,       // Single user (by user_id)
     Users,      // Multiple users (by user_ids array)
-    Room,       // All users in a game room
+    Room,       // All users in a game room (players + spectators)
     Broadcast,  // All connected users
-    Spectators, // Spectators of a game
-    Players,    // Players in a game (not spectators)
+    Spectators, // Spectators of a game only
+    Players,    // Players in a game only (not spectators)
+}
+
+pub struct Audience {
+    pub audience_type: AudienceType,
+    pub user_ids: Vec<String>,        // For User/Users
+    pub room_id: Option<String>,      // For Room/Spectators/Players
+    pub game_id: Option<String>,      // Alternative to room_id
 }
 ```
 
@@ -125,18 +151,72 @@ games.event.{game_name}.{event_name}
 Examples:
 - `games.event.bigger_dice.rolled`
 - `games.event.bigger_dice.round_result`
-- `games.event.poker.dealt`
-- `games.event.chess.moved`
+- `games.event.bigger_dice.tiebreaker_started`
+- `games.event.turn_changed` (generic, all games)
+
+---
+
+## Payment Event Formats
+
+### Game Participation Event
+
+Published when player is selected for game and balance is deducted:
+
+```json
+{
+  "event_type": "game.participation.deducted",
+  "event_id": "uuid",
+  "timestamp": "2024-01-20T10:30:01Z",
+  "user_id": 123,
+  "amount_cents": 1000,
+  "game_type": "bigger_dice",
+  "room_id": "room-abc123",
+  "room_name": "My Game",
+  "username": "Player1",
+  "description": "PAY BIGGER DICE GAME"
+}
+```
+
+### Prize Win Event
+
+Published when game finishes and winner receives prize:
+
+```json
+{
+  "event_type": "game.prize.won",
+  "event_id": "uuid",
+  "timestamp": "2024-01-20T10:35:00Z",
+  "user_id": 123,
+  "amount_cents": 1600,
+  "game_type": "bigger_dice",
+  "room_id": "room-abc123",
+  "room_name": "My Game",
+  "username": "Player1",
+  "total_players": 2,
+  "description": "WON BIGGER DICE GAME"
+}
+```
 
 ---
 
 ## Adding Kafka Topics for a New Game
 
-When creating a new game, you typically **don't need new topics**. Use the existing `games.commands` and `games.events` topics.
+When creating a new game, you typically **don't need new command/event topics**. Use the existing `games.commands` and `games.events` topics.
 
-### Steps:
+**However**, if your game has payments, add payment topics:
 
-1. **Define game commands** in `blazing_sun/src/app/games/types.rs`:
+### Step 1: Add Topic Constants
+
+In `blazing_sun/src/bootstrap/events/topics.rs`:
+
+```rust
+pub const NEW_GAME_PARTICIPATION_PAYED: &str = "new_game.participation_payed";
+pub const NEW_GAME_WIN_PRIZE: &str = "new_game.win_prize";
+```
+
+### Step 2: Define Game Commands
+
+In `blazing_sun/src/app/games/types.rs`:
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -155,7 +235,7 @@ pub enum GameCommand {
 }
 ```
 
-2. **Define game events** in the same file:
+### Step 3: Define Game Events
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -172,7 +252,7 @@ pub enum GameEvent {
 }
 ```
 
-3. **Add event_type_name()** mapping:
+### Step 4: Add event_type_name() Mapping
 
 ```rust
 impl GameEvent {
@@ -185,44 +265,13 @@ impl GameEvent {
 }
 ```
 
-4. **Handle commands** in `blazing_sun/src/bootstrap/events/handlers/games.rs`
+### Step 5: Handle Commands
 
-5. **Handle events** in `ws_gateway/src/server/mod.rs` (add to `envelope_to_server_message`)
+In `blazing_sun/src/bootstrap/events/handlers/games.rs`
 
----
+### Step 6: Handle Events in ws_gateway
 
-## Kafka Configuration
-
-### Environment Variables
-
-```env
-KAFKA_HOST=kafka
-KAFKA_PORT=9092
-KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-```
-
-### Topic Creation
-
-Topics are auto-created with default settings. For custom configuration:
-
-```bash
-# Access Kafka UI
-http://localhost:8080/kafka
-
-# Or via CLI
-docker compose exec kafka kafka-topics.sh --create \
-  --topic games.commands \
-  --partitions 3 \
-  --replication-factor 1 \
-  --bootstrap-server localhost:9092
-```
-
-### Consumer Groups
-
-| Consumer Group | Service | Topics |
-|----------------|---------|--------|
-| `ws_gateway` | WebSocket Gateway | `games.events`, `chat.events`, `system.events` |
-| `blazing_sun` | Rust Backend | `games.commands`, `chat.commands`, `system.events`, `gateway.presence` |
+In `ws_gateway/src/server/mod.rs` (add to `envelope_to_server_message`)
 
 ---
 
@@ -263,6 +312,30 @@ async fn publish_game_event(
 }
 ```
 
+### Publishing Payment Events
+
+```rust
+// Participation fee deducted
+let payload = serde_json::json!({
+    "event_type": "game.participation.deducted",
+    "event_id": Uuid::new_v4().to_string(),
+    "timestamp": Utc::now().to_rfc3339(),
+    "user_id": player_id,
+    "amount_cents": GAME_FEE_CENTS,
+    "game_type": "bigger_dice",
+    "room_id": room_id,
+    "room_name": room_name,
+    "username": username,
+    "description": "PAY BIGGER DICE GAME",
+});
+
+producer.send_raw(
+    topic::BIGGER_DICE_PARTICIPATION_PAYED,
+    Some(&event_id),
+    &serde_json::to_string(&payload)?
+).await?;
+```
+
 ---
 
 ## Consuming Commands (Backend)
@@ -288,6 +361,9 @@ impl EventHandler for GameCommandHandler {
             "games.command.join_room" => {
                 self.handle_join_room(&envelope).await
             }
+            "games.command.bigger_dice.roll" => {
+                self.handle_bigger_dice_roll(&envelope, payload).await
+            }
             // ... other commands
             _ => {
                 warn!("Unknown game command: {}", envelope.event_type);
@@ -297,6 +373,26 @@ impl EventHandler for GameCommandHandler {
     }
 }
 ```
+
+---
+
+## Kafka Configuration
+
+### Environment Variables
+
+```env
+KAFKA_HOST=kafka
+KAFKA_PORT=9092
+KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+```
+
+### Consumer Groups
+
+| Consumer Group | Service | Topics |
+|----------------|---------|--------|
+| `ws_gateway` | WebSocket Gateway | `games.events`, `chat.events`, `system.events` |
+| `blazing_sun` | Rust Backend | `games.commands`, `chat.commands`, `system.events`, `gateway.presence` |
+| `checkout-service` | Checkout Service | `checkout.requests`, `bigger_dice.participation_payed`, `bigger_dice.win_prize` |
 
 ---
 
@@ -330,6 +426,7 @@ self.publish_game_event(
 | `already_in_room` | Player is already in a room |
 | `banned` | Player is banned from the room |
 | `wrong_password` | Incorrect room password |
+| `insufficient_balance` | Not enough balance for game fee |
 
 ---
 
@@ -363,6 +460,9 @@ Access: http://localhost:8080/kafka
 1. **Always include socket_id** in error events so ws_gateway can route them
 2. **Use Audience.room()** for events affecting all room participants
 3. **Use Audience.user()** for private events (errors, state sync)
-4. **Serialize user_id as string** for ws_gateway compatibility
-5. **Include correlation_id** when responding to commands for tracing
-6. **Log Kafka failures as warnings**, don't fail the request
+4. **Use Audience.spectators()** for spectator-only events (spectator chat)
+5. **Use Audience.players()** for player-only events (player chat)
+6. **Serialize user_id as string** for ws_gateway compatibility
+7. **Include correlation_id** when responding to commands for tracing
+8. **Log Kafka failures as warnings**, don't fail the request
+9. **Use atomic DB operations** before publishing payment events

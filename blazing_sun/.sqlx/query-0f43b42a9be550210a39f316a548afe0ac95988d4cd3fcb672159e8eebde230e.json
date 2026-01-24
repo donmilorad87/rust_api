@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            id,\n            room_id,\n            room_name,\n            game_type,\n            status,\n            host_id,\n            players,\n            lobby,\n            banned_users,\n            spectators,\n            current_turn,\n            turn_number,\n            winner_id,\n            is_password_protected,\n            password_hash,\n            is_active,\n            created_at,\n            started_at,\n            finished_at,\n            updated_at,\n            player_count,\n            allow_spectators,\n            max_spectators,\n            admin_spectator_id,\n            lobby_chat_enabled,\n            spectators_data,\n            recorded_players,\n            recorded_spectators,\n            selected_players\n        FROM game_rooms\n        WHERE status = 'waiting'\n        AND game_type = $1\n        AND is_active = TRUE\n        ORDER BY created_at DESC\n        LIMIT 50\n        ",
+  "query": "\n        SELECT\n            id,\n            room_id,\n            room_name,\n            game_type,\n            status,\n            host_id,\n            players,\n            lobby,\n            banned_users,\n            spectators,\n            current_turn,\n            turn_number,\n            winner_id,\n            is_password_protected,\n            password_hash,\n            is_active,\n            created_at,\n            started_at,\n            finished_at,\n            updated_at,\n            player_count,\n            allow_spectators,\n            max_spectators,\n            admin_spectator_id,\n            lobby_chat_enabled,\n            spectators_data,\n            recorded_players,\n            recorded_spectators,\n            selected_players,\n            auto_players\n        FROM game_rooms\n        WHERE status = 'waiting'\n        AND game_type = $1\n        AND is_active = TRUE\n        ORDER BY created_at DESC\n        LIMIT 50\n        ",
   "describe": {
     "columns": [
       {
@@ -147,6 +147,11 @@
         "ordinal": 28,
         "name": "selected_players",
         "type_info": "Int8Array"
+      },
+      {
+        "ordinal": 29,
+        "name": "auto_players",
+        "type_info": "Int8Array"
       }
     ],
     "parameters": {
@@ -183,8 +188,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "c332a107142eff3cd041c5727ac4012bd1b92d63caf0d1ca97f0a27f71c8feb5"
+  "hash": "0f43b42a9be550210a39f316a548afe0ac95988d4cd3fcb672159e8eebde230e"
 }

@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Coordinate specialized subagents for complex multi-domain tasks. Use for full-stack features requiring backend, frontend, database, and testing.
-tools: Read, Glob, Grep, Task
+tools: Read, Glob, Grep, Task, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 color: cyan
 ---

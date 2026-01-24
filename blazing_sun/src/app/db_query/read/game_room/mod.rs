@@ -50,6 +50,8 @@ pub struct GameRoomRecord {
     pub recorded_players: Vec<i64>,
     pub recorded_spectators: Vec<i64>,
     pub selected_players: Vec<i64>,
+    /// Players that are currently auto-controlled (disconnected + kicked)
+    pub auto_players: Vec<i64>,
 }
 
 /// Game room list item (lighter for list display)
@@ -66,7 +68,7 @@ pub struct GameRoomListItem {
     pub created_at: DateTime<Utc>,
 }
 
-/// Get game room by room_id
+/// Get game room by room_id (only returns active rooms)
 pub async fn get_by_room_id(
     db: &Pool<Postgres>,
     room_id: &str,
@@ -103,9 +105,11 @@ pub async fn get_by_room_id(
             spectators_data,
             recorded_players,
             recorded_spectators,
-            selected_players
+            selected_players,
+            auto_players
         FROM game_rooms
         WHERE room_id = $1
+        AND is_active = TRUE
         "#,
         room_id
     )
@@ -150,7 +154,8 @@ pub async fn get_by_room_name(
             spectators_data,
             recorded_players,
             recorded_spectators,
-            selected_players
+            selected_players,
+            auto_players
         FROM game_rooms
         WHERE room_name = $1
         AND status IN ('waiting', 'in_progress')
@@ -343,7 +348,8 @@ pub async fn get_waiting_rooms(
             spectators_data,
             recorded_players,
             recorded_spectators,
-            selected_players
+            selected_players,
+            auto_players
         FROM game_rooms
         WHERE status = 'waiting'
         AND game_type = $1
@@ -394,7 +400,8 @@ pub async fn get_active_rooms(
             spectators_data,
             recorded_players,
             recorded_spectators,
-            selected_players
+            selected_players,
+            auto_players
         FROM game_rooms
         WHERE status IN ('waiting', 'in_progress')
         AND game_type = $1

@@ -1,80 +1,10 @@
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 use tokio::sync::{oneshot, Mutex};
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum CheckoutCommand {
-    #[serde(rename = "checkout.command.create_session")]
-    CreateSession {
-        request_id: String,
-        service_token: String,
-        user_id: i64,
-        amount_cents: i64,
-        currency: String,
-        success_url: String,
-        cancel_url: String,
-        purpose: String,
-        metadata: Value,
-        requested_at: String,
-        customer_email: Option<String>,
-    },
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum CheckoutEvent {
-    #[serde(rename = "checkout.event.session_created")]
-    SessionCreated {
-        request_id: String,
-        user_id: i64,
-        amount_cents: i64,
-        currency: String,
-        session_id: String,
-        session_url: String,
-        purpose: String,
-        metadata: Value,
-        created_at: String,
-    },
-    #[serde(rename = "checkout.event.session_failed")]
-    SessionFailed {
-        request_id: String,
-        user_id: i64,
-        amount_cents: i64,
-        currency: String,
-        error: String,
-        purpose: String,
-        failed_at: String,
-    },
-    #[serde(rename = "checkout.event.payment_succeeded")]
-    PaymentSucceeded {
-        request_id: String,
-        user_id: i64,
-        amount_cents: i64,
-        currency: String,
-        session_id: String,
-        payment_intent_id: Option<String>,
-        purpose: String,
-        metadata: Value,
-        paid_at: String,
-    },
-    #[serde(rename = "checkout.event.payment_failed")]
-    PaymentFailed {
-        request_id: String,
-        user_id: i64,
-        amount_cents: i64,
-        currency: String,
-        session_id: Option<String>,
-        error: String,
-        purpose: String,
-        failed_at: String,
-    },
-}
-
 // ============================================================================
-// New Checkout Flow Types (checkout and checkout_finished topics)
+// Checkout Flow Types (checkout and checkout_finished topics)
 // ============================================================================
 
 /// Event published to "checkout" topic when user initiates payment
@@ -237,63 +167,87 @@ pub fn euros_to_cents(amount_eur: i64) -> Result<i64, &'static str> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CheckoutCommand, CheckoutEvent, euros_to_cents};
-    use serde_json::json;
+    use super::{CheckoutFinishedEvent, CheckoutKafkaRequest, euros_to_cents};
 
     #[test]
-    fn checkout_command_serializes_type() {
-        let command = CheckoutCommand::CreateSession {
-            request_id: "req_123".to_string(),
-            service_token: "svc_token".to_string(),
-            user_id: 9,
-            amount_cents: 1200,
-            currency: "eur".to_string(),
-            success_url: "https://example.com/success".to_string(),
-            cancel_url: "https://example.com/cancel".to_string(),
-            purpose: "balance_topup".to_string(),
-            metadata: json!({"source": "balance"}),
-            requested_at: "2024-01-01T00:00:00Z".to_string(),
-            customer_email: None,
-        };
-
-        let value = serde_json::to_value(command).expect("serialize command");
-        assert_eq!(
-            value.get("type").and_then(|val| val.as_str()),
-            Some("checkout.command.create_session")
+    fn checkout_request_serializes_correctly() {
+        let request = CheckoutKafkaRequest::new(
+            "req_123".to_string(),
+            9,
+            1200,
+            "https://example.com/success".to_string(),
+            "https://example.com/cancel".to_string(),
         );
-        assert_eq!(value.get("amount_cents").and_then(|val| val.as_i64()), Some(1200));
+
+        let value = serde_json::to_value(&request).expect("serialize request");
         assert_eq!(
-            value.get("service_token").and_then(|val| val.as_str()),
-            Some("svc_token")
+            value.get("request_id").and_then(|val| val.as_str()),
+            Some("req_123")
+        );
+        assert_eq!(value.get("user_id").and_then(|val| val.as_i64()), Some(9));
+        assert_eq!(
+            value.get("amount_cents").and_then(|val| val.as_i64()),
+            Some(1200)
+        );
+        assert_eq!(
+            value.get("currency").and_then(|val| val.as_str()),
+            Some("eur")
+        );
+        assert_eq!(
+            value.get("purpose").and_then(|val| val.as_str()),
+            Some("balance_topup")
         );
     }
 
     #[test]
-    fn checkout_event_deserializes_session_created() {
-        let payload = json!({
-            "type": "checkout.event.session_created",
+    fn checkout_finished_deserializes_session_created() {
+        let payload = serde_json::json!({
             "request_id": "req_abc",
             "user_id": 7,
             "amount_cents": 500,
             "currency": "eur",
+            "purpose": "balance_topup",
+            "status": "session_created",
             "session_id": "cs_test_123",
             "session_url": "https://stripe.test/checkout",
-            "purpose": "balance_topup",
-            "metadata": {"coins": 5},
-            "created_at": "2024-01-01T00:00:00Z"
+            "payment_intent_id": null,
+            "error_message": null,
+            "timestamp": "2024-01-01T00:00:00Z"
         });
 
-        let event: CheckoutEvent =
+        let event: CheckoutFinishedEvent =
             serde_json::from_value(payload).expect("deserialize session_created");
 
-        match event {
-            CheckoutEvent::SessionCreated { request_id, amount_cents, session_id, .. } => {
-                assert_eq!(request_id, "req_abc");
-                assert_eq!(amount_cents, 500);
-                assert_eq!(session_id, "cs_test_123");
-            }
-            _ => panic!("unexpected event variant"),
-        }
+        assert_eq!(event.request_id, "req_abc");
+        assert_eq!(event.amount_cents, 500);
+        assert_eq!(event.session_id, Some("cs_test_123".to_string()));
+        assert!(event.is_session_created());
+        assert!(!event.is_success());
+        assert!(!event.is_failed());
+    }
+
+    #[test]
+    fn checkout_finished_deserializes_success() {
+        let payload = serde_json::json!({
+            "request_id": "req_def",
+            "user_id": 8,
+            "amount_cents": 1000,
+            "currency": "eur",
+            "purpose": "balance_topup",
+            "status": "success",
+            "session_id": "cs_test_456",
+            "session_url": null,
+            "payment_intent_id": "pi_test_789",
+            "error_message": null,
+            "timestamp": "2024-01-01T00:00:00Z"
+        });
+
+        let event: CheckoutFinishedEvent =
+            serde_json::from_value(payload).expect("deserialize success");
+
+        assert!(event.is_success());
+        assert!(!event.is_session_created());
+        assert!(!event.is_failed());
     }
 
     #[test]

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE users\n        SET balance = balance - $1, updated_at = NOW()\n        WHERE id = $2 AND balance >= $1\n        RETURNING balance\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "balance",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b44cf83c102cc1e48e21dfe5c46faac759690adc1e877bb03d95cac3b76b823d"
+}

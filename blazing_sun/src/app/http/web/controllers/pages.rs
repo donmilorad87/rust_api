@@ -1062,6 +1062,8 @@ impl PagesController {
             "web.games" => Self::games(req, session, state).await,
             "web.games.bigger_dice_lobby" => Self::bigger_dice_lobby(req, session, state).await,
             "web.games.bigger_dice" => Self::bigger_dice_game(req, session, state).await,
+            "web.games.tic_tac_toe_lobby" => Self::tic_tac_toe_lobby(req, session, state).await,
+            "web.games.tic_tac_toe" => Self::tic_tac_toe_game(req, session, state).await,
             "web.logout" => Self::logout(req).await,
             "admin.uploads" => Self::uploads(req, session, state).await,
             "admin.theme" => Self::theme(req, session, state).await,
@@ -1683,6 +1685,140 @@ impl PagesController {
         context.insert("ws_url", &format!("{}/ws/games", ws_url));
 
         Ok(Self::render("bigger_dice.html", &context))
+    }
+
+    /// Tic Tac Toe lobby page - shows room list and create room UI
+    pub async fn tic_tac_toe_lobby(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        // Must be logged in
+        if !auth.is_logged {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_branding_to_context(&mut context, &db).await;
+        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.games.tic_tac_toe_lobby").await;
+
+        // Fetch user data
+        if let Some(user_id) = auth.user_id {
+            context.insert("user_id", &user_id);
+            if let Ok(user) = db_user::get_by_id(&db, user_id).await {
+                let avatar_url = if let Some(avatar_id) = user.avatar_id {
+                    use crate::bootstrap::utility::template::avatar_by_id;
+                    avatar_by_id(&db, avatar_id, Some("small")).await
+                } else {
+                    None
+                };
+
+                let template_user = TemplateUser {
+                    id: user.id,
+                    email: user.email,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    avatar_url,
+                };
+                context.insert("user", &template_user);
+            }
+        } else {
+            context.insert("user_id", &0i64);
+        }
+        drop(db);
+
+        // No room_id - this is the lobby
+        context.insert("room_id", &"");
+        context.insert("room_name", "Tic Tac Toe");
+        context.insert("is_lobby", &true);
+
+        // Build WebSocket URL for the game server
+        let base_url = Self::get_base_url(&req);
+        let ws_url = base_url
+            .replace("https://", "wss://")
+            .replace("http://", "ws://");
+        context.insert("ws_url", &format!("{}/ws/games", ws_url));
+
+        Ok(Self::render("tic_tac_toe.html", &context))
+    }
+
+    /// Tic Tac Toe game page - renders individual game room
+    pub async fn tic_tac_toe_game(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        // Must be logged in
+        if !auth.is_logged {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        // Extract room_id from route args
+        let route_ctx = req.extensions();
+        let route_context = route_ctx.get::<RouteContext>();
+        let room_id = route_context
+            .and_then(|ctx| ctx.args.get("room_id"))
+            .cloned()
+            .unwrap_or_default();
+
+        if room_id.is_empty() {
+            return Ok(Self::redirect_to_route(&req, "web.games"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_branding_to_context(&mut context, &db).await;
+        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.games.tic_tac_toe").await;
+
+        // Fetch user data
+        if let Some(user_id) = auth.user_id {
+            context.insert("user_id", &user_id);
+            if let Ok(user) = db_user::get_by_id(&db, user_id).await {
+                let avatar_url = if let Some(avatar_id) = user.avatar_id {
+                    use crate::bootstrap::utility::template::avatar_by_id;
+                    avatar_by_id(&db, avatar_id, Some("small")).await
+                } else {
+                    None
+                };
+
+                let template_user = TemplateUser {
+                    id: user.id,
+                    email: user.email,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    avatar_url,
+                };
+                context.insert("user", &template_user);
+            }
+        } else {
+            context.insert("user_id", &0i64);
+        }
+        drop(db);
+
+        // Room info
+        context.insert("room_id", &room_id);
+        context.insert("room_name", "Tic Tac Toe");
+        context.insert("is_lobby", &false);
+
+        // Check if user wants to join as spectator (from ?spectate=true query param)
+        let is_spectator = req.query_string().contains("spectate=true");
+        context.insert("is_spectator", &is_spectator);
+
+        // Build WebSocket URL for the game server
+        let base_url = Self::get_base_url(&req);
+        let ws_url = base_url
+            .replace("https://", "wss://")
+            .replace("http://", "ws://");
+        context.insert("ws_url", &format!("{}/ws/games", ws_url));
+
+        Ok(Self::render("tic_tac_toe.html", &context))
     }
 
     /// 404 Not Found page

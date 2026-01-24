@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE game_rooms\n        SET auto_players = $2,\n            updated_at = NOW()\n        WHERE room_id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e80ce8e11c91e460e774d09f864550b1af620a007ccd600cbcf6bb74e1817464"
+}

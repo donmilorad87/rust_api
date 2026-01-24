@@ -18,8 +18,8 @@ use crate::app::http::api::controllers::theme::ThemeController;
 use crate::app::http::api::controllers::upload::UploadController;
 use crate::app::http::api::controllers::user::UserController;
 use crate::app::http::api::controllers::{
-    competitions, gallery, gallery_like, geo_place, oauth, oauth_api_product, oauth_client,
-    oauth_gallery, oauth_scope, picture,
+    competitions, gallery, gallery_like, game_config, geo_place, oauth, oauth_api_product,
+    oauth_client, oauth_gallery, oauth_scope, picture,
 };
 use crate::middleware;
 use crate::middleware::permission::{levels, require_permission};
@@ -152,11 +152,15 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1/balance")
             .wrap(from_fn(middleware::auth::verify_jwt))
-            .route("/checkout", web::post().to(BalanceController::create_checkout_session))
-            .route(
-                "/checkout-kafka",
-                web::post().to(BalanceController::create_checkout_kafka),
-            ),
+            .route("/checkout", web::post().to(BalanceController::create_checkout_session)),
+    );
+
+    // ============================================
+    // Games Config Routes (Public - no auth required)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/games")
+            .route("/config", web::get().to(game_config::get_config)),
     );
 
     // ============================================
@@ -736,6 +740,9 @@ fn register_route_names() {
     // Balance routes
     route!("balance.checkout", "/api/v1/balance/checkout");
     route!("balance.checkout_kafka", "/api/v1/balance/checkout-kafka");
+
+    // Games routes
+    route!("games.config", "/api/v1/games/config");
 
     // Gallery routes
     route!("galleries.list", "/api/v1/galleries");

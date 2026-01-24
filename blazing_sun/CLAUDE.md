@@ -56,6 +56,9 @@ blazing_sun/
 - [Admin Uploads Page](../Documentation/blazing_sun/Routes/Web/uploads.md) - `/admin/uploads` (asset management, variants)
 - [Super Admin Users Page](../Documentation/blazing_sun/Routes/Web/registered-users.md) - `/superadmin/users`
 
+#### Features
+- **[Geo Galleries](../Documentation/blazing_sun/GeoGalleries/GEO_GALLERIES.md)** - Location-based galleries, geo places, and competitions
+
 ### Frontend Architecture
 - **[Frontend Overview](../Documentation/blazing_sun/Frontend/README.md)** - ES6 classes, Vite, SCSS structure
 - **[Profile Page Components](../Documentation/blazing_sun/ProfilePage/README.md)** - Avatar, password, email change

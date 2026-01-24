@@ -2,7 +2,7 @@
 //!
 //! Stores game history for statistics and replay functionality.
 
-use super::types::{GameHistory, GameHistoryPlayer, GameTurn, GameType};
+use super::types::{BiggerDicePlayerRoll, BiggerDiceRoundResult, GameHistory, GameHistoryPlayer, GameTurn, GameType};
 use chrono::Utc;
 use mongodb::bson::{doc, oid::ObjectId, Document};
 use mongodb::options::{FindOptions, IndexOptions};
@@ -12,6 +12,9 @@ use tracing::{error, info};
 
 /// Collection name for game history
 const COLLECTION_GAME_HISTORY: &str = "game_history";
+
+/// Collection name for in-progress round results (for rejoining players)
+const COLLECTION_ROUND_RESULTS: &str = "game_round_results";
 
 /// MongoDB game history client
 pub struct MongoGameClient {
@@ -32,6 +35,11 @@ impl MongoGameClient {
     /// Get the raw collection for aggregations
     fn history_raw(&self) -> Collection<Document> {
         self.db.collection(COLLECTION_GAME_HISTORY)
+    }
+
+    /// Get the round results collection (for in-progress games)
+    fn round_results(&self) -> Collection<BiggerDiceRoundResult> {
+        self.db.collection(COLLECTION_ROUND_RESULTS)
     }
 
     /// Initialize indexes for the game history collection
@@ -60,9 +68,119 @@ impl MongoGameClient {
             .create_indexes([player_index, type_index, recent_index])
             .await?;
 
-        info!("MongoDB game history indexes initialized");
+        // Initialize round results indexes
+        let round_results_collection = self.round_results();
+
+        // Index for querying rounds by room_id (primary query pattern)
+        let room_index = IndexModel::builder()
+            .keys(doc! { "room_id": 1, "round_number": 1 })
+            .options(IndexOptions::builder().name("room_rounds_idx".to_string()).build())
+            .build();
+
+        // TTL index to auto-delete old round results after 24 hours
+        // (cleanup for abandoned games)
+        let ttl_index = IndexModel::builder()
+            .keys(doc! { "completed_at": 1 })
+            .options(
+                IndexOptions::builder()
+                    .name("round_results_ttl_idx".to_string())
+                    .expire_after(std::time::Duration::from_secs(86400)) // 24 hours
+                    .build(),
+            )
+            .build();
+
+        round_results_collection
+            .create_indexes([room_index, ttl_index])
+            .await?;
+
+        info!("MongoDB game history and round results indexes initialized");
         Ok(())
     }
+
+    // =========================================================================
+    // Round Results Methods (for in-progress games)
+    // =========================================================================
+
+    /// Save a round result during gameplay
+    /// This allows rejoining players to see the full round history
+    pub async fn save_round_result(
+        &self,
+        room_id: &str,
+        round_number: i32,
+        rolls: Vec<BiggerDicePlayerRoll>,
+        winner_id: Option<i64>,
+        winner_username: Option<String>,
+        is_tiebreaker: bool,
+    ) -> Result<ObjectId, mongodb::error::Error> {
+        let result = BiggerDiceRoundResult {
+            id: None,
+            room_id: room_id.to_string(),
+            round_number,
+            rolls,
+            winner_id,
+            winner_username,
+            is_tiebreaker,
+            completed_at: Utc::now(),
+        };
+
+        let insert_result = self.round_results().insert_one(&result).await?;
+        let id = insert_result.inserted_id.as_object_id().unwrap();
+
+        info!(
+            room_id = %room_id,
+            round = %round_number,
+            winner_id = ?winner_id,
+            "Round result saved to MongoDB"
+        );
+
+        Ok(id)
+    }
+
+    /// Get all round results for a room (for rejoining players)
+    pub async fn get_room_round_results(
+        &self,
+        room_id: &str,
+    ) -> Result<Vec<BiggerDiceRoundResult>, mongodb::error::Error> {
+        let filter = doc! { "room_id": room_id };
+        let options = FindOptions::builder()
+            .sort(doc! { "round_number": 1 })
+            .build();
+
+        let mut cursor = self.round_results().find(filter).with_options(options).await?;
+        let mut results = Vec::new();
+
+        use futures::StreamExt;
+        while let Some(result) = cursor.next().await {
+            match result {
+                Ok(r) => results.push(r),
+                Err(e) => error!("Error reading round result: {}", e),
+            }
+        }
+
+        Ok(results)
+    }
+
+    /// Clear round results for a room (called when game ends)
+    /// This is optional since TTL index will auto-delete after 24 hours
+    pub async fn clear_room_round_results(
+        &self,
+        room_id: &str,
+    ) -> Result<u64, mongodb::error::Error> {
+        let filter = doc! { "room_id": room_id };
+        let result = self.round_results().delete_many(filter).await?;
+
+        info!(
+            room_id = %room_id,
+            deleted = %result.deleted_count,
+            "Cleared round results for room"
+        );
+
+        Ok(result.deleted_count)
+    }
+
+    // =========================================================================
+    // Game History Methods (for completed games)
+    // =========================================================================
 
     /// Save a completed game to history
     pub async fn save_game(

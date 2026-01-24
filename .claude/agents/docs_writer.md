@@ -1,7 +1,7 @@
 ---
 name: docs
 description: Technical documentation and API docs. Use for README, code comments, and CLAUDE.md updates.
-tools: Read, Glob, Grep, Edit, Write
+tools: Read, Glob, Grep, Edit, Write, TaskCreate, TaskGet, TaskUpdate, TaskList
 model: inherit
 skill: docs
 color: purple

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_lobby %}Tic Tac Toe Lobby{% else %}{{ room_name | default(value='Tic Tac Toe') }}{% endif %} - Games - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/games/TIC_TAC_TOE/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="game-page">
+    <header class="game-page__header">
+        <a href="{{ route(name='web.games') }}" class="game-page__back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Games
+        </a>
+        <h1 class="game-page__title">{% if is_lobby %}Tic Tac Toe{% else %}{{ room_name | default(value='Tic Tac Toe') }}{% endif %}</h1>
+        {% if not is_lobby %}
+        <div class="room-info">
+            <span class="room-info__label">Room:</span>
+            <span class="room-info__value" id="roomIdDisplay">{{ room_id }}</span>
+            <button type="button" class="room-info__copy" id="copyRoomIdBtn" aria-label="Copy room link">
+                Copy Link
+            </button>
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="game-page__content">
+        <div class="game-page__component">
+            <tic-tac-toe
+                data-ws-url="{{ ws_url }}"
+                data-room-id="{{ room_id }}"
+                data-room-name="{{ room_name | default(value='Tic Tac Toe') }}"
+                data-user-id="{{ user_id }}"
+                data-username="{{ user.first_name | default(value='Guest') }}"
+                data-balance="{{ user.balance | default(value=0) }}"
+                {% if user.avatar_url %}data-avatar-id="{{ user.avatar_url }}"{% endif %}
+                {% if is_lobby %}data-mode="lobby"{% else %}data-mode="game"{% endif %}
+                {% if is_spectator %}data-spectate="true"{% endif %}
+            ></tic-tac-toe>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pass server-side variables to JavaScript
+    window.BASE_URL = "{{ base_url | safe }}";
+    window.WS_URL = "{{ ws_url | safe }}";
+    window.ROOM_ID = "{{ room_id | safe }}";
+    window.ROOM_NAME = "{{ room_name | default(value='Tic Tac Toe') | safe }}";
+    window.USER_ID = {{ user_id | default(value=0) }};
+    window.USERNAME = "{{ user.first_name | default(value='Guest') | safe }}";
+    window.IS_LOBBY = {% if is_lobby %}true{% else %}false{% endif %};
+</script>
+<script src="/assets/js/games/TIC_TAC_TOE/app.js?v={{ assets_version }}"></script>
+<script>
+    {% if not is_lobby %}
+    // Copy room link functionality (only in game mode)
+    document.getElementById('copyRoomIdBtn')?.addEventListener('click', function() {
+        const roomUrl = window.location.href;
+        navigator.clipboard.writeText(roomUrl).then(function() {
+            showToast('Room link copied to clipboard!', 'success');
+        }).catch(function() {
+            // Fallback
+            const textArea = document.createElement('textarea');
+            textArea.value = roomUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Room link copied!', 'success');
+            } catch(e) {
+                showToast('Failed to copy link', 'error');
+            }
+            document.body.removeChild(textArea);
+        });
+    });
+    {% endif %}
+
+    // Handle game-leave event from web component
+    document.querySelector('tic-tac-toe')?.addEventListener('game-leave', function(e) {
+        window.location.href = "{{ route(name='web.games.tic_tac_toe_lobby') }}";
+    });
+
+    // Handle game-error event from web component
+    document.querySelector('tic-tac-toe')?.addEventListener('game-error', function(e) {
+        showToast(e.detail.message || 'An error occurred', 'error');
+    });
+
+    // Handle room-joined event - navigate to game room
+    document.querySelector('tic-tac-toe')?.addEventListener('room-joined', function(e) {
+        if (e.detail && e.detail.room_id) {
+            // Get current language from URL
+            const pathParts = window.location.pathname.split('/').filter(p => p);
+            const lang = pathParts[0] || 'en';
+            // Pass spectate flag as query parameter if joining as spectator
+            const spectateParam = e.detail.as_spectator ? '?spectate=true' : '';
+            window.location.href = `/${lang}/games/tic-tac-toe/${e.detail.room_id}${spectateParam}`;
+        }
+    });
+</script>
+{% endblock %}

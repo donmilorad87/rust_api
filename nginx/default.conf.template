@@ -1,3 +1,7 @@
+# Docker DNS resolver - allows nginx to start even if upstreams aren't ready
+resolver 127.0.0.11 valid=10s ipv6=off;
+resolver_timeout 5s;
+
 upstream rust_backend {
     server rust:${APP_PORT};
 }
