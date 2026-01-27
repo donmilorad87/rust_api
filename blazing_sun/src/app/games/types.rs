@@ -949,6 +949,13 @@ pub enum GameEvent {
         user_id: i64,
         username: String,
     },
+    /// Sent to a spectator when they are kicked by admin
+    #[serde(rename = "spectator_kicked")]
+    SpectatorKicked {
+        room_id: String,
+        user_id: i64,
+        username: String,
+    },
     #[serde(rename = "room_state")]
     RoomState {
         room: GameRoom,
@@ -1356,6 +1363,7 @@ impl GameEvent {
             GameEvent::GameEnded { .. } => "game_ended",
             GameEvent::SpectatorJoined { .. } => "spectator_joined",
             GameEvent::SpectatorLeft { .. } => "spectator_left",
+            GameEvent::SpectatorKicked { .. } => "spectator_kicked",
             GameEvent::RoomState { .. } => "room_state",
             GameEvent::Error { .. } => "error",
             GameEvent::NotInRoom { .. } => "not_in_room",

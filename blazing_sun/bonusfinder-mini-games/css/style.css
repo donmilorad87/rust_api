@@ -1,0 +1,38 @@
+:root {
+	--bf-roulette-bg: #f8fafc;
+	--bf-roulette-bg-dark: #0f172a;
+	--bf-roulette-text: #0f172a;
+	--bf-roulette-card: #ffffff;
+	--bf-roulette-card-dark: #141926;
+	--bf-roulette-accent: #5b2abf;
+	--bf-roulette-accent-2: #f97316;
+}
+
+.bf-mini-roulette {
+	margin: 2rem auto;
+	max-width: 960px;
+	padding: 1rem;
+}
+.bf-mini-game-demo-accounts li:before{
+	width: 0!important;
+	height: 0!important;
+	margin-right: 0!important;
+	background-color: transparent!important;
+	background-image: none!important;
+}
+@media (max-width: 640px) {
+	.bf-mini-roulette {
+		padding: 0;
+	}
+}
+
+.bf-mini-game-login {
+	background: #fff1f2;
+	border: 1px solid #fecdd3;
+	border-radius: 12px;
+	padding: 1rem;
+	color: #be123c;
+	text-align: center;
+	font-weight: 600;
+}
+

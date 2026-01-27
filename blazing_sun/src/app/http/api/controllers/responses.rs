@@ -34,6 +34,22 @@ impl std::fmt::Display for BaseResponse {
     }
 }
 
+/// Dynamic base response that can hold owned strings
+#[derive(Serialize, Debug)]
+pub struct DynamicBaseResponse {
+    pub status: &'static str,
+    pub message: String,
+}
+
+impl DynamicBaseResponse {
+    pub fn error(message: impl Into<String>) -> Self {
+        Self {
+            status: "error",
+            message: message.into(),
+        }
+    }
+}
+
 /// Response for missing required fields (array of error messages)
 #[derive(Serialize, Debug)]
 pub struct MissingFieldsResponse {

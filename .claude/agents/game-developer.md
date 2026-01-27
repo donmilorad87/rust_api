@@ -222,6 +222,450 @@ Every game MUST define these in `blazing_sun/.env`:
 
 And load them in `blazing_sun/src/config/games.rs`.
 
+### Rule 19: Game Tabs Structure
+Every game MUST have these tabs in the game component:
+1. **Game Lobby Tab** - Shows available rooms and room creation (default tab)
+2. **Game History Tab** - Shows all games the user has played
+
+**Tab Implementation:**
+```html
+<div class="game-tabs">
+  <button class="game-tab active" data-tab="lobby">Game Lobby</button>
+  <button class="game-tab" data-tab="history">Game History</button>
+</div>
+<div class="game-tab-content" id="lobbyContent"><!-- Lobby UI --></div>
+<div class="game-tab-content hidden" id="historyContent"><!-- History UI --></div>
+```
+
+### Rule 20: Game History Requirements
+The Game History tab MUST implement these features:
+
+**1. Display User's Games:**
+- Show all games the current user has played
+- Each game entry shows: date, room name, opponent(s), result (win/loss), score
+- Paginated with 16 games per page
+
+**2. Pagination (MANDATORY STANDARD):**
+
+Every pagination MUST include ALL of these elements:
+
+```
+┌───────┐ ┌──────┐ ┌───┬───┬───┬─────┬───┬───┬───┐ ┌──────┐ ┌──────┐ ┌──────┐
+│ First │ │ Prev │ │ 1 │ 2 │ 3 │  4  │ 5 │ 6 │ 7 │ │ Next │ │ Last │ │ Go □ │
+└───────┘ └──────┘ └───┴───┴───┴─────┴───┴───┴───┘ └──────┘ └──────┘ └──────┘
+                                ▲
+                          Active page
+                     (disabled/highlighted)
+```
+
+| Element | Required | Behavior |
+|---------|----------|----------|
+| **First** | ✅ | Jump to page 1. Disabled when on page 1 |
+| **Previous** | ✅ | Go to previous page. Disabled when on page 1 |
+| **Page Numbers** | ✅ | Max 7 visible, active page in middle when possible |
+| **Next** | ✅ | Go to next page. Disabled when on last page |
+| **Last** | ✅ | Jump to last page. Disabled when on last page |
+| **Go to Page Input** | ✅ | Input field + button to jump to specific page |
+
+**Page Number Display Rules (Max 7 pages visible):**
+
+```javascript
+function calculatePageWindow(currentPage, totalPages) {
+    const maxVisible = 7;
+    const halfWindow = 3;
+
+    if (totalPages <= maxVisible) {
+        return { startPage: 1, endPage: totalPages };
+    } else if (currentPage <= halfWindow + 1) {
+        return { startPage: 1, endPage: maxVisible };
+    } else if (currentPage >= totalPages - halfWindow) {
+        return { startPage: totalPages - maxVisible + 1, endPage: totalPages };
+    } else {
+        return { startPage: currentPage - halfWindow, endPage: currentPage + halfWindow };
+    }
+}
+```
+
+| Current | Total | Displayed | Notes |
+|---------|-------|-----------|-------|
+| 1 | 20 | 1 2 3 4 5 6 7 | Near start |
+| 10 | 20 | 7 8 9 **10** 11 12 13 | Active centered |
+| 18 | 20 | 14 15 16 17 **18** 19 20 | Near end |
+
+**API Response MUST include:**
+```json
+{
+  "pagination": {
+    "page": 1,
+    "limit": 16,
+    "total": 45,
+    "total_pages": 3,
+    "has_next": true,
+    "has_prev": false
+  }
+}
+```
+
+- API must support `page` and `limit` query params
+
+**3. Game Details View:**
+- When user clicks a game from history, show full game details
+- Display same results screen as shown at game end (round results, scores, etc.)
+- For BIGGER_DICE: Show all rounds with rolls and scores
+- For TIC_TAC_TOE: Show all individual game boards from the match
+
+**4. Back Navigation:**
+- When viewing game details, show back arrow (←) in top-left corner
+- Back arrow returns user to game history list
+- Preserve pagination state when returning
+
+**5. State Management:**
+```javascript
+// Game history states
+const HistoryView = {
+  LIST: 'list',      // Showing paginated game list
+  DETAILS: 'details' // Showing single game details
+};
+
+this.historyView = HistoryView.LIST;
+this.historyPage = 1;
+this.historyGames = [];
+this.selectedHistoryGame = null;
+```
+
+### Rule 21: Game History API Route
+Create API endpoint for retrieving user's game history:
+
+**Endpoint:** `GET /api/v1/games/{game_type}/history`
+
+**Query Parameters:**
+- `page` (optional, default: 1) - Page number
+- `limit` (optional, default: 16, max: 50) - Items per page
+
+**Response:**
+```json
+{
+  "games": [
+    {
+      "game_id": "uuid",
+      "room_name": "Room Name",
+      "played_at": "2024-01-15T10:30:00Z",
+      "duration_seconds": 180,
+      "players": [
+        { "user_id": 1, "username": "Player1", "score": 10, "is_winner": true },
+        { "user_id": 2, "username": "Player2", "score": 7, "is_winner": false }
+      ],
+      "result": "win",  // "win", "loss", "draw"
+      "final_score": "10-7"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 16,
+    "total": 45,
+    "total_pages": 3,
+    "has_next": true,
+    "has_prev": false
+  }
+}
+```
+
+**Game Details Endpoint:** `GET /api/v1/games/{game_type}/history/{game_id}`
+
+**Response:** Full game data including round-by-round details for replay/review.
+
+### Rule 22: Game History WebSocket Command
+Add WebSocket command for fetching game history:
+
+```javascript
+// Client command
+{ type: 'games.command.get_history', game_type: 'bigger_dice', page: 1, limit: 16 }
+
+// Server response
+{ type: 'games.event.{game_type}.history_loaded', games: [...], pagination: {...} }
+
+// Get single game details
+{ type: 'games.command.get_game_details', game_type: 'bigger_dice', game_id: 'uuid' }
+
+// Server response
+{ type: 'games.event.{game_type}.game_details', game: {...} }
+```
+
+### Rule 23: MongoDB Game Storage Architecture
+
+**MongoDB is the SINGLE source of truth for all game data.** Three collections store game-related data:
+
+#### Collection 1: `game_history` - Completed Games
+
+Stores the final record of completed games. Created when a game finishes.
+
+```javascript
+// Collection: game_history
+// Indexed by: players.user_id + finished_at, game_type + finished_at, finished_at
+{
+  _id: ObjectId("696d64e73da6b67042ca45ee"),
+  room_id: "db900481-ea9c-467f-acbb-2b241cd11a3f",
+  room_name: "Game Room",
+  game_type: "bigger_dice",  // "bigger_dice" | "tic_tac_toe"
+  players: [
+    {
+      user_id: Long(4),
+      username: "Player1",
+      final_score: 10,
+      is_winner: true
+    },
+    {
+      user_id: Long(3),
+      username: "Player2",
+      final_score: 6,
+      is_winner: false
+    }
+  ],
+  winner_id: Long(4),
+  duration_seconds: Long(180),
+  turns: [
+    // Game-specific turn data (for replay/review)
+    {
+      turn_number: 1,
+      player_id: Long(4),
+      action: { "roll": 5, "round_number": 1 },
+      timestamp: "2026-01-18T22:54:30.123Z"
+    }
+  ],
+  started_at: "2026-01-18T22:54:23.807Z",
+  finished_at: "2026-01-18T22:57:23.807Z"
+}
+```
+
+#### Collection 2: `game_round_results` - In-Progress Round Results
+
+Stores round-by-round results DURING gameplay. Enables rejoining players to see full round history. Has 24-hour TTL for automatic cleanup.
+
+```javascript
+// Collection: game_round_results
+// Indexed by: room_id + round_number, completed_at (TTL: 24 hours)
+{
+  _id: ObjectId("..."),
+  room_id: "db900481-ea9c-467f-acbb-2b241cd11a3f",
+  round_number: 1,
+  rolls: [
+    { user_id: Long(4), username: "Player1", roll: 5 },
+    { user_id: Long(3), username: "Player2", roll: 3 }
+  ],
+  winner_id: Long(4),           // null if tie/tiebreaker
+  winner_username: "Player1",
+  is_tiebreaker: false,
+  completed_at: ISODate("2026-01-18T22:54:30.123Z")
+}
+```
+
+**Usage Flow:**
+1. **During game**: Each round result saved to `game_round_results`
+2. **Player rejoins**: Fetch all rounds from `game_round_results` by `room_id`
+3. **Game ends**: Round data used for final summary, then auto-deleted after 24h
+
+#### Collection 3: `game_chat_messages` - Chat History
+
+Stores chat messages for all channels. Loaded on rejoin for chat history.
+
+```javascript
+// Collection: game_chat_messages
+// Indexed by: room_id + channel + timestamp
+{
+  _id: ObjectId("..."),
+  room_id: "db900481-ea9c-467f-acbb-2b241cd11a3f",
+  channel: "lobby",  // "lobby" | "players" | "spectators"
+  user_id: Long(4),
+  username: "Player1",
+  avatar_id: Long(123),
+  content: "Hello everyone!",
+  is_system: false,
+  timestamp: ISODate("2026-01-18T22:54:00.000Z")
+}
+```
+
+#### MongoDB Rust Types (types.rs)
+
+```rust
+// Game history record
+pub struct GameHistory {
+    pub id: Option<ObjectId>,
+    pub room_id: String,
+    pub room_name: String,
+    pub game_type: GameType,
+    pub players: Vec<GameHistoryPlayer>,
+    pub winner_id: Option<i64>,
+    pub duration_seconds: i64,
+    pub turns: Vec<GameTurn>,
+    pub started_at: DateTime<Utc>,
+    pub finished_at: DateTime<Utc>,
+}
+
+// Round result for BIGGER_DICE (stored during game)
+pub struct BiggerDiceRoundResult {
+    pub id: Option<ObjectId>,
+    pub room_id: String,
+    pub round_number: i32,
+    pub rolls: Vec<BiggerDicePlayerRoll>,
+    pub winner_id: Option<i64>,
+    pub winner_username: Option<String>,
+    pub is_tiebreaker: bool,
+    pub completed_at: DateTime<Utc>,
+}
+
+// Single player roll in a round
+pub struct BiggerDicePlayerRoll {
+    pub user_id: i64,
+    pub username: String,
+    pub roll: i32,
+}
+```
+
+#### MongoDB Client Methods (mongodb_games.rs)
+
+```rust
+impl MongoGameClient {
+    // ===== In-Progress Round Results =====
+
+    /// Save round result during gameplay (enables rejoin history)
+    pub async fn save_round_result(
+        &self, room_id: &str, round_number: i32,
+        rolls: Vec<BiggerDicePlayerRoll>,
+        winner_id: Option<i64>, winner_username: Option<String>,
+        is_tiebreaker: bool
+    ) -> Result<ObjectId, Error>;
+
+    /// Get all rounds for a room (for rejoining players)
+    pub async fn get_room_round_results(
+        &self, room_id: &str
+    ) -> Result<Vec<BiggerDiceRoundResult>, Error>;
+
+    /// Clear rounds when game ends (optional, TTL handles cleanup)
+    pub async fn clear_room_round_results(
+        &self, room_id: &str
+    ) -> Result<u64, Error>;
+
+    // ===== Completed Game History =====
+
+    /// Save completed game to history
+    pub async fn save_game(
+        &self, room_id: &str, room_name: &str, game_type: GameType,
+        players: Vec<GameHistoryPlayer>, winner_id: Option<i64>,
+        turns: Vec<GameTurn>, started_at: DateTime<Utc>
+    ) -> Result<ObjectId, Error>;
+
+    /// Get games for user (paginated)
+    pub async fn get_user_games(
+        &self, user_id: i64, limit: i64, skip: u64
+    ) -> Result<Vec<GameHistory>, Error>;
+
+    /// Get games for user filtered by game type
+    pub async fn get_user_games_by_type(
+        &self, user_id: i64, game_type: &str, limit: i64, skip: u64
+    ) -> Result<Vec<GameHistory>, Error>;
+
+    /// Get single game by ID
+    pub async fn get_game(
+        &self, game_id: ObjectId
+    ) -> Result<Option<GameHistory>, Error>;
+}
+```
+
+#### Storing Round Results During Game
+
+**IMPORTANT: Save round results after EVERY round for rejoin support.**
+
+```rust
+// In games.rs handler, after round completes:
+async fn handle_round_completed(&self, room: &GameRoom, round_state: &RoundState) {
+    // 1. Get MongoDB client
+    let mongo = self.mongo_client.clone();
+
+    // 2. Build rolls data
+    let rolls: Vec<BiggerDicePlayerRoll> = round_state.current_round_rolls
+        .iter()
+        .map(|(&uid, &roll)| {
+            let username = room.players.iter()
+                .find(|p| p.user_id == uid)
+                .map(|p| p.username.clone())
+                .unwrap_or_default();
+            BiggerDicePlayerRoll { user_id: uid, username, roll }
+        })
+        .collect();
+
+    // 3. Save to MongoDB
+    mongo.save_round_result(
+        &room.room_id,
+        round_state.round_number,
+        rolls,
+        winner_id,
+        winner_username,
+        is_tiebreaker
+    ).await?;
+}
+```
+
+#### Loading Round History on Rejoin
+
+```rust
+// When player rejoins mid-game:
+async fn handle_rejoin(&self, user_id: i64, room_id: &str) {
+    // 1. Get round history from MongoDB
+    let round_history = self.mongo_client
+        .get_room_round_results(room_id)
+        .await?;
+
+    // 2. Convert to JSON format for frontend
+    let history_json: Vec<serde_json::Value> = round_history
+        .iter()
+        .map(|r| json!({
+            "round": r.round_number,
+            "rolls": r.rolls.iter().map(|roll| json!({
+                "id": roll.user_id,
+                "roll": roll.roll,
+                "username": roll.username
+            })).collect::<Vec<_>>(),
+            "winnerId": r.winner_id,
+            "winnerName": r.winner_username,
+            "isTiebreaker": r.is_tiebreaker
+        }))
+        .collect();
+
+    // 3. Send state with history
+    self.send_game_state(user_id, room, round_history_json).await;
+}
+```
+
+#### Game-Specific Data Storage
+
+**BIGGER_DICE:**
+- `turns[]` contains roll actions with `round_number`, `roll` value
+- `game_round_results` stores each round for rejoin support
+- Rounds include all player rolls and tiebreaker info
+
+**TIC_TAC_TOE:**
+- `turns[]` contains move actions with `position`, `mark` (X/O)
+- Store individual game boards (best-of-9 match = up to 9 boards)
+- Each board: 9 cells with X, O, or null
+
+#### MongoDB Indexes (mongodb_games.rs)
+
+```rust
+pub async fn init_indexes(&self) -> Result<(), Error> {
+    // game_history indexes
+    let player_index = doc! { "players.user_id": 1, "finished_at": -1 };
+    let type_index = doc! { "game_type": 1, "finished_at": -1 };
+    let recent_index = doc! { "finished_at": -1 };
+
+    // game_round_results indexes
+    let room_index = doc! { "room_id": 1, "round_number": 1 };
+    let ttl_index = doc! { "completed_at": 1 };  // TTL: 24 hours
+
+    // game_chat_messages indexes
+    let chat_index = doc! { "room_id": 1, "channel": 1, "timestamp": -1 };
+}
+```
+
 ---
 
 ## 🎲 BIGGER_DICE REFERENCE IMPLEMENTATION
@@ -1137,7 +1581,9 @@ pub enum AudienceType {
 - [ ] Implement turn validation
 - [ ] Implement score tracking
 - [ ] Implement game end detection
-- [ ] Add MongoDB history saving
+- [ ] **Save round results to MongoDB after EVERY round** (for rejoin support)
+- [ ] Add MongoDB `game_history` saving when game finishes
+- [ ] Clear `game_round_results` for room when game ends (optional, TTL handles cleanup)
 - [ ] Add checkout integration (if paid game)
 
 ### Phase 4: WebSocket Gateway
@@ -1157,6 +1603,25 @@ pub enum AudienceType {
 - [ ] Implement turn timer (if applicable)
 - [ ] Implement animation queue (if needed)
 - [ ] Add SCSS styles (inline or external)
+- [ ] **Implement Game Tabs (Game Lobby + Game History)** - Rule 19
+- [ ] **Implement Game History list view (paginated, 16 per page)** - Rule 20
+- [ ] **Implement Game History details view with back arrow** - Rule 20
+
+### Phase 5b: Game History API & MongoDB Storage
+- [ ] Create API endpoint `GET /api/v1/games/{game_type}/history` with pagination
+- [ ] Create API endpoint `GET /api/v1/games/{game_type}/history/{game_id}` for details
+- [ ] Add WebSocket commands: `get_history`, `get_game_details`
+- [ ] Add WebSocket events: `history_loaded`, `game_details`
+- [ ] **MongoDB Collections Setup:**
+  - [ ] Ensure `game_history` collection stores completed games with `turns[]` data
+  - [ ] Ensure `game_round_results` collection stores in-progress round results
+  - [ ] Ensure `game_chat_messages` collection stores chat history
+  - [ ] Create indexes: `players.user_id + finished_at`, `game_type + finished_at`
+  - [ ] Create TTL index on `game_round_results.completed_at` (24 hours)
+- [ ] **Round Results Storage:**
+  - [ ] Save round result to MongoDB after each round completes
+  - [ ] Include all player rolls/moves, winner, tiebreaker flag
+  - [ ] Load round history when player rejoins mid-game
 
 ### Phase 6: Tera Template
 - [ ] Create `{game_name}.html` in `resources/views/web/`

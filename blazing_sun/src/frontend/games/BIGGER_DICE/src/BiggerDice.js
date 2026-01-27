@@ -117,6 +117,403 @@ template.innerHTML = `
     }
 
     /* ============================================
+       LOBBY TABS STYLES
+       ============================================ */
+
+    .lobby-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .lobby-tab {
+      padding: 0.75rem 1.5rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+
+    .lobby-tab:hover {
+      color: var(--text-color);
+    }
+
+    .lobby-tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
+    .lobby-tab-content {
+      display: none;
+    }
+
+    .lobby-tab-content.active {
+      display: block;
+    }
+
+    /* ============================================
+       GAME HISTORY STYLES
+       ============================================ */
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .history-back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 0.5rem;
+      background: var(--card-bg);
+      color: var(--text-color);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .history-back-btn:hover {
+      background: var(--border-color);
+    }
+
+    .history-back-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .history-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .history-item:hover {
+      border-color: var(--primary-color);
+      transform: translateY(-1px);
+    }
+
+    .history-item__main {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .history-item__room {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .history-item__date {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .history-item__result {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .history-item__score {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    .history-item__badge {
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .history-item__badge--win {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success-color);
+    }
+
+    .history-item__badge--loss {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger-color);
+    }
+
+    .history-item__badge--draw {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+    }
+
+    .history-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .history-empty__icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .history-empty__title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .history-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1rem;
+      gap: 1rem;
+      color: var(--text-muted);
+    }
+
+    .history-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .history-pagination__btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      border-radius: 0.375rem;
+      background: transparent;
+      color: var(--text-color);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      min-width: 2.5rem;
+    }
+
+    .history-pagination__btn:hover:not(:disabled) {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: #fff;
+    }
+
+    .history-pagination__btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .history-pagination__btn--active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: #fff;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .history-pagination__pages {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .history-pagination__goto {
+      display: flex;
+      gap: 0.25rem;
+      margin-left: 0.5rem;
+    }
+
+    .history-pagination__input {
+      width: 60px;
+      padding: 0.5rem;
+      font-size: 0.875rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.375rem;
+      background: transparent;
+      color: var(--text-color);
+      text-align: center;
+    }
+
+    .history-pagination__input::-webkit-inner-spin-button,
+    .history-pagination__input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .history-pagination__input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    @media (max-width: 600px) {
+      .history-pagination__btn--first,
+      .history-pagination__btn--last {
+        display: none;
+      }
+      .history-pagination__goto {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+        margin-left: 0;
+      }
+    }
+
+    /* Game Details View */
+    .history-details {
+      display: none;
+    }
+
+    .history-details.active {
+      display: block;
+    }
+
+    .history-details__summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--card-bg);
+      border-radius: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .history-details__players {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .history-details__player {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .history-details__player-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .history-details__player-score {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .history-details__player--winner .history-details__player-score {
+      color: var(--success-color);
+    }
+
+    .history-details__vs {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .history-details__info {
+      text-align: right;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .history-rounds {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .history-rounds__title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .history-round {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: var(--card-bg);
+      border-radius: 0.5rem;
+      gap: 1rem;
+    }
+
+    .history-round__number {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 60px;
+    }
+
+    .history-round__rolls {
+      flex: 1;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .history-round__roll {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+    }
+
+    .history-round__roll-value {
+      font-weight: 700;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .history-round__roll--winner {
+      color: var(--success-color);
+    }
+
+    .history-round__winner {
+      font-size: 0.75rem;
+      color: var(--success-color);
+      font-weight: 500;
+    }
+
+    .history-round--tiebreaker {
+      border-left: 3px solid var(--warning-color);
+    }
+
+    .history-round__tiebreaker-badge {
+      font-size: 0.625rem;
+      padding: 0.125rem 0.375rem;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning-color);
+      border-radius: 0.25rem;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* ============================================
        LOBBY MODE STYLES
        ============================================ */
 
@@ -2354,25 +2751,88 @@ template.innerHTML = `
 
     <!-- LOBBY SECTION -->
     <section id="lobbySection" class="lobby-section">
-      <div class="lobby-controls">
-        <h2 class="lobby-title">Available Rooms</h2>
-        <button class="create-room-btn" id="createRoomBtn">
-          <span>+</span> Create Room
-        </button>
+      <!-- Lobby Tabs -->
+      <div class="lobby-tabs">
+        <button class="lobby-tab active" data-tab="rooms" id="tabRooms">Game Lobby</button>
+        <button class="lobby-tab" data-tab="history" id="tabHistory">Game History</button>
       </div>
 
-      <div id="loadingState" class="loading-state">
-        <div class="spinner"></div>
-        <p>Loading rooms...</p>
+      <!-- Tab Content: Game Lobby -->
+      <div class="lobby-tab-content active" id="tabContentRooms">
+        <div class="lobby-controls">
+          <h2 class="lobby-title">Available Rooms</h2>
+          <button class="create-room-btn" id="createRoomBtn">
+            <span>+</span> Create Room
+          </button>
+        </div>
+
+        <div id="loadingState" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading rooms...</p>
+        </div>
+
+        <div id="emptyState" class="empty-state hidden">
+          <div class="empty-state__icon">🎲</div>
+          <h3 class="empty-state__title">No Active Rooms</h3>
+          <p class="empty-state__message">Create a new room to start playing!</p>
+        </div>
+
+        <div id="roomsGrid" class="rooms-grid hidden"></div>
       </div>
 
-      <div id="emptyState" class="empty-state hidden">
-        <div class="empty-state__icon">🎲</div>
-        <h3 class="empty-state__title">No Active Rooms</h3>
-        <p class="empty-state__message">Create a new room to start playing!</p>
-      </div>
+      <!-- Tab Content: Game History -->
+      <div class="lobby-tab-content" id="tabContentHistory">
+        <!-- History List View -->
+        <div id="historyListView">
+          <div class="history-header">
+            <h2 class="history-title">Your Game History</h2>
+          </div>
 
-      <div id="roomsGrid" class="rooms-grid hidden"></div>
+          <div id="historyLoading" class="history-loading">
+            <div class="spinner"></div>
+            <p>Loading game history...</p>
+          </div>
+
+          <div id="historyEmpty" class="history-empty hidden">
+            <div class="history-empty__icon">📜</div>
+            <h3 class="history-empty__title">No Games Yet</h3>
+            <p>Play some games to see your history here!</p>
+          </div>
+
+          <div id="historyList" class="history-list hidden"></div>
+
+          <nav id="historyPagination" class="history-pagination hidden" aria-label="Pagination">
+            <button class="history-pagination__btn history-pagination__btn--first" id="historyFirstBtn" aria-label="Go to first page" disabled>First</button>
+            <button class="history-pagination__btn history-pagination__btn--prev" id="historyPrevBtn" aria-label="Go to previous page" disabled>Prev</button>
+            <div class="history-pagination__pages" id="historyPages"></div>
+            <button class="history-pagination__btn history-pagination__btn--next" id="historyNextBtn" aria-label="Go to next page" disabled>Next</button>
+            <button class="history-pagination__btn history-pagination__btn--last" id="historyLastBtn" aria-label="Go to last page" disabled>Last</button>
+            <div class="history-pagination__goto">
+              <input type="number" class="history-pagination__input" id="historyPageInput" min="1" placeholder="Page" aria-label="Go to page number">
+              <button class="history-pagination__btn" id="historyGoBtn" aria-label="Go to entered page">Go</button>
+            </div>
+          </nav>
+        </div>
+
+        <!-- History Details View -->
+        <div id="historyDetailsView" class="history-details">
+          <div class="history-header">
+            <button class="history-back-btn" id="historyBackBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <h2 class="history-title">Game Details</h2>
+          </div>
+
+          <div id="historyDetailsSummary" class="history-details__summary"></div>
+
+          <div class="history-rounds">
+            <h3 class="history-rounds__title">Round Results</h3>
+            <div id="historyRoundsList"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- GAME SECTION -->
@@ -2764,6 +3224,7 @@ export class BiggerDice extends HTMLElement {
     this.disconnectOverlayIds = new Set();
     this.windowEventsBound = false;
     this.hasSentDisconnectIntent = false;
+    this.isNavigatingToOwnRoom = false;  // Flag to prevent leave_room on navigation to room we just created/joined
     this.handlePageHide = null;
     this.handleBeforeUnload = null;
     this.handleOffline = null;
@@ -2806,6 +3267,15 @@ export class BiggerDice extends HTMLElement {
     this.isChatCollapsed = false;         // Chat panel collapse state
     this.isPlayer = false;                // Whether current user is a player
     this.isSpectator = false;             // Whether current user is a spectator
+
+    // Game history state
+    this.historyTab = 'rooms';            // Current tab: 'rooms' or 'history'
+    this.historyView = 'list';            // History view: 'list' or 'details'
+    this.historyGames = [];               // List of history games
+    this.historyPage = 1;                 // Current page
+    this.historyTotalPages = 1;           // Total pages
+    this.historyLoading = false;          // Loading state
+    this.selectedHistoryGame = null;      // Currently selected game for details
 
     this.cacheElements();
     this.bindEvents();
@@ -2966,6 +3436,28 @@ export class BiggerDice extends HTMLElement {
       chatForm: $('chatForm'),
       chatInput: $('chatInput'),
       chatSend: $('chatSend'),
+      // Lobby tabs
+      tabRooms: $('tabRooms'),
+      tabHistory: $('tabHistory'),
+      tabContentRooms: $('tabContentRooms'),
+      tabContentHistory: $('tabContentHistory'),
+      // Game history elements
+      historyListView: $('historyListView'),
+      historyLoading: $('historyLoading'),
+      historyEmpty: $('historyEmpty'),
+      historyList: $('historyList'),
+      historyPagination: $('historyPagination'),
+      historyFirstBtn: $('historyFirstBtn'),
+      historyPrevBtn: $('historyPrevBtn'),
+      historyPages: $('historyPages'),
+      historyNextBtn: $('historyNextBtn'),
+      historyLastBtn: $('historyLastBtn'),
+      historyPageInput: $('historyPageInput'),
+      historyGoBtn: $('historyGoBtn'),
+      historyDetailsView: $('historyDetailsView'),
+      historyBackBtn: $('historyBackBtn'),
+      historyDetailsSummary: $('historyDetailsSummary'),
+      historyRoundsList: $('historyRoundsList'),
     };
   }
 
@@ -3118,6 +3610,66 @@ export class BiggerDice extends HTMLElement {
       this.elements.requestToPlayBtn.addEventListener('click', () => this.requestToPlay());
     }
 
+    // Lobby tab events
+    if (this.elements.tabRooms) {
+      this.elements.tabRooms.addEventListener('click', () => this.switchLobbyTab('rooms'));
+    }
+    if (this.elements.tabHistory) {
+      this.elements.tabHistory.addEventListener('click', () => this.switchLobbyTab('history'));
+    }
+
+    // Game history events
+    if (this.elements.historyBackBtn) {
+      this.elements.historyBackBtn.addEventListener('click', () => this.showHistoryList());
+    }
+    if (this.elements.historyFirstBtn) {
+      this.elements.historyFirstBtn.addEventListener('click', () => this.loadHistoryPage(1));
+    }
+    if (this.elements.historyPrevBtn) {
+      this.elements.historyPrevBtn.addEventListener('click', () => this.loadHistoryPage(this.historyPage - 1));
+    }
+    if (this.elements.historyPages) {
+      this.elements.historyPages.addEventListener('click', (e) => {
+        const btn = e.target.closest('.history-pagination__btn[data-page]');
+        if (btn && !btn.disabled) {
+          const page = parseInt(btn.dataset.page, 10);
+          this.loadHistoryPage(page);
+        }
+      });
+    }
+    if (this.elements.historyNextBtn) {
+      this.elements.historyNextBtn.addEventListener('click', () => this.loadHistoryPage(this.historyPage + 1));
+    }
+    if (this.elements.historyLastBtn) {
+      this.elements.historyLastBtn.addEventListener('click', () => this.loadHistoryPage(this.historyTotalPages));
+    }
+    if (this.elements.historyGoBtn) {
+      this.elements.historyGoBtn.addEventListener('click', () => {
+        const page = parseInt(this.elements.historyPageInput?.value, 10);
+        if (page >= 1 && page <= this.historyTotalPages) {
+          this.loadHistoryPage(page);
+        }
+      });
+    }
+    if (this.elements.historyPageInput) {
+      this.elements.historyPageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const page = parseInt(this.elements.historyPageInput?.value, 10);
+          if (page >= 1 && page <= this.historyTotalPages) {
+            this.loadHistoryPage(page);
+          }
+        }
+      });
+    }
+    if (this.elements.historyList) {
+      this.elements.historyList.addEventListener('click', (e) => {
+        const item = e.target.closest('.history-item');
+        if (item && item.dataset.gameId) {
+          this.showHistoryDetails(item.dataset.gameId);
+        }
+      });
+    }
+
     // Chat events
     if (this.elements.chatTabLobby) {
       this.elements.chatTabLobby.addEventListener('click', () => this.switchChatChannel('lobby'));
@@ -3200,10 +3752,28 @@ export class BiggerDice extends HTMLElement {
   notifyDisconnectIntent() {
     if (this.hasSentDisconnectIntent) return;
     if (!this.roomId) return;
-    if (this.gameStatus !== GameStatus.PLAYING) return;
-    if (!this.isPlayer || this.isSpectator) return;
 
+    // Don't send leave_room if we're intentionally navigating to our own room
+    // (e.g., after creating a room or joining a room from lobby)
+    if (this.isNavigatingToOwnRoom) {
+      console.log('[BiggerDice] Skipping leave_room - navigating to own room');
+      return;
+    }
+
+    // Check if user is in this room (as player, lobby member, or spectator)
+    const isInLobby = this.lobby && this.lobby.some(p => String(p.user_id) === String(this.myPlayerId));
+    const isInRoom = this.isSpectator || this.isPlayer || isInLobby;
+
+    if (!isInRoom) return;
+
+    // Send leave_room for anyone in the room (spectator, player, or lobby member)
     this.hasSentDisconnectIntent = true;
+    console.log('[BiggerDice] Sending leave_room on navigation away', {
+      isSpectator: this.isSpectator,
+      isPlayer: this.isPlayer,
+      isInLobby: isInLobby,
+      roomId: this.roomId
+    });
     this.send({
       type: 'games.command.leave_room',
       room_id: this.roomId
@@ -3424,6 +3994,9 @@ export class BiggerDice extends HTMLElement {
         case 'games.event.bigger_dice.spectator_left':
           this.handleSpectatorLeft(message);
           break;
+        case 'games.event.bigger_dice.spectator_kicked':
+          this.handleSpectatorKicked(message);
+          break;
         case 'games.event.bigger_dice.request_to_play_accepted':
           this.handleRequestToPlayAccepted(message);
           break;
@@ -3608,6 +4181,8 @@ export class BiggerDice extends HTMLElement {
     // If we created the room, navigate to it
     if (hostIdStr === userIdStr) {
       console.log('[BiggerDice] We are the host, dispatching room-joined event');
+      // Set flag to prevent leave_room from being sent during navigation
+      this.isNavigatingToOwnRoom = true;
       // Use room_id (UUID) for URL
       this.dispatchEvent(new CustomEvent('room-joined', {
         detail: { room_id: message.room_id, game_type: message.game_type || 'bigger_dice' },
@@ -3659,6 +4234,8 @@ export class BiggerDice extends HTMLElement {
     // Check if we are the player who joined
     const playerId = message.player?.user_id || message.player_id;
     if (playerId === this.userId || playerId === String(this.userId) || String(playerId) === this.userId) {
+      // Set flag to prevent leave_room from being sent during navigation
+      this.isNavigatingToOwnRoom = true;
       // Navigate to the game room
       this.dispatchEvent(new CustomEvent('room-joined', {
         detail: { room_id: message.room_id, game_type: 'bigger_dice' }
@@ -3687,7 +4264,8 @@ export class BiggerDice extends HTMLElement {
     }
 
     // If we're currently in this room and it's being removed, show closed message
-    if (this.roomId === roomId && this.mode === ComponentMode.GAME) {
+    // BUT NOT if the reason is "game_started" - that's a valid transition, not a room closure
+    if (this.roomId === roomId && this.mode === ComponentMode.GAME && reason !== 'game_started') {
       this.showRoomClosedMessage();
     }
   }
@@ -4703,6 +5281,37 @@ export class BiggerDice extends HTMLElement {
 
     // Update spectator UI
     this.updateSpectatorUI();
+
+    // Update admin's lobby players list (which also shows spectators)
+    this.renderAdminLobby();
+  }
+
+  handleSpectatorKicked(message) {
+    console.log('[BiggerDice] Spectator kicked:', message);
+    const userId = String(message.user_id);
+
+    // Check if this is about me
+    if (userId === String(this.myPlayerId)) {
+      // I was kicked - show message and redirect
+      this.showToast('You have been removed from this room by the admin', 'warning');
+      this.isSpectator = false;
+      this.roomId = null;
+
+      // Redirect to game list after a short delay
+      setTimeout(() => {
+        window.location.href = '/games/bigger-dice';
+      }, 2000);
+      return;
+    }
+
+    // Someone else was kicked - remove from spectators list (same as left)
+    this.spectators = this.spectators.filter(s => String(s.user_id) !== userId);
+
+    // Update spectator UI
+    this.updateSpectatorUI();
+
+    // Update admin's lobby players list (which also shows spectators)
+    this.renderAdminLobby();
   }
 
   handleRequestToPlayAccepted(message) {
@@ -6668,7 +7277,7 @@ export class BiggerDice extends HTMLElement {
         } else {
           actionsHtml = `
             <button class="select-btn" data-action="select-spectator" data-user-id="${spectator.user_id}">Select to Play</button>
-            <button class="kick-btn" data-action="kick-spectator" data-user-id="${spectator.user_id}">Remove</button>
+            <button class="kick-btn" data-action="kick-spectator" data-user-id="${spectator.user_id}">Kick</button>
             <button class="ban-btn" data-action="ban" data-user-id="${spectator.user_id}">Ban</button>
           `;
         }
@@ -7392,5 +8001,277 @@ export class BiggerDice extends HTMLElement {
       'abandoned': 'Abandoned'
     };
     return statuses[status] || status;
+  }
+
+  // ============================================
+  // Lobby Tabs Methods
+  // ============================================
+
+  switchLobbyTab(tab) {
+    if (this.historyTab === tab) return;
+    this.historyTab = tab;
+
+    // Update tab buttons
+    this.elements.tabRooms?.classList.toggle('active', tab === 'rooms');
+    this.elements.tabHistory?.classList.toggle('active', tab === 'history');
+
+    // Update tab content
+    this.elements.tabContentRooms?.classList.toggle('active', tab === 'rooms');
+    this.elements.tabContentHistory?.classList.toggle('active', tab === 'history');
+
+    // Load history when switching to history tab
+    if (tab === 'history' && this.historyGames.length === 0) {
+      this.loadHistoryPage(1);
+    }
+  }
+
+  // ============================================
+  // Game History Methods
+  // ============================================
+
+  async loadHistoryPage(page) {
+    if (this.historyLoading || page < 1) return;
+
+    this.historyLoading = true;
+    this.historyPage = page;
+
+    // Show loading state
+    this.elements.historyLoading?.classList.remove('hidden');
+    this.elements.historyEmpty?.classList.add('hidden');
+    this.elements.historyList?.classList.add('hidden');
+    this.elements.historyPagination?.classList.add('hidden');
+
+    try {
+      const response = await fetch(`/api/v1/games/bigger_dice/history?page=${page}&limit=16`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data = await response.json();
+
+      this.historyGames = data.games || [];
+      this.historyTotalPages = data.pagination?.total_pages || 1;
+      this.historyPage = data.pagination?.page || 1;
+
+      this.renderHistoryList();
+    } catch (error) {
+      console.error('[BiggerDice] Failed to load game history:', error);
+      this.historyGames = [];
+      this.renderHistoryList();
+    } finally {
+      this.historyLoading = false;
+      this.elements.historyLoading?.classList.add('hidden');
+    }
+  }
+
+  renderHistoryList() {
+    const list = this.elements.historyList;
+    const empty = this.elements.historyEmpty;
+    const pagination = this.elements.historyPagination;
+
+    if (this.historyGames.length === 0) {
+      empty?.classList.remove('hidden');
+      list?.classList.add('hidden');
+      pagination?.classList.add('hidden');
+      return;
+    }
+
+    empty?.classList.add('hidden');
+    list?.classList.remove('hidden');
+
+    list.innerHTML = this.historyGames.map(game => {
+      const myPlayer = game.players?.find(p => String(p.user_id) === String(this.userId));
+      const result = myPlayer?.is_winner ? 'win' : (game.winner_id ? 'loss' : 'draw');
+      const myScore = myPlayer?.final_score || 0;
+      const opponentScore = game.players?.find(p => String(p.user_id) !== String(this.userId))?.final_score || 0;
+      const playedAt = new Date(game.played_at || game.finished_at);
+      const dateStr = playedAt.toLocaleDateString() + ' ' + playedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      return `
+        <div class="history-item" data-game-id="${game.game_id}">
+          <div class="history-item__main">
+            <div class="history-item__room">${this.escapeHtml(game.room_name)}</div>
+            <div class="history-item__date">${dateStr}</div>
+          </div>
+          <div class="history-item__result">
+            <span class="history-item__score">${myScore} - ${opponentScore}</span>
+            <span class="history-item__badge history-item__badge--${result}">${result}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Update pagination
+    if (this.historyTotalPages > 1) {
+      pagination?.classList.remove('hidden');
+
+      // Update First/Prev/Next/Last buttons
+      this.elements.historyFirstBtn.disabled = this.historyPage <= 1;
+      this.elements.historyPrevBtn.disabled = this.historyPage <= 1;
+      this.elements.historyNextBtn.disabled = this.historyPage >= this.historyTotalPages;
+      this.elements.historyLastBtn.disabled = this.historyPage >= this.historyTotalPages;
+
+      // Update page input max
+      if (this.elements.historyPageInput) {
+        this.elements.historyPageInput.max = this.historyTotalPages;
+        this.elements.historyPageInput.value = '';
+      }
+
+      // Render page numbers (max 7, active in middle)
+      const { startPage, endPage } = this.calculatePageWindow(this.historyPage, this.historyTotalPages);
+      let pagesHtml = '';
+      for (let i = startPage; i <= endPage; i++) {
+        const isActive = i === this.historyPage;
+        pagesHtml += `
+          <button class="history-pagination__btn ${isActive ? 'history-pagination__btn--active' : ''}"
+                  data-page="${i}"
+                  ${isActive ? 'aria-current="page" disabled' : ''}>
+            ${i}
+          </button>
+        `;
+      }
+      if (this.elements.historyPages) {
+        this.elements.historyPages.innerHTML = pagesHtml;
+      }
+    } else {
+      pagination?.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Calculate page window for pagination (max 7 visible, active in middle)
+   */
+  calculatePageWindow(currentPage, totalPages) {
+    const maxVisible = 7;
+    const halfWindow = 3;
+
+    let startPage, endPage;
+
+    if (totalPages <= maxVisible) {
+      startPage = 1;
+      endPage = totalPages;
+    } else if (currentPage <= halfWindow + 1) {
+      startPage = 1;
+      endPage = maxVisible;
+    } else if (currentPage >= totalPages - halfWindow) {
+      startPage = totalPages - maxVisible + 1;
+      endPage = totalPages;
+    } else {
+      startPage = currentPage - halfWindow;
+      endPage = currentPage + halfWindow;
+    }
+
+    return { startPage, endPage };
+  }
+
+  async showHistoryDetails(gameId) {
+    // Always fetch from details API to get full game data including rounds
+    // The list API doesn't return rounds, only the details API does
+    try {
+      const response = await fetch(`/api/v1/games/bigger_dice/history/${gameId}`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        this.selectedHistoryGame = data.game || data;
+      } else {
+        console.error('[BiggerDice] Failed to fetch game details:', response.status);
+        // Fallback to cached data if API fails
+        const cachedGame = this.historyGames.find(g => g.game_id === gameId);
+        if (cachedGame) {
+          this.selectedHistoryGame = cachedGame;
+        } else {
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('[BiggerDice] Failed to fetch game details:', error);
+      // Fallback to cached data if API fails
+      const cachedGame = this.historyGames.find(g => g.game_id === gameId);
+      if (cachedGame) {
+        this.selectedHistoryGame = cachedGame;
+      } else {
+        return;
+      }
+    }
+
+    this.historyView = 'details';
+    this.renderHistoryDetails();
+
+    // Show details view, hide list view
+    this.elements.historyListView?.classList.add('hidden');
+    this.elements.historyDetailsView?.classList.add('active');
+  }
+
+  showHistoryList() {
+    this.historyView = 'list';
+    this.selectedHistoryGame = null;
+
+    // Hide details view, show list view
+    this.elements.historyDetailsView?.classList.remove('active');
+    this.elements.historyListView?.classList.remove('hidden');
+  }
+
+  renderHistoryDetails() {
+    const game = this.selectedHistoryGame;
+    if (!game) return;
+
+    const summary = this.elements.historyDetailsSummary;
+    const roundsList = this.elements.historyRoundsList;
+
+    // Render summary
+    const players = game.players || [];
+    const winner = players.find(p => p.is_winner);
+    const playedAt = new Date(game.played_at || game.finished_at);
+    const dateStr = playedAt.toLocaleDateString() + ' ' + playedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    summary.innerHTML = `
+      <div class="history-details__players">
+        ${players.map(p => `
+          <div class="history-details__player ${p.is_winner ? 'history-details__player--winner' : ''}">
+            <span class="history-details__player-name">${this.escapeHtml(p.username)}</span>
+            <span class="history-details__player-score">${p.final_score}</span>
+          </div>
+        `).join('<span class="history-details__vs">vs</span>')}
+      </div>
+      <div class="history-details__info">
+        <div>${dateStr}</div>
+        <div>${game.duration_seconds ? Math.floor(game.duration_seconds / 60) + ' min' : ''}</div>
+      </div>
+    `;
+
+    // Render rounds
+    const rounds = game.rounds || [];
+    if (rounds.length === 0) {
+      roundsList.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">No round data available</p>';
+      return;
+    }
+
+    roundsList.innerHTML = rounds.map(round => {
+      const rolls = round.rolls || {};
+      const rollEntries = Object.entries(rolls);
+      const maxRoll = Math.max(...rollEntries.map(([, roll]) => roll));
+
+      return `
+        <div class="history-round ${round.is_tiebreaker ? 'history-round--tiebreaker' : ''}">
+          <span class="history-round__number">
+            Round ${round.round_number}
+            ${round.is_tiebreaker ? '<span class="history-round__tiebreaker-badge">Tiebreaker</span>' : ''}
+          </span>
+          <div class="history-round__rolls">
+            ${rollEntries.map(([oderId, roll]) => {
+              const player = players.find(p => String(p.user_id) === String(oderId));
+              const isWinner = roll === maxRoll && rollEntries.filter(([, r]) => r === maxRoll).length === 1;
+              return `
+                <span class="history-round__roll ${isWinner ? 'history-round__roll--winner' : ''}">
+                  ${this.escapeHtml(player?.username || 'Player')}:
+                  <span class="history-round__roll-value">${roll}</span>
+                </span>
+              `;
+            }).join('')}
+          </div>
+          ${round.winner_id ? `<span class="history-round__winner">Winner</span>` : ''}
+        </div>
+      `;
+    }).join('');
   }
 }

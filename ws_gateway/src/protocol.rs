@@ -140,6 +140,12 @@ pub enum ClientMessage {
         target_user_id: String,
     },
 
+    #[serde(rename = "games.command.kick_spectator")]
+    GameKickSpectator {
+        room_id: String,
+        target_user_id: String,
+    },
+
     #[serde(rename = "games.command.vote_kick_disconnected")]
     GameVoteKickDisconnected {
         room_id: String,
@@ -677,6 +683,28 @@ pub enum ServerMessage {
 
     #[serde(rename = "games.event.bigger_dice.spectator_left")]
     BiggerDiceSpectatorLeft {
+        room_id: String,
+        user_id: String,
+        username: String,
+    },
+
+    #[serde(rename = "games.event.spectator_kicked")]
+    GameSpectatorKicked {
+        room_id: String,
+        user_id: String,
+        username: String,
+    },
+
+    // Game-specific SpectatorKicked variants
+    #[serde(rename = "games.event.tic_tac_toe.spectator_kicked")]
+    TicTacToeSpectatorKicked {
+        room_id: String,
+        user_id: String,
+        username: String,
+    },
+
+    #[serde(rename = "games.event.bigger_dice.spectator_kicked")]
+    BiggerDiceSpectatorKicked {
         room_id: String,
         user_id: String,
         username: String,

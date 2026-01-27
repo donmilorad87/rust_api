@@ -13,13 +13,15 @@ use crate::app::http::api::controllers::balance::BalanceController;
 use crate::app::http::api::controllers::email::EmailController;
 use crate::app::http::api::controllers::game_chat_config::GameChatConfigController;
 use crate::app::http::api::controllers::localization::LocalizationController;
+use crate::app::http::api::controllers::roulette::RouletteController;
+use crate::app::http::api::controllers::roulette_ajax::RouletteAjaxController;
 use crate::app::http::api::controllers::schema::SchemaController;
 use crate::app::http::api::controllers::theme::ThemeController;
 use crate::app::http::api::controllers::upload::UploadController;
 use crate::app::http::api::controllers::user::UserController;
 use crate::app::http::api::controllers::{
-    competitions, gallery, gallery_like, game_config, geo_place, oauth, oauth_api_product,
-    oauth_client, oauth_gallery, oauth_scope, picture,
+    competitions, gallery, gallery_like, game_config, game_history, geo_place, oauth,
+    oauth_api_product, oauth_client, oauth_gallery, oauth_scope, picture,
 };
 use crate::middleware;
 use crate::middleware::permission::{levels, require_permission};
@@ -156,11 +158,47 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     );
 
     // ============================================
+    // Roulette Game Routes (Protected - requires JWT)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/roulette")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("/place-bet", web::post().to(RouletteController::place_bet))
+            .route("/spin", web::post().to(RouletteController::spin))
+            .route("/history", web::get().to(RouletteController::history))
+            .route("/stats", web::get().to(RouletteController::stats))
+            .route("/balance", web::get().to(RouletteController::balance)),
+    );
+
+    // ============================================
+    // Roulette AJAX Endpoint (WordPress-style single endpoint)
+    // POST /api/games/roulette with action parameter
+    // ============================================
+    cfg.service(
+        web::resource("/api/games/roulette")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route(web::post().to(RouletteAjaxController::handle)),
+    );
+
+    // ============================================
     // Games Config Routes (Public - no auth required)
+    // ============================================
+    // Game Config (Public - no auth)
     // ============================================
     cfg.service(
         web::scope("/api/v1/games")
-            .route("/config", web::get().to(game_config::get_config)),
+            .route("/config", web::get().to(game_config::get_config))
+            // Game History Routes (Requires JWT - wrapped individually)
+            .service(
+                web::resource("/{game_type}/history")
+                    .wrap(from_fn(middleware::auth::verify_jwt))
+                    .route(web::get().to(game_history::get_history)),
+            )
+            .service(
+                web::resource("/{game_type}/history/{game_id}")
+                    .wrap(from_fn(middleware::auth::verify_jwt))
+                    .route(web::get().to(game_history::get_game_details)),
+            ),
     );
 
     // ============================================
@@ -740,6 +778,14 @@ fn register_route_names() {
     // Balance routes
     route!("balance.checkout", "/api/v1/balance/checkout");
     route!("balance.checkout_kafka", "/api/v1/balance/checkout-kafka");
+
+    // Roulette routes
+    route!("roulette.place_bet", "/api/v1/roulette/place-bet");
+    route!("roulette.spin", "/api/v1/roulette/spin");
+    route!("roulette.history", "/api/v1/roulette/history");
+    route!("roulette.stats", "/api/v1/roulette/stats");
+    route!("roulette.balance", "/api/v1/roulette/balance");
+    route!("roulette.ajax", "/api/games/roulette");
 
     // Games routes
     route!("games.config", "/api/v1/games/config");

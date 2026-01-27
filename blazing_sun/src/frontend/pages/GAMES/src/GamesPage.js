@@ -515,7 +515,8 @@ export class GamesPage {
 
     // Map game type to route
     const gameRoutes = {
-      'bigger_dice': 'bigger-dice'
+      'bigger_dice': 'bigger-dice',
+      'roulette': 'roulette'
     };
 
     const gameRoute = gameRoutes[gameType] || gameType;
@@ -543,7 +544,8 @@ export class GamesPage {
    */
   formatGameType(type) {
     const types = {
-      'bigger_dice': 'Bigger Dice'
+      'bigger_dice': 'Bigger Dice',
+      'roulette': 'Roulette'
     };
     return types[type] || type;
   }

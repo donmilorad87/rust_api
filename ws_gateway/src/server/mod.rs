@@ -388,6 +388,12 @@ impl WebSocketServer {
                             "target_user_id": target_user_id,
                         })).await
                     }
+                    ClientMessage::GameKickSpectator { room_id, target_user_id } => {
+                        self.forward_games_command(connection, "games.command.kick_spectator", serde_json::json!({
+                            "room_id": room_id,
+                            "target_user_id": target_user_id,
+                        })).await
+                    }
                     ClientMessage::GameVoteKickDisconnected { room_id, target_user_id } => {
                         self.forward_games_command(connection, "games.command.vote_kick_disconnected", serde_json::json!({
                             "room_id": room_id,
@@ -856,7 +862,11 @@ impl WebSocketServer {
                             || envelope.event_type == "games.event.player_banned"
                             || envelope.event_type.ends_with(".player_banned")
                             || envelope.event_type == "games.event.removed_from_game"
-                            || envelope.event_type.ends_with(".removed_from_game");
+                            || envelope.event_type.ends_with(".removed_from_game")
+                            || envelope.event_type == "games.event.spectator_left"
+                            || envelope.event_type.ends_with(".spectator_left")
+                            || envelope.event_type == "games.event.spectator_kicked"
+                            || envelope.event_type.ends_with(".spectator_kicked");
 
                         if is_leave_event {
                             if let Some(room_id) = envelope.payload.get("room_id").and_then(|v| v.as_str()) {
@@ -900,7 +910,11 @@ impl WebSocketServer {
                         || envelope.event_type == "games.event.player_banned"
                         || envelope.event_type.ends_with(".player_banned")
                         || envelope.event_type == "games.event.removed_from_game"
-                        || envelope.event_type.ends_with(".removed_from_game");
+                        || envelope.event_type.ends_with(".removed_from_game")
+                        || envelope.event_type == "games.event.spectator_left"
+                        || envelope.event_type.ends_with(".spectator_left")
+                        || envelope.event_type == "games.event.spectator_kicked"
+                        || envelope.event_type.ends_with(".spectator_kicked");
 
                     if is_leave_event {
                         // Extract the leaving player's user_id from the event payload
@@ -2156,6 +2170,29 @@ impl WebSocketServer {
             // spectator_left - generic fallback
             "games.event.spectator_left" => {
                 Ok(Some(ServerMessage::GameSpectatorLeft {
+                    room_id: payload.get("room_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    user_id: payload.get("user_id").and_then(|v| v.as_i64().map(|n| n.to_string()).or_else(|| v.as_str().map(|s| s.to_string()))).unwrap_or_default(),
+                    username: payload.get("username").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                }))
+            }
+            // spectator_kicked - game-specific variants
+            "games.event.tic_tac_toe.spectator_kicked" => {
+                Ok(Some(ServerMessage::TicTacToeSpectatorKicked {
+                    room_id: payload.get("room_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    user_id: payload.get("user_id").and_then(|v| v.as_i64().map(|n| n.to_string()).or_else(|| v.as_str().map(|s| s.to_string()))).unwrap_or_default(),
+                    username: payload.get("username").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                }))
+            }
+            "games.event.bigger_dice.spectator_kicked" => {
+                Ok(Some(ServerMessage::BiggerDiceSpectatorKicked {
+                    room_id: payload.get("room_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    user_id: payload.get("user_id").and_then(|v| v.as_i64().map(|n| n.to_string()).or_else(|| v.as_str().map(|s| s.to_string()))).unwrap_or_default(),
+                    username: payload.get("username").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                }))
+            }
+            // spectator_kicked - generic fallback
+            "games.event.spectator_kicked" => {
+                Ok(Some(ServerMessage::GameSpectatorKicked {
                     room_id: payload.get("room_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                     user_id: payload.get("user_id").and_then(|v| v.as_i64().map(|n| n.to_string()).or_else(|| v.as_str().map(|s| s.to_string()))).unwrap_or_default(),
                     username: payload.get("username").and_then(|v| v.as_str()).unwrap_or("").to_string(),

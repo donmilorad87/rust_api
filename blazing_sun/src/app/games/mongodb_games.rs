@@ -250,6 +250,63 @@ impl MongoGameClient {
         Ok(games)
     }
 
+    /// Get game history for a user filtered by game type
+    pub async fn get_user_games_by_type(
+        &self,
+        user_id: i64,
+        game_type: &str,
+        limit: i64,
+        skip: u64,
+    ) -> Result<Vec<GameHistory>, mongodb::error::Error> {
+        let filter = doc! {
+            "players.user_id": user_id,
+            "game_type": game_type
+        };
+        let options = FindOptions::builder()
+            .sort(doc! { "finished_at": -1 })
+            .limit(limit)
+            .skip(skip)
+            .build();
+
+        info!(
+            user_id = %user_id,
+            game_type = %game_type,
+            limit = %limit,
+            skip = %skip,
+            "Fetching user games by type"
+        );
+
+        let mut cursor = self.history().find(filter).with_options(options).await?;
+        let mut games = Vec::new();
+
+        use futures::StreamExt;
+        while let Some(game) = cursor.next().await {
+            match game {
+                Ok(g) => {
+                    info!(game_id = ?g.id, room_name = %g.room_name, "Found game");
+                    games.push(g);
+                }
+                Err(e) => error!("Error reading game history: {}", e),
+            }
+        }
+
+        info!(count = %games.len(), "Total games found");
+        Ok(games)
+    }
+
+    /// Count games for a user filtered by game type
+    pub async fn count_user_games_by_type(
+        &self,
+        user_id: i64,
+        game_type: &str,
+    ) -> Result<u64, mongodb::error::Error> {
+        let filter = doc! {
+            "players.user_id": user_id,
+            "game_type": game_type
+        };
+        self.history().count_documents(filter).await
+    }
+
     /// Get user's statistics
     pub async fn get_user_stats(
         &self,

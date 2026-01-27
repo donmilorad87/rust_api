@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_lobby %}Roulette Lobby{% else %}{{ room_name | default(value='Roulette') }}{% endif %} - Games - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/games/ROULETTE/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="game-page">
+    <header class="game-page__header">
+        <a href="{{ route(name='web.games') }}" class="game-page__back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Games
+        </a>
+        <h1 class="game-page__title">{% if is_lobby %}Roulette{% else %}{{ room_name | default(value='Roulette') }}{% endif %}</h1>
+        {% if not is_lobby %}
+        <div class="room-info">
+            <span class="room-info__label">Room:</span>
+            <span class="room-info__value" id="roomIdDisplay">{{ room_id }}</span>
+            <button type="button" class="room-info__copy" id="copyRoomIdBtn" aria-label="Copy room link">
+                Copy Link
+            </button>
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="game-page__content">
+        <div class="game-page__component">
+            <mini-roulette
+                data-ajax-url="/api/games/roulette"
+                data-credits="1000"
+                data-max-tokens="16"
+                data-chip-multipliers="[1,2,5,10,20,30,50,100,200,500]"
+                data-wheel-order='["0","28","9","26","30","11","7","20","32","17","5","22","34","15","3","24","36","13","1","00","27","10","25","29","12","8","19","31","18","6","21","33","16","4","23","35","14","2"]'
+                data-history-per-page="16"
+                data-nonce-history="placeholder_nonce_history"
+                data-action-history="roulette_history"
+                data-nonce-add="placeholder_nonce_add"
+                data-nonce-place="placeholder_nonce_place"
+                data-nonce-spin="placeholder_nonce_spin"
+                data-action-add="roulette_add_credits"
+                data-action-place="roulette_place_bet"
+                data-action-spin="roulette_spin"
+            ></mini-roulette>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pass server-side variables to JavaScript
+    window.BASE_URL = "{{ base_url | safe }}";
+    window.ROOM_ID = "{{ room_id | safe }}";
+    window.ROOM_NAME = "{{ room_name | default(value='Roulette') | safe }}";
+    window.USER_ID = {{ user_id | default(value=0) }};
+    window.USERNAME = "{{ user.first_name | default(value='Guest') | safe }}";
+    window.IS_LOBBY = {% if is_lobby %}true{% else %}false{% endif %};
+</script>
+<script src="/assets/js/games/ROULETTE/app.js?v={{ assets_version }}"></script>
+<script>
+    {% if not is_lobby %}
+    // Copy room link functionality (only in game mode)
+    document.getElementById('copyRoomIdBtn')?.addEventListener('click', function() {
+        const roomUrl = window.location.href;
+        navigator.clipboard.writeText(roomUrl).then(function() {
+            showToast('Room link copied to clipboard!', 'success');
+        }).catch(function() {
+            // Fallback
+            const textArea = document.createElement('textarea');
+            textArea.value = roomUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Room link copied!', 'success');
+            } catch(e) {
+                showToast('Failed to copy link', 'error');
+            }
+            document.body.removeChild(textArea);
+        });
+    });
+    {% endif %}
+
+    // Handle game-leave event from web component
+    document.querySelector('mini-roulette')?.addEventListener('game-leave', function(e) {
+        window.location.href = "{{ route(name='web.games.roulette_lobby') }}";
+    });
+
+    // Handle game-error event from web component
+    document.querySelector('mini-roulette')?.addEventListener('game-error', function(e) {
+        showToast(e.detail.message || 'An error occurred', 'error');
+    });
+
+    // Handle room-joined event - navigate to game room
+    document.querySelector('mini-roulette')?.addEventListener('room-joined', function(e) {
+        if (e.detail && e.detail.room_id) {
+            // Get current language from URL
+            const pathParts = window.location.pathname.split('/').filter(p => p);
+            const lang = pathParts[0] || 'en';
+            window.location.href = `/${lang}/games/roulette/${e.detail.room_id}`;
+        }
+    });
+</script>
+{% endblock %}

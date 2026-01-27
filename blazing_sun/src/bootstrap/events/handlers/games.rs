@@ -21,7 +21,7 @@ use crate::config::GamesConfig;
 use crate::app::db_query::read::game_user_mutes as mute_read;
 use crate::app::games::types::{
     Audience, BannedPlayer, BiggerDicePlayerRoll, EventEnvelope, GameEvent, GameHistoryPlayer,
-    GamePlayer, GameRoom, GameSpectator, GameType, RoomStatus,
+    GamePlayer, GameRoom, GameSpectator, GameTurn, GameType, RoomStatus,
 };
 use crate::events::consumer::{EventHandler, EventHandlerError};
 use crate::events::producer::EventProducer;
@@ -846,6 +846,46 @@ impl GameCommandHandler {
             return Ok(());
         };
 
+        // Store game type for events
+        let gt = room.game_type.as_str();
+        let room_id_str = room_id.to_string();
+
+        // Check if user is a spectator (using spectators_data which has full GameSpectator objects)
+        let is_spectator = room.spectators_data.iter().any(|s| s.user_id == user_id);
+
+        if is_spectator {
+            // Handle spectator leaving
+            let spectator = room.remove_spectator(user_id);
+            let username = spectator.map(|s| s.username).unwrap_or_default();
+
+            // Remove spectator from database
+            let db = self.db.lock().await;
+            if let Err(e) = game_room_mutations::remove_spectator(&db, room_id, user_id).await {
+                warn!(error = %e, "Failed to remove spectator from database");
+            }
+            drop(db);
+
+            // Update cache
+            self.update_room(&room).await?;
+
+            // Notify room that spectator left
+            let event = GameEvent::SpectatorLeft {
+                room_id: room_id_str.clone(),
+                user_id,
+                username: username.clone(),
+            };
+            self.publish_game_event_typed(event, Audience::room(room_id_str), Some(gt)).await?;
+
+            info!(
+                room_id = %room_id,
+                user_id = %user_id,
+                "Spectator left game room"
+            );
+
+            return Ok(());
+        }
+
+        // Handle player leaving
         if room.status == RoomStatus::InProgress && room.is_player(user_id) {
             self.handle_player_disconnected(user_id, room_id).await?;
             return Ok(());
@@ -856,9 +896,8 @@ impl GameCommandHandler {
             .or_else(|| room.lobby.iter().find(|p| p.user_id == user_id));
         let username = player.map(|p| p.username.clone()).unwrap_or_default();
 
-        // Store room name and game type for events
+        // Store room name for events
         let room_name = room.room_name.clone();
-        let gt = room.game_type.as_str();
 
         // Remove player from both players and lobby lists
         room.players.retain(|p| p.user_id != user_id);
@@ -871,7 +910,7 @@ impl GameCommandHandler {
         }
 
         let event = GameEvent::PlayerLeft {
-            room_id: room_id.to_string(),
+            room_id: room_id_str.clone(),
             user_id,
             username,
         };
@@ -899,7 +938,7 @@ impl GameCommandHandler {
                 "abandoned"
             };
             let room_removed_event = GameEvent::RoomRemoved {
-                room_id: room_id.to_string(),
+                room_id: room_id_str.clone(),
                 room_name,
                 reason: reason.to_string(),
             };
@@ -910,7 +949,7 @@ impl GameCommandHandler {
             self.update_room(&room).await?;
         }
 
-        self.publish_game_event_typed(event, Audience::room(room_id.to_string()), Some(gt)).await?;
+        self.publish_game_event_typed(event, Audience::room(room_id_str), Some(gt)).await?;
 
         info!(
             room_id = %room_id,
@@ -2159,22 +2198,21 @@ impl GameCommandHandler {
         // Update cache
         self.update_room(&room).await?;
 
-        // Notify room that spectator was removed
+        // Notify room that spectator was removed (so admin UI updates)
         let event = GameEvent::SpectatorLeft {
             room_id: room_id_str.clone(),
             user_id: target_user_id,
             username: username.clone(),
         };
-
         self.publish_game_event_typed(event, Audience::room(room_id_str.clone()), Some(gt)).await?;
 
-        // Notify the kicked spectator (error events can stay unprefixed)
-        let kicked_event = GameEvent::Error {
-            code: "kicked_from_room".to_string(),
-            message: "You have been removed from this room by the admin".to_string(),
-            socket_id: socket_id.to_string(),
+        // Notify the kicked spectator so they can handle being removed
+        let kicked_event = GameEvent::SpectatorKicked {
+            room_id: room_id_str.clone(),
+            user_id: target_user_id,
+            username: username.clone(),
         };
-        self.publish_game_event(kicked_event, Audience::user(target_user_id)).await?;
+        self.publish_game_event_typed(kicked_event, Audience::user(target_user_id), Some(gt)).await?;
 
         info!(
             room_id = %room_id_str,
@@ -2657,50 +2695,49 @@ impl GameCommandHandler {
                 ..
             } = event
             {
-                // Only save rounds that have a winner (not ties going to tiebreaker)
-                if let Some(winner) = winner_id {
-                    if let Some(mongodb) = &self.mongodb {
-                        let game_client = MongoGameClient::new(mongodb.clone());
+                // Save ALL rounds (including ties) for complete game history
+                if let Some(mongodb) = &self.mongodb {
+                    let game_client = MongoGameClient::new(mongodb.clone());
 
-                        // Build player rolls with usernames
-                        let player_rolls: Vec<BiggerDicePlayerRoll> = rolls
+                    // Build player rolls with usernames
+                    let player_rolls: Vec<BiggerDicePlayerRoll> = rolls
+                        .iter()
+                        .map(|(pid, roll)| {
+                            let username = room
+                                .players
+                                .iter()
+                                .find(|p| p.user_id == *pid)
+                                .map(|p| p.username.clone())
+                                .unwrap_or_else(|| format!("Player {}", pid));
+                            BiggerDicePlayerRoll {
+                                user_id: *pid,
+                                username,
+                                roll: *roll,
+                            }
+                        })
+                        .collect();
+
+                    // Get winner username (if there is a winner)
+                    let winner_username = winner_id.and_then(|winner| {
+                        room.players
                             .iter()
-                            .map(|(pid, roll)| {
-                                let username = room
-                                    .players
-                                    .iter()
-                                    .find(|p| p.user_id == *pid)
-                                    .map(|p| p.username.clone())
-                                    .unwrap_or_else(|| format!("Player {}", pid));
-                                BiggerDicePlayerRoll {
-                                    user_id: *pid,
-                                    username,
-                                    roll: *roll,
-                                }
-                            })
-                            .collect();
+                            .find(|p| p.user_id == winner)
+                            .map(|p| p.username.clone())
+                    });
 
-                        // Get winner username
-                        let winner_username = room
-                            .players
-                            .iter()
-                            .find(|p| p.user_id == *winner)
-                            .map(|p| p.username.clone());
-
-                        // Save to MongoDB
-                        if let Err(e) = game_client
-                            .save_round_result(
-                                room_id,
-                                current_round_number,
-                                player_rolls,
-                                Some(*winner),
-                                winner_username,
-                                *is_tiebreaker,
-                            )
-                            .await
-                        {
-                            error!(error = %e, room_id = %room_id, round = %current_round_number, "Failed to save round result to MongoDB");
-                        }
+                    // Save to MongoDB
+                    if let Err(e) = game_client
+                        .save_round_result(
+                            room_id,
+                            current_round_number,
+                            player_rolls,
+                            *winner_id,
+                            winner_username,
+                            *is_tiebreaker,
+                        )
+                        .await
+                    {
+                        error!(error = %e, room_id = %room_id, round = %current_round_number, "Failed to save round result to MongoDB");
                     }
                 }
             }
@@ -2724,13 +2761,44 @@ impl GameCommandHandler {
                     }
                 }).collect();
 
+                // Fetch round results from MongoDB and convert to GameTurn format
+                let turns: Vec<GameTurn> = match game_client.get_room_round_results(room_id).await {
+                    Ok(round_results) => {
+                        round_results
+                            .into_iter()
+                            .flat_map(|round| {
+                                // Convert each round's rolls into individual turns
+                                round.rolls.into_iter().map(move |roll| {
+                                    GameTurn {
+                                        turn_number: round.round_number,
+                                        player_id: roll.user_id,
+                                        action: serde_json::json!({
+                                            "roll": roll.roll,
+                                            "round_number": round.round_number,
+                                            "is_tiebreaker": round.is_tiebreaker,
+                                            "winner_id": round.winner_id
+                                        }),
+                                        timestamp: round.completed_at,
+                                    }
+                                })
+                            })
+                            .collect()
+                    }
+                    Err(e) => {
+                        warn!(error = %e, room_id = %room_id, "Failed to fetch round results for game history");
+                        Vec::new()
+                    }
+                };
+
+                info!(room_id = %room_id, turns_count = %turns.len(), "Saving game history with turns");
+
                 if let Err(e) = game_client.save_game(
                     room_id,
                     &room.room_name,
                     room.game_type.clone(),
                     history_players,
                     room.winner_id,
-                    Vec::new(), // TODO: collect turns during game
+                    turns,
                     room.started_at.unwrap_or_else(Utc::now),
                 ).await {
                     error!(error = %e, "Failed to save game history to MongoDB");

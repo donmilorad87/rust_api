@@ -463,35 +463,60 @@ export class UploadsPage {
       return;
     }
 
-    let html = '<div class="pagination">';
+    // Calculate page window (max 7 pages, active in middle)
+    const { startPage, endPage } = this.calculatePageWindow(this.currentPage, totalPages);
+
+    let html = '<nav class="pagination" aria-label="Pagination">';
+
+    // First button
+    html += `
+      <button class="pagination__btn pagination__btn--first" ${this.currentPage === 1 ? 'disabled' : ''} data-page="1" aria-label="Go to first page">
+        First
+      </button>
+    `;
 
     // Previous button
     html += `
-      <button class="pagination__btn" ${this.currentPage === 1 ? 'disabled' : ''} data-page="${this.currentPage - 1}">
-        &laquo; Prev
+      <button class="pagination__btn pagination__btn--prev" ${this.currentPage === 1 ? 'disabled' : ''} data-page="${this.currentPage - 1}" aria-label="Go to previous page">
+        Prev
       </button>
     `;
 
     // Page numbers
-    const startPage = Math.max(1, this.currentPage - 2);
-    const endPage = Math.min(totalPages, this.currentPage + 2);
-
+    html += '<div class="pagination__pages">';
     for (let i = startPage; i <= endPage; i++) {
+      const isActive = i === this.currentPage;
       html += `
-        <button class="pagination__btn ${i === this.currentPage ? 'pagination__btn--active' : ''}" data-page="${i}">
+        <button class="pagination__btn ${isActive ? 'pagination__btn--active' : ''}" data-page="${i}" ${isActive ? 'aria-current="page" disabled' : ''}>
           ${i}
         </button>
       `;
     }
+    html += '</div>';
 
     // Next button
     html += `
-      <button class="pagination__btn" ${this.currentPage === totalPages ? 'disabled' : ''} data-page="${this.currentPage + 1}">
-        Next &raquo;
+      <button class="pagination__btn pagination__btn--next" ${this.currentPage === totalPages ? 'disabled' : ''} data-page="${this.currentPage + 1}" aria-label="Go to next page">
+        Next
       </button>
     `;
 
-    html += '</div>';
+    // Last button
+    html += `
+      <button class="pagination__btn pagination__btn--last" ${this.currentPage === totalPages ? 'disabled' : ''} data-page="${totalPages}" aria-label="Go to last page">
+        Last
+      </button>
+    `;
+
+    // Go to page input
+    html += `
+      <div class="pagination__goto">
+        <input type="number" class="pagination__input" min="1" max="${totalPages}" placeholder="Page" aria-label="Go to page number">
+        <button class="pagination__btn" data-action="goto" aria-label="Go to entered page">Go</button>
+      </div>
+    `;
+
+    html += '</nav>';
 
     this.pagination.innerHTML = html;
 
@@ -505,6 +530,57 @@ export class UploadsPage {
         }
       });
     });
+
+    // Bind go button event
+    const goBtn = this.pagination.querySelector('[data-action="goto"]');
+    const input = this.pagination.querySelector('.pagination__input');
+    if (goBtn && input) {
+      goBtn.addEventListener('click', () => {
+        const page = parseInt(input.value, 10);
+        if (page >= 1 && page <= totalPages) {
+          this.currentPage = page;
+          this.loadUploads();
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const page = parseInt(input.value, 10);
+          if (page >= 1 && page <= totalPages) {
+            this.currentPage = page;
+            this.loadUploads();
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Calculate page window for pagination (max 7 visible, active in middle)
+   * @param {number} currentPage - Current page number
+   * @param {number} totalPages - Total number of pages
+   * @returns {{startPage: number, endPage: number}}
+   */
+  calculatePageWindow(currentPage, totalPages) {
+    const maxVisible = 7;
+    const halfWindow = 3;
+
+    let startPage, endPage;
+
+    if (totalPages <= maxVisible) {
+      startPage = 1;
+      endPage = totalPages;
+    } else if (currentPage <= halfWindow + 1) {
+      startPage = 1;
+      endPage = maxVisible;
+    } else if (currentPage >= totalPages - halfWindow) {
+      startPage = totalPages - maxVisible + 1;
+      endPage = totalPages;
+    } else {
+      startPage = currentPage - halfWindow;
+      endPage = currentPage + halfWindow;
+    }
+
+    return { startPage, endPage };
   }
 
   /**

@@ -3298,7 +3298,8 @@ export class TicTacToe extends HTMLElement {
         }
 
         // If we're currently in this room and it's being removed, show message and return to lobby
-        if (this.roomId === roomId && this.mode !== 'lobby') {
+        // BUT NOT if the reason is "game_started" - that's a valid transition, not a room closure
+        if (this.roomId === roomId && this.mode !== 'lobby' && reason !== 'game_started') {
             this._showToast('Room has been closed', 'info');
             this.mode = 'lobby';
             this._showLobby();

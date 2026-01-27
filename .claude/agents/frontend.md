@@ -1032,6 +1032,461 @@ showToast('Item saved successfully!', 'success');
 
 ---
 
+## Pagination Component (MANDATORY STANDARD)
+
+**Every pagination implementation MUST follow these rules.**
+
+### Required Elements
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           PAGINATION COMPONENT STRUCTURE                          │
+│                                                                                   │
+│  ┌───────┐ ┌──────┐ ┌───┬───┬───┬─────┬───┬───┬───┐ ┌──────┐ ┌──────┐ ┌──────┐ │
+│  │ First │ │ Prev │ │ 1 │ 2 │ 3 │  4  │ 5 │ 6 │ 7 │ │ Next │ │ Last │ │ Go □ │ │
+│  └───────┘ └──────┘ └───┴───┴───┴─────┴───┴───┴───┘ └──────┘ └──────┘ └──────┘ │
+│                                    ▲                                              │
+│                                    │                                              │
+│                              Active page                                          │
+│                         (disabled/highlighted)                                    │
+│                                                                                   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Component Requirements
+
+| Element | Required | Behavior |
+|---------|----------|----------|
+| **First** | ✅ | Jump to page 1. Disabled when on page 1 |
+| **Previous** | ✅ | Go to previous page. Disabled when on page 1 |
+| **Page Numbers** | ✅ | Max 7 visible, active page in middle when possible |
+| **Next** | ✅ | Go to next page. Disabled when on last page |
+| **Last** | ✅ | Jump to last page. Disabled when on last page |
+| **Go to Page Input** | ✅ | Input field + button to jump to specific page |
+
+### Page Number Display Rules
+
+**Maximum 7 page numbers displayed** with active page centered when possible:
+
+```javascript
+// Page window calculation (±3 around active page)
+function calculatePageWindow(currentPage, totalPages) {
+    const maxVisible = 7;
+    const halfWindow = 3; // Math.floor(7/2)
+
+    let startPage, endPage;
+
+    if (totalPages <= maxVisible) {
+        // Show all pages if total ≤ 7
+        startPage = 1;
+        endPage = totalPages;
+    } else if (currentPage <= halfWindow + 1) {
+        // Near start: show 1-7
+        startPage = 1;
+        endPage = maxVisible;
+    } else if (currentPage >= totalPages - halfWindow) {
+        // Near end: show last 7
+        startPage = totalPages - maxVisible + 1;
+        endPage = totalPages;
+    } else {
+        // Middle: center current page
+        startPage = currentPage - halfWindow;
+        endPage = currentPage + halfWindow;
+    }
+
+    return { startPage, endPage };
+}
+```
+
+### Page Number Examples
+
+| Current | Total | Displayed Pages | Notes |
+|---------|-------|-----------------|-------|
+| 1 | 20 | 1 2 3 4 5 6 7 | Near start |
+| 4 | 20 | 1 2 3 **4** 5 6 7 | Active centered |
+| 10 | 20 | 7 8 9 **10** 11 12 13 | Active centered |
+| 18 | 20 | 14 15 16 17 **18** 19 20 | Near end |
+| 3 | 5 | 1 2 **3** 4 5 | Total ≤ 7, show all |
+
+### Button States
+
+```scss
+// Pagination button states
+.pagination {
+    &__btn {
+        // Normal state
+        cursor: pointer;
+        opacity: 1;
+
+        // Disabled state (current page or boundary)
+        &--disabled,
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        // Active page (current)
+        &--active {
+            background: var(--color-primary);
+            color: var(--text-on-primary);
+            cursor: default;
+            pointer-events: none;
+        }
+    }
+}
+```
+
+### HTML Structure
+
+```html
+<nav class="pagination" aria-label="Pagination">
+    <!-- First & Previous -->
+    <button class="pagination__btn pagination__btn--first"
+            aria-label="Go to first page"
+            data-page="1"
+            disabled>
+        First
+    </button>
+    <button class="pagination__btn pagination__btn--prev"
+            aria-label="Go to previous page"
+            data-page="3"
+            disabled>
+        Previous
+    </button>
+
+    <!-- Page Numbers -->
+    <div class="pagination__pages">
+        <button class="pagination__btn" data-page="1">1</button>
+        <button class="pagination__btn" data-page="2">2</button>
+        <button class="pagination__btn" data-page="3">3</button>
+        <button class="pagination__btn pagination__btn--active"
+                data-page="4"
+                aria-current="page"
+                disabled>4</button>
+        <button class="pagination__btn" data-page="5">5</button>
+        <button class="pagination__btn" data-page="6">6</button>
+        <button class="pagination__btn" data-page="7">7</button>
+    </div>
+
+    <!-- Next & Last -->
+    <button class="pagination__btn pagination__btn--next"
+            aria-label="Go to next page"
+            data-page="5">
+        Next
+    </button>
+    <button class="pagination__btn pagination__btn--last"
+            aria-label="Go to last page"
+            data-page="20">
+        Last
+    </button>
+
+    <!-- Go to Page Input -->
+    <div class="pagination__goto">
+        <input type="number"
+               class="pagination__input"
+               min="1"
+               max="20"
+               placeholder="Page"
+               aria-label="Go to page number">
+        <button class="pagination__btn pagination__btn--go"
+                aria-label="Go to entered page">
+            Go
+        </button>
+    </div>
+</nav>
+```
+
+### JavaScript Class Pattern
+
+```javascript
+class Pagination {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.currentPage = options.currentPage || 1;
+        this.totalPages = options.totalPages || 1;
+        this.onPageChange = options.onPageChange || (() => {});
+
+        this.render();
+        this.bindEvents();
+    }
+
+    calculatePageWindow() {
+        const maxVisible = 7;
+        const halfWindow = 3;
+
+        let startPage, endPage;
+
+        if (this.totalPages <= maxVisible) {
+            startPage = 1;
+            endPage = this.totalPages;
+        } else if (this.currentPage <= halfWindow + 1) {
+            startPage = 1;
+            endPage = maxVisible;
+        } else if (this.currentPage >= this.totalPages - halfWindow) {
+            startPage = this.totalPages - maxVisible + 1;
+            endPage = this.totalPages;
+        } else {
+            startPage = this.currentPage - halfWindow;
+            endPage = this.currentPage + halfWindow;
+        }
+
+        return { startPage, endPage };
+    }
+
+    render() {
+        const { startPage, endPage } = this.calculatePageWindow();
+
+        // Build page buttons
+        let pagesHtml = '';
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === this.currentPage;
+            pagesHtml += `
+                <button class="pagination__btn ${isActive ? 'pagination__btn--active' : ''}"
+                        data-page="${i}"
+                        ${isActive ? 'aria-current="page" disabled' : ''}>
+                    ${i}
+                </button>
+            `;
+        }
+
+        this.container.innerHTML = `
+            <button class="pagination__btn pagination__btn--first"
+                    data-page="1"
+                    ${this.currentPage === 1 ? 'disabled' : ''}>
+                First
+            </button>
+            <button class="pagination__btn pagination__btn--prev"
+                    data-page="${this.currentPage - 1}"
+                    ${this.currentPage === 1 ? 'disabled' : ''}>
+                Prev
+            </button>
+
+            <div class="pagination__pages">${pagesHtml}</div>
+
+            <button class="pagination__btn pagination__btn--next"
+                    data-page="${this.currentPage + 1}"
+                    ${this.currentPage === this.totalPages ? 'disabled' : ''}>
+                Next
+            </button>
+            <button class="pagination__btn pagination__btn--last"
+                    data-page="${this.totalPages}"
+                    ${this.currentPage === this.totalPages ? 'disabled' : ''}>
+                Last
+            </button>
+
+            <div class="pagination__goto">
+                <input type="number"
+                       class="pagination__input"
+                       min="1"
+                       max="${this.totalPages}"
+                       placeholder="Page">
+                <button class="pagination__btn pagination__btn--go">Go</button>
+            </div>
+        `;
+    }
+
+    bindEvents() {
+        // Page button clicks
+        this.container.addEventListener('click', (e) => {
+            const btn = e.target.closest('.pagination__btn[data-page]');
+            if (btn && !btn.disabled) {
+                const page = parseInt(btn.dataset.page, 10);
+                this.goToPage(page);
+            }
+        });
+
+        // Go button click
+        const goBtn = this.container.querySelector('.pagination__btn--go');
+        const input = this.container.querySelector('.pagination__input');
+
+        goBtn?.addEventListener('click', () => {
+            const page = parseInt(input.value, 10);
+            if (page >= 1 && page <= this.totalPages) {
+                this.goToPage(page);
+            }
+        });
+
+        // Enter key in input
+        input?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const page = parseInt(input.value, 10);
+                if (page >= 1 && page <= this.totalPages) {
+                    this.goToPage(page);
+                }
+            }
+        });
+    }
+
+    goToPage(page) {
+        if (page < 1 || page > this.totalPages || page === this.currentPage) {
+            return;
+        }
+        this.currentPage = page;
+        this.render();
+        this.bindEvents();
+        this.onPageChange(page);
+    }
+
+    update(currentPage, totalPages) {
+        this.currentPage = currentPage;
+        this.totalPages = totalPages;
+        this.render();
+        this.bindEvents();
+    }
+}
+```
+
+### SCSS Styles
+
+```scss
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    &__pages {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    &__btn {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--input-border);
+        background: var(--card-bg);
+        color: var(--text-primary);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover:not(:disabled) {
+            background: var(--color-primary);
+            color: var(--text-on-primary);
+            border-color: var(--color-primary);
+        }
+
+        &--active {
+            background: var(--color-primary);
+            color: var(--text-on-primary);
+            border-color: var(--color-primary);
+            cursor: default;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    &__goto {
+        display: flex;
+        gap: 0.25rem;
+        margin-left: 0.5rem;
+    }
+
+    &__input {
+        width: 60px;
+        padding: 0.5rem;
+        border: 1px solid var(--input-border);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        border-radius: 4px;
+        text-align: center;
+
+        &::-webkit-inner-spin-button,
+        &::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        &[type=number] {
+            -moz-appearance: textfield;
+        }
+    }
+}
+
+// Responsive: stack on mobile
+@media (max-width: 600px) {
+    .pagination {
+        &__btn--first,
+        &__btn--last {
+            display: none;
+        }
+
+        &__goto {
+            width: 100%;
+            justify-content: center;
+            margin-top: 0.5rem;
+            margin-left: 0;
+        }
+    }
+}
+```
+
+### Accessibility Requirements
+
+| Requirement | Implementation |
+|-------------|----------------|
+| **Navigation landmark** | Use `<nav>` with `aria-label="Pagination"` |
+| **Current page** | Add `aria-current="page"` to active button |
+| **Button labels** | Add `aria-label` to First/Prev/Next/Last buttons |
+| **Input label** | Add `aria-label` to the "Go to page" input |
+| **Keyboard navigation** | All buttons must be focusable and activatable with Enter |
+
+### Integration Example
+
+```javascript
+// In your page class
+class GalleryPage {
+    constructor() {
+        this.currentPage = 1;
+        this.totalPages = 1;
+        this.pagination = null;
+
+        this.init();
+    }
+
+    init() {
+        this.pagination = new Pagination(
+            document.querySelector('.pagination'),
+            {
+                currentPage: this.currentPage,
+                totalPages: this.totalPages,
+                onPageChange: (page) => this.loadPage(page)
+            }
+        );
+
+        this.loadPage(1);
+    }
+
+    async loadPage(page) {
+        const response = await fetch(`/api/v1/galleries?page=${page}&limit=16`);
+        const data = await response.json();
+
+        // Render items...
+        this.renderItems(data.items);
+
+        // Update pagination
+        this.pagination.update(data.pagination.page, data.pagination.total_pages);
+    }
+}
+```
+
+### Pages Using Pagination
+
+All these pages MUST follow the pagination standard:
+
+| Page | Route | Component |
+|------|-------|-----------|
+| **Galleries** | `/galleries` | GalleryManager |
+| **Game History** | `/games/*` (history tab) | GameHistory |
+| **Admin Uploads** | `/admin/uploads` | AdminUploads |
+| **Registered Users** | `/superadmin/users` | RegisteredUsers |
+
+---
+
 Now proceed with the frontend task. Remember to prefix all responses with [FE].
 
 ## Build Commands

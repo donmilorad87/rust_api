@@ -39,6 +39,12 @@ fn is_excluded_path(path: &str) -> bool {
         return true;
     }
 
+    // Exclude game AJAX endpoints (protected by JWT authentication)
+    // These use WordPress-style nonces in POST body instead of X-CSRF-TOKEN header
+    if path.starts_with("/api/games/") {
+        return true;
+    }
+
     false
 }
 

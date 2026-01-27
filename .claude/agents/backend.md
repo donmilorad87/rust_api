@@ -808,6 +808,152 @@ impl Backup {
 
 ---
 
+## Pagination API Standard (MANDATORY)
+
+**All paginated endpoints MUST follow this standard.**
+
+### Response Structure
+
+```rust
+#[derive(Debug, Serialize)]
+pub struct PaginatedResponse<T> {
+    pub items: Vec<T>,
+    pub pagination: PaginationInfo,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginationInfo {
+    pub page: u64,           // Current page (1-indexed)
+    pub limit: i64,          // Items per page
+    pub total: u64,          // Total items count
+    pub total_pages: u64,    // ceil(total / limit)
+    pub has_next: bool,      // page < total_pages
+    pub has_prev: bool,      // page > 1
+}
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Max | Description |
+|-----------|------|---------|-----|-------------|
+| `page` | u64 | 1 | - | Page number (1-indexed) |
+| `limit` | i64 | 16 | 50 | Items per page |
+
+```rust
+#[derive(Debug, Deserialize)]
+pub struct PaginationQuery {
+    #[serde(default = "default_page")]
+    pub page: u64,
+    #[serde(default = "default_limit")]
+    pub limit: i64,
+}
+
+fn default_page() -> u64 { 1 }
+fn default_limit() -> i64 { 16 }
+```
+
+### Controller Implementation
+
+```rust
+pub async fn list_items(
+    state: web::Data<AppState>,
+    query: web::Query<PaginationQuery>,
+) -> HttpResponse {
+    // 1. Validate and clamp parameters
+    let limit = query.limit.min(50).max(1);
+    let page = query.page.max(1);
+    let skip = (page - 1) * (limit as u64);
+
+    // 2. Get total count
+    let total = db_query::items::count(&db).await.unwrap_or(0);
+
+    // 3. Get items with limit + 1 (to detect has_next)
+    let items = db_query::items::get_paginated(&db, limit + 1, skip).await?;
+
+    // 4. Check if there are more items
+    let has_next = items.len() > limit as usize;
+    let items_to_return: Vec<_> = items.into_iter().take(limit as usize).collect();
+
+    // 5. Calculate pagination info
+    let total_pages = if total > 0 {
+        ((total as f64) / (limit as f64)).ceil() as u64
+    } else {
+        0
+    };
+
+    HttpResponse::Ok().json(PaginatedResponse {
+        items: items_to_return,
+        pagination: PaginationInfo {
+            page,
+            limit,
+            total,
+            total_pages,
+            has_next,
+            has_prev: page > 1,
+        },
+    })
+}
+```
+
+### JSON Response Example
+
+```json
+{
+  "items": [
+    { "id": 1, "name": "Item 1" },
+    { "id": 2, "name": "Item 2" }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 16,
+    "total": 45,
+    "total_pages": 3,
+    "has_next": true,
+    "has_prev": false
+  }
+}
+```
+
+### Frontend Expectations
+
+The frontend pagination component expects:
+- **First/Last buttons**: Jump to page 1 or `total_pages`
+- **Prev/Next buttons**: Disabled when at boundaries
+- **Page numbers**: Max 7 displayed, active page centered
+- **Go to page input**: Direct page navigation
+
+The API must provide `total_pages` so frontend can render the "Last" button and page input validation.
+
+### Database Query Pattern
+
+```rust
+// Count query
+pub async fn count_items(db: &Pool<Postgres>) -> Result<u64, sqlx::Error> {
+    let result = sqlx::query_scalar!(r#"SELECT COUNT(*) as "count!" FROM items"#)
+        .fetch_one(db)
+        .await?;
+    Ok(result as u64)
+}
+
+// Paginated fetch
+pub async fn get_paginated(
+    db: &Pool<Postgres>,
+    limit: i64,
+    skip: u64,
+) -> Result<Vec<Item>, sqlx::Error> {
+    sqlx::query_as!(
+        Item,
+        r#"SELECT * FROM items ORDER BY created_at DESC LIMIT $1 OFFSET $2"#,
+        limit,
+        skip as i64
+    )
+    .fetch_all(db)
+    .await
+}
+```
+
+---
+
 Now proceed with the backend task. Remember:
 1. **CALL TESTER FIRST** for tests
 2. Then implement to make tests pass
