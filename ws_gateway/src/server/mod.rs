@@ -547,6 +547,48 @@ impl WebSocketServer {
                         })).await
                     }
 
+                    // ========== Roulette Commands ==========
+
+                    // Join roulette table
+                    ClientMessage::RouletteJoin => {
+                        // Register connection in roulette room for broadcasts
+                        self.connections.join_room(connection.id(), "roulette");
+                        self.forward_roulette_command(connection, "roulette.join", serde_json::json!({})).await
+                    }
+
+                    // Leave roulette table
+                    ClientMessage::RouletteLeave => {
+                        self.connections.leave_room(connection.id(), "roulette");
+                        self.forward_roulette_command(connection, "roulette.leave", serde_json::json!({})).await
+                    }
+
+                    // Broadcast bets when betting closes
+                    ClientMessage::RouletteBroadcastBets { spin_id, bets } => {
+                        self.forward_roulette_command(connection, "roulette.broadcast_bets", serde_json::json!({
+                            "spin_id": spin_id,
+                            "bets": bets,
+                        })).await
+                    }
+
+                    // Chat message
+                    ClientMessage::RouletteChat { content } => {
+                        self.forward_roulette_command(connection, "roulette.chat", serde_json::json!({
+                            "content": content,
+                        })).await
+                    }
+
+                    // Toggle chat opt-out
+                    ClientMessage::RouletteToggleChat { opt_out } => {
+                        self.forward_roulette_command(connection, "roulette.toggle_chat", serde_json::json!({
+                            "opt_out": opt_out,
+                        })).await
+                    }
+
+                    // Get current state
+                    ClientMessage::RouletteGetState => {
+                        self.forward_roulette_command(connection, "roulette.get_state", serde_json::json!({})).await
+                    }
+
                     _ => Ok(())
                 }
             }
@@ -758,6 +800,34 @@ impl WebSocketServer {
         self.kafka_producer.publish_games_command(key, &envelope).await
     }
 
+    /// Forward a roulette command to Kafka
+    async fn forward_roulette_command(
+        &self,
+        connection: &mut Connection,
+        command_type: &str,
+        payload: serde_json::Value,
+    ) -> GatewayResult<()> {
+        let user = connection.user.as_ref().ok_or(GatewayError::NotAuthenticated)?;
+
+        let envelope = EventEnvelope::new(
+            command_type,
+            Actor {
+                user_id: user.user_id.clone(),
+                username: Some(user.username.clone()),
+                roles: user.roles.clone(),
+            },
+            Audience {
+                audience_type: AudienceType::Room,
+                user_ids: vec![],
+                room_id: Some("roulette".to_string()),
+                game_id: None,
+            },
+            payload,
+        );
+
+        self.kafka_producer.publish_roulette_command(&user.user_id, &envelope).await
+    }
+
     /// Handle an event received from Kafka
     async fn handle_kafka_event(
         connections: &ConnectionManager,
@@ -899,6 +969,7 @@ impl WebSocketServer {
             }
             AudienceType::Room => {
                 // Send to room members
+                debug!("Room audience event: room_id={:?}", envelope.audience.room_id);
                 if let Some(room_id) = &envelope.audience.room_id {
                     // Handle room leave events - remove user connections from room tracking
                     // This must happen BEFORE sending the message so the leaving user still receives it
@@ -961,6 +1032,18 @@ impl WebSocketServer {
                     let spectator_room = format!("spectators:{}", game_id);
                     if let Ok(Some(message)) = Self::envelope_to_server_message(&envelope) {
                         connections.send_to_room(&spectator_room, message);
+                    }
+                }
+            }
+            AudienceType::Users => {
+                // Send to multiple specific users
+                if envelope.audience.user_ids.is_empty() {
+                    warn!("Users audience but no user_ids specified for event: {}", envelope.event_type);
+                }
+                if let Ok(Some(message)) = Self::envelope_to_server_message(&envelope) {
+                    for user_id in &envelope.audience.user_ids {
+                        let sent = connections.send_to_user(user_id, message.clone());
+                        debug!("Sent {} to user {}: {} connection(s)", envelope.event_type, user_id, sent);
                     }
                 }
             }
@@ -2218,6 +2301,66 @@ impl WebSocketServer {
                 Ok(Some(ServerMessage::TicTacToeSpectatorDataJoined {
                     room_id: payload.get("room_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                     spectator: payload.get("spectator").cloned().unwrap_or(serde_json::Value::Null),
+                }))
+            }
+
+            // ========== Roulette Events ==========
+
+            "roulette.event.roulette.tick" | "roulette.event.tick" => {
+                Ok(Some(ServerMessage::RouletteTick {
+                    spin_id: payload.get("spin_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    seconds_remaining: payload.get("seconds_remaining").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+                    phase: payload.get("phase").and_then(|v| v.as_str()).unwrap_or("betting").to_string(),
+                    block_bets: payload.get("block_bets").and_then(|v| v.as_bool()).unwrap_or(false),
+                }))
+            }
+            "roulette.event.roulette.spin_result" | "roulette.event.spin_result" => {
+                Ok(Some(ServerMessage::RouletteSpinResult {
+                    spin_id: payload.get("spin_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    winning_number: payload.get("winning_number").and_then(|v| v.as_str()).unwrap_or("0").to_string(),
+                    winning_color: payload.get("winning_color").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    winning_parity: payload.get("winning_parity").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                }))
+            }
+            "roulette.event.bet_confirmed" => {
+                Ok(Some(ServerMessage::RouletteBetConfirmed {
+                    spin_id: payload.get("spin_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    total_bet_amount: payload.get("total_bet_amount").and_then(|v| v.as_i64()).unwrap_or(0),
+                    bet_count: payload.get("bet_count").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+                }))
+            }
+            "roulette.event.payout" => {
+                Ok(Some(ServerMessage::RoulettePayout {
+                    spin_id: payload.get("spin_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    payout_amount: payload.get("payout_amount").and_then(|v| v.as_i64()).unwrap_or(0),
+                    new_balance: payload.get("new_balance").and_then(|v| v.as_i64()).unwrap_or(0),
+                    bet_results: payload.get("bet_results").and_then(|v| v.as_array()).cloned().unwrap_or_default(),
+                }))
+            }
+            "roulette.event.roulette.state" | "roulette.event.state" => {
+                Ok(Some(ServerMessage::RouletteState {
+                    spin_id: payload.get("spin_id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    seconds_remaining: payload.get("seconds_remaining").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+                    phase: payload.get("phase").and_then(|v| v.as_str()).unwrap_or("betting").to_string(),
+                    block_bets: payload.get("block_bets").and_then(|v| v.as_bool()).unwrap_or(false),
+                    connected_count: payload.get("connected_count").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+                    history: payload.get("history").and_then(|v| v.as_array()).cloned().unwrap_or_default(),
+                    balance: payload.get("balance").and_then(|v| v.as_i64()).unwrap_or(0),
+                    pending_bets: payload.get("pending_bets").cloned(),
+                }))
+            }
+            "roulette.event.error" => {
+                Ok(Some(ServerMessage::RouletteError {
+                    code: payload.get("code").and_then(|v| v.as_str()).unwrap_or("error").to_string(),
+                    message: payload.get("message").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                }))
+            }
+            "roulette.event.chat" => {
+                Ok(Some(ServerMessage::RouletteChat {
+                    user_id: payload.get("user_id").and_then(|v| v.as_i64().map(|n| n.to_string()).or_else(|| v.as_str().map(|s| s.to_string()))).unwrap_or_default(),
+                    username: payload.get("username").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    content: payload.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    timestamp: payload.get("timestamp").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 }))
             }
 

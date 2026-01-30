@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Multiplayer Roulette - Games - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/ROULETTE/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="game-page game-page--roulette-multiplayer">
+    <header class="game-page__header">
+        <a href="{{ route(name='web.games') }}" class="game-page__back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Games
+        </a>
+        <h1 class="game-page__title">Multiplayer Roulette</h1>
+        <div class="game-page__user-info">
+            {% set balance_raw = user_balance | default(value=0) %}
+            <span class="user-balance" id="header-balance" data-balance="{{ balance_raw }}">
+                <span class="balance-icon">&#9679;</span>
+                <span class="balance-value">{{ (balance_raw / 1000) | round(precision=2) }}</span>
+            </span>
+        </div>
+    </header>
+
+    <div class="game-page__content">
+        <!-- Multiplayer Roulette Container -->
+        <div id="roulette-multiplayer" class="roulette-multiplayer">
+            <!-- Content will be injected by JavaScript -->
+            <div class="roulette-loading">
+                <div class="roulette-loading__spinner"></div>
+                <div class="roulette-loading__text">Loading game...</div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pass server-side variables to JavaScript
+    window.BASE_URL = "{{ base_url | default(value='') | safe }}";
+    window.USER_ID = {{ user_id | default(value=0) }};
+    window.USERNAME = "{{ user.first_name | default(value='Guest') | safe }}";
+    window.USER_AVATAR_ID = {% if user_avatar_id %}{{ user_avatar_id }}{% else %}null{% endif %};
+    window.USER_BALANCE = {{ user_balance | default(value=0) }};
+    window.JWT_TOKEN = "{{ jwt_token | default(value='') | safe }}";
+
+    // WebSocket configuration
+    window.WS_URL = "{{ ws_url | default(value='/ws/roulette') | safe }}";
+
+    // Store JWT for API calls if provided
+    if (window.JWT_TOKEN) {
+        localStorage.setItem('jwt_token', window.JWT_TOKEN);
+    }
+</script>
+<script src="/assets/js/ROULETTE/app.js?v={{ assets_version }}"></script>
+<script>
+    // Handle connection errors gracefully
+    window.addEventListener('error', function(e) {
+        console.error('Game error:', e.message);
+    });
+
+    // Handle unload - leave the table gracefully
+    window.addEventListener('beforeunload', function(e) {
+        if (window.rouletteGame && window.rouletteGame.ws) {
+            window.rouletteGame.sendCommand({ type: 'roulette.leave' });
+        }
+    });
+</script>
+{% endblock %}

@@ -77,6 +77,28 @@ pub mod topic {
     /// Consumed by checkout service to create refund transaction records
     pub const TIC_TAC_TOE_MATCH_CANCELLED: &str = "tic_tac_toe.match_cancelled";
 
+    // === Multiplayer Roulette Topics ===
+
+    /// Roulette tick events from WebSocket gateway
+    /// ws_gateway sends ticks every second with countdown and phase info
+    pub const ROULETTE_TICKS: &str = "roulette.ticks";
+
+    /// Roulette events to send back to WebSocket gateway
+    /// Includes bet confirmations, spin results, payouts, chat messages
+    pub const ROULETTE_EVENTS: &str = "roulette.events";
+
+    /// Roulette commands from clients via WebSocket gateway
+    /// Includes bet broadcasts, join/leave, chat, toggle settings
+    pub const ROULETTE_COMMANDS: &str = "roulette.commands";
+
+    /// Roulette bet payment events (balance deducted for bet)
+    /// Consumed by checkout service to create transaction records
+    pub const ROULETTE_BET_PAYED: &str = "roulette.bet_payed";
+
+    /// Roulette payout events (winnings credited)
+    /// Consumed by checkout service to create transaction records
+    pub const ROULETTE_PAYOUT: &str = "roulette.payout";
+
     /// Get all topics for initialization
     pub fn all() -> Vec<&'static str> {
         vec![
@@ -98,6 +120,11 @@ pub mod topic {
             TIC_TAC_TOE_PARTICIPATION_PAYED,
             TIC_TAC_TOE_WIN_PRIZE,
             TIC_TAC_TOE_MATCH_CANCELLED,
+            ROULETTE_TICKS,
+            ROULETTE_EVENTS,
+            ROULETTE_COMMANDS,
+            ROULETTE_BET_PAYED,
+            ROULETTE_PAYOUT,
         ]
     }
 }

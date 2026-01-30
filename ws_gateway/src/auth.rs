@@ -6,25 +6,32 @@ use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::Arc;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use crate::error::{GatewayError, GatewayResult};
 
 /// JWT Claims structure matching blazing_sun's token format
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
-    /// Subject (user ID)
+    /// Subject (user ID) - blazing_sun sends as i64, we deserialize to string
+    #[serde(deserialize_with = "deserialize_sub")]
     pub sub: String,
-    /// Username
+    /// Role (from blazing_sun)
+    #[serde(default)]
+    pub role: Option<String>,
+    /// Permissions level (from blazing_sun)
+    #[serde(default)]
+    pub permissions: Option<i16>,
+    /// Username (optional)
     #[serde(default)]
     pub username: Option<String>,
-    /// Email
+    /// Email (optional)
     #[serde(default)]
     pub email: Option<String>,
-    /// User roles
+    /// User roles (optional)
     #[serde(default)]
     pub roles: Vec<String>,
-    /// Permission level (1=basic, 10=admin, 50=affiliate, 100=super admin)
+    /// Permission level (optional, 1=basic, 10=admin, 50=affiliate, 100=super admin)
     #[serde(default)]
     pub permission_level: Option<i32>,
     /// Expiration time (Unix timestamp)
@@ -32,9 +39,50 @@ pub struct Claims {
     /// Issued at time (Unix timestamp)
     #[serde(default)]
     pub iat: Option<usize>,
-    /// Issuer
+    /// Issuer (optional)
     #[serde(default)]
     pub iss: Option<String>,
+}
+
+/// Custom deserializer for sub field that handles both i64 and String
+fn deserialize_sub<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+
+    struct SubVisitor;
+
+    impl<'de> Visitor<'de> for SubVisitor {
+        type Value = String;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a string or integer")
+        }
+
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(v.to_string())
+        }
+
+        fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(v.to_string())
+        }
+
+        fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(v.to_string())
+        }
+    }
+
+    deserializer.deserialize_any(SubVisitor)
 }
 
 /// Authenticated user information
@@ -49,12 +97,33 @@ pub struct AuthenticatedUser {
 
 impl From<Claims> for AuthenticatedUser {
     fn from(claims: Claims) -> Self {
+        // Build roles from either `roles` array or single `role` field
+        let roles = if !claims.roles.is_empty() {
+            claims.roles
+        } else if let Some(role) = claims.role {
+            vec![role]
+        } else {
+            vec!["user".to_string()]
+        };
+
+        // Get permission level from either field
+        let permission_level = claims.permission_level
+            .or(claims.permissions.map(|p| p as i32))
+            .unwrap_or(1);
+
+        // Extract fields in the right order to satisfy borrow checker
+        let sub_for_username = claims.sub.clone();
+        let username = claims.username.unwrap_or_else(|| {
+            let len = sub_for_username.len().min(8);
+            format!("user_{}", &sub_for_username[..len])
+        });
+
         Self {
             user_id: claims.sub,
-            username: claims.username.unwrap_or_else(|| "unknown".to_string()),
+            username,
             email: claims.email,
-            roles: claims.roles,
-            permission_level: claims.permission_level.unwrap_or(1),
+            roles,
+            permission_level,
         }
     }
 }
@@ -126,19 +195,23 @@ pub type SharedJwtValidator = Arc<JwtValidator>;
 
 /// Create a JWT validator from configuration
 pub fn create_validator(key_path: &str) -> GatewayResult<SharedJwtValidator> {
-    // Try RSA PEM first
-    if let Ok(validator) = JwtValidator::from_pem_file(key_path) {
-        return Ok(Arc::new(validator));
+    // Try HMAC secret first (matches blazing_sun's HS256 tokens)
+    if let Ok(secret) = std::env::var("JWT_SECRET") {
+        if !secret.is_empty() {
+            info!("Using HS256 JWT validation with JWT_SECRET");
+            let validator = JwtValidator::from_secret(&secret)?;
+            return Ok(Arc::new(validator));
+        }
     }
 
-    // Fall back to HMAC secret from environment
-    if let Ok(secret) = std::env::var("JWT_SECRET") {
-        let validator = JwtValidator::from_secret(&secret)?;
+    // Fall back to RSA PEM if JWT_SECRET not set
+    if let Ok(validator) = JwtValidator::from_pem_file(key_path) {
+        info!("Using RS256 JWT validation with PEM file");
         return Ok(Arc::new(validator));
     }
 
     Err(GatewayError::Internal(
-        "No JWT validation method available. Set JWT_PUBLIC_KEY_PATH or JWT_SECRET".to_string(),
+        "No JWT validation method available. Set JWT_SECRET or JWT_PUBLIC_KEY_PATH".to_string(),
     ))
 }
 

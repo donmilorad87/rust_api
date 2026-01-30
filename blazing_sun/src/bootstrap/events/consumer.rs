@@ -181,7 +181,9 @@ impl EventConsumer {
         let is_gateway_topic = topic == super::topics::topic::GAMES_COMMANDS
             || topic == super::topics::topic::CHAT_COMMANDS
             || topic == super::topics::topic::GATEWAY_PRESENCE
-            || topic == super::topics::topic::CHECKOUT_FINISHED;
+            || topic == super::topics::topic::CHECKOUT_FINISHED
+            || topic == super::topics::topic::ROULETTE_TICKS
+            || topic == super::topics::topic::ROULETTE_COMMANDS;
 
         let event = if is_gateway_topic {
             // For gateway topics, wrap the raw payload in a synthetic DomainEvent

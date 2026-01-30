@@ -46,9 +46,28 @@ export class MiniRouletteGame extends HTMLElement {
 						busy: false
 					};
 
+					// WebSocket multiplayer state
+					this.wsState = {
+						connected: false,
+						authenticated: false,
+						secondsRemaining: 120,
+						spinId: null,
+						blockBets: false,
+						phase: 'betting' // 'betting' | 'blocked' | 'spinning' | 'result'
+					};
+					this.ws = null;
+					this.wsReconnectAttempts = 0;
+					this.maxWsReconnectAttempts = 5;
+					this.betsBroadcasted = false;
+
+					// Initialize WebSocket connection
+					this.initWebSocket();
+
 					this.render();
 					this.cacheElements();
 					this.bindEvents();
+					// Board starts locked until we receive state from server
+					this.swapDisabledState(true);
 					this.updateCredits();
 					this.updateSummary();
 					this.updateChipSelector();
@@ -189,13 +208,6 @@ export class MiniRouletteGame extends HTMLElement {
 				}
 				.summary-row button {
 					color: #5B2ABF;
-				}
-				.brand-svg svg {
-					background: #3444c2;
-					padding: 1rem;
-					border-radius: 1rem;
-					box-shadow: 0 4px 13px rgba(15, 23, 42, 0.35);
-					border: 1px solid #5b2abf33;
 				}
 				.canvas-container {
 					position: relative;
@@ -399,17 +411,6 @@ export class MiniRouletteGame extends HTMLElement {
 					display:flex;
 					flex-direction:column;
 					gap: 1rem;
-				}
-				.brand-svg {
-					display: flex;
-					justify-content: center;
-					align-items: center;
-					margin-top: 1rem;
-				}
-				.brand-svg svg {
-					max-width: 360px;
-					width: 90%;
-					height: auto;
 				}
 
 				.roulette-table {
@@ -1052,22 +1053,6 @@ export class MiniRouletteGame extends HTMLElement {
 			buildBoardMarkup() {
 				return `
 			<div class="panel wheel-wrapper">
-				<div class="brand-svg" aria-hidden="true">
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" height="67" viewBox="0 0 369 67" width="369" role="presentation">
-						<path d="M15.3248 7.93164V25.2241C16.1538 24.1593 17.439 23.233 19.184 22.4453C20.929 21.6577 23.0468 21.2638 25.5267 21.2638C28.0066 21.2638 30.3055 21.6941 32.4197 22.5474C34.5339 23.4044 36.3513 24.6187 37.8682 26.1941C39.3851 27.7694 40.5689 29.6657 41.4197 31.8902C42.2705 34.111 42.694 36.5688 42.694 39.2528C42.694 41.9367 42.2669 44.369 41.4197 46.5461C40.5689 48.7231 39.3634 50.5975 37.7994 52.1729C36.2355 53.7482 34.3855 54.9626 32.2496 55.8195C30.1136 56.6765 27.7351 57.1031 25.114 57.1031C22.4929 57.1031 20.2194 56.6984 18.011 55.8888C15.8063 55.0792 13.8984 53.9087 12.2874 52.3807C10.6763 50.8528 9.40201 48.9784 8.46074 46.7539C7.51946 44.5331 7.04883 42.0315 7.04883 39.2528V7.93164H15.3212H15.3248ZM31.8405 31.613C30.1172 29.8079 27.8075 28.9036 24.9113 28.9036C22.015 28.9036 19.6944 29.8079 17.9459 31.613C16.2009 33.4181 15.3284 35.9416 15.3284 39.1835C15.3284 42.4254 16.2009 44.9488 17.9459 46.7539C19.6908 48.559 22.015 49.4634 24.9113 49.4634C27.8075 49.4634 30.1172 48.559 31.8405 46.7539C33.5637 44.9488 34.4253 42.4254 34.4253 39.1835C34.4253 35.9416 33.5637 33.4181 31.8405 31.613Z" fill="white"/>
-						<path d="M79.9648 31.8575C79.114 29.6586 77.9085 27.7842 76.3445 26.2307C74.7805 24.6809 72.9089 23.4775 70.7258 22.6205C68.5428 21.7636 66.1172 21.3369 63.4527 21.3369C60.7882 21.3369 58.3517 21.7672 56.1434 22.6205C53.9386 23.4775 52.0525 24.6809 50.4885 26.2307C48.9246 27.7842 47.719 29.6586 46.8682 31.8575C46.0175 34.0564 45.5939 36.4997 45.5939 39.1836C45.5939 41.8676 46.0175 44.3218 46.8682 46.5462C47.0601 47.0495 47.2737 47.5345 47.5054 48.0049L42.9221 52.6216C41.4595 54.0948 41.4595 56.487 42.9221 57.9603C44.3847 59.4335 46.7596 59.4335 48.2222 57.9603L52.3312 53.8213C53.4716 54.6528 54.7423 55.342 56.1434 55.8853C58.3481 56.7423 60.7846 57.169 63.4527 57.169C66.1209 57.169 68.5428 56.7386 70.7258 55.8853C72.9089 55.0284 74.7805 53.814 76.3445 52.2387C77.9048 50.667 79.114 48.7671 79.9648 46.5426C80.8155 44.3218 81.2391 41.8676 81.2391 39.18C81.2391 36.4924 80.8119 34.0528 79.9648 31.8539V31.8575ZM70.3457 46.8234C68.5971 48.6285 66.2765 49.5329 63.3803 49.5329C60.4841 49.5329 58.1743 48.6285 56.4511 46.8234C54.7278 45.0183 53.8662 42.4948 53.8662 39.2529C53.8662 36.0111 54.7278 33.4876 56.4511 31.6825C58.1743 29.8774 60.4841 28.973 63.3803 28.973C66.2765 28.973 68.5971 29.8774 70.3457 31.6825C72.0907 33.4876 72.9668 36.0111 72.9668 39.2529C72.9668 42.4948 72.0943 45.0183 70.3457 46.8234Z" fill="#27E287"/>
-						<path d="M100.271 21.1982C103.12 21.1982 105.546 21.6723 107.544 22.6204C109.542 23.5686 111.186 24.772 112.475 26.2306C113.76 27.6893 114.69 29.2756 115.266 30.9895C115.842 32.7034 116.128 34.3226 116.128 35.8505V56.5453H107.855V36.0584C107.855 34.8076 107.649 33.7427 107.236 32.8639C106.824 31.985 106.27 31.2448 105.582 30.6431C104.894 30.0414 104.087 29.6001 103.167 29.323C102.248 29.0458 101.281 28.9073 100.271 28.9073C99.2608 28.9073 98.2942 29.0458 97.3746 29.323C96.4551 29.6001 95.6514 30.0414 94.9599 30.6431C94.2721 31.2448 93.7182 31.985 93.3055 32.8639C92.8927 33.7427 92.6864 34.8076 92.6864 36.0584V56.5453H84.4141V35.8505C84.4141 34.3226 84.7001 32.7034 85.2757 30.9895C85.8513 29.2756 86.7817 27.6893 88.0669 26.2306C89.3521 24.772 90.9957 23.5686 92.9977 22.6204C94.9961 21.6723 97.4217 21.1982 100.271 21.1982Z" fill="white"/>
-						<path d="M135.641 57.1722C132.792 57.1722 130.366 56.6982 128.368 55.75C126.369 54.8019 124.726 53.5985 123.437 52.1398C122.148 50.6812 121.218 49.0949 120.646 47.381C120.07 45.667 119.784 44.0479 119.784 42.52V21.8252H128.057V42.3121C128.057 43.5629 128.263 44.6277 128.676 45.5066C129.088 46.3854 129.642 47.1293 130.33 47.7274C131.018 48.3291 131.822 48.7667 132.745 49.0475C133.664 49.3246 134.627 49.4632 135.641 49.4632C136.655 49.4632 137.618 49.3246 138.537 49.0475C139.457 48.7703 140.26 48.3291 140.952 47.7274C141.643 47.1257 142.194 46.3854 142.606 45.5066C143.019 44.6277 143.225 43.5629 143.225 42.3121V21.8252H151.498V42.52C151.498 44.0479 151.212 45.6707 150.636 47.381C150.061 49.0949 149.13 50.6812 147.845 52.1398C146.556 53.5985 144.916 54.8019 142.914 55.75C140.916 56.6982 138.49 57.1722 135.641 57.1722Z" fill="white"/>
-						<path d="M163.426 31.1974C163.426 32.0325 163.886 32.6779 164.806 33.1411C165.725 33.6042 166.884 34.0345 168.288 34.4247C169.689 34.8185 171.195 35.2342 172.803 35.6755C174.41 36.1167 175.916 36.7403 177.317 37.5499C178.718 38.3594 179.88 39.4388 180.8 40.7808C181.72 42.1228 182.179 43.8841 182.179 46.0575C182.179 47.8188 181.846 49.3796 181.18 50.7471C180.514 52.1146 179.584 53.2597 178.389 54.1859C177.194 55.1122 175.779 55.8087 174.15 56.2682C172.517 56.7313 170.714 56.961 168.737 56.961C166.898 56.961 165.233 56.775 163.738 56.4067C162.242 56.0384 160.91 55.5862 159.737 55.0538C158.564 54.5214 157.554 53.9416 156.703 53.318C155.853 52.6944 155.154 52.1474 154.6 51.6843L159.013 45.1568C160.483 46.5462 162.083 47.5891 163.806 48.282C165.53 48.9748 167.242 49.3249 168.944 49.3249C170.366 49.3249 171.55 49.0806 172.495 48.5956C173.436 48.1106 173.907 47.3557 173.907 46.3383C173.907 45.3209 173.447 44.5442 172.528 44.0117C171.608 43.4793 170.446 43.0162 169.045 42.6224C167.644 42.2285 166.138 41.8128 164.531 41.3716C162.919 40.9303 161.417 40.3177 160.016 39.53C158.615 38.7423 157.453 37.714 156.533 36.4376C155.614 35.165 155.154 33.462 155.154 31.3323C155.154 28.1378 156.269 25.6618 158.499 23.9004C160.729 22.1427 163.796 21.2603 167.702 21.2603C169.403 21.2603 170.964 21.4244 172.39 21.7453C173.813 22.0698 175.113 22.4746 176.286 22.9596C177.459 23.4446 178.526 24.0025 179.493 24.6261C180.46 25.2497 181.307 25.8879 182.045 26.537L177.632 32.9952C175.793 31.4672 174.012 30.4024 172.289 29.8007C170.565 29.199 168.991 28.8964 167.564 28.8964C166.232 28.8964 165.207 29.1042 164.498 29.5199C163.785 29.9356 163.43 30.4936 163.43 31.1865L163.426 31.1974Z" fill="white"/>
-						<path d="M209.643 18.4377C211.022 17.0738 213.343 16.3883 216.608 16.3883V8.74854C210.906 8.74854 206.598 10.1379 203.68 12.9167C201.146 15.3271 199.716 18.7294 199.379 23.1273H192.819V30.767H199.3V57.8544H207.572V30.767H217.292V23.1273H207.691C207.945 21.0378 208.593 19.477 209.639 18.4377H209.643Z" fill="#27E287"/>
-						<path d="M228.877 23.1235H220.605V57.8506H228.877V23.1235Z" fill="#27E287"/>
-						<path d="M260.732 27.5363C259.443 26.0776 257.803 24.8742 255.801 23.9261C253.803 22.978 251.377 22.5039 248.528 22.5039C245.679 22.5039 243.253 22.978 241.255 23.9261C239.257 24.8742 237.613 26.0776 236.324 27.5363C235.035 28.995 234.105 30.5812 233.533 32.2952C232.957 34.0091 232.671 35.6282 232.671 37.1562V57.8509H240.944V37.364C240.944 36.1132 241.15 35.0484 241.563 34.1696C241.975 33.2907 242.529 32.5504 243.217 31.9487C243.905 31.347 244.709 30.9058 245.632 30.6287C246.552 30.3515 247.515 30.2129 248.528 30.2129C249.542 30.2129 250.505 30.3515 251.424 30.6287C252.344 30.9058 253.148 31.347 253.839 31.9487C254.527 32.5504 255.081 33.2907 255.494 34.1696C255.906 35.0484 256.113 36.1132 256.113 37.364V57.8509H264.385V37.1562C264.385 35.6282 264.099 34.0091 263.523 32.2952C262.948 30.5812 262.017 28.995 260.732 27.5363Z" fill="#27E287"/>
-						<path d="M294.929 26.5258C294.1 25.461 292.815 24.5348 291.066 23.7471C289.318 22.9594 287.204 22.5656 284.724 22.5656C282.244 22.5656 279.941 22.9959 277.827 23.8492C275.713 24.7062 273.895 25.9205 272.379 27.4958C270.862 29.0712 269.678 30.9675 268.827 33.1919C267.976 35.4127 267.553 37.8706 267.553 40.5545C267.553 43.2385 267.976 45.6708 268.827 47.8478C269.678 50.0249 270.883 51.8993 272.447 53.4746C274.008 55.05 275.861 56.2643 277.997 57.1213C280.133 57.9782 282.512 58.4049 285.133 58.4049C287.754 58.4049 290.027 58.0001 292.236 57.1906C294.441 56.381 296.348 55.2104 297.959 53.6825C299.567 52.1545 300.845 50.2802 301.786 48.0557C302.727 45.8349 303.198 43.3333 303.198 40.5545V9.2334H294.926V26.5258H294.929ZM292.312 48.0557C290.563 49.8608 288.243 50.7652 285.346 50.7652C282.45 50.7652 280.14 49.8608 278.417 48.0557C276.694 46.2506 275.832 43.7271 275.832 40.4852C275.832 37.2434 276.694 34.7199 278.417 32.9148C280.14 31.1097 282.45 30.2053 285.346 30.2053C288.243 30.2053 290.563 31.1097 292.312 32.9148C294.057 34.7199 294.933 37.2434 294.933 40.4852C294.933 43.7271 294.06 46.2506 292.312 48.0557Z" fill="#27E287"/>
-						<path d="M336.783 27.5359C335.219 25.9861 333.348 24.7827 331.165 23.9257C328.982 23.0687 326.556 22.6421 323.892 22.6421C321.227 22.6421 318.791 23.0724 316.582 23.9257C314.377 24.7827 312.491 25.9861 310.927 27.5359C309.363 29.0894 308.158 30.9638 307.307 33.1627C306.456 35.3616 306.033 37.8049 306.033 40.4888C306.033 43.1728 306.456 45.627 307.307 47.8514C308.158 50.0722 309.363 51.9721 310.927 53.5475C312.488 55.1229 314.374 56.3372 316.582 57.1942C318.791 58.0511 321.223 58.4778 323.892 58.4778C328.073 58.4778 331.624 57.4604 334.546 55.4219C337.464 53.3834 339.499 50.6083 340.65 47.0893H331.617C329.916 49.5909 327.32 50.838 323.826 50.838C321.343 50.838 319.297 50.178 317.69 48.8579C316.079 47.5378 315.047 45.6744 314.587 43.2676H341.548C341.591 42.8044 341.627 42.3523 341.653 41.9147C341.674 41.4734 341.685 40.9994 341.685 40.4925C341.685 37.8085 341.258 35.3653 340.411 33.1663C339.56 30.9674 338.355 29.093 336.791 27.5395L336.783 27.5359ZM315.203 35.6242C315.938 33.9103 317.042 32.5938 318.512 31.6639C319.982 30.7377 321.752 30.2745 323.819 30.2745C325.886 30.2745 327.667 30.7377 329.163 31.6639C330.658 32.5902 331.769 33.9103 332.508 35.6242H315.203Z" fill="#27E287"/>
-						<path d="M349.469 26.4933C346.388 29.1554 344.849 33.1266 344.849 38.4033V57.8509H353.121V38.4033C353.121 35.6245 353.903 33.5532 355.467 32.1857C357.028 30.8219 359.189 30.1363 361.948 30.1363V22.4966C356.709 22.4966 352.546 23.8276 349.469 26.4897V26.4933Z" fill="#27E287"/>
-						<path d="M224.739 8.74854C223.45 8.74854 222.371 9.20072 221.499 10.1014C220.627 11.0058 220.188 12.0816 220.188 13.3324C220.188 14.6744 220.627 15.7866 221.499 16.6654C222.371 17.5443 223.454 17.9855 224.739 17.9855C226.024 17.9855 227.107 17.5443 227.979 16.6654C228.852 15.7866 229.29 14.6744 229.29 13.3324C229.29 12.0816 228.852 11.0058 227.979 10.1014C227.107 9.19707 226.024 8.74854 224.739 8.74854Z" fill="#27E287"/>
-					</svg>
-				</div>
 				<div class="canvas-container">
 					<canvas id="wheelCanvas" class="canvas-wheel" width="600" height="600" aria-hidden="true"></canvas>
 				</div>
@@ -3572,6 +3557,65 @@ export class MiniRouletteGame extends HTMLElement {
 					ctx.fillText(`Won ${wonCredits} credits`, infoX, winRowY);
 				}
 
+				// === COUNTDOWN TIMER (far right) ===
+				if (this.wsState && this.wsState.connected) {
+					const countdownX = 1700;
+					const countdownY = 42;
+					const seconds = this.wsState.secondsRemaining || 0;
+					const countdownColor = this.getCountdownColor();
+					const countdownText = this.getCountdownText();
+
+					// Countdown background box
+					ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+					ctx.beginPath();
+					ctx.roundRect(countdownX - 10, 12, 280, 60, 10);
+					ctx.fill();
+
+					// Countdown border
+					ctx.strokeStyle = countdownColor;
+					ctx.lineWidth = 3;
+					ctx.beginPath();
+					ctx.roundRect(countdownX - 10, 12, 280, 60, 10);
+					ctx.stroke();
+
+					// "Next spin:" label
+					ctx.fillStyle = '#ffd700';
+					ctx.font = 'bold 22px Arial';
+					ctx.textAlign = 'left';
+					ctx.textBaseline = 'middle';
+					ctx.fillText('Next spin:', countdownX, 32);
+
+					// Countdown value
+					ctx.fillStyle = countdownColor;
+					ctx.font = 'bold 36px Arial';
+					ctx.textAlign = 'center';
+					ctx.fillText(countdownText, countdownX + 140, 52);
+
+					// Connection indicator
+					ctx.fillStyle = '#22c55e';
+					ctx.beginPath();
+					ctx.arc(1960, 42, 8, 0, Math.PI * 2);
+					ctx.fill();
+				} else if (this.wsState) {
+					// Show disconnected state
+					const countdownX = 1700;
+					ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+					ctx.beginPath();
+					ctx.roundRect(countdownX - 10, 12, 280, 60, 10);
+					ctx.fill();
+					ctx.strokeStyle = '#ef4444';
+					ctx.lineWidth = 3;
+					ctx.beginPath();
+					ctx.roundRect(countdownX - 10, 12, 280, 60, 10);
+					ctx.stroke();
+
+					ctx.fillStyle = '#ef4444';
+					ctx.font = 'bold 24px Arial';
+					ctx.textAlign = 'center';
+					ctx.textBaseline = 'middle';
+					ctx.fillText('CONNECTING...', countdownX + 130, 42);
+				}
+
 				// === ROW 3: Winning number history ===
 				const historyRowY = 115;
 
@@ -5480,12 +5524,11 @@ export class MiniRouletteGame extends HTMLElement {
 				const buttonGap = 15;
 				const buttonTopPadding = (panelHeight - buttonHeight) / 2;
 
-				// Right side buttons
+				// Right side buttons (spin removed - controlled by WebSocket tick events)
 				const rightButtons = [
 					{ key: 'undo', label: 'UNDO', width: 110, enabled: this.undoStack.length > 0 },
 					{ key: 'redo', label: 'REDO', width: 110, enabled: this.redoStack.length > 0 },
-					{ key: 'rebet', label: 'RE-BET', width: 130, enabled: this.lastBet && this.lastBet.length > 0 },
-					{ key: 'spin', label: 'SPIN', width: 160, enabled: !this.isSpinning && !this.wheelAnimating && this.state.placements.length > 0 }
+					{ key: 'rebet', label: 'RE-BET', width: 130, enabled: this.lastBet && this.lastBet.length > 0 }
 				];
 
 				// Left side buttons (multipliers + clear)
@@ -6288,7 +6331,7 @@ export class MiniRouletteGame extends HTMLElement {
 					this.lastWonCredits = winnings;
 					this.winningDisplayState = 'result'; // Show the winning number
 					this.winningHistory.unshift(number);
-					if (this.winningHistory.length > 20) this.winningHistory.pop();
+					if (this.winningHistory.length > 30) this.winningHistory.pop();
 					this.drawRouletteCanvas(); // Redraw to show updated top bar
 
 					this.state.credits = credits;
@@ -7197,5 +7240,306 @@ export class MiniRouletteGame extends HTMLElement {
 					throw new Error(message);
 				}
 				return data;
+			}
+
+			// ==================== WebSocket Multiplayer Methods ====================
+
+			initWebSocket() {
+				const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+				this.wsToken = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token') || window.JWT_TOKEN || '';
+				const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+				console.log('[ROULETTE] Connecting to WebSocket:', wsUrl);
+
+				this.ws = new WebSocket(wsUrl);
+
+				this.ws.onopen = () => {
+					console.log('[ROULETTE] WebSocket connected, authenticating...');
+					this.wsState.connected = true;
+					this.wsReconnectAttempts = 0;
+					// Authenticate first
+					this.wsSend({ type: 'system.authenticate', token: this.wsToken });
+				};
+
+				this.ws.onmessage = (event) => {
+					try {
+						const data = JSON.parse(event.data);
+						this.handleWsMessage(data);
+					} catch (error) {
+						console.error('[ROULETTE] Failed to parse WebSocket message:', error);
+					}
+				};
+
+				this.ws.onclose = () => {
+					console.log('[ROULETTE] WebSocket disconnected');
+					this.wsState.connected = false;
+					this.attemptWsReconnect();
+				};
+
+				this.ws.onerror = (error) => {
+					console.error('[ROULETTE] WebSocket error:', error);
+				};
+			}
+
+			attemptWsReconnect() {
+				if (this.wsReconnectAttempts < this.maxWsReconnectAttempts) {
+					this.wsReconnectAttempts++;
+					const delay = Math.min(1000 * Math.pow(2, this.wsReconnectAttempts), 30000);
+					console.log(`[ROULETTE] Reconnecting in ${delay}ms (attempt ${this.wsReconnectAttempts})`);
+					setTimeout(() => this.initWebSocket(), delay);
+				} else {
+					this.showToast('Connection lost. Please refresh the page.');
+				}
+			}
+
+			wsSend(data) {
+				if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+					this.ws.send(JSON.stringify(data));
+				}
+			}
+
+			handleWsMessage(data) {
+				const type = data.type || data.event_type;
+				console.log('[ROULETTE] Received:', type, data);
+
+				switch (type) {
+					case 'system.welcome':
+						// Welcome message received on connection
+						console.log('[ROULETTE] Welcome received, connection_id:', data.connection_id);
+						break;
+					case 'system.authenticated':
+						// Successfully authenticated, now join the roulette table
+						console.log('[ROULETTE] Authenticated as:', data.username);
+						this.wsState.authenticated = true;
+						this.wsSend({ type: 'roulette.join' });
+						break;
+					case 'system.error':
+						console.error('[ROULETTE] System error:', data.message);
+						if (data.code === 'not_authenticated') {
+							this.showToast('Please log in to play roulette');
+						}
+						break;
+					case 'roulette.event.tick':
+					case 'roulette.tick':
+						this.handleTick(data);
+						break;
+					case 'roulette.event.state':
+					case 'roulette.state':
+						this.handleStateUpdate(data);
+						break;
+					case 'roulette.event.spin_result':
+					case 'roulette.spin_result':
+						this.handleSpinResult(data);
+						break;
+					case 'roulette.event.payout':
+					case 'roulette.payout':
+						this.handlePayout(data);
+						break;
+					case 'roulette.event.bet_confirmed':
+					case 'roulette.bet_confirmed':
+						this.handleBetConfirmed(data);
+						break;
+					case 'roulette.bet_rejected':
+						this.handleBetRejected(data);
+						break;
+					case 'roulette.event.error':
+					case 'roulette.error':
+						this.showToast(data.message || 'An error occurred');
+						break;
+				}
+			}
+
+			handleTick(data) {
+				// Detect new spin cycle (spin_id changed)
+				const isNewCycle = this.wsState.spinId && this.wsState.spinId !== data.spin_id;
+
+				if (isNewCycle) {
+					// Reset state for new spin cycle
+					this.wsState.blockBets = false;
+					this.wsState.phase = 'betting';
+					this.betsBroadcasted = false;
+					this.swapDisabledState(false);
+					this.pushLog('New round started! Place your bets.');
+					console.log('[ROULETTE] New spin cycle started:', data.spin_id);
+				}
+
+				this.wsState.secondsRemaining = data.seconds_remaining;
+				this.wsState.spinId = data.spin_id;
+
+				// Only update phase from server if it's not overridden by local logic
+				if (!isNewCycle) {
+					this.wsState.phase = data.phase || 'betting';
+				}
+
+				// Check if bets should be blocked (at 5 seconds)
+				if (data.block_bets && !this.wsState.blockBets) {
+					this.wsState.blockBets = true;
+					this.wsState.phase = 'blocked';
+					// Broadcast bets to server when bets get blocked
+					this.broadcastBets();
+					// Disable the board
+					this.swapDisabledState(true);
+					this.pushLog('Bets closed! Waiting for spin...');
+				}
+
+				// Check if bets should be unblocked (after winning number announced)
+				if (!data.block_bets && this.wsState.blockBets) {
+					this.wsState.blockBets = false;
+					this.wsState.phase = 'betting';
+					this.betsBroadcasted = false;
+					// Enable the board
+					this.swapDisabledState(false);
+					this.pushLog('Betting open! Place your bets.');
+				}
+
+				// Update countdown display
+				this.updateCountdownDisplay();
+
+				// Redraw canvas to show countdown
+				this.drawRouletteCanvas();
+			}
+
+			handleStateUpdate(data) {
+				this.wsState.secondsRemaining = data.seconds_remaining;
+				this.wsState.spinId = data.spin_id;
+				this.wsState.blockBets = data.block_bets;
+				this.wsState.phase = data.phase || 'betting';
+
+				if (data.balance !== undefined) {
+					// Convert balance to coins (100 balance = 1 coin)
+					this.state.credits = Math.floor(data.balance / 100);
+					this.updateCredits();
+				}
+
+				if (data.history && Array.isArray(data.history)) {
+					// Update winning history from server
+					this.winningHistory = data.history.map(h => String(h.winning_number));
+				}
+
+				// Unlock board only if betting is open
+				if (!data.block_bets && data.phase === 'betting') {
+					this.swapDisabledState(false);
+					this.betsBroadcasted = false;
+				} else {
+					this.swapDisabledState(true);
+				}
+
+				this.updateCountdownDisplay();
+				this.drawRouletteCanvas();
+			}
+
+			handleSpinResult(data) {
+				const { winning_number, winning_color, spin_id } = data;
+				this.wsState.phase = 'spinning';
+
+				// Animate the wheel with the winning number
+				this.scrollWheelIntoView();
+				this.setSpinning(true);
+				this.winningDisplayState = 'spinning';
+				this.drawRouletteCanvas();
+
+				this.animateWheel(winning_number).then(() => {
+					// Update winning number tracking
+					this.lastWinningNumber = winning_number;
+					this.winningDisplayState = 'result';
+					this.winningHistory.unshift(String(winning_number));
+					if (this.winningHistory.length > 30) this.winningHistory.pop();
+
+					this.setSpinning(false);
+					this.wsState.phase = 'betting';
+
+					// Clear all chips from the board after winning number is shown
+					this.clearPlacements();
+
+					// Unlock board for new bets
+					this.wsState.blockBets = false;
+					this.betsBroadcasted = false;
+					this.swapDisabledState(false);
+
+					this.drawRouletteCanvas();
+				});
+			}
+
+			handlePayout(data) {
+				const { payout_amount, new_balance } = data;
+
+				// Convert balance to coins (100 balance = 1 coin)
+				this.state.credits = Math.floor(new_balance / 100);
+				this.updateCredits();
+				// Convert payout to coins for display
+				const payoutCoins = Math.floor(payout_amount / 100);
+				this.lastWonCredits = payoutCoins;
+
+				if (payoutCoins > 0) {
+					this.pushLog(`You won ${payoutCoins} coins!`);
+					this.showToast(`You won ${payoutCoins} coins!`);
+				}
+
+				// Board already unlocked in handleSpinResult
+				// Placements already cleared in handleSpinResult
+			}
+
+			handleBetConfirmed(data) {
+				this.pushLog('Bets confirmed!');
+				if (data.new_balance !== undefined) {
+					// Convert balance to coins (100 balance = 1 coin)
+					this.state.credits = Math.floor(data.new_balance / 100);
+					this.updateCredits();
+				}
+			}
+
+			handleBetRejected(data) {
+				this.showToast(`Bet rejected: ${data.reason || 'Unknown error'}`);
+				this.pushLog(`Bet rejected: ${data.reason || 'Unknown error'}`);
+			}
+
+			broadcastBets() {
+				if (this.betsBroadcasted) {
+					return; // Already broadcasted for this spin
+				}
+
+				if (!this.state.placements.length) {
+					console.log('[ROULETTE] No bets to broadcast');
+					return;
+				}
+
+				// Convert placements to the format expected by server
+				const bets = this.state.placements.map(p => ({
+					bet_type: p.type || 'straight',
+					numbers: p.numbers || [p.number],
+					amount: p.amount * 100 // Convert to balance units (1 coin = 100 balance)
+				}));
+
+				this.wsSend({
+					type: 'roulette.broadcast_bets',
+					spin_id: this.wsState.spinId,
+					bets: bets
+				});
+
+				this.betsBroadcasted = true;
+				this.pushLog(`Bets placed: ${this.state.placements.length} bet(s)`);
+			}
+
+			updateCountdownDisplay() {
+				// This will be called to update any countdown UI elements
+				// The countdown is drawn on the canvas in drawRouletteCanvas
+			}
+
+			getCountdownColor() {
+				const seconds = this.wsState.secondsRemaining;
+				if (seconds <= 5) return '#ef4444'; // Red - danger
+				if (seconds <= 15) return '#f59e0b'; // Orange - warning
+				return '#22c55e'; // Green - safe
+			}
+
+			getCountdownText() {
+				const seconds = this.wsState.secondsRemaining;
+				if (this.wsState.blockBets) {
+					return 'NO MORE BETS';
+				}
+				if (seconds <= 0) {
+					return 'SPINNING...';
+				}
+				return `${seconds}s`;
 			}
 		}

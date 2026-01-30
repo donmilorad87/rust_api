@@ -8,6 +8,21 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
 // ============================================================================
+// Roulette Types
+// ============================================================================
+
+/// Roulette bet input from client
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RouletteBetInput {
+    /// Bet type (straight, split, street, corner, etc.)
+    pub bet_type: String,
+    /// Numbers covered by this bet
+    pub numbers: Vec<String>,
+    /// Amount in balance units (1000 = 1 coin)
+    pub amount: i64,
+}
+
+// ============================================================================
 // Client -> Server Messages (Commands)
 // ============================================================================
 
@@ -257,6 +272,39 @@ pub enum ClientMessage {
         room_id: String,
         target_user_id: String,
     },
+
+    // ========== Roulette Commands ==========
+
+    /// Join the roulette table
+    #[serde(rename = "roulette.join")]
+    RouletteJoin,
+
+    /// Leave the roulette table
+    #[serde(rename = "roulette.leave")]
+    RouletteLeave,
+
+    /// Broadcast bets when betting closes (at 5 seconds)
+    #[serde(rename = "roulette.broadcast_bets")]
+    RouletteBroadcastBets {
+        spin_id: String,
+        bets: Vec<RouletteBetInput>,
+    },
+
+    /// Send a chat message to roulette table
+    #[serde(rename = "roulette.chat")]
+    RouletteChat {
+        content: String,
+    },
+
+    /// Toggle chat opt-out
+    #[serde(rename = "roulette.toggle_chat")]
+    RouletteToggleChat {
+        opt_out: bool,
+    },
+
+    /// Get current state (for reconnection)
+    #[serde(rename = "roulette.get_state")]
+    RouletteGetState,
 }
 
 // ============================================================================
@@ -1334,6 +1382,72 @@ pub enum ServerMessage {
         room_id: String,
         lobby: Vec<serde_json::Value>,
     },
+
+    // ========== Roulette Events ==========
+
+    /// Roulette tick event (countdown)
+    #[serde(rename = "roulette.event.tick")]
+    RouletteTick {
+        spin_id: String,
+        seconds_remaining: u32,
+        phase: String,
+        block_bets: bool,
+    },
+
+    /// Roulette spin result
+    #[serde(rename = "roulette.event.spin_result")]
+    RouletteSpinResult {
+        spin_id: String,
+        winning_number: String,
+        winning_color: String,
+        winning_parity: String,
+    },
+
+    /// Roulette bet confirmed
+    #[serde(rename = "roulette.event.bet_confirmed")]
+    RouletteBetConfirmed {
+        spin_id: String,
+        total_bet_amount: i64,
+        bet_count: u32,
+    },
+
+    /// Roulette payout
+    #[serde(rename = "roulette.event.payout")]
+    RoulettePayout {
+        spin_id: String,
+        payout_amount: i64,
+        new_balance: i64,
+        bet_results: Vec<serde_json::Value>,
+    },
+
+    /// Roulette state (for reconnection)
+    #[serde(rename = "roulette.state")]
+    RouletteState {
+        spin_id: String,
+        seconds_remaining: u32,
+        phase: String,
+        block_bets: bool,
+        connected_count: u32,
+        history: Vec<serde_json::Value>,
+        balance: i64,
+        pending_bets: Option<serde_json::Value>,
+    },
+
+    /// Roulette error
+    #[serde(rename = "roulette.event.error")]
+    RouletteError {
+        code: String,
+        message: String,
+    },
+
+    /// Roulette chat message
+    #[serde(rename = "roulette.event.chat")]
+    RouletteChat {
+        user_id: String,
+        username: String,
+        content: String,
+        timestamp: String,
+    },
 }
 
 // ============================================================================
@@ -1445,6 +1559,7 @@ pub struct Audience {
 #[serde(rename_all = "lowercase")]
 pub enum AudienceType {
     User,
+    Users,
     Room,
     Broadcast,
     Spectators,

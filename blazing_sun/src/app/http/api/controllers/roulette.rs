@@ -5,6 +5,9 @@
 //! - POST /api/v1/roulette/spin - Execute spin, calculate winnings, update balance
 //! - GET /api/v1/roulette/history - Get paginated game history
 //! - GET /api/v1/roulette/stats - Get user statistics
+//! - GET /api/v1/roulette/multiplayer/state - Get current multiplayer state
+//! - GET /api/v1/roulette/multiplayer/spin-history - Get spin history for history bar
+//! - GET /api/v1/roulette/multiplayer/my-bets/{spin_id} - Get user's bets for a spin
 
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -13,9 +16,11 @@ use tracing::{error, info, warn};
 use crate::app::db_query::mutations::user as user_mutations;
 use crate::app::db_query::read::user as user_read;
 use crate::app::games::mongodb_roulette::{MongoRouletteClient, RouletteUserStats};
+use crate::app::games::mongodb_roulette_multiplayer::MongoRouletteMultiplayerClient;
 use crate::app::games::roulette::{
     calculate_total_stake, execute_spin, validate_bet, RouletteBet,
 };
+use crate::app::games::roulette_types::{SpinResultSummary, HISTORY_BAR_SIZE};
 use crate::app::http::api::controllers::responses::BaseResponse;
 use crate::bootstrap::database::AppState;
 
@@ -484,4 +489,166 @@ impl RouletteController {
             balance: user.balance,
         })
     }
+
+    // ============================================
+    // Multiplayer Roulette Endpoints
+    // ============================================
+
+    /// GET /api/v1/roulette/multiplayer/spin-history
+    ///
+    /// Returns the last N spins for the history bar display.
+    pub async fn spin_history(state: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
+        // Authenticate user
+        let _user_id = match get_user_id(&req) {
+            Some(id) => id,
+            None => {
+                return HttpResponse::Unauthorized().json(ApiResponse::<()>::error("Unauthorized"));
+            }
+        };
+
+        // Get MongoDB client
+        let mongodb = match state.mongo() {
+            Some(db) => db,
+            None => {
+                return HttpResponse::ServiceUnavailable()
+                    .json(ApiResponse::<()>::error("Database unavailable"));
+            }
+        };
+
+        let client = MongoRouletteMultiplayerClient::new(mongodb.clone());
+
+        // Get recent spins
+        let history = match client.get_recent_spins(HISTORY_BAR_SIZE as i64).await {
+            Ok(h) => h,
+            Err(e) => {
+                error!("Failed to get spin history: {}", e);
+                return HttpResponse::InternalServerError()
+                    .json(ApiResponse::<()>::error("Failed to get spin history"));
+            }
+        };
+
+        HttpResponse::Ok().json(ApiResponse::success(SpinHistoryResponse { history }))
+    }
+
+    /// GET /api/v1/roulette/multiplayer/my-bets/{spin_id}
+    ///
+    /// Returns the user's bets for a specific spin.
+    pub async fn my_bets(
+        state: web::Data<AppState>,
+        req: HttpRequest,
+        path: web::Path<String>,
+    ) -> HttpResponse {
+        // Authenticate user
+        let user_id = match get_user_id(&req) {
+            Some(id) => id,
+            None => {
+                return HttpResponse::Unauthorized().json(ApiResponse::<()>::error("Unauthorized"));
+            }
+        };
+
+        let spin_id = path.into_inner();
+
+        // Get MongoDB client
+        let mongodb = match state.mongo() {
+            Some(db) => db,
+            None => {
+                return HttpResponse::ServiceUnavailable()
+                    .json(ApiResponse::<()>::error("Database unavailable"));
+            }
+        };
+
+        let client = MongoRouletteMultiplayerClient::new(mongodb.clone());
+
+        // Get user's bet for this spin
+        match client.get_user_bet_for_spin(user_id, &spin_id).await {
+            Ok(Some(bet_record)) => {
+                HttpResponse::Ok().json(ApiResponse::success(MyBetsResponse {
+                    spin_id: bet_record.spin_id,
+                    bets: bet_record.bets,
+                    total_amount: bet_record.total_amount,
+                    processed: bet_record.processed,
+                    payout: bet_record.payout,
+                }))
+            }
+            Ok(None) => {
+                HttpResponse::NotFound().json(ApiResponse::<()>::error("No bets found for this spin"))
+            }
+            Err(e) => {
+                error!("Failed to get user bets: {}", e);
+                HttpResponse::InternalServerError()
+                    .json(ApiResponse::<()>::error("Failed to get bets"))
+            }
+        }
+    }
+
+    /// GET /api/v1/roulette/multiplayer/state
+    ///
+    /// Returns the current multiplayer roulette state.
+    /// Note: Full state is delivered via WebSocket, this is for initial load/fallback.
+    pub async fn multiplayer_state(state: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
+        // Authenticate user
+        let user_id = match get_user_id(&req) {
+            Some(id) => id,
+            None => {
+                return HttpResponse::Unauthorized().json(ApiResponse::<()>::error("Unauthorized"));
+            }
+        };
+
+        // Get MongoDB client
+        let mongodb = match state.mongo() {
+            Some(db) => db,
+            None => {
+                return HttpResponse::ServiceUnavailable()
+                    .json(ApiResponse::<()>::error("Database unavailable"));
+            }
+        };
+
+        let client = MongoRouletteMultiplayerClient::new(mongodb.clone());
+
+        // Get spin history
+        let history = client
+            .get_recent_spins(HISTORY_BAR_SIZE as i64)
+            .await
+            .unwrap_or_default();
+
+        // Get user balance
+        let balance = {
+            let db = state.db.lock().await;
+            match user_read::get_by_id(&db, user_id).await {
+                Ok(u) => u.balance,
+                Err(_) => 0,
+            }
+        };
+
+        HttpResponse::Ok().json(ApiResponse::success(MultiplayerStateResponse {
+            history,
+            balance,
+            // Note: Real-time state (spin_id, seconds_remaining, phase) comes via WebSocket
+            // This endpoint provides static data for initial load
+        }))
+    }
+}
+
+// ============================================
+// Multiplayer Response Types
+// ============================================
+
+#[derive(Debug, Serialize)]
+pub struct SpinHistoryResponse {
+    pub history: Vec<SpinResultSummary>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MyBetsResponse {
+    pub spin_id: String,
+    pub bets: Vec<RouletteBet>,
+    pub total_amount: i64,
+    pub processed: bool,
+    pub payout: Option<i64>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MultiplayerStateResponse {
+    pub history: Vec<SpinResultSummary>,
+    pub balance: i64,
 }

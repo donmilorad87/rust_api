@@ -1,0 +1,339 @@
+// Multiplayer Roulette Styles
+// Import order matters - variables first
+
+@use 'variables' as *;
+@use 'countdown-timer';
+@use 'history-bar';
+@use 'chat';
+
+// Main container
+.roulette-multiplayer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: $spacing-lg;
+    background: $roulette-bg;
+    color: #fff;
+    font-family: $font-main;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: $spacing-lg;
+    }
+
+    &__title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    &__balance {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+        padding: $spacing-sm $spacing-md;
+        background: rgba(255, 179, 0, 0.1);
+        border: 1px solid rgba(255, 179, 0, 0.3);
+        border-radius: $radius-md;
+        font-family: $font-mono;
+        font-size: 16px;
+        font-weight: 600;
+        color: $roulette-gold;
+    }
+
+    &__connected {
+        display: flex;
+        align-items: center;
+        gap: $spacing-xs;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+
+        &::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: $radius-round;
+            animation: pulse 2s ease-in-out infinite;
+        }
+    }
+
+    &__main {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: $spacing-lg;
+        flex: 1;
+
+        @media (max-width: 1024px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    &__game-area {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-lg;
+
+        @media (max-width: 1024px) {
+            order: -1;
+        }
+    }
+
+    &__wheel-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: $spacing-xl;
+        background: $roulette-surface;
+        border-radius: $radius-lg;
+        margin-bottom: $spacing-lg;
+    }
+
+    &__betting-area {
+        background: $roulette-surface;
+        border-radius: $radius-lg;
+        padding: $spacing-lg;
+    }
+
+    &__current-bets {
+        margin-top: $spacing-lg;
+        padding: $spacing-md;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: $radius-md;
+
+        &-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: $spacing-sm;
+        }
+
+        &-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        &-total {
+            font-family: $font-mono;
+            font-size: 14px;
+            color: $roulette-gold;
+        }
+
+        &-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: $spacing-xs;
+        }
+
+        &-item {
+            display: flex;
+            align-items: center;
+            gap: $spacing-xs;
+            padding: $spacing-xs $spacing-sm;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: $radius-sm;
+            font-size: 12px;
+        }
+
+        &-empty {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 14px;
+            text-align: center;
+            padding: $spacing-md;
+        }
+    }
+}
+
+// Wheel animation overlay
+.wheel-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: $z-animation;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity $transition-normal, visibility $transition-normal;
+
+    &--active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    &__wheel {
+        width: 300px;
+        height: 300px;
+        border-radius: $radius-round;
+        background: conic-gradient(
+            from 0deg,
+            #2E7D32 0deg 9.73deg,
+            #C62828 9.73deg 19.46deg,
+            #212121 19.46deg 29.19deg,
+            #C62828 29.19deg 38.92deg,
+            #212121 38.92deg 48.65deg,
+            #C62828 48.65deg 58.38deg,
+            #212121 58.38deg 68.11deg,
+            #C62828 68.11deg 77.84deg,
+            #212121 77.84deg 87.57deg,
+            #C62828 87.57deg 97.30deg,
+            #212121 97.30deg 107.03deg,
+            #C62828 107.03deg 116.76deg,
+            #212121 116.76deg 126.49deg,
+            #C62828 126.49deg 136.22deg,
+            #212121 136.22deg 145.95deg,
+            #C62828 145.95deg 155.68deg,
+            #212121 155.68deg 165.41deg,
+            #C62828 165.41deg 175.14deg,
+            #212121 175.14deg 184.87deg,
+            #2E7D32 184.87deg 194.60deg,
+            #C62828 194.60deg 204.33deg,
+            #212121 204.33deg 214.06deg,
+            #C62828 214.06deg 223.79deg,
+            #212121 223.79deg 233.52deg,
+            #C62828 233.52deg 243.25deg,
+            #212121 243.25deg 252.98deg,
+            #C62828 252.98deg 262.71deg,
+            #212121 262.71deg 272.44deg,
+            #C62828 272.44deg 282.17deg,
+            #212121 282.17deg 291.90deg,
+            #C62828 291.90deg 301.63deg,
+            #212121 301.63deg 311.36deg,
+            #C62828 311.36deg 321.09deg,
+            #212121 321.09deg 330.82deg,
+            #C62828 330.82deg 340.55deg,
+            #212121 340.55deg 350.28deg,
+            #C62828 350.28deg 360deg
+        );
+        border: 4px solid $roulette-gold;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        transition: transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    }
+
+    &__ball {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: $radius-round;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    &__result {
+        position: absolute;
+        bottom: 100px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity $transition-normal, transform $transition-normal;
+
+        &--visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    &__number {
+        font-family: $font-mono;
+        font-size: 72px;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+        &--red {
+            color: $roulette-red;
+        }
+
+        &--green {
+            color: $roulette-green;
+        }
+    }
+
+    &__color {
+        font-size: 18px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: $spacing-sm;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+// Status messages
+.roulette-status {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-md;
+    border-radius: $radius-md;
+    font-size: 14px;
+    margin-bottom: $spacing-md;
+
+    &--success {
+        background: rgba(76, 175, 80, 0.1);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: #4CAF50;
+    }
+
+    &--error {
+        background: rgba(244, 67, 54, 0.1);
+        border: 1px solid rgba(244, 67, 54, 0.3);
+        color: #F44336;
+    }
+
+    &--info {
+        background: rgba(33, 150, 243, 0.1);
+        border: 1px solid rgba(33, 150, 243, 0.3);
+        color: #2196F3;
+    }
+}
+
+// Loading state
+.roulette-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-xl * 2;
+
+    &__spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top-color: $roulette-gold;
+        border-radius: $radius-round;
+        animation: spin 1s linear infinite;
+    }
+
+    &__text {
+        margin-top: $spacing-md;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

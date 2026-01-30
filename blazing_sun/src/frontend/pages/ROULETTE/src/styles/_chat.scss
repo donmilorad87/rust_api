@@ -1,0 +1,233 @@
+// Roulette Chat Component Styles
+@use 'variables' as *;
+
+.roulette-chat {
+    display: flex;
+    flex-direction: column;
+    background: $chat-bg;
+    border-radius: $radius-md;
+    overflow: hidden;
+    height: 300px;
+    max-height: 400px;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: $spacing-sm $spacing-md;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+        font-size: 14px;
+        font-weight: 500;
+        color: #fff;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+    }
+
+    &__toggle {
+        display: flex;
+        align-items: center;
+        gap: $spacing-xs;
+        padding: $spacing-xs $spacing-sm;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: $radius-sm;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        cursor: pointer;
+        transition: all $transition-fast;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        &--opted-out {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: rgba(244, 67, 54, 0.3);
+            color: #F44336;
+
+            &:hover {
+                background: rgba(244, 67, 54, 0.3);
+            }
+        }
+    }
+
+    &__messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: $spacing-sm;
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-xs;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+    }
+
+    &__message {
+        display: flex;
+        align-items: flex-start;
+        gap: $spacing-sm;
+        padding: $spacing-sm;
+        background: $chat-message-bg;
+        border-radius: $radius-sm;
+
+        &--system {
+            background: rgba(255, 179, 0, 0.1);
+            border-left: 2px solid $chat-system-color;
+        }
+    }
+
+    &__avatar {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: $radius-round;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.7);
+        overflow: hidden;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    &__content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__username {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 2px;
+
+        .roulette-chat__message--system & {
+            color: $chat-system-color;
+        }
+    }
+
+    &__text {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        word-break: break-word;
+        line-height: 1.4;
+    }
+
+    &__time {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.3);
+        margin-top: 2px;
+    }
+
+    &__input-area {
+        display: flex;
+        gap: $spacing-sm;
+        padding: $spacing-sm $spacing-md;
+        background: rgba(0, 0, 0, 0.3);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    &__input {
+        flex: 1;
+        padding: $spacing-sm $spacing-md;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: $radius-sm;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+        transition: all $transition-fast;
+
+        &::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        &:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    &__send {
+        padding: $spacing-sm $spacing-md;
+        background: $roulette-gold;
+        border: none;
+        border-radius: $radius-sm;
+        color: #000;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all $transition-fast;
+
+        &:hover:not(:disabled) {
+            background: lighten($roulette-gold, 10%);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    &__empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 14px;
+    }
+
+    &--collapsed {
+        height: auto;
+
+        .roulette-chat__messages,
+        .roulette-chat__input-area {
+            display: none;
+        }
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .roulette-chat {
+        height: 250px;
+    }
+}

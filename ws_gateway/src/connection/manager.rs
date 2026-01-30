@@ -151,11 +151,15 @@ impl ConnectionManager {
     pub fn send_to_room(&self, room_id: &str, message: ServerMessage) -> usize {
         let mut sent = 0;
         if let Some(connections) = self.room_connections.get(room_id) {
+            let conn_count = connections.len();
+            debug!("Sending to room {} with {} connections", room_id, conn_count);
             for conn_id in connections.iter() {
                 if self.send_to_connection(conn_id, message.clone()) {
                     sent += 1;
                 }
             }
+        } else {
+            debug!("Room {} has no connections", room_id);
         }
         sent
     }

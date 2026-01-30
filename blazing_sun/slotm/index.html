@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Slot Mašina || Blazing Sun </title>
+    <meta charset="utf-8">
+
+    
+	<link rel="stylesheet" type="text/css" href="style.css" />
+	<script type="module" async src="assets/script/script.js"></script>
+    
+	
+	<link rel="shortcut icon" href="assets/img/blazingSun.ico">
+	<script>!function(h,oo,d,y,t,a,g){h[y]=t[y]||function(){(h[y].q=h[y].q||[]).push(arguments)},h[y].l=1*new Date,a=oo.createElement(d),g=oo.getElementsByTagName(d)[0],a.async=1,a.crossOrigin='anonymous',a.src=t,g.parentNode.insertBefore(a,g)}(window,document,'script','Hood','https://dev-sdk.ocmhood.com/sdk/ht.js?tag=NjY4bL60Nma9sTQ2SWgxNDY4MjE0Nq_t');</script>
+</head>
+
+<body>
+
+    <header>
+		<a href="https://blazingsun.space" style="position: absolute;left: 16px;top: 16px;"><img style="height:4em;" src="https://blazingsun.space/slotm/assets/img/blazingsun.gif"></a>
+        <div id="buttonContainer">
+            <button id="pokreniIgru" >Pokreni Igru</button>
+            <div class="progresCont">
+                <label for="progressBar" id="preostalo"> 5 sec </label>
+                <progress value="0" max="5" id="progressBar"> </progress>
+            </div>
+            <button id="stoper" class="stop-button stop">Zaustavi igru</button>
+        </div>
+        <div class="doigSpin">Odigrano spinova: <span id="odSpin">0</span></div>
+    </header>
+    <nav>
+	<div class="navdiv">
+        <button id="bet-button">Ulog</button>
+        <div>
+            <div class="cosma cz" id="cosma1">
+                <input type="radio" id="bet1" name="bet" value="2" checked="">
+                <label for="bet1">2 $</label>
+            </div>
+            <div class="cosma cz" id="cosma2">
+                <input type="radio" id="bet2" name="bet" value="3">
+                <label for="bet2">3 $</label>
+            </div>
+            <div class="cosma cz" id="cosma3">
+                <input type="radio" id="bet3" name="bet" value="4">
+                <label for="bet3">4 $</label>
+            </div>
+            <div class="cosma cz" id="cosma4">
+                <input type="radio" id="bet4" name="bet" value="5">
+                <label for="bet4">5 $</label>
+            </div>
+        </div>
+        <div id="jokerCont">
+            <input type="checkbox" id="joker" name="joker">
+            <label for="joker" class="jokerka"> Kupi Dzokera</label>
+            <p style="font-size: 9px;padding: 5px;margin: 4px;"> Dzoker košta 5 puta više nego trenutni ulog.</p>
+        </div>
+        <div id="linije">
+            <div id="brake">
+                <input type="checkbox" id="linija1" name="0" value="1" checked disabled>
+                <label for="linija1"> Linija 1 </label>
+            </div>
+            <div>
+                <input type="checkbox" id="linija2" name="1" value="0">
+                <label for="linija2"> Linija 2</label>
+            </div>
+            <div>
+                <input type="checkbox" id="linija3" name="2" value="0">
+                <label for="linija3"> Linija 3 </label>
+            </div>
+            <div>
+                <input type="checkbox" id="linija4" name="3" value="0">
+                <label for="linija4"> Linija 4</label>
+            </div>
+            <div>
+                <input type="checkbox" id="linija5" name="4" value="0">
+                <label for="linija5"> Linija 5</label>
+            </div>
+            <div>
+                <input type="checkbox" id="linija6" name="5" value="0">
+                <label for="linija6"> Linija 6</label>
+            </div>
+            <div>
+                <input type="checkbox" id="linija7" name="6" value="0">
+                <label for="linija7"> Linija 7</label>
+            </div>
+        </div>
+		</div>
+    </nav>
+    <main>
+        <div id="spinovi">
+            <div class="scene" style="perspective: 1000px;">
+                <div class="carousel" >
+                    <div class="carousel__cell" style="transform: rotateX(0deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(30deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(60deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(90deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(120deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(150deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(180deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(210deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(240deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(270deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(300deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(330deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                </div>
+            </div>
+            <div class="scene" style="perspective: 1000px;">
+                <div class="carousel" >
+                    <div class="carousel__cell" style="transform: rotateX(0deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(30deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(60deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(90deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(120deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(150deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(180deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(210deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(240deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(270deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(300deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(330deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                </div>
+            </div>
+            <div class="scene" style="perspective: 1000px;">
+                <div class="carousel" >
+                    <div class="carousel__cell" style="transform: rotateX(0deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(30deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(60deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(90deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(120deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(150deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(180deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(210deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(240deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(270deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(300deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(330deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                </div>
+            </div>
+            <div class="scene" style="perspective: 1000px;">
+                <div class="carousel" >
+                    <div class="carousel__cell" style="transform: rotateX(0deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(30deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(60deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(90deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(120deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(150deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(180deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(210deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(240deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(270deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(300deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(330deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                </div>
+            </div>
+            <div class="scene" style="perspective: 1000px;">
+                <div class="carousel" >
+                    <div class="carousel__cell" style="transform: rotateX(0deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(30deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(60deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(90deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(120deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(150deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(180deg) translateZ(336px);">
+                        <p>1</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(210deg) translateZ(336px);">
+                        <p>2</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(240deg) translateZ(336px);">
+                        <p>3</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(270deg) translateZ(336px);">
+                        <p>4</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(300deg) translateZ(336px);">
+                        <p>5</p>
+                    </div>
+                    <div class="carousel__cell" style="transform: rotateX(330deg) translateZ(336px);">
+                        <p>6</p>
+                    </div>
+                </div>
+            </div>
+            <canvas id="myCanvas" class="okvir" style="z-index: 99999; height: 180px; top: calc(50% - 90px);" height="511" width="807"></canvas>
+        </div>
+        <div class="insajder" style="display:flex;">
+            <div> Ulog: <span id="igraUlog">2</span> $ </div>
+            <div> Tip igre: <span id="igra"> Brojevi</span></div>
+            <div> Dzoker kupljen: <span id="igraDzoker"> NE (0 $)</span></div>
+            <div> Broj linija: <span id="igraBrojLinija">1</span> </div>
+            <div> Ukupan ulog: <span id="ukupanulog">2</span> $</div>
+            <div> Broj Kredita: <span id="brojKredita">1000</span> $</div>
+        </div>
+        <div class="insajder" id="kombinacije"></div>
+        <div id="kiki">
+            <table class="tg">
+                <caption style="height:21px; font-size:18px; margin: 8px; line-height:21px;">Kvota za 5 i 6</caption>
+                <tbody>
+                    <tr>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td class="poljaTabKvote">100</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td class="poljaTabKvote">50</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td class="poljaTabKvote">30</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>5 || 6</td>
+                        <td>5 || 6</td>
+                        <td class="poljaTabKvote">5</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="tg">
+                <caption style="height:21px;font-size:18px; margin: 8px; line-height:21px;">Kvota za 3 i 4</caption>
+                <tbody>
+                    <tr>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td class="poljaTabKvote">50</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td class="poljaTabKvote">30</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td class="poljaTabKvote">20</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>3 || 4</td>
+                        <td>3 || 4</td>
+                        <td class="poljaTabKvote">4</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="tg">
+                <caption style="height:21px;font-size:18px; margin: 8px; line-height:21px;">Kvota za 1 i 2</caption>
+                <tbody>
+                    <tr>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td class="poljaTabKvote">30</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td class="poljaTabKvote">20</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td class="poljaTabKvote">10</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>1 || 2</td>
+                        <td>1 || 2</td>
+                        <td class="poljaTabKvote">3</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <aside>
+	<div class="navdiv">
+        <button id="game-button">Odaberite Tip Igre</button>
+        <div>
+            <div class="gozma cz">
+                <input type="radio" id="tip1" name="tipIgre" value="1" checked="">
+                <label for="tip1">Brojevi</label>
+            </div>
+            <div class="gozma cz" style="background: white;">
+                <input type="radio" id="tip2" name="tipIgre" value="2">
+                <label for="tip2">Rimski Brojevi</label>
+            </div>
+            <div class="gozma cz">
+                <input type="radio" id="tip3" name="tipIgre" value="3">
+                <label for="tip3">Voćkice</label>
+            </div>
+            <div class="gozma cz">
+                <input type="radio" id="tip4" name="tipIgre" value="4">
+                <label for="tip4">Životinje</label>
+            </div>
+            <div class="gozma cz">
+                <input type="radio" id="tip5" name="tipIgre" value="5">
+                <label for="tip5">Smajlići</label>
+            </div>
+        </div>
+        <button id="game-button-nacin">Odaberite način nagradjivanja </button>
+        <div>
+			<div class="gigozma cz">
+                <input type="radio" id="nag2" name="nag" value="2" checked>
+                <label for="nag2">1x5 Srednja linija</label>
+            </div>
+            <div class="gigozma cz">
+                <input type="radio" id="nag1" name="nag" value="1">
+                <label for="nag1">3x5 Više linija</label>
+            </div>
+            
+        </div>
+		</div>
+    </aside>
+    <footer>
+        <div class="insajder">Blazing Sun 2020. Sva prava zadržana.</div>
+    </footer>
+</body>
+</html>

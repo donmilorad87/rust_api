@@ -117,6 +117,11 @@ pub struct KafkaTopics {
     // Games topics
     pub games_commands: &'static str,
     pub games_events: &'static str,
+
+    // Roulette topics
+    pub roulette_commands: &'static str,
+    pub roulette_events: &'static str,
+    pub roulette_ticks: &'static str,
 }
 
 impl Default for KafkaTopics {
@@ -128,6 +133,9 @@ impl Default for KafkaTopics {
             chat_events: "chat.events",
             games_commands: "games.commands",
             games_events: "games.events",
+            roulette_commands: "roulette.commands",
+            roulette_events: "roulette.events",
+            roulette_ticks: "roulette.ticks",
         }
     }
 }
@@ -139,6 +147,7 @@ impl KafkaTopics {
             self.system_events,
             self.chat_events,
             self.games_events,
+            self.roulette_events,
         ]
     }
 
@@ -149,6 +158,7 @@ impl KafkaTopics {
             self.gateway_presence,
             self.chat_commands,
             self.games_commands,
+            self.roulette_commands,
         ]
     }
 }

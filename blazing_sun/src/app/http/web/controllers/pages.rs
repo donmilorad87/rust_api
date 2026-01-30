@@ -1066,6 +1066,9 @@ impl PagesController {
             "web.games.tic_tac_toe" => Self::tic_tac_toe_game(req, session, state).await,
             "web.games.roulette_lobby" => Self::roulette_lobby(req, session, state).await,
             "web.games.roulette" => Self::roulette_game(req, session, state).await,
+            "web.games.roulette_multiplayer" => {
+                Self::roulette_multiplayer(req, session, state).await
+            }
             "web.logout" => Self::logout(req).await,
             "admin.uploads" => Self::uploads(req, session, state).await,
             "admin.theme" => Self::theme(req, session, state).await,
@@ -1861,9 +1864,14 @@ impl PagesController {
                     avatar_url,
                 };
                 context.insert("user", &template_user);
+                // Add user balance for roulette (100 balance = 1 coin)
+                context.insert("user_balance", &user.balance);
+                context.insert("user_balance_coins", &(user.balance / 100));
             }
         } else {
             context.insert("user_id", &0i64);
+            context.insert("user_balance", &0i64);
+            context.insert("user_balance_coins", &0i64);
         }
         drop(db);
 
@@ -1871,6 +1879,11 @@ impl PagesController {
         context.insert("room_id", &"");
         context.insert("room_name", "Roulette");
         context.insert("is_lobby", &true);
+
+        // Pass JWT token for WebSocket authentication
+        if let Some(cookie) = req.cookie("auth_token") {
+            context.insert("jwt_token", cookie.value());
+        }
 
         Ok(Self::render("roulette.html", &context))
     }
@@ -1925,9 +1938,14 @@ impl PagesController {
                     avatar_url,
                 };
                 context.insert("user", &template_user);
+                // Add user balance for roulette (100 balance = 1 coin)
+                context.insert("user_balance", &user.balance);
+                context.insert("user_balance_coins", &(user.balance / 100));
             }
         } else {
             context.insert("user_id", &0i64);
+            context.insert("user_balance", &0i64);
+            context.insert("user_balance_coins", &0i64);
         }
         drop(db);
 
@@ -1936,7 +1954,72 @@ impl PagesController {
         context.insert("room_name", "Roulette");
         context.insert("is_lobby", &false);
 
+        // Pass JWT token for WebSocket authentication
+        if let Some(cookie) = req.cookie("auth_token") {
+            context.insert("jwt_token", cookie.value());
+        }
+
         Ok(Self::render("roulette.html", &context))
+    }
+
+    /// Multiplayer Roulette page - synchronized global table
+    pub async fn roulette_multiplayer(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        // Require authentication for multiplayer
+        if !auth.is_logged {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_branding_to_context(&mut context, &db).await;
+        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.games.roulette_multiplayer").await;
+
+        // Fetch user data for template
+        if let Some(user_id) = auth.user_id {
+            context.insert("user_id", &user_id);
+            if let Ok(user) = db_user::get_by_id(&db, user_id).await {
+                let avatar_url = if let Some(avatar_id) = user.avatar_id {
+                    use crate::bootstrap::utility::template::avatar_by_id;
+                    avatar_by_id(&db, avatar_id, Some("small")).await
+                } else {
+                    None
+                };
+
+                let template_user = TemplateUser {
+                    id: user.id,
+                    email: user.email,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    avatar_url,
+                };
+                context.insert("user", &template_user);
+                // Also add balance and avatar_id as separate context vars for JS
+                context.insert("user_balance", &user.balance);
+                context.insert("user_avatar_id", &user.avatar_id);
+            }
+        }
+        drop(db);
+
+        // Build WebSocket URL for multiplayer
+        let base_url = Self::get_base_url(&req);
+        let ws_url = base_url
+            .replace("https://", "wss://")
+            .replace("http://", "ws://");
+        context.insert("ws_url", &format!("{}/ws/roulette", ws_url));
+
+        // Pass JWT token for WebSocket authentication
+        if let Some(cookie) = req.cookie("auth_token") {
+            context.insert("jwt_token", cookie.value());
+        }
+
+        Ok(Self::render("roulette_multiplayer.html", &context))
     }
 
     /// 404 Not Found page
@@ -1981,38 +2064,7 @@ impl PagesController {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::PagesController;
-    use serde_json::json;
-    use std::collections::{HashMap, HashSet};
-
-    #[test]
-    fn normalize_schema_for_graph_collects_nodes_and_refs() {
-        let schema = json!({
-            "@type": "Organization",
-            "@id": "urn:en:entity:organization:org-1",
-            "name": "GDC Group",
-            "founder": {
-                "@id": "urn:en:entity:person:person-1",
-                "@type": "Person",
-                "name": "John Doe"
-            },
-            "address": {
-                "@id": "urn:en:entity:postaladdress:addr-1"
-            }
-        });
-
-        let mut nodes: HashMap<String, serde_json::Value> = HashMap::new();
-        let mut refs: HashSet<String> = HashSet::new();
-        let normalized = PagesController::normalize_schema_for_graph(schema, &mut nodes, &mut refs);
-
-        assert!(normalized.get("@id").is_some());
-        assert!(nodes.contains_key("urn:en:entity:organization:org-1"));
-        assert!(nodes.contains_key("urn:en:entity:person:person-1"));
-        assert!(refs.contains("urn:en:entity:postaladdress:addr-1"));
-    }
-}
+// Tests are at the end of the file
 
 // ============================================================================
 // OAuth Consent Page Rendering (used by OAuth API controller)
@@ -2114,7 +2166,8 @@ pub async fn render_oauth_consent(
 #[cfg(test)]
 mod tests {
     use super::PagesController;
-    use std::collections::HashMap;
+    use serde_json::json;
+    use std::collections::{HashMap, HashSet};
 
     #[test]
     fn normalize_path_handles_root() {
@@ -2151,5 +2204,31 @@ mod tests {
             .expect("should resolve");
         assert_eq!(found.0, "web.sign_up");
         assert_eq!(found.1, "sr");
+    }
+
+    #[test]
+    fn normalize_schema_for_graph_collects_nodes_and_refs() {
+        let schema = json!({
+            "@type": "Organization",
+            "@id": "urn:en:entity:organization:org-1",
+            "name": "GDC Group",
+            "founder": {
+                "@id": "urn:en:entity:person:person-1",
+                "@type": "Person",
+                "name": "John Doe"
+            },
+            "address": {
+                "@id": "urn:en:entity:postaladdress:addr-1"
+            }
+        });
+
+        let mut nodes: HashMap<String, serde_json::Value> = HashMap::new();
+        let mut refs: HashSet<String> = HashSet::new();
+        let normalized = PagesController::normalize_schema_for_graph(schema, &mut nodes, &mut refs);
+
+        assert!(normalized.get("@id").is_some());
+        assert!(nodes.contains_key("urn:en:entity:organization:org-1"));
+        assert!(nodes.contains_key("urn:en:entity:person:person-1"));
+        assert!(refs.contains("urn:en:entity:postaladdress:addr-1"));
     }
 }

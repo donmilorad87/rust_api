@@ -58,5 +58,8 @@ pub mod geo_galleries;
 #[path = "COMPETITIONS/mod.rs"]
 pub mod competitions;
 
+#[path = "ROULETTE_MULTIPLAYER/mod.rs"]
+pub mod roulette_multiplayer;
+
 #[path = "helpers/mod.rs"]
 pub mod helpers;

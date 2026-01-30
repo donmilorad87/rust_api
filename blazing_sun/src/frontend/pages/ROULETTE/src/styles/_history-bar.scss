@@ -1,0 +1,123 @@
+// Spin History Bar Component Styles
+@use 'variables' as *;
+
+.spin-history {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: $spacing-lg;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: $spacing-sm;
+    }
+
+    &__title {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    &__count {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    &__bar {
+        display: flex;
+        gap: $spacing-xs;
+        overflow-x: auto;
+        padding: $spacing-sm;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: $radius-md;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+
+        &::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+    }
+
+    &__item {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: $radius-sm;
+        font-family: $font-mono;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+        transition: transform $transition-fast, box-shadow $transition-fast;
+        cursor: default;
+
+        &--red {
+            background: $history-red;
+        }
+
+        &--black {
+            background: $history-black;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        &--green {
+            background: $history-green;
+        }
+
+        &--new {
+            animation: slide-in 0.3s ease-out;
+        }
+
+        &:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+    }
+
+    &--empty {
+        .spin-history__bar {
+            justify-content: center;
+            padding: $spacing-lg;
+        }
+    }
+
+    &__empty-text {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 14px;
+    }
+}
+
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-20px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 480px) {
+    .spin-history {
+        &__item {
+            width: 28px;
+            height: 28px;
+            font-size: 11px;
+        }
+    }
+}

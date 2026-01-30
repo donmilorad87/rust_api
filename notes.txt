@@ -1,0 +1,4 @@
+ stripe listen --forward-to http://192.168.0.108:9996/webhooks/stripe
+
+sqlx migrate run
+cargo sqlx prepare

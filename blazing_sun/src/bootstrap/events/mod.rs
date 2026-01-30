@@ -71,6 +71,7 @@
 pub mod consumer;
 pub mod handlers;
 pub mod producer;
+pub mod roulette_tick_producer;
 pub mod topics;
 pub mod types;
 
@@ -177,6 +178,10 @@ pub async fn init_full(
     })?;
 
     let consumer = Arc::new(consumer);
+
+    // Start the roulette tick producer background task
+    roulette_tick_producer::start_tick_producer(producer.clone());
+    info!("Roulette tick producer started");
 
     info!("Kafka event system initialized successfully");
 

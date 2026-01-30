@@ -2,22 +2,24 @@
 
 This file provides guidance to Claude Code when working with the Blazing Sun application.
 
-> **Infrastructure docs are in root `CLAUDE.md`.** This file covers application code only.
+> **Infrastructure docs are in root `../CLAUDE.md`.** This file covers application code only.
 
 ---
 
 ## Quick Reference
 
 ### Tech Stack
-- **Framework**: Actix-web 4 (Rust)
-- **Databases**: PostgreSQL (sqlx), MongoDB
-- **Queue**: RabbitMQ (lapin)
-- **Events**: Apache Kafka (rdkafka)
-- **Cache**: Redis
-- **Email**: SMTP (lettre)
-- **Templates**: Tera
-- **Auth**: JWT
-- **Frontend**: Vanilla JS (ES6), Vite, SCSS
+| Component | Technology |
+|-----------|------------|
+| Framework | Actix-web 4 (Rust) |
+| Databases | PostgreSQL (sqlx), MongoDB |
+| Queue | RabbitMQ (lapin) |
+| Events | Apache Kafka (rdkafka) |
+| Cache | Redis |
+| Email | SMTP (lettre) |
+| Templates | Tera |
+| Auth | JWT |
+| Frontend | Vanilla JS (ES6), Vite, SCSS |
 
 ### Key Directories
 ```
@@ -27,71 +29,70 @@ blazing_sun/
 │   ├── app/              # Application layer
 │   │   ├── http/         # Controllers (web + API)
 │   │   ├── db_query/     # Database queries (read + mutations)
+│   │   ├── games/        # Game logic (roulette, bigger_dice, tic_tac_toe)
 │   │   ├── mq/           # RabbitMQ jobs and workers
 │   │   └── events/       # Kafka event publishers
 │   ├── config/           # Configuration modules
 │   └── routes/           # Route definitions (api.rs, web.rs)
 ├── migrations/           # Database migrations
 ├── storage/              # File storage (uploads, backups)
-├── src/frontend/pages/   # Frontend components (Vite)
+├── src/frontend/         # Frontend components (Vite)
+│   ├── pages/            # Page-specific bundles
+│   └── games/            # Game-specific bundles
 └── src/resources/        # Compiled assets (CSS, JS)
 ```
 
 ---
 
-## 📚 Complete Documentation
+## Detailed Documentation (CLAUDE_partials/)
+
+All detailed application documentation is organized in the `CLAUDE_partials/` folder:
+
+| File | Description |
+|------|-------------|
+| [01-overview.md](CLAUDE_partials/01-overview.md) | Application purpose, complete tech stack |
+| [02-project-structure.md](CLAUDE_partials/02-project-structure.md) | Complete directory tree with file purposes |
+| [03-modules.md](CLAUDE_partials/03-modules.md) | main.rs initialization, module exports |
+| [04-configuration.md](CLAUDE_partials/04-configuration.md) | Configuration pattern, AppState structure |
+| [05-database-queries.md](CLAUDE_partials/05-database-queries.md) | Read/mutation operations, query API |
+| [06-event-driven.md](CLAUDE_partials/06-event-driven.md) | Kafka topics, event publishing patterns |
+| [07-rabbitmq-jobs.md](CLAUDE_partials/07-rabbitmq-jobs.md) | Job priorities, email templates |
+| [08-storage-system.md](CLAUDE_partials/08-storage-system.md) | Storage driver architecture, S3-ready |
+| [09-api-endpoints.md](CLAUDE_partials/09-api-endpoints.md) | Complete API endpoints reference |
+| [10-admin-theme.md](CLAUDE_partials/10-admin-theme.md) | Theme system, SCSS build, JSON-LD schemas |
+| [11-named-routes.md](CLAUDE_partials/11-named-routes.md) | Laravel-style routes with i18n support |
+| [12-database-schema.md](CLAUDE_partials/12-database-schema.md) | Tables overview, column definitions |
+| [13-adding-features.md](CLAUDE_partials/13-adding-features.md) | Checklists for adding new features |
+| [14-development.md](CLAUDE_partials/14-development.md) | Development commands, common workflows |
+| [15-important-notes.md](CLAUDE_partials/15-important-notes.md) | SQLx offline mode, JWT, error handling |
+
+---
+
+## Additional Documentation
 
 ### Routes & Endpoints
-- **[Web Routes Overview](../Documentation/blazing_sun/Routes/Web/README.md)** - All web pages (11 routes)
-- **[Web Routes Quick Reference](../Documentation/blazing_sun/Routes/Web/quick-reference.md)** - Permission matrix, bundle sizes
-- **[API Routes Overview](../Documentation/blazing_sun/Routes/API/README.md)** - All API endpoints (65+)
+- **[../Documentation/blazing_sun/Routes/Web/README.md](../Documentation/blazing_sun/Routes/Web/README.md)** - All web pages (11 routes)
+- **[../Documentation/blazing_sun/Routes/API/README.md](../Documentation/blazing_sun/Routes/API/README.md)** - All API endpoints (65+)
 
-#### Individual Web Pages
-- [Sign In Page](../Documentation/blazing_sun/Routes/Web/sign-in.md) - `/sign-in`
-- [Sign Up Page](../Documentation/blazing_sun/Routes/Web/sign-up.md) - `/sign-up`
-- [Forgot Password Page](../Documentation/blazing_sun/Routes/Web/forgot-password.md) - `/forgot-password`
-- [Profile Page](../Documentation/blazing_sun/Routes/Web/profile.md) - `/profile` (avatar, password, email)
-- [Galleries Page](../Documentation/blazing_sun/Routes/Web/galleries.md) - `/galleries` (CRUD, pictures, lightbox)
-- [Admin Theme Page](../Documentation/blazing_sun/Routes/Web/theme.md) - `/admin/theme` (colors, typography, SEO, schema)
-- [Admin Uploads Page](../Documentation/blazing_sun/Routes/Web/uploads.md) - `/admin/uploads` (asset management, variants)
-- [Super Admin Users Page](../Documentation/blazing_sun/Routes/Web/registered-users.md) - `/superadmin/users`
-
-#### Features
-- **[Geo Galleries](../Documentation/blazing_sun/GeoGalleries/GEO_GALLERIES.md)** - Location-based galleries, geo places, and competitions
-
-### Frontend Architecture
-- **[Frontend Overview](../Documentation/blazing_sun/Frontend/README.md)** - ES6 classes, Vite, SCSS structure
-- **[Profile Page Components](../Documentation/blazing_sun/ProfilePage/README.md)** - Avatar, password, email change
-- **[Admin Uploads System](../Documentation/blazing_sun/AdminUploads/README.md)** - Image variants, RabbitMQ integration
+### Game Documentation
+- **[../Documentation/Games/ROULETTE.md](../Documentation/Games/ROULETTE.md)** - Roulette game implementation
 
 ### Backend Systems
+| System | Documentation |
+|--------|---------------|
+| Bootstrap Layer | [../Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md](../Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md) |
+| Controllers | [../Documentation/blazing_sun/Controllers/CONTROLLERS.md](../Documentation/blazing_sun/Controllers/CONTROLLERS.md) |
+| Database Layer | [../Documentation/blazing_sun/Database/DATABASE.md](../Documentation/blazing_sun/Database/DATABASE.md) |
+| Permissions | [../Documentation/blazing_sun/Permissions/PERMISSIONS.md](../Documentation/blazing_sun/Permissions/PERMISSIONS.md) |
+| Events (Kafka) | [../Documentation/blazing_sun/Events/EVENTS.md](../Documentation/blazing_sun/Events/EVENTS.md) |
+| Message Queue | [../Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md](../Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md) |
+| Cron Jobs | [../Documentation/blazing_sun/CronJobs/CRON_JOBS.md](../Documentation/blazing_sun/CronJobs/CRON_JOBS.md) |
+| MongoDB | [../Documentation/blazing_sun/MongoDB/MONGODB.md](../Documentation/blazing_sun/MongoDB/MONGODB.md) |
+| Uploads | [../Documentation/blazing_sun/Uploads/UPLOADS.md](../Documentation/blazing_sun/Uploads/UPLOADS.md) |
+| Email | [../Documentation/blazing_sun/Email/EMAIL.md](../Documentation/blazing_sun/Email/EMAIL.md) |
 
-#### Core Framework
-- **[Bootstrap Layer](../Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md)** - Initialization sequence, middleware, utilities
-- **[Controllers](../Documentation/blazing_sun/Controllers/CONTROLLERS.md)** - API + web controllers
-- **[Database Layer](../Documentation/blazing_sun/Database/DATABASE.md)** - Query organization, stored procedures
-- **[Permissions System](../Documentation/blazing_sun/Permissions/PERMISSIONS.md)** - User levels (1, 10, 50, 100)
-
-#### Event-Driven Architecture
-- **[Events (Kafka)](../Documentation/blazing_sun/Events/EVENTS.md)** - Event publishers, topics, patterns
-- **[Message Queue (RabbitMQ)](../Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md)** - Job enqueuing, workers, priorities
-- **[Cron Jobs](../Documentation/blazing_sun/CronJobs/CRON_JOBS.md)** - Scheduled tasks
-
-#### Data & Storage
-- **[MongoDB Integration](../Documentation/blazing_sun/MongoDB/MONGODB.md)** - Document store usage
-- **[Uploads System](../Documentation/blazing_sun/Uploads/UPLOADS.md)** - File storage, S3-ready architecture
-- **[Email System](../Documentation/blazing_sun/Email/EMAIL.md)** - Templates, SMTP configuration
-
-#### Theme Configuration
-- **[Theme System Overview](../Documentation/blazing_sun/theme_configurations/OVERVIEW.md)**
-- **[Colors Configuration](../Documentation/blazing_sun/theme_configurations/COLORS.md)** - Light/dark themes
-- **[Typography Configuration](../Documentation/blazing_sun/theme_configurations/TYPOGRAPHY.md)** - Fonts, sizes, weights
-- **[Spacing Configuration](../Documentation/blazing_sun/theme_configurations/SPACING.md)** - Scale system
-- **[Branding Configuration](../Documentation/blazing_sun/theme_configurations/BRANDING.md)** - Logo, favicon
-- **[SEO Configuration](../Documentation/blazing_sun/theme_configurations/SEO.md)** - Meta tags, Schema.org
-
-#### Templates
-- **[Template System](../Documentation/blazing_sun/Templates/TEMPLATES.md)** - Tera templates, partials, helpers
+### Frontend
+- **[../Documentation/blazing_sun/Frontend/README.md](../Documentation/blazing_sun/Frontend/README.md)** - ES6 classes, Vite, SCSS structure
 
 ---
 
@@ -108,7 +109,8 @@ let user = user::get_by_email(&db, "test@example.com").await?;
 // Mutation
 user::create(&db, &CreateUserParams { ... }).await?;
 ```
-See [Database Layer](../Documentation/blazing_sun/Database/DATABASE.md) for all query patterns.
+
+See [CLAUDE_partials/05-database-queries.md](CLAUDE_partials/05-database-queries.md) for all query patterns.
 
 ### Publishing Events (Kafka)
 ```rust
@@ -123,7 +125,8 @@ if let Some(event_bus) = state.event_bus() {
     ).await?;
 }
 ```
-See [Events](../Documentation/blazing_sun/Events/EVENTS.md) for all event types.
+
+See [CLAUDE_partials/06-event-driven.md](CLAUDE_partials/06-event-driven.md) for all event types.
 
 ### Enqueueing Jobs (RabbitMQ)
 ```rust
@@ -132,7 +135,8 @@ use crate::bootstrap::mq::{self, JobOptions};
 let options = JobOptions::new().priority(1).fault_tolerance(3);
 mq::enqueue_job_dyn(&mq, "send_email", &params, options).await?;
 ```
-See [Message Queue](../Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md) for all job types.
+
+See [CLAUDE_partials/07-rabbitmq-jobs.md](CLAUDE_partials/07-rabbitmq-jobs.md) for all job types.
 
 ### Named Routes (Laravel-like)
 ```html
@@ -141,7 +145,8 @@ See [Message Queue](../Documentation/blazing_sun/MessageQueue/MESSAGE_QUEUE.md) 
 <a href="{{ route(name='web.profile') }}">Profile</a>
 <a href="{{ route(name='admin.uploads') }}">Uploads</a>
 ```
-See [Bootstrap Layer](../Documentation/blazing_sun/Bootstrap/BOOTSTRAP.md) for named routes.
+
+See [CLAUDE_partials/11-named-routes.md](CLAUDE_partials/11-named-routes.md) for named routes.
 
 ### File Uploads
 ```rust
@@ -156,7 +161,8 @@ let result = upload::save_uploaded_file(
     UploadContext::PublicFile,
 ).await?;
 ```
-See [Uploads System](../Documentation/blazing_sun/Uploads/UPLOADS.md) for file handling.
+
+See [CLAUDE_partials/08-storage-system.md](CLAUDE_partials/08-storage-system.md) for file handling.
 
 ---
 
@@ -191,7 +197,7 @@ cargo sqlx prepare
 
 ### Frontend Development
 ```bash
-# Enter PROFILE page directory
+# Enter page directory (e.g., PROFILE)
 cd src/frontend/pages/PROFILE
 
 # Install dependencies
@@ -207,7 +213,7 @@ npm run build:prod
 npm run watch
 ```
 
-See [Frontend Overview](../Documentation/blazing_sun/Frontend/README.md) for all frontend build commands.
+See [CLAUDE_partials/14-development.md](CLAUDE_partials/14-development.md) for more commands.
 
 ---
 
@@ -224,18 +230,23 @@ See [Frontend Overview](../Documentation/blazing_sun/Frontend/README.md) for all
 9. **Theme Build**: After theme config changes, trigger SCSS build via API
 10. **Frontend Bundles**: Each page has its own JS/CSS bundle, compiled by Vite
 
+See [CLAUDE_partials/15-important-notes.md](CLAUDE_partials/15-important-notes.md) for detailed notes.
+
 ---
 
 ## Project Statistics
 
-- **Web Routes**: 11 (includes 404 fallback)
-- **API Endpoints**: 65+ (9 scopes)
-- **Frontend Pages**: 8 (GLOBAL + 7 feature pages)
-- **Database Tables**: 15+ (PostgreSQL)
-- **Kafka Topics**: 3 (user_events, transaction_events, system_events)
-- **RabbitMQ Jobs**: 5 types (email, SMS, image resize, user creation, notifications)
-- **Image Variants**: 5 per upload (thumb, small, medium, large, full)
-- **Permission Levels**: 4 (1=basic, 10=admin, 50=affiliate, 100=super admin)
+| Metric | Value |
+|--------|-------|
+| Web Routes | 11 (includes 404 fallback) |
+| API Endpoints | 65+ (9 scopes) |
+| Frontend Pages | 8 (GLOBAL + 7 feature pages) |
+| Game Pages | 3 (Roulette, Bigger Dice, Tic Tac Toe) |
+| Database Tables | 15+ (PostgreSQL) |
+| Kafka Topics | 6+ (user, transaction, system, roulette.*) |
+| RabbitMQ Jobs | 5 types (email, SMS, image, user, notifications) |
+| Image Variants | 5 per upload (thumb, small, medium, large, full) |
+| Permission Levels | 4 (1=basic, 10=admin, 50=affiliate, 100=super) |
 
 ---
 
@@ -247,12 +258,23 @@ When adding new features, follow this order:
 2. **Database Queries** - Add to `src/app/db_query/read/` or `mutations/`
 3. **API Endpoint** - Add controller in `src/app/http/api/controllers/`
 4. **Route Definition** - Add to `src/routes/api.rs` or `web.rs`
-5. **Frontend Component** - Add page in `src/frontend/pages/`
+5. **Frontend Component** - Add page in `src/frontend/pages/` or `src/frontend/games/`
 6. **Build Frontend** - Run `npm run build` in page directory
 7. **Tests** - Add integration tests in `tests/`
 
-See individual documentation files for detailed step-by-step guides.
+See [CLAUDE_partials/13-adding-features.md](CLAUDE_partials/13-adding-features.md) for detailed checklists.
 
 ---
 
-For complete documentation on any specific feature, system, or component, refer to the files in the [Documentation/blazing_sun/](../Documentation/blazing_sun/) directory.
+## Quick Links
+
+| Need | Go To |
+|------|-------|
+| Add API endpoint | [CLAUDE_partials/13-adding-features.md](CLAUDE_partials/13-adding-features.md) |
+| Add Kafka event | [CLAUDE_partials/06-event-driven.md](CLAUDE_partials/06-event-driven.md) |
+| Add RabbitMQ job | [CLAUDE_partials/07-rabbitmq-jobs.md](CLAUDE_partials/07-rabbitmq-jobs.md) |
+| Database queries | [CLAUDE_partials/05-database-queries.md](CLAUDE_partials/05-database-queries.md) |
+| Named routes | [CLAUDE_partials/11-named-routes.md](CLAUDE_partials/11-named-routes.md) |
+| File uploads | [CLAUDE_partials/08-storage-system.md](CLAUDE_partials/08-storage-system.md) |
+| Theme system | [CLAUDE_partials/10-admin-theme.md](CLAUDE_partials/10-admin-theme.md) |
+| Project structure | [CLAUDE_partials/02-project-structure.md](CLAUDE_partials/02-project-structure.md) |

@@ -1,0 +1,11 @@
+Time : 23:43:43
+SQLSTATE[HY093]: Invalid parameter number
+Raw SQL : INSERT INTO korisnik(username,email,pass,hash,salt) VALUES(:username,:email,:pass,:hash,:salt)
+
+Time : 23:35:48
+SQLSTATE[HY093]: Invalid parameter number
+Raw SQL : INSERT INTO korisnik(username,email,pass,hash,salt) VALUES(:username,:email,:pass,:hash,:salt)
+
+Time : 23:34:30
+SQLSTATE[HY093]: Invalid parameter number
+Raw SQL : INSERT INTO korisnik(username,email,pass,hash,salt) VALUES(:username,:email,:pass,:hash,:salt)

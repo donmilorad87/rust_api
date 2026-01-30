@@ -1,0 +1,11 @@
+Time : 20:25:14
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'WHERE username = ?' at line 1
+Raw SQL : UPDATE korisnik SET token = :token, stranica = :stranica, WHERE username = :username
+
+Time : 20:25:08
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'WHERE username = ?' at line 1
+Raw SQL : UPDATE korisnik SET token = :token, stranica = :stranica, WHERE username = :username
+
+Time : 20:12:40
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'WHERE username = ?' at line 1
+Raw SQL : UPDATE korisnik SET token = :token, stranica = :stranica, WHERE username = :username

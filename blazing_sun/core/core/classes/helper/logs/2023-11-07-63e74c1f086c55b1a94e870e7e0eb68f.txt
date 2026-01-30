@@ -1,0 +1,11 @@
+Time : 20:50:37
+SQLSTATE[42S22]: Column not found: 1054 Unknown column 'email' in 'where clause'
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 20:49:49
+SQLSTATE[42S22]: Column not found: 1054 Unknown column 'username' in 'where clause'
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 20:47:43
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 

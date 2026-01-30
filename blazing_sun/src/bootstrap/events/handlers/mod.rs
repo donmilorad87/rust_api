@@ -2,12 +2,14 @@ pub mod auth;
 pub mod chat;
 pub mod checkout_finished;
 pub mod games;
+pub mod roulette;
 pub mod user;
 
 pub use auth::{AuthEventHandler, SecurityMonitorHandler};
 pub use chat::ChatCommandHandler;
 pub use checkout_finished::CheckoutFinishedHandler;
 pub use games::GameCommandHandler;
+pub use roulette::RouletteCommandHandler;
 pub use user::{UserAuditHandler, UserEventHandler};
 
 use crate::events::consumer::EventConsumer;
@@ -64,8 +66,12 @@ pub fn register_all_handlers(
     consumer.register_handler(Arc::new(chat_handler));
 
     // Register game command handler for WebSocket gateway
-    let game_handler = GameCommandHandler::new(db.clone(), mongodb, producer);
+    let game_handler = GameCommandHandler::new(db.clone(), mongodb.clone(), producer.clone());
     consumer.register_handler(Arc::new(game_handler));
 
-    info!("WebSocket gateway handlers registered (chat + games)");
+    // Register roulette command handler for multiplayer roulette
+    let roulette_handler = RouletteCommandHandler::new(db, mongodb, producer);
+    consumer.register_handler(Arc::new(roulette_handler));
+
+    info!("WebSocket gateway handlers registered (chat + games + roulette)");
 }

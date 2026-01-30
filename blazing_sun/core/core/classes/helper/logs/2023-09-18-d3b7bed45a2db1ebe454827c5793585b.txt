@@ -1,0 +1,105 @@
+Time : 21:32:24
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:31:58
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:53
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:53
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:53
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:53
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:52
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:52
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:52
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:52
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:52
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:51
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:51
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:51
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:50
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:50
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:50
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:48
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:48
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:44
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:43
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:42
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:40
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:28:37
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE email=? 
+
+Time : 21:28:33
+SQLSTATE[42S02]: Base table or view not found: 1146 Table 'u242412708_kerre.korisnik' doesn't exist
+Raw SQL : SELECT COUNT(1) FROM korisnik WHERE username=? 
+
+Time : 21:26:29
+SQLSTATE[HY000] [1045] Access denied for user 'u242412708_likee'@'127.0.0.1' (using password: YES)
+
+Time : 21:25:03
+SQLSTATE[HY000] [1045] Access denied for user 'u242412708_likee'@'127.0.0.1' (using password: YES)

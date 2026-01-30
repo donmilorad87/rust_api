@@ -98,6 +98,16 @@ impl KafkaProducer {
         self.publish(self.topics.gateway_presence, key, envelope).await
     }
 
+    /// Publish a roulette command
+    pub async fn publish_roulette_command(&self, key: &str, envelope: &EventEnvelope) -> GatewayResult<()> {
+        self.publish(self.topics.roulette_commands, key, envelope).await
+    }
+
+    /// Publish a roulette event
+    pub async fn publish_roulette_event(&self, key: &str, envelope: &EventEnvelope) -> GatewayResult<()> {
+        self.publish(self.topics.roulette_events, key, envelope).await
+    }
+
     /// Get topic for event type
     pub fn topic_for_command(&self, event_type: &str) -> &str {
         if event_type.starts_with("chat.") {

@@ -163,11 +163,25 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1/roulette")
             .wrap(from_fn(middleware::auth::verify_jwt))
+            // Single-player routes
             .route("/place-bet", web::post().to(RouletteController::place_bet))
             .route("/spin", web::post().to(RouletteController::spin))
             .route("/history", web::get().to(RouletteController::history))
             .route("/stats", web::get().to(RouletteController::stats))
-            .route("/balance", web::get().to(RouletteController::balance)),
+            .route("/balance", web::get().to(RouletteController::balance))
+            // Multiplayer routes
+            .route(
+                "/multiplayer/state",
+                web::get().to(RouletteController::multiplayer_state),
+            )
+            .route(
+                "/multiplayer/spin-history",
+                web::get().to(RouletteController::spin_history),
+            )
+            .route(
+                "/multiplayer/my-bets/{spin_id}",
+                web::get().to(RouletteController::my_bets),
+            ),
     );
 
     // ============================================
@@ -779,13 +793,27 @@ fn register_route_names() {
     route!("balance.checkout", "/api/v1/balance/checkout");
     route!("balance.checkout_kafka", "/api/v1/balance/checkout-kafka");
 
-    // Roulette routes
+    // Roulette routes (single-player)
     route!("roulette.place_bet", "/api/v1/roulette/place-bet");
     route!("roulette.spin", "/api/v1/roulette/spin");
     route!("roulette.history", "/api/v1/roulette/history");
     route!("roulette.stats", "/api/v1/roulette/stats");
     route!("roulette.balance", "/api/v1/roulette/balance");
     route!("roulette.ajax", "/api/games/roulette");
+
+    // Roulette routes (multiplayer)
+    route!(
+        "roulette.multiplayer.state",
+        "/api/v1/roulette/multiplayer/state"
+    );
+    route!(
+        "roulette.multiplayer.spin_history",
+        "/api/v1/roulette/multiplayer/spin-history"
+    );
+    route!(
+        "roulette.multiplayer.my_bets",
+        "/api/v1/roulette/multiplayer/my-bets/{spin_id}"
+    );
 
     // Games routes
     route!("games.config", "/api/v1/games/config");

@@ -6,31 +6,31 @@ This file provides guidance to Claude Code when working with the infrastructure 
 
 ---
 
-## 📋 Quick Reference
+## Quick Reference
 
 ### Infrastructure Overview
-- **12 Services** running in Docker Compose
+- **13 Services** running in Docker Compose
 - **Custom Bridge Network**: `devnet` (172.28.0.0/16)
 - **3-Phase Startup Sequence** with healthcheck dependencies
 - **Dual Database Architecture**: PostgreSQL + MongoDB
 - **Dual Messaging Strategy**: RabbitMQ (tasks) + Kafka (events)
 - **SSL/HTTPS**: Nginx reverse proxy with Let's Encrypt support
 
-See **[README.md](README.md)** for comprehensive infrastructure documentation (1300+ lines).
-
 ### Tech Stack
-- **Application**: Actix-web (Rust)
-- **Databases**: PostgreSQL 17, MongoDB 8
-- **Cache**: Redis 7
-- **Message Queue**: RabbitMQ 4.0 (task processing)
-- **Event Streaming**: Apache Kafka 3.9 (KRaft mode)
-- **Proxy**: Nginx 1.27 (SSL + static files)
-- **Monitoring**: Prometheus + Grafana
-- **Management UIs**: pgAdmin, Mongo Express, Kafka UI, RabbitMQ Management
+| Component | Technology |
+|-----------|------------|
+| Application | Actix-web (Rust) |
+| Databases | PostgreSQL 17, MongoDB 8 |
+| Cache | Redis 7 |
+| Message Queue | RabbitMQ 4.0 (task processing) |
+| Event Streaming | Apache Kafka 3.9 (KRaft mode) |
+| Proxy | Nginx 1.27 (SSL + static files) |
+| Monitoring | Prometheus + Grafana |
+| Management UIs | pgAdmin, Mongo Express, Kafka UI, RabbitMQ Management |
 
 ---
 
-## 🌐 Services & Network
+## Services & Network
 
 | Service | IP | Port(s) | URL | Purpose |
 |---------|-------|---------|-----|---------|
@@ -48,11 +48,11 @@ See **[README.md](README.md)** for comprehensive infrastructure documentation (1
 | **mongo-express** | 172.28.0.21 | 8081 | http://localhost:8081/mongo/ | MongoDB admin |
 | **php-oauth** | 172.28.0.22 | 8889 | https://localhost:8889 | OAuth callback test service |
 
-See [06-web-uis.md](CLAUDE_partials/06-web-uis.md) for admin credentials.
+For admin credentials, see [CLAUDE_partials/06-web-uis.md](CLAUDE_partials/06-web-uis.md).
 
 ---
 
-## ⚡ Most Common Commands
+## Most Common Commands
 
 ### Basic Operations
 ```bash
@@ -92,52 +92,42 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-See [04-docker-operations.md](CLAUDE_partials/04-docker-operations.md) for complete command reference.
+For more commands, see [CLAUDE_partials/04-docker-operations.md](CLAUDE_partials/04-docker-operations.md).
 
 ---
 
-## 📚 Complete Documentation
+## Detailed Documentation (CLAUDE_partials/)
 
-### Infrastructure Documentation
+All detailed infrastructure documentation is organized in the `CLAUDE_partials/` folder:
+
+| File | Description |
+|------|-------------|
+| [01-overview-architecture.md](CLAUDE_partials/01-overview-architecture.md) | System overview, architecture diagram, infrastructure structure |
+| [02-services-reference.md](CLAUDE_partials/02-services-reference.md) | All services with IPs, ports, healthchecks, startup sequence |
+| [03-message-brokers.md](CLAUDE_partials/03-message-brokers.md) | RabbitMQ vs Kafka usage patterns, when to use which |
+| [04-docker-operations.md](CLAUDE_partials/04-docker-operations.md) | All Docker commands (start, stop, logs, rebuild, CLI access) |
+| [05-environment-config.md](CLAUDE_partials/05-environment-config.md) | .env structure, build modes, volumes, sync mechanism |
+| [06-web-uis.md](CLAUDE_partials/06-web-uis.md) | Admin interfaces, credentials, SSL certificates |
+| [07-troubleshooting.md](CLAUDE_partials/07-troubleshooting.md) | Common issues, database problems, performance debugging |
+| [08-tech-stack-extensions.md](CLAUDE_partials/08-tech-stack-extensions.md) | Adding services, Kafka topics, volumes, scaling |
+
+---
+
+## Additional Documentation
+
+### Infrastructure Deep Dive
 - **[README.md](README.md)** - Complete infrastructure guide (1300+ lines)
-  - Architecture overview
-  - All 12 services with container details
-  - Environment variables reference
-  - Startup sequence
-  - Docker commands
-  - Volumes and persistence
-  - Web UIs and credentials
-  - Troubleshooting all services
-  - Production deployment checklist
-  - Backup strategies
+- **[Documentation/docker_infrastructure/INFRASTRUCTURE.md](Documentation/docker_infrastructure/INFRASTRUCTURE.md)** - Architecture deep dive
 
-- **[INFRASTRUCTURE.md](Documentation/docker_infrastructure/INFRASTRUCTURE.md)** - Architecture deep dive
+### Game Documentation
+- **[Documentation/Games/ROULETTE.md](Documentation/Games/ROULETTE.md)** - Roulette game implementation
 
-### Detailed Operations Guides
-
-1. **[Overview & Architecture](CLAUDE_partials/01-overview-architecture.md)** - System overview, architecture diagram, structure
-2. **[Services Reference](CLAUDE_partials/02-services-reference.md)** - IPs, ports, healthchecks, startup sequence
-3. **[Message Brokers](CLAUDE_partials/03-message-brokers.md)** - RabbitMQ vs Kafka usage patterns
-4. **[Docker Operations](CLAUDE_partials/04-docker-operations.md)** - All Docker commands (start, stop, logs, rebuild, CLI access)
-5. **[Environment Config](CLAUDE_partials/05-environment-config.md)** - .env structure, build modes, volumes, sync mechanism
-6. **[Web UIs & Access](CLAUDE_partials/06-web-uis.md)** - Admin interfaces, credentials, SSL certificates
-7. **[Troubleshooting](CLAUDE_partials/07-troubleshooting.md)** - Common issues, database problems, performance debugging
-8. **[Tech Stack & Extensions](CLAUDE_partials/08-tech-stack-extensions.md)** - Adding services, Kafka topics, volumes, scaling
+### Application Documentation
+- **[blazing_sun/CLAUDE.md](blazing_sun/CLAUDE.md)** - Application-specific guidance
 
 ---
 
-## 🔄 Development Workflow
-
-1. **Make changes** to code in `blazing_sun/`
-2. **Hot reload** automatically picks up changes (dev mode with cargo-watch)
-3. **View logs**: `docker compose logs -f rust`
-4. **Restart if needed**: `docker compose restart rust`
-5. **Run migrations**: `docker compose exec rust bash -c "cd blazing_sun && sqlx migrate run"`
-6. **Frontend builds**: Each page has its own Vite build in `src/frontend/pages/`
-
----
-
-## 🚨 Startup Sequence
+## Startup Sequence
 
 **Phase 1: Infrastructure** (healthcheck required before Phase 2)
 - PostgreSQL, MongoDB, Redis, RabbitMQ, Kafka
@@ -148,11 +138,11 @@ See [04-docker-operations.md](CLAUDE_partials/04-docker-operations.md) for compl
 **Phase 3: Management UIs**
 - Nginx, pgAdmin, Mongo Express, Kafka UI, Grafana, Prometheus
 
-See [02-services-reference.md](CLAUDE_partials/02-services-reference.md) for detailed startup dependencies.
+See [CLAUDE_partials/02-services-reference.md](CLAUDE_partials/02-services-reference.md) for detailed startup dependencies.
 
 ---
 
-## 🎯 Event-Driven Architecture
+## Event-Driven Architecture
 
 ### RabbitMQ (Task Queue)
 - **Purpose**: Background job processing
@@ -162,16 +152,16 @@ See [02-services-reference.md](CLAUDE_partials/02-services-reference.md) for det
 
 ### Kafka (Event Streaming)
 - **Purpose**: Event sourcing, audit logging, real-time data pipelines
-- **Topics**: user_events, transaction_events, system_events
+- **Topics**: user_events, transaction_events, system_events, roulette.*
 - **Partitions**: 3 per topic
 - **Retention**: 7 days
 - **Mode**: KRaft (no Zookeeper)
 
-See [03-message-brokers.md](CLAUDE_partials/03-message-brokers.md) for usage patterns.
+See [CLAUDE_partials/03-message-brokers.md](CLAUDE_partials/03-message-brokers.md) for usage patterns.
 
 ---
 
-## 🐳 Docker Volumes
+## Docker Volumes
 
 | Volume | Purpose | Backup Priority |
 |--------|---------|-----------------|
@@ -190,7 +180,7 @@ See [README.md](README.md) for backup strategies and restoration procedures.
 
 ---
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 Environment variables are defined in root `.env` file and automatically synced to `blazing_sun/.env` by `rust/entrypoint.sh`.
 
@@ -204,21 +194,34 @@ Environment variables are defined in root `.env` file and automatically synced t
 - Nginx (SSL, domain)
 - Admin UIs (pgAdmin, Mongo Express, Kafka UI, Grafana credentials)
 
-See [05-environment-config.md](CLAUDE_partials/05-environment-config.md) for complete .env reference.
+See [CLAUDE_partials/05-environment-config.md](CLAUDE_partials/05-environment-config.md) for complete .env reference.
 
 ---
 
-## 🆘 Getting Help
+## Development Workflow
 
-- **Infrastructure Issues**: See [07-troubleshooting.md](CLAUDE_partials/07-troubleshooting.md)
-- **Application Issues**: See `blazing_sun/CLAUDE.md`
-- **Docker Commands**: See [04-docker-operations.md](CLAUDE_partials/04-docker-operations.md)
-- **Configuration**: See [05-environment-config.md](CLAUDE_partials/05-environment-config.md)
-- **Complete Guide**: See [README.md](README.md)
+1. **Make changes** to code in `blazing_sun/`
+2. **Hot reload** automatically picks up changes (dev mode with cargo-watch)
+3. **View logs**: `docker compose logs -f rust`
+4. **Restart if needed**: `docker compose restart rust`
+5. **Run migrations**: `docker compose exec rust bash -c "cd blazing_sun && sqlx migrate run"`
+6. **Frontend builds**: Each page has its own Vite build in `src/frontend/pages/`
 
 ---
 
-## 🚀 Production Deployment
+## Getting Help
+
+| Topic | Documentation |
+|-------|---------------|
+| Infrastructure Issues | [CLAUDE_partials/07-troubleshooting.md](CLAUDE_partials/07-troubleshooting.md) |
+| Application Issues | [blazing_sun/CLAUDE.md](blazing_sun/CLAUDE.md) |
+| Docker Commands | [CLAUDE_partials/04-docker-operations.md](CLAUDE_partials/04-docker-operations.md) |
+| Configuration | [CLAUDE_partials/05-environment-config.md](CLAUDE_partials/05-environment-config.md) |
+| Complete Guide | [README.md](README.md) |
+
+---
+
+## Production Deployment
 
 See [README.md](README.md) for complete 16-point production checklist including:
 - SSL certificates (Let's Encrypt)
@@ -229,10 +232,3 @@ See [README.md](README.md) for complete 16-point production checklist including:
 - Monitoring and alerting
 - Log rotation
 - Performance tuning
-
----
-
-For detailed information on any topic, refer to:
-- **[README.md](README.md)** - Complete infrastructure documentation
-- **CLAUDE_partials/** - Detailed operations guides
-- **Documentation/docker_infrastructure/** - Architecture deep dive

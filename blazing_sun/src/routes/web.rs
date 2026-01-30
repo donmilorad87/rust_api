@@ -68,6 +68,7 @@ fn register_route_names() {
     route!("web.games.tic_tac_toe", "/games/tic-tac-toe/{room_id}");
     route!("web.games.roulette_lobby", "/games/roulette");
     route!("web.games.roulette", "/games/roulette/{room_id}");
+    route!("web.games.roulette_multiplayer", "/games/roulette-multiplayer");
     route!("web.logout", "/logout");
 
     // Serbian variants
@@ -89,6 +90,7 @@ fn register_route_names() {
     route!("web.games.tic_tac_toe", "/igre/iks-oks/{room_id}", "sr");
     route!("web.games.roulette_lobby", "/igre/rulet", "sr");
     route!("web.games.roulette", "/igre/rulet/{room_id}", "sr");
+    route!("web.games.roulette_multiplayer", "/igre/rulet-vise-igraca", "sr");
     route!("web.logout", "/odjava", "sr");
 
     // Admin pages (Admin+ can access)

@@ -1,0 +1,11 @@
+Time : 12:07:05
+SQLSTATE[HY000] [1045] Access denied for user 'u242412708_likee'@'127.0.0.1' (using password: YES)
+
+Time : 12:07:05
+SQLSTATE[HY000] [1045] Access denied for user 'u242412708_likee'@'127.0.0.1' (using password: YES)
+
+Time : 12:06:57
+SQLSTATE[HY000] [1045] Access denied for user 'u242412708_likee'@'127.0.0.1' (using password: YES)
+
+Time : 12:06:55
+SQLSTATE[HY000] [1045] Access denied for user 'u242412708_likee'@'127.0.0.1' (using password: YES)
