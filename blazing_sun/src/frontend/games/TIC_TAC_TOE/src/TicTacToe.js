@@ -422,6 +422,16 @@ template.innerHTML = `
       padding: 0.5rem 1rem;
     }
 
+    .player-score--ready {
+      background: rgba(34, 197, 94, 0.2);
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .player-score--ready .player-score__value {
+      color: var(--success-color);
+    }
+
     .vs-divider {
       font-size: 1.25rem;
       color: var(--text-muted);
@@ -1416,6 +1426,12 @@ template.innerHTML = `
       color: var(--text-muted);
     }
 
+    .waiting-for-admin__actions {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
     .waiting-players-list {
       margin-top: 1.5rem;
       display: flex;
@@ -1978,12 +1994,15 @@ template.innerHTML = `
 
     <!-- Game Section (contains all room-related views like BiggerDice) -->
     <section id="gameSection" class="game-section">
-      <!-- Waiting state for non-admin players in lobby -->
+      <!-- Waiting state for non-admin players in lobby (also used for ready phase) -->
       <div id="waitingForAdmin" class="waiting-for-admin hidden">
         <div class="waiting-for-admin__icon">⏳</div>
         <div class="waiting-for-admin__title">Waiting in Lobby</div>
         <p class="waiting-for-admin__message">The room admin will select players. Please wait...</p>
         <div id="waitingPlayersList" class="waiting-players-list"></div>
+        <div class="waiting-for-admin__actions hidden" id="readyPhaseActions">
+          <button class="ready-btn" id="readyPhaseBtn">Ready!</button>
+        </div>
       </div>
 
       <!-- Admin lobby view - shows waiting players with select/kick/ban actions -->
@@ -2293,6 +2312,7 @@ export class TicTacToe extends HTMLElement {
         this.playerOId = null;
         this.currentTurn = null;
         this.scores = {};
+        this.gamePlayers = {};  // Store player info by user_id for username lookup
         this.gameNumber = 1;
         this.moveDeadline = null;
         this.isGamePaused = false;
@@ -2309,6 +2329,7 @@ export class TicTacToe extends HTMLElement {
         this.players = [];
         this.selectedPlayers = [];
         this.isReady = false;
+        this.isInReadyPhase = false;  // True when admin selected both players, waiting for ready
         this.isHost = false;
 
         // Room to join
@@ -2426,9 +2447,11 @@ export class TicTacToe extends HTMLElement {
             // Action buttons
             actionButtons: s.querySelector('#actionButtons'),
             readyBtn: s.querySelector('#readyBtn'),
-            // Admin Lobby
+            // Admin Lobby / Ready Phase
             waitingForAdmin: s.querySelector('#waitingForAdmin'),
             waitingPlayersList: s.querySelector('#waitingPlayersList'),
+            readyPhaseActions: s.querySelector('#readyPhaseActions'),
+            readyPhaseBtn: s.querySelector('#readyPhaseBtn'),
             adminLobby: s.querySelector('#adminLobby'),
             lobbyCount: s.querySelector('#lobbyCount'),
             lobbyPlayersList: s.querySelector('#lobbyPlayersList'),
@@ -2542,6 +2565,9 @@ export class TicTacToe extends HTMLElement {
 
         // Waiting room
         this.els.readyBtn.addEventListener('click', () => this._toggleReady());
+        if (this.els.readyPhaseBtn) {
+            this.els.readyPhaseBtn.addEventListener('click', () => this._toggleReady());
+        }
         this.els.leaveBtn.addEventListener('click', () => this._leaveRoom());
 
         // Board clicks
@@ -2786,6 +2812,10 @@ export class TicTacToe extends HTMLElement {
             case 'games.event.tic_tac_toe.player_ready_changed':
             case 'games.event.tic_tac_toe.selected_players_updated':
                 this._onWaitingRoomUpdate(msg);
+                break;
+            // Ready phase - admin selected both players
+            case 'games.event.tic_tac_toe.game_starting':
+                this._onGameStarting(msg);
                 break;
             // Game started - tic_tac_toe prefixed
             case 'games.event.tic_tac_toe.game_started':
@@ -3072,6 +3102,9 @@ export class TicTacToe extends HTMLElement {
         this.bannedPlayers = [];
         this.notInRoomInfo = null;
         this.wantsToSpectate = false;
+        this.isInReadyPhase = false;
+        this.selectedPlayers = [];
+        this.gamePlayers = {};
     }
 
     _showWaitingRoom() {
@@ -3089,6 +3122,16 @@ export class TicTacToe extends HTMLElement {
         // Show game board, hide other sub-views
         this._hideAllGameSubViews();
         this.els.gameBoard.classList.remove('hidden');
+
+        // Hide ready button during gameplay
+        if (this.els.readyBtn) {
+            this.els.readyBtn.classList.add('hidden');
+        }
+
+        // Show turn indicator
+        if (this.els.turnIndicator) {
+            this.els.turnIndicator.classList.remove('hidden');
+        }
     }
 
     _hideAllGameSubViews() {
@@ -3098,6 +3141,8 @@ export class TicTacToe extends HTMLElement {
         if (this.els.waitingState) this.els.waitingState.classList.add('hidden');
         if (this.els.notInRoomState) this.els.notInRoomState.classList.add('hidden');
         if (this.els.gameBoard) this.els.gameBoard.classList.add('hidden');
+        // Hide ready phase actions
+        if (this.els.readyPhaseActions) this.els.readyPhaseActions.classList.add('hidden');
     }
 
     _showCreateRoomModal() {
@@ -3576,6 +3621,20 @@ export class TicTacToe extends HTMLElement {
             if (player) {
                 player.is_ready = msg.is_ready;
             }
+            console.log('[TicTacToe] Player ready changed:', msg.username, msg.is_ready);
+
+            // If in ready phase, update the ready phase UI
+            if (this.isInReadyPhase) {
+                this._updateReadyPhaseMatchInfo();
+                // Update own ready button state
+                if (String(msg.user_id) === String(this.userId)) {
+                    this.isReady = msg.is_ready;
+                    if (this.els.readyBtn) {
+                        this.els.readyBtn.textContent = this.isReady ? 'Not Ready' : 'Ready!';
+                        this.els.readyBtn.disabled = false;
+                    }
+                }
+            }
         } else if (msg.type === 'games.event.tic_tac_toe.player_selected') {
             // A player was selected - move them from lobby to selectedPlayers
             const player = msg.player || {
@@ -3617,6 +3676,12 @@ export class TicTacToe extends HTMLElement {
     }
 
     _updateGameUI() {
+        // If in ready phase, show ready phase UI
+        if (this.isInReadyPhase) {
+            this._showReadyPhase();
+            return;
+        }
+
         // Decide which view to show based on admin status
         if (this.isAdmin) {
             // Admin sees the lobby management interface
@@ -4198,7 +4263,12 @@ export class TicTacToe extends HTMLElement {
             room_id: this.roomId,
         });
         // Disable button after clicking (like BiggerDice)
-        this.els.readyBtn.disabled = true;
+        if (this.els.readyBtn) {
+            this.els.readyBtn.disabled = true;
+        }
+        if (this.els.readyPhaseBtn) {
+            this.els.readyPhaseBtn.disabled = true;
+        }
     }
 
     _leaveRoom() {
@@ -4233,8 +4303,161 @@ export class TicTacToe extends HTMLElement {
         this.dispatchEvent(new CustomEvent('game-leave', { detail: { roomId, roomName } }));
     }
 
+    _onGameStarting(msg) {
+        console.log('[TicTacToe] Game starting (ready phase):', msg);
+
+        // Update state to ready phase
+        this.isInReadyPhase = true;
+
+        // Update players list with selected players from the event
+        if (msg.players && Array.isArray(msg.players)) {
+            this.lobby = msg.players.map(p => ({
+                ...p,
+                is_ready: p.is_ready || false,
+            }));
+            this.selectedPlayers = msg.players.map(p => p);
+        }
+
+        // Check if we are one of the selected players
+        const isSelected = this.selectedPlayers.some(p => String(p.user_id) === String(this.userId));
+
+        if (isSelected) {
+            // Show ready phase UI
+            this._showReadyPhase();
+            this._showToast('Game starting! Click Ready when you\'re prepared to play.', 'info');
+        } else {
+            // This shouldn't happen - non-selected players get RemovedFromGame event
+            console.log('[TicTacToe] Game starting but we\'re not selected');
+        }
+    }
+
+    _showReadyPhase() {
+        console.log('[TicTacToe] Showing ready phase UI');
+        console.log('[TicTacToe] Selected players:', this.selectedPlayers);
+        this.mode = 'ready';
+        this.els.lobbySection.classList.remove('active');
+        this.els.gameSection.classList.add('active');
+
+        // Hide all sub-views first
+        this._hideAllGameSubViews();
+
+        // Show the game board (like BiggerDice)
+        if (this.els.gameBoard) {
+            this.els.gameBoard.classList.remove('hidden');
+        }
+
+        // Update match info with player names and ready status
+        this._updateReadyPhaseMatchInfo();
+
+        // Show the Ready button in action-buttons section
+        if (this.els.readyBtn) {
+            const myPlayer = this.lobby.find(p => String(p.user_id) === String(this.userId));
+            this.isReady = myPlayer?.is_ready || false;
+            this.els.readyBtn.classList.remove('hidden');
+            this.els.readyBtn.disabled = false;
+            this.els.readyBtn.textContent = this.isReady ? 'Not Ready' : 'Ready!';
+        }
+
+        // Hide turn indicator and timer during ready phase
+        if (this.els.turnIndicator) this.els.turnIndicator.classList.add('hidden');
+        if (this.els.turnTimer) this.els.turnTimer.classList.add('hidden');
+
+        // Update game number text to show ready phase
+        if (this.els.gameNumber) {
+            this.els.gameNumber.textContent = 'Click Ready when you\'re prepared to play!';
+        }
+    }
+
+    _updateReadyPhaseMatchInfo() {
+        // Get the two players from selectedPlayers or lobby
+        const players = this.selectedPlayers.length > 0 ? this.selectedPlayers : this.lobby;
+        console.log('[TicTacToe] _updateReadyPhaseMatchInfo players:', players);
+
+        if (players.length < 2) {
+            console.log('[TicTacToe] Not enough players for ready phase');
+            return;
+        }
+
+        const player1 = players[0];
+        const player2 = players[1];
+
+        // Get usernames - use actual username, not just initial
+        const player1Name = player1?.username || 'Player 1';
+        const player2Name = player2?.username || 'Player 2';
+
+        console.log('[TicTacToe] Player 1:', player1Name, 'Player 2:', player2Name);
+
+        // Get ready status from lobby
+        const player1Lobby = this.lobby.find(p => String(p.user_id) === String(player1?.user_id));
+        const player2Lobby = this.lobby.find(p => String(p.user_id) === String(player2?.user_id));
+        const player1Ready = player1Lobby?.is_ready || false;
+        const player2Ready = player2Lobby?.is_ready || false;
+
+        // Update player 1 (X)
+        if (this.els.player1Score) {
+            const nameEl = this.els.player1Score.querySelector('.player-score__name');
+            const valueEl = this.els.player1Score.querySelector('.player-score__value');
+            if (nameEl) nameEl.textContent = player1Name;
+            if (valueEl) valueEl.textContent = player1Ready ? '✓' : '...';
+            this.els.player1Score.classList.toggle('player-score--ready', player1Ready);
+        }
+
+        // Update player 2 (O)
+        if (this.els.player2Score) {
+            const nameEl = this.els.player2Score.querySelector('.player-score__name');
+            const valueEl = this.els.player2Score.querySelector('.player-score__value');
+            if (nameEl) nameEl.textContent = player2Name;
+            if (valueEl) valueEl.textContent = player2Ready ? '✓' : '...';
+            this.els.player2Score.classList.toggle('player-score--ready', player2Ready);
+        }
+    }
+
+    _renderReadyPhasePlayersList() {
+        // This is now deprecated - we use _updateReadyPhaseMatchInfo instead
+        // Keeping for backwards compatibility
+        const listEl = this.els.waitingPlayersList;
+        if (!listEl) return;
+
+        listEl.innerHTML = this.selectedPlayers.map(player => {
+            const isMe = String(player.user_id) === String(this.userId);
+            const lobbyPlayer = this.lobby.find(p => String(p.user_id) === String(player.user_id));
+            const isReady = lobbyPlayer?.is_ready || false;
+            const initial = (player.username || 'U').charAt(0).toUpperCase();
+
+            let statusClass = isReady ? 'waiting-player--ready' : '';
+            let statusText = isReady
+                ? '<span class="waiting-player__status waiting-player__status--ready">✓ Ready</span>'
+                : '<span class="waiting-player__status">Waiting...</span>';
+
+            if (isMe) {
+                statusClass += ' waiting-player--me';
+            }
+
+            return `
+                <div class="waiting-player ${statusClass}" data-user-id="${player.user_id}">
+                    <div class="waiting-player__avatar">${initial}</div>
+                    <div class="waiting-player__info">
+                        <span class="waiting-player__name">${this._escapeHtml(player.username)}${isMe ? ' (You)' : ''}</span>
+                        ${statusText}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
     _onGameStarted(msg) {
         console.log('[TicTacToe] Game started:', msg);
+        this.isInReadyPhase = false;  // Exit ready phase
+
+        // Store player info for username lookup
+        if (msg.players && Array.isArray(msg.players)) {
+            this.gamePlayers = {};
+            msg.players.forEach(p => {
+                this.gamePlayers[p.user_id] = p;
+            });
+            console.log('[TicTacToe] Stored game players:', this.gamePlayers);
+        }
+
         this._updateGameStatus('playing');
         this._showGame();
         this._resetBoard();
@@ -4985,19 +5208,23 @@ export class TicTacToe extends HTMLElement {
         const player1 = { id: this.playerXId, score: this.scores[this.playerXId] || 0 };
         const player2 = { id: this.playerOId, score: this.scores[this.playerOId] || 0 };
 
-        // Get names (we might need to store these from game started event)
-        const player1Name = player1.id == this.userId ? this.username : 'Opponent';
-        const player2Name = player2.id == this.userId ? this.username : 'Opponent';
+        // Get names from stored gamePlayers (set in _onGameStarted) or fallback
+        const player1Info = this.gamePlayers[player1.id];
+        const player2Info = this.gamePlayers[player2.id];
+        const player1Name = player1Info?.username || (player1.id == this.userId ? this.username : 'Player 1');
+        const player2Name = player2Info?.username || (player2.id == this.userId ? this.username : 'Player 2');
 
         // Update player 1 (X)
         this.els.player1Score.querySelector('.player-score__name').textContent = player1Name;
         this.els.player1Score.querySelector('.player-score__value').textContent = player1.score;
         this.els.player1Score.classList.toggle('player-score--active', this.currentTurn == player1.id);
+        this.els.player1Score.classList.remove('player-score--ready');  // Remove ready state during game
 
         // Update player 2 (O)
         this.els.player2Score.querySelector('.player-score__name').textContent = player2Name;
         this.els.player2Score.querySelector('.player-score__value').textContent = player2.score;
         this.els.player2Score.classList.toggle('player-score--active', this.currentTurn == player2.id);
+        this.els.player2Score.classList.remove('player-score--ready');  // Remove ready state during game
 
         // Update game number
         this.els.gameNumber.textContent = `Game ${this.gameNumber} of 9 (First to ${WIN_SCORE} wins)`;

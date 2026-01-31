@@ -7,13 +7,18 @@
 //! - Game chat (stored in MongoDB with channel separation)
 //! - Kafka handlers for game commands from WebSocket gateway
 //! - Roulette game logic and history
+//! - Slot machine game logic and history
 
 pub mod bigger_dice;
 pub mod mongodb_game_chat;
 pub mod mongodb_games;
 pub mod mongodb_roulette;
 pub mod mongodb_roulette_multiplayer;
+pub mod mongodb_slot_machine;
 pub mod roulette;
 pub mod roulette_types;
+pub mod slot_machine;
+pub mod slot_machine_minigame;
+pub mod slot_machine_types;
 pub mod tic_tac_toe;
 pub mod types;

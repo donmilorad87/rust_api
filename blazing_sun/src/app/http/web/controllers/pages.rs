@@ -1069,6 +1069,7 @@ impl PagesController {
             "web.games.roulette_multiplayer" => {
                 Self::roulette_multiplayer(req, session, state).await
             }
+            "web.games.slot_machine" => Self::slot_machine(req, session, state).await,
             "web.logout" => Self::logout(req).await,
             "admin.uploads" => Self::uploads(req, session, state).await,
             "admin.theme" => Self::theme(req, session, state).await,
@@ -2020,6 +2021,61 @@ impl PagesController {
         }
 
         Ok(Self::render("roulette_multiplayer.html", &context))
+    }
+
+    /// Slot Machine page
+    pub async fn slot_machine(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        // Require authentication for slot machine
+        if !auth.is_logged {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_branding_to_context(&mut context, &db).await;
+        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.games.slot_machine").await;
+
+        // Fetch user data for template
+        if let Some(user_id) = auth.user_id {
+            context.insert("user_id", &user_id);
+            if let Ok(user) = db_user::get_by_id(&db, user_id).await {
+                let avatar_url = if let Some(avatar_id) = user.avatar_id {
+                    use crate::bootstrap::utility::template::avatar_by_id;
+                    avatar_by_id(&db, avatar_id, Some("small")).await
+                } else {
+                    None
+                };
+
+                let template_user = TemplateUser {
+                    id: user.id,
+                    email: user.email,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    avatar_url,
+                };
+                context.insert("user", &template_user);
+                // Balance in coins (1 coin = 100 balance units)
+                let balance_coins = user.balance / 100;
+                context.insert("user_balance", &user.balance);
+                context.insert("user_balance_coins", &balance_coins);
+                context.insert("user_avatar_id", &user.avatar_id);
+            }
+        }
+        drop(db);
+
+        // Pass JWT token for API authentication
+        if let Some(cookie) = req.cookie("auth_token") {
+            context.insert("jwt_token", cookie.value());
+        }
+
+        Ok(Self::render("slot_machine.html", &context))
     }
 
     /// 404 Not Found page

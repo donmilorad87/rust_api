@@ -15,6 +15,7 @@ use crate::app::http::api::controllers::game_chat_config::GameChatConfigControll
 use crate::app::http::api::controllers::localization::LocalizationController;
 use crate::app::http::api::controllers::roulette::RouletteController;
 use crate::app::http::api::controllers::roulette_ajax::RouletteAjaxController;
+use crate::app::http::api::controllers::slot_machine::SlotMachineController;
 use crate::app::http::api::controllers::schema::SchemaController;
 use crate::app::http::api::controllers::theme::ThemeController;
 use crate::app::http::api::controllers::upload::UploadController;
@@ -192,6 +193,17 @@ pub fn register(cfg: &mut web::ServiceConfig) {
         web::resource("/api/games/roulette")
             .wrap(from_fn(middleware::auth::verify_jwt))
             .route(web::post().to(RouletteAjaxController::handle)),
+    );
+
+    // ============================================
+    // Slot Machine AJAX Endpoint (WordPress-style single endpoint)
+    // POST /api/games/slot-machine with action parameter
+    // Actions: slot_spin, slot_minigame, slot_history, slot_stats
+    // ============================================
+    cfg.service(
+        web::resource("/api/games/slot-machine")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route(web::post().to(SlotMachineController::handle)),
     );
 
     // ============================================
@@ -800,6 +812,9 @@ fn register_route_names() {
     route!("roulette.stats", "/api/v1/roulette/stats");
     route!("roulette.balance", "/api/v1/roulette/balance");
     route!("roulette.ajax", "/api/games/roulette");
+
+    // Slot Machine routes
+    route!("slot_machine.ajax", "/api/games/slot-machine");
 
     // Roulette routes (multiplayer)
     route!(

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Slot Machine - Games - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/games/SLOT_MACHINE/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="game-page">
+    <header class="game-page__header">
+        <a href="{{ route(name='web.games') }}" class="game-page__back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Games
+        </a>
+        <h1 class="game-page__title">Slot Machine</h1>
+    </header>
+
+    <div class="game-page__content">
+        <div class="game-page__component">
+            <slot-machine
+                data-balance="{{ user_balance_coins | default(value=0) }}"
+                data-user-id="{{ user_id | default(value=0) }}"
+                data-jwt-token="{{ jwt_token | default(value='') }}"
+                data-games-url="{{ route(name='web.games') }}"
+            ></slot-machine>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pass server-side variables to JavaScript
+    window.USER_BALANCE_COINS = {{ user_balance_coins | default(value=0) }};
+    window.JWT_TOKEN = "{{ jwt_token | default(value='') | safe }}";
+    window.USER_ID = {{ user_id | default(value=0) }};
+
+    // Store JWT for API calls if provided
+    if (window.JWT_TOKEN) {
+        localStorage.setItem('jwt_token', window.JWT_TOKEN);
+    }
+</script>
+<script src="/assets/js/games/SLOT_MACHINE/app.js?v={{ assets_version }}"></script>
+<script>
+    // Handle balance-update event from web component
+    document.querySelector('slot-machine')?.addEventListener('balance-update', function(e) {
+        if (e.detail && e.detail.balance !== undefined) {
+            window.USER_BALANCE_COINS = e.detail.balance;
+        }
+    });
+
+    // Handle game-error event from web component
+    document.querySelector('slot-machine')?.addEventListener('game-error', function(e) {
+        showToast(e.detail.message || 'An error occurred', 'error');
+    });
+</script>
+{% endblock %}

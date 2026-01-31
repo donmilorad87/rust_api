@@ -32,6 +32,13 @@ pub fn register(cfg: &mut web::ServiceConfig) {
         )
         .show_files_listing(),
     );
+    cfg.service(
+        Files::new(
+            "/assets/img",
+            concat!(env!("CARGO_MANIFEST_DIR"), "/src/resources/img"),
+        )
+        .show_files_listing(),
+    );
 
     // ============================================
     // Web Pages (Localized Router)
@@ -69,6 +76,7 @@ fn register_route_names() {
     route!("web.games.roulette_lobby", "/games/roulette");
     route!("web.games.roulette", "/games/roulette/{room_id}");
     route!("web.games.roulette_multiplayer", "/games/roulette-multiplayer");
+    route!("web.games.slot_machine", "/games/slot-machine");
     route!("web.logout", "/logout");
 
     // Serbian variants
@@ -91,6 +99,7 @@ fn register_route_names() {
     route!("web.games.roulette_lobby", "/igre/rulet", "sr");
     route!("web.games.roulette", "/igre/rulet/{room_id}", "sr");
     route!("web.games.roulette_multiplayer", "/igre/rulet-vise-igraca", "sr");
+    route!("web.games.slot_machine", "/igre/slot-masina", "sr");
     route!("web.logout", "/odjava", "sr");
 
     // Admin pages (Admin+ can access)
