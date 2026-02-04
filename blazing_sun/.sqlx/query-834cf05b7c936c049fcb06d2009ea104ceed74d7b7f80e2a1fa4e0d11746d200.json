@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO search_index_settings (content_type, display_name, is_enabled, display_order)\n        VALUES ($1, $2, $3, $4)\n        ON CONFLICT (content_type) DO UPDATE SET\n            display_name = EXCLUDED.display_name,\n            is_enabled = EXCLUDED.is_enabled,\n            display_order = EXCLUDED.display_order\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Bool",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "834cf05b7c936c049fcb06d2009ea104ceed74d7b7f80e2a1fa4e0d11746d200"
+}

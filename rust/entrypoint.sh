@@ -126,6 +126,11 @@ sync_env_vars() {
     sync_env_var "BIGGER_DICE_ENTRY_FEE_CENTS" "$BIGGER_DICE_ENTRY_FEE_CENTS"
     sync_env_var "BIGGER_DICE_READY_TIMEOUT_SECONDS" "$BIGGER_DICE_READY_TIMEOUT_SECONDS"
 
+    # Sync Elasticsearch Configuration
+    sync_env_var "ELASTICSEARCH_HOST" "$ELASTICSEARCH_HOST"
+    sync_env_var "ELASTICSEARCH_PORT" "$ELASTICSEARCH_PORT"
+    sync_env_var "ELASTICSEARCH_INDEX_PREFIX" "$ELASTICSEARCH_INDEX_PREFIX"
+
     echo ""
 }
 

@@ -21,7 +21,7 @@ use crate::app::http::api::controllers::theme::ThemeController;
 use crate::app::http::api::controllers::upload::UploadController;
 use crate::app::http::api::controllers::user::UserController;
 use crate::app::http::api::controllers::{
-    competitions, gallery, gallery_like, game_config, game_history, geo_place, oauth,
+    blog, competitions, gallery, gallery_like, game_config, game_history, geo_place, oauth,
     oauth_api_product, oauth_client, oauth_gallery, oauth_scope, picture,
 };
 use crate::middleware;
@@ -590,8 +590,88 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             ),
     );
 
-    // Admin routes (permission = 10 or 100)
-    // NOTE: Actix middleware order is REVERSED - last .wrap() runs first!
+    // ============================================
+    // Blog Admin Routes (Admin+ permission = 10 or 100)
+    // NOTE: More specific scopes must be registered BEFORE less specific ones!
+    // ============================================
+
+    // Blog Categories Admin
+    cfg.service(
+        web::scope("/api/v1/admin/blog/categories")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(blog::BlogController::admin_list_categories))
+            .route("", web::post().to(blog::BlogController::admin_create_category))
+            .route("/{id}", web::get().to(blog::BlogController::admin_get_category))
+            .route("/{id}", web::put().to(blog::BlogController::admin_update_category))
+            .route("/{id}", web::delete().to(blog::BlogController::admin_delete_category)),
+    );
+
+    // Blog Tags Admin
+    cfg.service(
+        web::scope("/api/v1/admin/blog/tags")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(blog::BlogController::admin_list_tags))
+            .route("", web::post().to(blog::BlogController::admin_create_tag))
+            .route("/{id}", web::get().to(blog::BlogController::admin_get_tag))
+            .route("/{id}", web::put().to(blog::BlogController::admin_update_tag))
+            .route("/{id}", web::delete().to(blog::BlogController::admin_delete_tag)),
+    );
+
+    // Blog Posts Admin
+    cfg.service(
+        web::scope("/api/v1/admin/blog/posts")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(blog::BlogController::admin_list_posts))
+            .route("", web::post().to(blog::BlogController::admin_create_post))
+            .route("/{id}", web::get().to(blog::BlogController::admin_get_post))
+            .route("/{id}", web::put().to(blog::BlogController::admin_update_post))
+            .route("/{id}", web::delete().to(blog::BlogController::admin_delete_post)),
+    );
+
+    // Blog Taxonomies Admin
+    cfg.service(
+        web::scope("/api/v1/admin/blog/taxonomies")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(blog::BlogController::admin_list_taxonomies))
+            .route("", web::post().to(blog::BlogController::admin_create_taxonomy))
+            .route("/{id}", web::get().to(blog::BlogController::admin_get_taxonomy))
+            .route("/{id}", web::put().to(blog::BlogController::admin_update_taxonomy))
+            .route("/{id}", web::delete().to(blog::BlogController::admin_delete_taxonomy)),
+    );
+
+    // Blog Analytics & Reindex Admin
+    cfg.service(
+        web::scope("/api/v1/admin/blog")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("/search-analytics", web::get().to(blog::BlogController::admin_search_analytics))
+            .route("/reindex", web::post().to(blog::BlogController::admin_reindex)),
+    );
+
+    // Search Index Admin (Elasticsearch management)
+    cfg.service(
+        web::scope("/api/v1/admin/search")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("/stats", web::get().to(blog::BlogController::admin_search_stats))
+            .route("/items", web::get().to(blog::BlogController::admin_search_list_indexed))
+            .route("/blogs", web::get().to(blog::BlogController::admin_search_blogs_index_status))
+            .route("/index/blog/{id}", web::post().to(blog::BlogController::admin_search_index_single_blog))
+            .route("/index/blogs/all", web::post().to(blog::BlogController::admin_search_index_all_blogs))
+            .route("/index/blogs/not-indexed", web::post().to(blog::BlogController::admin_search_index_not_indexed_blogs))
+            .route("/settings", web::get().to(blog::BlogController::admin_search_settings_get))
+            .route("/settings", web::put().to(blog::BlogController::admin_search_settings_update))
+            .route("/settings/enabled", web::get().to(blog::BlogController::admin_search_settings_enabled)),
+    );
+
+    // ============================================
+    // General Admin routes (permission = 10 or 100)
+    // NOTE: Less specific scope registered AFTER more specific ones above
+    // ============================================
     cfg.service(
         web::scope("/api/v1/admin")
             .wrap(from_fn(require_permission(levels::ADMIN))) // Runs second (checks permissions)
@@ -764,6 +844,41 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     // OAuth 2.0 JWKS Endpoint (Public - for JWT verification)
     // ============================================
     cfg.service(web::scope("/.well-known").route("/jwks.json", web::get().to(oauth::jwks_json)));
+
+    // ============================================
+    // Blog Public Routes (No auth required)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/blog")
+            // Categories
+            .route("/categories", web::get().to(blog::BlogController::public_list_categories))
+            .route(
+                "/categories/{slug}/posts",
+                web::get().to(blog::BlogController::public_get_category_posts),
+            )
+            // Tags
+            .route("/tags", web::get().to(blog::BlogController::public_list_tags))
+            .route(
+                "/tags/{slug}/posts",
+                web::get().to(blog::BlogController::public_get_tag_posts),
+            )
+            // Taxonomies
+            .route(
+                "/taxonomies/{slug}/posts",
+                web::get().to(blog::BlogController::public_get_taxonomy_posts),
+            )
+            // Posts
+            .route("/posts", web::get().to(blog::BlogController::public_list_posts))
+            .route("/posts/{slug}", web::get().to(blog::BlogController::public_get_post))
+            // Archive
+            .route("/archive", web::get().to(blog::BlogController::public_get_archive))
+            .route(
+                "/archive/{year}/{month}",
+                web::get().to(blog::BlogController::public_get_archive_posts),
+            )
+            // Search
+            .route("/search", web::get().to(blog::BlogController::public_search)),
+    );
 }
 
 /// Register all route names for URL generation
@@ -1004,6 +1119,103 @@ fn register_route_names() {
         "admin.game_chat.profanity_remove",
         "/api/v1/admin/game-chat/profanity/remove"
     );
+
+    // Blog Admin routes (Admin+ permission)
+    route!(
+        "admin.blog.categories.list",
+        "/api/v1/admin/blog/categories"
+    );
+    route!(
+        "admin.blog.categories.create",
+        "/api/v1/admin/blog/categories"
+    );
+    route!(
+        "admin.blog.categories.get",
+        "/api/v1/admin/blog/categories/{id}"
+    );
+    route!(
+        "admin.blog.categories.update",
+        "/api/v1/admin/blog/categories/{id}"
+    );
+    route!(
+        "admin.blog.categories.delete",
+        "/api/v1/admin/blog/categories/{id}"
+    );
+    route!("admin.blog.tags.list", "/api/v1/admin/blog/tags");
+    route!("admin.blog.tags.create", "/api/v1/admin/blog/tags");
+    route!("admin.blog.tags.get", "/api/v1/admin/blog/tags/{id}");
+    route!("admin.blog.tags.update", "/api/v1/admin/blog/tags/{id}");
+    route!("admin.blog.tags.delete", "/api/v1/admin/blog/tags/{id}");
+    route!("admin.blog.posts.list", "/api/v1/admin/blog/posts");
+    route!("admin.blog.posts.create", "/api/v1/admin/blog/posts");
+    route!("admin.blog.posts.get", "/api/v1/admin/blog/posts/{id}");
+    route!("admin.blog.posts.update", "/api/v1/admin/blog/posts/{id}");
+    route!("admin.blog.posts.delete", "/api/v1/admin/blog/posts/{id}");
+    route!(
+        "admin.blog.taxonomies.list",
+        "/api/v1/admin/blog/taxonomies"
+    );
+    route!(
+        "admin.blog.taxonomies.create",
+        "/api/v1/admin/blog/taxonomies"
+    );
+    route!(
+        "admin.blog.taxonomies.get",
+        "/api/v1/admin/blog/taxonomies/{id}"
+    );
+    route!(
+        "admin.blog.taxonomies.update",
+        "/api/v1/admin/blog/taxonomies/{id}"
+    );
+    route!(
+        "admin.blog.taxonomies.delete",
+        "/api/v1/admin/blog/taxonomies/{id}"
+    );
+    route!(
+        "admin.blog.search_analytics",
+        "/api/v1/admin/blog/search-analytics"
+    );
+    route!("admin.blog.reindex", "/api/v1/admin/blog/reindex");
+
+    // Admin Search Index routes
+    route!("admin.search.stats", "/api/v1/admin/search/stats");
+    route!("admin.search.items", "/api/v1/admin/search/items");
+    route!("admin.search.blogs", "/api/v1/admin/search/blogs");
+    route!(
+        "admin.search.index_blog",
+        "/api/v1/admin/search/index/blog/{id}"
+    );
+    route!(
+        "admin.search.index_all_blogs",
+        "/api/v1/admin/search/index/blogs/all"
+    );
+    route!(
+        "admin.search.index_not_indexed_blogs",
+        "/api/v1/admin/search/index/blogs/not-indexed"
+    );
+    route!("admin.search.settings", "/api/v1/admin/search/settings");
+    route!(
+        "admin.search.settings_enabled",
+        "/api/v1/admin/search/settings/enabled"
+    );
+
+    // Blog Public routes
+    route!("blog.categories.list", "/api/v1/blog/categories");
+    route!(
+        "blog.categories.posts",
+        "/api/v1/blog/categories/{slug}/posts"
+    );
+    route!("blog.tags.list", "/api/v1/blog/tags");
+    route!("blog.tags.posts", "/api/v1/blog/tags/{slug}/posts");
+    route!(
+        "blog.taxonomies.posts",
+        "/api/v1/blog/taxonomies/{slug}/posts"
+    );
+    route!("blog.posts.list", "/api/v1/blog/posts");
+    route!("blog.posts.get", "/api/v1/blog/posts/{slug}");
+    route!("blog.archive", "/api/v1/blog/archive");
+    route!("blog.archive.posts", "/api/v1/blog/archive/{year}/{month}");
+    route!("blog.search", "/api/v1/blog/search");
 
     // Webhooks
 }

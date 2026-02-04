@@ -45,6 +45,16 @@ fn is_excluded_path(path: &str) -> bool {
         return true;
     }
 
+    // Exclude blog admin API endpoints (protected by JWT + admin permission)
+    if path.starts_with("/api/v1/admin/blog/") || path.starts_with("/api/v1/blog/") {
+        return true;
+    }
+
+    // Exclude admin search index API endpoints (protected by JWT + admin permission)
+    if path.starts_with("/api/v1/admin/search/") {
+        return true;
+    }
+
     false
 }
 

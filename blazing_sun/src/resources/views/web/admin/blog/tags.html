@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Tags - Blog Admin - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BLOG_TAGS/style.css?v={{ assets_version }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="blog-admin">
+        {# Header #}
+        <header class="blog-admin__header">
+            <nav class="blog-admin__breadcrumb" aria-label="Breadcrumb">
+                <a href="/admin/blog">Blog</a>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">Tags</span>
+            </nav>
+            <div class="blog-admin__title-row">
+                <h1 class="blog-admin__title">Tags</h1>
+                <button type="button" id="addTagBtn" class="btn btn--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add Tag</span>
+                </button>
+            </div>
+        </header>
+
+        {# Search and Filters #}
+        <div class="blog-admin__controls">
+            <div class="search-input">
+                <svg class="search-input__icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="searchInput" class="search-input__field" placeholder="Search tags..." aria-label="Search tags">
+            </div>
+            <select id="sortSelect" class="filter-select" aria-label="Sort tags">
+                <option value="name_asc">Name A-Z</option>
+                <option value="name_desc">Name Z-A</option>
+                <option value="posts_desc">Most Posts</option>
+                <option value="posts_asc">Least Posts</option>
+                <option value="created_desc">Newest First</option>
+                <option value="created_asc">Oldest First</option>
+            </select>
+            <div class="bulk-actions">
+                <label class="bulk-select">
+                    <input type="checkbox" id="selectAll" class="bulk-select__checkbox">
+                    <span class="bulk-select__label">Select all</span>
+                </label>
+                <span id="selectedCount" class="bulk-count">0 selected</span>
+                <button type="button" id="bulkDeleteBtn" class="btn btn--danger btn--hidden" disabled aria-label="Delete selected tags">
+                    Delete Selected
+                </button>
+                <button type="button" id="bulkMergeBtn" class="btn btn--secondary btn--hidden" disabled aria-label="Merge selected tags">
+                    Merge Tags
+                </button>
+            </div>
+        </div>
+
+        {# Tag Cloud Visualization #}
+        <section id="tagCloud" class="tag-cloud" aria-label="Tag cloud visualization">
+            {% if tags and tags | length > 0 %}
+                {% set max_count = 1 %}
+                {% for tag in tags %}
+                    {% if tag.post_count > max_count %}
+                        {% set max_count = tag.post_count %}
+                    {% endif %}
+                {% endfor %}
+                {% for tag in tags %}
+                    {% set ratio = tag.post_count / max_count %}
+                    {% if ratio > 0.8 %}
+                        {% set size = "xl" %}
+                    {% elif ratio > 0.6 %}
+                        {% set size = "lg" %}
+                    {% elif ratio > 0.4 %}
+                        {% set size = "md" %}
+                    {% elif ratio > 0.2 %}
+                        {% set size = "sm" %}
+                    {% else %}
+                        {% set size = "xs" %}
+                    {% endif %}
+                    <a href="/blog/tag/{{ tag.slug }}" class="tag-cloud__tag tag-cloud__tag--{{ size }}" data-id="{{ tag.id }}" {% if tag.color %}style="--tag-color: {{ tag.color }}"{% endif %}>
+                        {{ tag.name }}
+                        <span class="tag-cloud__tag__count">{{ tag.post_count | default(value=0) }}</span>
+                    </a>
+                {% endfor %}
+            {% endif %}
+        </section>
+
+        {# Table View #}
+        <div class="table-container">
+            <table id="tagsTable" class="data-table" role="grid" aria-label="Tags table">
+                <thead class="data-table__head">
+                    <tr>
+                        <th class="data-table__header data-table__header--select" scope="col">
+                            <span class="sr-only">Select</span>
+                        </th>
+                        <th class="data-table__header" scope="col">Name</th>
+                        <th class="data-table__header" scope="col">Slug</th>
+                        <th class="data-table__header data-table__header--center" scope="col">Posts</th>
+                        <th class="data-table__header" scope="col">Created</th>
+                        <th class="data-table__header data-table__header--center" scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tagsTableBody" class="data-table__body">
+                    {% if tags and tags | length > 0 %}
+                    {% for tag in tags %}
+                    <tr class="data-table__row" data-id="{{ tag.id }}">
+                        <td class="data-table__cell">
+                            <input type="checkbox" class="row-select" data-id="{{ tag.id }}" aria-label="Select {{ tag.name }}">
+                        </td>
+                        <td class="data-table__cell">
+                            <span class="tag-name">
+                                {% if tag.color %}
+                                <span class="tag-name__color" style="background-color: {{ tag.color }}"></span>
+                                {% endif %}
+                                {{ tag.name }}
+                            </span>
+                        </td>
+                        <td class="data-table__cell">
+                            <span class="tag-slug">/blog/tag/{{ tag.slug }}</span>
+                        </td>
+                        <td class="data-table__cell data-table__cell--center">
+                            <span class="tag-count">{{ tag.post_count | default(value=0) }}</span>
+                        </td>
+                        <td class="data-table__cell">
+                            <time datetime="{{ tag.created_at }}">{{ tag.created_at | date(format="%b %d, %Y") }}</time>
+                        </td>
+                        <td class="data-table__cell data-table__cell--center">
+                            <div class="tag-actions">
+                                <button type="button" class="btn btn--icon" data-action="edit" data-id="{{ tag.id }}" title="Edit {{ tag.name }}" aria-label="Edit {{ tag.name }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                                <button type="button" class="btn btn--icon btn--danger" data-action="delete" data-id="{{ tag.id }}" title="Delete {{ tag.name }}" aria-label="Delete {{ tag.name }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="data-table__empty">
+                            <div class="empty-state">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                </svg>
+                                <h3>No tags yet</h3>
+                                <p>Create your first tag to organize and label your blog posts.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Pagination #}
+        <nav id="pagination" class="pagination" aria-label="Tags pagination"></nav>
+    </div>
+</main>
+
+{# Add/Edit Tag Modal #}
+<div id="tagModal" class="modal tag-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-action="close"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tagModalTitle">
+        <header class="modal__header">
+            <h2 id="tagModalTitle" class="modal__title">Add Tag</h2>
+            <button type="button" class="modal__close" data-action="close" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <form id="tagForm" class="modal__body">
+            <input type="hidden" id="tagId" name="id">
+
+            <div class="form-group">
+                <label class="form-label" for="tagName">Name <span class="required" aria-label="required">*</span></label>
+                <input type="text" id="tagName" name="name" class="form-input" required maxlength="50" placeholder="Enter tag name">
+                <div id="tagNameError" class="form-error" aria-live="polite"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="tagSlug">Slug</label>
+                <input type="text" id="tagSlug" name="slug" class="form-input" maxlength="50" placeholder="auto-generated-from-name">
+                <div class="form-hint">Leave empty to auto-generate from name</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="tagDescription">Description</label>
+                <textarea id="tagDescription" name="description" class="form-textarea" rows="3" maxlength="300" placeholder="Optional description for this tag"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="tagColor">Color</label>
+                <div class="form-group__color-presets" role="group" aria-label="Color presets">
+                    <button type="button" class="form-group__color-preset" data-color="#8B2942" style="background-color: #8B2942" aria-label="Burgundy"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#2D7D46" style="background-color: #2D7D46" aria-label="Forest green"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#C4841D" style="background-color: #C4841D" aria-label="Amber"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#1D4ED8" style="background-color: #1D4ED8" aria-label="Royal blue"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#7C3AED" style="background-color: #7C3AED" aria-label="Purple"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#0D9488" style="background-color: #0D9488" aria-label="Teal"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#DB2777" style="background-color: #DB2777" aria-label="Pink"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#EA580C" style="background-color: #EA580C" aria-label="Orange"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#5C554C" style="background-color: #5C554C" aria-label="Gray"></button>
+                    <button type="button" class="form-group__color-preset" data-color="#1A1714" style="background-color: #1A1714" aria-label="Black"></button>
+                </div>
+                <input type="color" id="tagColor" name="color" class="form-input form-input--color" value="#8B2942">
+            </div>
+        </form>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--ghost" data-action="cancel">Cancel</button>
+            <button type="button" class="btn btn--primary" data-action="save">Save Tag</button>
+        </footer>
+    </div>
+</div>
+
+{# Merge Tags Modal #}
+<div id="mergeModal" class="modal merge-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-action="cancel"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="mergeModalTitle">
+        <header class="modal__header">
+            <h2 id="mergeModalTitle" class="modal__title">Merge Tags</h2>
+            <button type="button" class="modal__close" data-action="cancel" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <p>Select the tag to keep. All selected tags will be merged into this tag.</p>
+
+            <div class="form-group">
+                <label class="form-label" for="targetTag">Keep Tag</label>
+                <select id="targetTag" class="form-select">
+                    {# Options populated by JavaScript #}
+                </select>
+            </div>
+
+            <div class="merge-preview">
+                <h4>Tags to merge:</h4>
+                <ul id="mergeTagsList" class="merge-tags-list">
+                    {# Populated by JavaScript #}
+                </ul>
+            </div>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--ghost" data-action="cancel">Cancel</button>
+            <button type="button" class="btn btn--primary" data-action="confirm">Merge Tags</button>
+        </footer>
+    </div>
+</div>
+
+{# Delete Confirmation Modal #}
+<div id="confirmModal" class="modal confirm-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-action="cancel"></div>
+    <div class="modal__dialog modal__dialog--small" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc">
+        <header class="modal__header">
+            <h2 id="deleteModalTitle" class="modal__title">Delete Tag</h2>
+            <button type="button" class="modal__close" data-action="cancel" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <p id="deleteModalDesc" class="confirm-modal__message">Are you sure you want to delete this tag? It will be removed from all posts.</p>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--ghost" data-action="cancel">Cancel</button>
+            <button type="button" class="btn btn--danger" data-action="confirm">Delete</button>
+        </footer>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/BLOG_TAGS/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

@@ -1,5 +1,6 @@
 pub mod activation_hash;
 pub mod asset;
+pub mod blog;
 pub mod friend;
 pub mod gallery;
 pub mod gallery_like;
@@ -21,6 +22,7 @@ pub mod page_schema;
 pub mod page_seo;
 pub mod picture;
 pub mod schema_entity;
+pub mod search_settings;
 pub mod session_refresh_token;
 pub mod site_config;
 pub mod upload;

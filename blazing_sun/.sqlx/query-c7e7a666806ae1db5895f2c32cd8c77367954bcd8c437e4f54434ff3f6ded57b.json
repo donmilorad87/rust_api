@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE blog_posts\n        SET is_featured = NOT is_featured\n        WHERE id = $1\n        RETURNING is_featured\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_featured",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c7e7a666806ae1db5895f2c32cd8c77367954bcd8c437e4f54434ff3f6ded57b"
+}

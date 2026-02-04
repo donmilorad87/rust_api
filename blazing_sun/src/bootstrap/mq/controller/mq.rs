@@ -136,14 +136,20 @@ pub enum JobResult<T> {
     Failed(String),
 }
 
+use crate::bootstrap::elasticsearch::{ElasticsearchClient, SharedElasticsearch};
+
 /// The Message Queue manager using RabbitMQ
 pub struct MessageQueue {
     channel: Channel,
     db: Pool<Postgres>,
+    elasticsearch: Option<SharedElasticsearch>,
 }
 
 impl MessageQueue {
-    pub async fn new(db: Pool<Postgres>) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(
+        db: Pool<Postgres>,
+        elasticsearch: Option<SharedElasticsearch>,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let url = RabbitMQConfig::url();
         info!("Connecting to RabbitMQ at {}", url);
 
@@ -179,7 +185,11 @@ impl MessageQueue {
 
         info!("RabbitMQ connection established");
 
-        Ok(Self { channel, db })
+        Ok(Self {
+            channel,
+            db,
+            elasticsearch,
+        })
     }
 
     /// Enqueue a job with priority support
@@ -322,6 +332,11 @@ impl MessageQueue {
         &self.db
     }
 
+    /// Get the Elasticsearch client (if available)
+    pub fn elasticsearch(&self) -> Option<&ElasticsearchClient> {
+        self.elasticsearch.as_ref().map(|es| es.as_ref())
+    }
+
     /// Get the channel for advanced operations
     pub fn channel(&self) -> &Channel {
         &self.channel
@@ -457,9 +472,10 @@ pub async fn enqueue_and_wait_result_dyn<T: serde::Serialize>(
 /// Initialize the message queue
 pub async fn init(
     db: Pool<Postgres>,
+    elasticsearch: Option<SharedElasticsearch>,
 ) -> Result<SharedQueue, Box<dyn std::error::Error + Send + Sync>> {
     info!("Initializing RabbitMQ message queue...");
-    let mq = MessageQueue::new(db).await?;
+    let mq = MessageQueue::new(db, elasticsearch).await?;
     let shared = Arc::new(Mutex::new(mq));
     info!("RabbitMQ message queue initialized successfully");
     Ok(shared)

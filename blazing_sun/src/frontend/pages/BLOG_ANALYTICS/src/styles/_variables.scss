@@ -1,0 +1,60 @@
+// ============================================
+// BLOG_ANALYTICS PAGE - SCSS Variables
+// ============================================
+// Editorial Magazine Design System
+// Deep burgundy accent with warm grays
+
+@forward '../../../GLOBAL/src/styles/variables';
+
+// ============================================
+// BLOG EDITORIAL PALETTE
+// ============================================
+// Primary accent - deep burgundy
+$blog-accent: #8B2942;
+$blog-accent-light: #A83D56;
+$blog-accent-dark: #6D1F33;
+$blog-accent-muted: rgba(139, 41, 66, 0.1);
+
+// Warm grays
+$blog-gray-50: #FAF9F7;
+$blog-gray-100: #F5F3F0;
+$blog-gray-200: #E8E4DE;
+$blog-gray-300: #D4CEC5;
+$blog-gray-400: #A69E94;
+$blog-gray-500: #7A7267;
+$blog-gray-600: #5C554C;
+$blog-gray-700: #433D36;
+$blog-gray-800: #2D2924;
+$blog-gray-900: #1A1714;
+
+// Semantic colors
+$blog-success: #2D7D46;
+$blog-success-light: rgba(45, 125, 70, 0.1);
+$blog-warning: #C4841D;
+$blog-warning-light: rgba(196, 132, 29, 0.1);
+$blog-error: #B91C1C;
+$blog-error-light: rgba(185, 28, 28, 0.1);
+$blog-info: #1D4ED8;
+$blog-info-light: rgba(29, 78, 216, 0.1);
+
+// Chart colors
+$chart-primary: $blog-accent;
+$chart-secondary: #0D9488;
+$chart-tertiary: #7C3AED;
+$chart-quaternary: #C4841D;
+
+// ============================================
+// TYPOGRAPHY - EDITORIAL
+// ============================================
+$font-editorial-display: 'Playfair Display', Georgia, serif;
+$font-editorial-body: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-editorial-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+// ============================================
+// SHADOWS - WARM TINT
+// ============================================
+$shadow-editorial-sm: 0 1px 3px rgba(26, 23, 20, 0.06), 0 1px 2px rgba(26, 23, 20, 0.04);
+$shadow-editorial-md: 0 4px 12px rgba(26, 23, 20, 0.08), 0 2px 4px rgba(26, 23, 20, 0.04);
+$shadow-editorial-lg: 0 12px 24px rgba(26, 23, 20, 0.1), 0 4px 8px rgba(26, 23, 20, 0.06);
+$shadow-editorial-card: 0 2px 8px rgba(139, 41, 66, 0.04), 0 1px 2px rgba(26, 23, 20, 0.04);
+$shadow-editorial-hover: 0 8px 24px rgba(139, 41, 66, 0.12), 0 4px 8px rgba(26, 23, 20, 0.06);

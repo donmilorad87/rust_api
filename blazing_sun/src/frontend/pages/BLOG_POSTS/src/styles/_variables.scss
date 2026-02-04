@@ -1,0 +1,62 @@
+// ============================================
+// BLOG_POSTS PAGE - SCSS Variables
+// ============================================
+// Editorial Magazine Design System
+// Deep burgundy accent with warm grays
+
+@forward '../../../GLOBAL/src/styles/variables';
+
+// ============================================
+// EDITORIAL PALETTE
+// ============================================
+// Primary accent - Deep Burgundy
+$editorial-burgundy: #8B2942;
+$editorial-burgundy-dark: #6B1F33;
+$editorial-burgundy-light: #A83D56;
+$editorial-burgundy-subtle: rgba(139, 41, 66, 0.08);
+$editorial-burgundy-muted: rgba(139, 41, 66, 0.15);
+
+// Warm grays with slight warmth
+$editorial-gray-50: #FAFAF9;
+$editorial-gray-100: #F5F5F4;
+$editorial-gray-200: #E7E5E4;
+$editorial-gray-300: #D6D3D1;
+$editorial-gray-400: #A8A29E;
+$editorial-gray-500: #78716C;
+$editorial-gray-600: #57534E;
+$editorial-gray-700: #44403C;
+$editorial-gray-800: #292524;
+$editorial-gray-900: #1C1917;
+
+// Semantic colors - Editorial style
+$editorial-success: #059669;
+$editorial-success-light: rgba(5, 150, 105, 0.1);
+$editorial-warning: #D97706;
+$editorial-warning-light: rgba(217, 119, 6, 0.1);
+$editorial-info: #0284C7;
+$editorial-info-light: rgba(2, 132, 199, 0.1);
+$editorial-muted: #78716C;
+$editorial-muted-light: rgba(120, 113, 108, 0.1);
+
+// ============================================
+// TYPOGRAPHY - EDITORIAL
+// ============================================
+$font-editorial-display: 'Playfair Display', Georgia, serif;
+$font-editorial-body: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-editorial-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+// ============================================
+// EDITORIAL SHADOWS
+// ============================================
+$shadow-editorial-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+$shadow-editorial-md: 0 2px 8px rgba(28, 25, 23, 0.06);
+$shadow-editorial-lg: 0 4px 16px rgba(28, 25, 23, 0.08);
+$shadow-editorial-xl: 0 8px 32px rgba(28, 25, 23, 0.1);
+$shadow-editorial-glow: 0 0 0 3px rgba(139, 41, 66, 0.15);
+
+// ============================================
+// EDITORIAL TRANSITIONS
+// ============================================
+$transition-editorial: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-editorial-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-editorial-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

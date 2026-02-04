@@ -1099,6 +1099,179 @@ template.innerHTML = `
       color: #4CAF50;
       font-weight: bold;
     }
+
+    /* Toast Notification System */
+    .minigame-toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100003;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-width: 320px;
+    }
+
+    .minigame-toast {
+      background: rgba(30, 30, 46, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+      padding: 0.875rem 1rem;
+      color: #fff;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: toastSlideIn 0.3s ease-out;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .minigame-toast--error {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .minigame-toast--warning {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.15);
+    }
+
+    .minigame-toast--success {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .minigame-toast--info {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.15);
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes toastSlideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    /* Coin Selector */
+    .coin-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 15px 0;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .coin-selector-label {
+      color: #ffd700;
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .coin-selector-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .coin-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .coin-btn:hover {
+      background: linear-gradient(145deg, #3a3a6a, #2a2a5a);
+      transform: scale(1.05);
+    }
+
+    .coin-btn.selected {
+      background: linear-gradient(145deg, #ffd700, #ffa500);
+      color: #000;
+      border-color: #ffd700;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    }
+
+    /* Total Bet Display */
+    .total-bet-display {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      margin: 10px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .total-bet-label {
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    .total-bet-value {
+      color: #ffd700;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .total-bet-value.insufficient {
+      color: #ef4444;
+    }
+
+    /* Balance Display */
+    .balance-display-mini {
+      color: #10b981;
+      font-size: 0.85rem;
+    }
+
+    .balance-display-mini.low {
+      color: #f59e0b;
+    }
+
+    .balance-display-mini.insufficient {
+      color: #ef4444;
+    }
+
+    /* Globally Used Numbers - Cannot be selected in other tickets */
+    .number-btn.globally-used {
+      opacity: 0.3;
+      cursor: not-allowed;
+      background: linear-gradient(145deg, #1a1a2a, #0a0a1a);
+      border-color: #333;
+    }
+
+    .number-btn.globally-used:hover {
+      transform: none;
+      background: linear-gradient(145deg, #1a1a2a, #0a0a1a);
+    }
+
   </style>
 
   <div class="slot-game">
@@ -1107,15 +1280,15 @@ template.innerHTML = `
       <div></div>
       <div class="slot-top-controls-center">
         <div class="slot-controls-wrapper">
-          <button class="btn-primary" id="startBtn">Pokreni Igru</button>
+          <button class="btn-primary" id="startBtn">Start Game</button>
           <div class="progress-container" id="progressContainer">
             <span class="progress-label" id="progressLabel">5 sec</span>
             <progress value="0" max="5" id="progressBar"></progress>
           </div>
-          <button class="btn-secondary" id="stopBtn">Zaustavi</button>
+          <button class="btn-secondary" id="stopBtn">Stop</button>
         </div>
       </div>
-      <div class="spins-counter">Odigrano spinova: <span id="spinsCount">0</span></div>
+      <div class="spins-counter">Spins played: <span id="spinsCount">0</span></div>
     </div>
 
     <!-- Main Layout -->
@@ -1123,12 +1296,14 @@ template.innerHTML = `
       <!-- Left Sidebar: Bet & Lines -->
       <div class="slot-sidebar">
         <div class="nav-div">
-          <button id="ulogBtn">Ulog</button>
+          <button id="betBtn">Bet</button>
           <div id="betOptions"></div>
           <div class="joker-container" id="jokerContainer">
             <input type="checkbox" id="jokerCheckbox" name="joker">
-            <label for="jokerCheckbox">Kupi Dzokera</label>
-            <p class="joker-hint">Dzoker kosta 5x ulog.</p>
+            <label for="jokerCheckbox">Buy Joker</label>
+            <p class="joker-hint">Joker costs 5x bet.</p>
+            <button id="confirmJokerBtn" style="display: none; margin-top: 8px; width: 100%;">Confirm Joker</button>
+            <button id="removeJokerBtn" style="display: none; margin-top: 8px; width: 100%;">Remove Joker</button>
           </div>
           <div class="lines-container" id="linesContainer"></div>
         </div>
@@ -1140,11 +1315,11 @@ template.innerHTML = `
 
         <!-- Info Panel -->
         <div class="info-panel">
-          <div>Ulog: <span id="currentBet">2</span> $</div>
-          <div>Tip: <span id="gameType">Brojevi</span></div>
-          <div>Dzoker: <span id="jokerStatus">NE (0 $)</span></div>
-          <div>Linija: <span id="lineCount">1</span></div>
-          <div>Ukupno: <span id="totalBet">2</span> $</div>
+          <div>Bet: <span id="currentBet">2</span> $</div>
+          <div>Type: <span id="gameType">Numbers</span></div>
+          <div>Joker: <span id="jokerStatus">NO (0 $)</span></div>
+          <div>Lines: <span id="lineCount">1</span></div>
+          <div>Total: <span id="totalBet">2</span> $</div>
           <div>Krediti: <span id="credits">0</span> $</div>
         </div>
 
@@ -1156,9 +1331,9 @@ template.innerHTML = `
       <div class="slot-right-column">
         <div class="slot-options">
           <div class="nav-div">
-            <button id="tipIgreBtn">Tip Igre</button>
+            <button id="gameTypeBtn">Game Type</button>
             <div id="gameTypeOptions"></div>
-            <button id="nacinNagradjivanjaBtn">Nacin nagradjivanja</button>
+            <button id="rewardModeBtn">Reward Mode</button>
             <div id="rewardModeOptions"></div>
           </div>
         </div>
@@ -1169,18 +1344,21 @@ template.innerHTML = `
 
 /**
  * BingoMiniGame - Bonus game after winning on slot machine
- * Based on BingoTiketSistem from legacy code
+ * Based on BingoTicketSystem from legacy code
  *
  * Rules:
- * - Same numbers CAN be reused across different tickets
- * - No duplicates within a single ticket
+ * - Numbers must be UNIQUE across ALL tickets (not just within one ticket)
+ * - User selects a coin value (10, 20, 50, 100, 200, 500, 1000)
+ * - Bet per ticket = betMultiplier[numbers] × coinValue
+ * - Total bet must not exceed user balance
  * - Click ticket numbers to remove them
  */
 class BingoMiniGame {
-  constructor(winAmount, shadowRoot, onComplete) {
+  constructor(winAmount, shadowRoot, onComplete, userBalance) {
     this.winAmount = winAmount;
     this.shadowRoot = shadowRoot;
     this.onComplete = onComplete;
+    this.userBalance = userBalance || 0;
 
     // Game state
     this.currentTicket = 0;
@@ -1192,6 +1370,10 @@ class BingoMiniGame {
     this.drawCount = 12;
     this.isPlaying = false;
     this.gameFinished = false;
+
+    // Coin value selection
+    this.coinValues = [10, 20, 50, 100, 200, 500, 1000];
+    this.selectedCoinValue = 10; // Default to lowest
 
     // Payout odds table (matches, odds, probability%)
     // Formula: P(k of n) = C(12,k) × C(18, n-k) / C(30,n)
@@ -1214,10 +1396,54 @@ class BingoMiniGame {
       { played: 5, matches: 5, odds: 179.94, prob: 0.56 },
     ];
 
-    // Bet multipliers per ticket size
-    this.betMultipliers = { 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 };
+    // Bet multipliers per ticket size (1 number = 1x coin value)
+    this.betMultipliers = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 };
 
     this.render();
+  }
+
+  /**
+   * Show toast notification (replaces JS alerts)
+   */
+  showToast(message, type = 'error') {
+    const container = this.overlay.querySelector('#toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `minigame-toast minigame-toast--${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+      toast.style.animation = 'toastSlideOut 0.3s ease-out forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  /**
+   * Select coin value for betting
+   */
+  selectCoinValue(value) {
+    if (this.isPlaying || this.gameFinished) return;
+    this.selectedCoinValue = value;
+    this.updateUI();
+  }
+
+  /**
+   * Calculate total bet across all tickets
+   */
+  calculateTotalBet() {
+    return this.tickets
+      .filter(t => t.length > 0)
+      .reduce((sum, t) => sum + (this.betMultipliers[t.length] * this.selectedCoinValue), 0);
+  }
+
+  /**
+   * Check if user has sufficient balance
+   */
+  hasSufficientBalance() {
+    return this.calculateTotalBet() <= this.userBalance;
   }
 
   render() {
@@ -1226,24 +1452,41 @@ class BingoMiniGame {
     overlay.id = 'minigameOverlay';
 
     overlay.innerHTML = `
+      <div class="minigame-toast-container" id="toastContainer"></div>
       <div class="minigame-container">
         <div class="minigame-header">
-          <h2>BINGO BONUS IGRA</h2>
-          <p>Osvojili ste: <span class="minigame-prize">${this.winAmount} $</span></p>
-          <p>Ulog iz slot igre: <span class="minigame-stake">${this.winAmount} $</span></p>
-          <p>Izaberite brojeve za tikete. Isti brojevi se mogu koristiti na vise tiketa!</p>
+          <h2>BINGO BONUS GAME</h2>
+          <p>You won: <span class="minigame-prize">${this.winAmount} coins</span></p>
+          <p>Your balance: <span class="balance-display-mini" id="balanceDisplay">${this.userBalance} coins</span></p>
+          <p>Each number can only be used ONCE across all tickets!</p>
+        </div>
+
+        <!-- Coin Selector -->
+        <div class="coin-selector">
+          <div class="coin-selector-label">Select Coin Value</div>
+          <div class="coin-selector-buttons" id="coinSelector">
+            ${this.coinValues.map(v => `
+              <button class="coin-btn ${v === this.selectedCoinValue ? 'selected' : ''}" data-value="${v}">${v}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Total Bet Display -->
+        <div class="total-bet-display">
+          <span class="total-bet-label">Total Bet:</span>
+          <span class="total-bet-value" id="totalBetDisplay">0 coins</span>
         </div>
 
         <div class="minigame-layout">
           <div class="minigame-numbers">
-            <h3>Izaberite brojeve (1-30)</h3>
+            <h3>Select numbers (1-30)</h3>
             <div class="number-grid" id="numberGrid">
               ${this.renderNumberGrid()}
             </div>
           </div>
 
           <div class="minigame-tickets">
-            <h3>Vasi tiketi (kliknite broj da ga obrisete)</h3>
+            <h3>Your tickets (click number to remove)</h3>
             <div class="tickets-container" id="ticketsContainer">
               ${this.renderTickets()}
             </div>
@@ -1251,33 +1494,33 @@ class BingoMiniGame {
         </div>
 
         <div class="minigame-odds">
-          <h3>Tabela kvota</h3>
+          <h3>Odds Table</h3>
           <div class="odds-table-container">
             ${this.renderOddsTable()}
           </div>
         </div>
 
         <div class="minigame-drawn" id="drawnSection" style="display: none;">
-          <h3>Izvuceni brojevi (12)</h3>
+          <h3>Drawn numbers (12)</h3>
           <div class="drawn-numbers" id="drawnNumbers"></div>
         </div>
 
         <div class="minigame-result" id="resultSection" style="display: none;">
-          <h2>Rezultat</h2>
+          <h2>Result</h2>
           <p id="resultText"></p>
           <p class="total-win" id="totalWin"></p>
         </div>
 
         <div class="minigame-controls">
-          <button class="minigame-btn minigame-btn-secondary" id="nextTicketBtn">Sledeci tiket</button>
-          <button class="minigame-btn minigame-btn-primary" id="playBtn" disabled>Zapocni izvlacenje</button>
-          <button class="minigame-btn minigame-btn-success" id="collectBtn" style="display: none;">Preuzmi dobitak</button>
-          <button class="minigame-btn minigame-btn-secondary" id="skipBtn">Preskoci</button>
+          <button class="minigame-btn minigame-btn-secondary" id="nextTicketBtn">Next ticket</button>
+          <button class="minigame-btn minigame-btn-primary" id="playBtn" disabled>Start drawing</button>
+          <button class="minigame-btn minigame-btn-success" id="collectBtn" style="display: none;">Collect winnings</button>
+          <button class="minigame-btn minigame-btn-secondary" id="skipBtn">Skip</button>
         </div>
 
         <div class="minigame-info">
-          Kliknite na broj (1-30) da ga dodate u aktivan tiket. Kliknite na broj u tiketu da ga obrisete.
-          <br>Isti broj mozete koristiti na vise tiketa! Izvlaci se 12 od 30 brojeva.
+          Click a number (1-30) to add to active ticket. Click a number in ticket to remove.
+          <br>Each number can only be used ONCE across all tickets! 12 of 30 numbers are drawn.
         </div>
       </div>
     `;
@@ -1289,7 +1532,7 @@ class BingoMiniGame {
   }
 
   renderOddsTable() {
-    let html = '<table class="odds-table"><thead><tr><th>Brojeva</th><th>Pogodaka</th><th>Kvota</th><th>Verovatnoca</th></tr></thead><tbody>';
+    let html = '<table class="odds-table"><thead><tr><th>Numbers</th><th>Matches</th><th>Odds</th><th>Probability</th></tr></thead><tbody>';
     for (const row of this.oddsTable) {
       html += `<tr><td>${row.played}</td><td>${row.matches}</td><td>${row.odds}x</td><td>${row.prob}%</td></tr>`;
     }
@@ -1311,7 +1554,7 @@ class BingoMiniGame {
       const isActive = i === this.currentTicket;
       html += `
         <div class="ticket ${isActive ? 'active' : ''}" data-ticket="${i}">
-          <span class="ticket-label">Tiket ${i + 1}:</span>
+          <span class="ticket-label">Ticket ${i + 1}:</span>
           <div class="ticket-numbers" id="ticketNumbers${i}"></div>
           <span class="ticket-result" id="ticketResult${i}"></span>
         </div>
@@ -1321,6 +1564,15 @@ class BingoMiniGame {
   }
 
   bindEvents() {
+    // Coin selector buttons
+    this.overlay.querySelectorAll('.coin-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (this.isPlaying || this.gameFinished) return;
+        const value = parseInt(btn.dataset.value);
+        this.selectCoinValue(value);
+      });
+    });
+
     // Number selection
     this.overlay.querySelectorAll('.number-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1366,18 +1618,30 @@ class BingoMiniGame {
   selectNumber(num, btn) {
     const ticket = this.tickets[this.currentTicket];
 
-    // Check if number is already in CURRENT ticket only
-    // (same numbers CAN be reused across different tickets)
+    // Check if number is already in CURRENT ticket
     const indexInCurrentTicket = ticket.indexOf(num);
 
     if (indexInCurrentTicket !== -1) {
       // Remove from current ticket
       ticket.splice(indexInCurrentTicket, 1);
     } else {
+      // Check if number is used in ANY other ticket (globally unique enforcement)
+      const usedInOtherTicket = this.tickets.some((t, idx) =>
+        idx !== this.currentTicket && t.includes(num)
+      );
+
+      if (usedInOtherTicket) {
+        this.showToast(`Number ${num} is already used in another ticket`, 'warning');
+        return;
+      }
+
       // Add to current ticket if not full
       if (ticket.length < this.maxNumbersPerTicket) {
         ticket.push(num);
         ticket.sort((a, b) => a - b);
+      } else {
+        this.showToast(`Ticket ${this.currentTicket + 1} is full (max 5 numbers)`, 'info');
+        return;
       }
     }
 
@@ -1416,33 +1680,48 @@ class BingoMiniGame {
   }
 
   updateUI() {
+    // Update coin selector buttons
+    this.overlay.querySelectorAll('.coin-btn').forEach(btn => {
+      const value = parseInt(btn.dataset.value);
+      btn.classList.toggle('selected', value === this.selectedCoinValue);
+    });
+
+    // Calculate total bet and update display
+    const totalBet = this.calculateTotalBet();
+    const totalBetDisplay = this.overlay.querySelector('#totalBetDisplay');
+    if (totalBetDisplay) {
+      totalBetDisplay.textContent = `${totalBet} coins`;
+      totalBetDisplay.classList.toggle('insufficient', totalBet > this.userBalance);
+    }
+
+    // Update balance display
+    const balanceDisplay = this.overlay.querySelector('#balanceDisplay');
+    if (balanceDisplay) {
+      balanceDisplay.textContent = `${this.userBalance} coins`;
+      balanceDisplay.classList.toggle('low', this.userBalance < 500);
+      balanceDisplay.classList.toggle('insufficient', totalBet > this.userBalance);
+    }
+
     // Update ticket active states and styling
     this.overlay.querySelectorAll('.ticket').forEach((ticket, idx) => {
       ticket.classList.toggle('active', idx === this.currentTicket);
-      // Show ticket bet amount if it has numbers
-      const numCount = this.tickets[idx].length;
-      const betAmount = numCount > 0 ? this.betMultipliers[numCount] * this.winAmount : 0;
-      const betLabel = ticket.querySelector('.ticket-bet');
-      if (betLabel) {
-        betLabel.textContent = numCount > 0 ? `Ulog: ${betAmount}$` : '';
-      }
     });
 
     // Update ticket contents with removable numbers
     for (let i = 0; i < this.maxTickets; i++) {
       const container = this.overlay.querySelector(`#ticketNumbers${i}`);
       const betAmount = this.tickets[i].length > 0
-        ? this.betMultipliers[this.tickets[i].length] * this.winAmount
+        ? this.betMultipliers[this.tickets[i].length] * this.selectedCoinValue
         : 0;
 
       container.innerHTML = this.tickets[i].map(num =>
-        `<span class="ticket-number removable" data-ticket="${i}" data-num="${num}" title="Kliknite za brisanje">${num}</span>`
+        `<span class="ticket-number removable" data-ticket="${i}" data-num="${num}" title="Click to remove">${num}</span>`
       ).join('');
 
       // Show bet for this ticket
       const resultEl = this.overlay.querySelector(`#ticketResult${i}`);
       if (resultEl && !this.gameFinished) {
-        resultEl.textContent = betAmount > 0 ? `Ulog: ${betAmount}$` : '';
+        resultEl.textContent = betAmount > 0 ? `Bet: ${betAmount} coins` : '';
       }
 
       // Bind click to remove number from ticket
@@ -1457,21 +1736,38 @@ class BingoMiniGame {
       });
     }
 
-    // Update number grid selection state - highlight only numbers in CURRENT ticket
+    // Update number grid selection state
+    // Numbers used in OTHER tickets are completely disabled (globally-used)
     const currentTicketNums = this.tickets[this.currentTicket];
     this.overlay.querySelectorAll('.number-btn').forEach(btn => {
       const num = parseInt(btn.dataset.number);
-      // 'selected' = in current ticket, 'used' = in other tickets
       const isInCurrentTicket = currentTicketNums.includes(num);
       const isInOtherTicket = this.tickets.some((t, idx) => idx !== this.currentTicket && t.includes(num));
 
+      // 'selected' = in current ticket (green)
       btn.classList.toggle('selected', isInCurrentTicket);
-      btn.classList.toggle('used-other', isInOtherTicket && !isInCurrentTicket);
+      // 'globally-used' = in other tickets (disabled, cannot be selected)
+      btn.classList.toggle('globally-used', isInOtherTicket);
+      // Remove old 'used-other' class if present
+      btn.classList.remove('used-other');
     });
 
-    // Update play button state
+    // Update play button state - disabled if no numbers OR insufficient balance
     const hasNumbers = this.tickets.some(t => t.length > 0);
-    this.overlay.querySelector('#playBtn').disabled = !hasNumbers || this.isPlaying;
+    const hasSufficientBalance = this.hasSufficientBalance();
+    const playBtn = this.overlay.querySelector('#playBtn');
+    playBtn.disabled = !hasNumbers || !hasSufficientBalance || this.isPlaying;
+
+    // Update play button text based on balance
+    if (!this.isPlaying && !this.gameFinished) {
+      if (!hasNumbers) {
+        playBtn.textContent = 'Select numbers';
+      } else if (!hasSufficientBalance) {
+        playBtn.textContent = 'Insufficient balance';
+      } else {
+        playBtn.textContent = 'Start drawing';
+      }
+    }
 
     // Update next ticket button state
     const currentFull = this.tickets[this.currentTicket].length >= this.maxNumbersPerTicket;
@@ -1479,20 +1775,33 @@ class BingoMiniGame {
   }
 
   async play() {
+    // Validate balance before playing
+    const totalBet = this.calculateTotalBet();
+    if (totalBet > this.userBalance) {
+      this.showToast('Insufficient balance! Please select a lower coin value or fewer numbers.', 'error');
+      return;
+    }
+
+    if (totalBet === 0) {
+      this.showToast('Please select at least one number on a ticket.', 'warning');
+      return;
+    }
+
     this.isPlaying = true;
 
     // Disable controls
     this.overlay.querySelector('#playBtn').disabled = true;
-    this.overlay.querySelector('#playBtn').textContent = 'Izvlacenje...';
+    this.overlay.querySelector('#playBtn').textContent = 'Drawing...';
     this.overlay.querySelector('#nextTicketBtn').disabled = true;
     this.overlay.querySelector('#skipBtn').style.display = 'none';
     this.overlay.querySelectorAll('.number-btn').forEach(btn => btn.classList.add('disabled'));
+    this.overlay.querySelectorAll('.coin-btn').forEach(btn => btn.classList.add('disabled'));
 
     // Show drawn section
     this.overlay.querySelector('#drawnSection').style.display = 'block';
 
     try {
-      // Call backend API for authoritative random numbers and payout calculation
+      // Call backend API with new ticket-based format
       const response = await fetch('/api/games/slot-machine', {
         method: 'POST',
         headers: {
@@ -1501,7 +1810,7 @@ class BingoMiniGame {
         body: JSON.stringify({
           action: 'slot_minigame',
           tickets: this.tickets,
-          stake: this.winAmount
+          coin_value: this.selectedCoinValue
         })
       });
 
@@ -1512,6 +1821,11 @@ class BingoMiniGame {
         this.drawnNumbers = result.data.drawn_numbers;
         this.serverResults = result.data;
 
+        // Update user balance from server response
+        if (result.data.new_balance !== undefined) {
+          this.userBalance = result.data.new_balance;
+        }
+
         // Animate drawing with server numbers
         this.animateDraw(0);
       } else {
@@ -1519,15 +1833,16 @@ class BingoMiniGame {
       }
     } catch (error) {
       console.error('[BingoMiniGame] API Error:', error);
-      alert('Greska pri pokretanju mini igre: ' + error.message);
+      this.showToast('Error: ' + error.message, 'error');
 
       // Re-enable controls on error
       this.isPlaying = false;
       this.overlay.querySelector('#playBtn').disabled = false;
-      this.overlay.querySelector('#playBtn').textContent = 'Zapocni izvlacenje';
+      this.overlay.querySelector('#playBtn').textContent = 'Start drawing';
       this.overlay.querySelector('#nextTicketBtn').disabled = false;
       this.overlay.querySelector('#skipBtn').style.display = 'inline-block';
       this.overlay.querySelectorAll('.number-btn').forEach(btn => btn.classList.remove('disabled'));
+      this.overlay.querySelectorAll('.coin-btn').forEach(btn => btn.classList.remove('disabled'));
       this.overlay.querySelector('#drawnSection').style.display = 'none';
     }
   }
@@ -1587,7 +1902,7 @@ class BingoMiniGame {
 
         // Show result on ticket
         const resultEl = this.overlay.querySelector(`#ticketResult${i}`);
-        resultEl.textContent = `${result.matches}/${result.numbers_played} = ${ticketWin.toFixed(2)}$`;
+        resultEl.textContent = `${result.matches}/${result.numbers_played} = ${ticketWin.toFixed(2)} coins`;
         if (ticketWin > 0) resultEl.classList.add('win');
       });
 
@@ -1609,32 +1924,44 @@ class BingoMiniGame {
 
         // Show result on ticket
         const resultEl = this.overlay.querySelector(`#ticketResult${i}`);
-        resultEl.textContent = `${matched}/${played} = ${ticketWin.toFixed(2)}$`;
+        resultEl.textContent = `${matched}/${played} = ${ticketWin.toFixed(2)} coins`;
         if (ticketWin > 0) resultEl.classList.add('win');
       }
     }
 
-    // Apply bonus to original win
-    const finalWin = this.winAmount + totalWin;
+    // Calculate net result
+    const totalBet = this.serverResults?.total_bet || this.calculateTotalBet();
+    const netResult = totalWin - totalBet;
 
     // Show result section
     const resultSection = this.overlay.querySelector('#resultSection');
     resultSection.style.display = 'block';
 
     this.overlay.querySelector('#resultText').innerHTML = `
-      Originalni dobitak: ${this.winAmount}$<br>
-      Bonus iz mini igre: ${totalWin.toFixed(2)}$
+      Total bet: ${totalBet} coins<br>
+      Total payout: ${totalWin} coins<br>
+      Net result: <span style="color: ${netResult >= 0 ? '#10b981' : '#ef4444'}">${netResult >= 0 ? '+' : ''}${netResult} coins</span>
     `;
-    this.overlay.querySelector('#totalWin').textContent = `Ukupno: ${finalWin.toFixed(2)}$`;
+    this.overlay.querySelector('#totalWin').textContent = netResult >= 0 ? `Won: ${netResult} coins` : `Lost: ${Math.abs(netResult)} coins`;
 
-    // Update balance if server provided new balance
+    // Update balance display in mini-game
+    const balanceDisplay = this.overlay.querySelector('#balanceDisplay');
+    if (balanceDisplay && this.serverResults?.new_balance !== undefined) {
+      this.userBalance = this.serverResults.new_balance;
+      balanceDisplay.textContent = `${this.userBalance} coins`;
+    }
+
+    // Update main slot machine balance display
     if (this.serverResults && this.serverResults.new_balance !== undefined) {
       const balanceEl = document.querySelector('#kreditOkvir') ||
-                        document.querySelector('.balance-display');
+        document.querySelector('.balance-display');
       if (balanceEl) {
         balanceEl.textContent = this.serverResults.new_balance;
       }
     }
+
+    // Set total win for onComplete callback (payout, not net)
+    this.totalWin = totalWin;
 
     // Show collect button, hide play button
     this.overlay.querySelector('#playBtn').style.display = 'none';
@@ -1673,7 +2000,7 @@ export class SlotMachine extends HTMLElement {
     this.kvote = [100, 50, 30, 5, 50, 30, 20, 4, 30, 20, 10, 3];
     this.spinsCount = 0;
     this.stopArray = [];
-    this.linez = [1, 0, 0, 0, 0, 0, 0];
+    this.selectedPaylines = [1, 0, 0, 0, 0, 0, 0];
     this.jokerAdded = false;
     this.jokerPosition = 0;
     this.jokerCost = 0;
@@ -1690,9 +2017,9 @@ export class SlotMachine extends HTMLElement {
     this.canvas = null;
     this.ctx = null;
     this.canvasWidth = 0;
-    this.halfStep = 0;
-    this.middle = 0;
-    this.down = 0;
+    this.cellHalfHeight = 0;
+    this.middleRowCenterY = 0;
+    this.bottomRowCenterY = 0;
   }
 
   connectedCallback() {
@@ -1700,12 +2027,16 @@ export class SlotMachine extends HTMLElement {
     this.jwtToken = this.getAttribute('data-jwt-token') || '';
 
     // Additional state for joker/lines
-    this.kockice = new Array(15).fill(0);
-    this.pomocniNiz = [];
-    this.kkk1 = 0;
-    this.kkk2 = 0;
+    this.validJokerPositions = new Array(15).fill(0);
+    this.jokerAffectedLines = [];
+    this.jokerCanvasX = 0;
+    this.jokerCanvasY = 0;
+    this.jokerImageLoaded = false;
     this.img = new Image();
-    this.halfStepW = 0;
+    // Preload joker image so it's ready when user clicks
+    this.img.onload = () => { this.jokerImageLoaded = true; };
+    this.img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKIAAACiCAMAAAD1LOYpAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAALNUExURUdwTP/fIP3bIv3cIv7fH//hHvzbIv3bIv7dIf/gH/3cIf/hHv/fHP/jH/3cIf/hH/zbIv7dIf7cIf/gH//gH/3cIQAAAQYFCR0VFSMXFRoRDyobFi8gGAoJDRAOEsa1nQYDA/fq4S0kJEIzKikfHjorIzIkHNK7ocq5oBUTFz0vJhQLCfbl2k49LjIoKzUnIdHApufWySEVDu/Xx+rZzSQaGkc5LxwYHfju58y8pltLPc62naOLcdm9ppd8YmJQQNnMvZ2Eas/BsA0HBvTh1GRUR66Yf9THt1pHNd3QwqiSev/gHHtqV+PVw+jLtkg3Ke/ez1JDNL2pkVVFOmtbSsmymCIcIk0+NaF+ZaiEaeTGrzsvMI10W8StlOfNvN3ArvzbI4dmTvDj24RsV3VlU66Jburc08GwmUMxIL+Ye/Hazdm2muXa039jS+7f1pVzW72ki8ajiN+7oCUhKfr18HBhTc+rkMzDulc/L8Geg512XYJyYLeagq6PdIt6Y8e2qDkqGuPBprahiO3Swt/PunNXQ7eTeY9sVGxNOnhdS0A2OJJ/aWpWQLWkkce8sObRw6+diu7RvMCyosioj9avk5iHdObh29bFrM3IxOfWut/Ht9Kxms2liYt8dLipm2RGMfPUI+3JrtvMsqiUiJ6NfOvbw//pIWJGPYFya2JTUkk+PuHWz/39/Jx9dbiNb6d+YffZN5F1a0tNVFxLSVFEQquHffjbwn9aQ25RSnNjXnhpaHBxdiktNoBiWpOIhottYsupoNS2q4aOlVI4JOrLLaybmXJXUzU7RcqgfGZeXZ2JTb2clHp9gvLWUKCtt5WYnf3rz7KwtNTT0eXUqezo5syxIq/BzcWsQV9lbNbg58C/wbWdVuXIIpOgq9i7OcDT3tu+IFZYYfDZc+7Zk11PFdy/VJJ+O6qTJde+cradNHNfLJqEG35sGNrCiv/oLsn1uUoAAAAWdFJOUwCoGjuHuwUreJhttPbpSeANZFLRx1vpWQcXAAA0RElEQVR42uyXXU/beBrFpy0MoZQCbSfkxXSjODZbW45LQlyNgRqaNTLExeOxiyFlgShON0BTCiOz0NAoDG9tMQNMYEcKpc3OVFm6laAV0o6mN3sxXHS5R1wQVdWqQ7d0NZ9h/+nufgGGtnPBubJ8k5/OOc/zOB99dKADHehABzrQgfasw3lHTpQYcnLygXJyDCUnjuQd/nURFr8FzD9UkJubW1BwKP8t5Me/FrqP80oM+QVpn68zlcqsZ168eJHJZFKdvnS6AIDmfXC+vJL83CJAt7659WpneyNQN35bDw9y8ZcbW683M4CzqCD/kw+Y+BEDwOvMPN/a2GgLqphzefnpU/Yfit1utxnXHnDC9xs7bzlPFhz9IGbmGXILO9cBXmBq6eHaD8ssgvILKs2rIkZiFps0LVpYWSFkfefV5npnYUHJe/ay+Pihws7HP21vVMeeLEejmsirMInQPM1O8QpKUmYjPLvs4nQOZiWJCEe2s5SHjhS/vwVTcsqX2vx32+ef1k/xswsyr1K0ZEEoWKSjMQ2YSKI4+t3XCEpzAs0MCnGNp3Zfb6bSuSfej5WHDUW+1E/bGE6o96bbIrNTsqZhccWBkJSsyqxGwYiVwsjv7sUhUQwT+iAhqJqgS+LLN6n0qfcwO4dzitKPt3aePuBxlOB0PqrKMsdKsII6rEpUJWGNISGSZqw/TCs4LAoQE4RhVec4Tjhduvsmkz514h0TfnLSl3kTiU1pfCNmQ8MEq9ESLSgKRcMYQkRVGFFoDMMkFqIW1oxmDsaRKUbQdJEUCZfFif/4OuXLPf4up7jAl9o6T8OiOsXXxcyueFyhaVEQMIoSWYmiZZmmrKCXJM1iNK94LSLshdp48B42C7TVPAjZQSlTxw69q7SLDYWdz3f4B41TssAF22IahUBmTKcRGLNKTFSjZIpiWAvMYBAtU6wqWXBBtGG8qjMyZRZFCBoUKIridjd9RSXv5Djm5foyO6o8zseq6xeYMBMMygRqseq0GaFwjF+KUoyCSTJC0maryCisJposKIujmqbrmojRBBnHYAKmCJQAlXwXRh491vm8WlXBEtT1tunZaDgsaxzpggnR7KIcDjrGWiUWhQGmiFgVQpRZxWFBVbNH0xg+KCqMJMRdLgFCRJiRAs99J/e7kcX5vsf/ejA7u9A4XfunP05/Xn/hKw6S2TgkIBRqQkwO0ECbR1PMCkVhNInRUbDGKRxRYS9zW4/xgqzLGoNAYGGKhMgts69+Tufsb8infM8ja3Kw8cvG+q8vNDRcmG785rdimI2jIkIiJjvuNePUHRvF2hwUCUsYSi8/uc2rRFynXfeB6xFOi4SuV1UTEA4jGMzy8tPdF/sadklh5z+/Wr6tEz+C/UYMcrSmgbtBEwTmEhDc7LXDVosRx1AracIEmOEGGV2eam0NBBgxGPj+vh6oqx6v7h9YTFSrLOfCaFVjpIf1IOx9+7ow+FIb9xounP3Dg2B2CWt6HLKaXV6vJ0xAKGzz4pCoUB4jxAyGxyP3b/f29oZu1g0nFkOrk3prV++t8cmJvpuJxaGbE4kvG+sYhpFFlKteevgqVXh8vwjXt5eivKxFeVVlWJXnZYIKo4gDdxEihFhKMSF7nolbkcBkqPVG743V1on5/pqmppqBoa6+REvvjZauRE9PYmh4Yvj64qX6RgaKSzIv0dL2z8eO7gdhTnp9Q43Ggkw4DFtxKxqPkyQCCx6cDEMogYE3FAdOYSQQ6A2FVromboZCQ4v+pvbR9ib/yEh5Yhi8mOhb7EkkEn3XE1Udc5/GdBEiMEogH26k0vvAaEi/iPBRTeNVmmHiVqvLYoUVLE7iRqMZTChsNlOD+nhgcnKyZWKob2io7+7dnrnfdbu7u0fb/d921FT9/vrw8FBisaq8vKq8pqbG3578m18WYKPJ5PU6dveB0eB7HKAYGfRHpjmW4QgEtZod1GAYPW00njaZrHEXMRnobWlZbV15dne+Z2BgvqfJ7a6s7K7sdgPGb5Nnf1N16VJ5TXlNR0dHMjmW9Pvn/PXnVcpicqJk88vML2U0pDNtSzFdBlVkaYkBu42jJcyEQxhyurTsjMlsjQtgPlpCodaVrmcDPSN+v79pbnTU3V0JVDEzlqwdO1tVk8X7JlmbTCZn2kFH+//sjzm8ZWU4XmoMr6dLftFJ8a1P0losFpQlCsNgcGEVWmYZFrPazwET7ViYoCMg4lBrtobP5kdGQAkBIWB0f1ZZUTHTkKxtSHZ0+JP/1czM6Gh7u79/ZG7KaffavF7v6TO7qWNH9k54/Nj6xt/PqyJMWs1mC26xeHGP886dy7Dy18ueUtsZOxgbPRCYvBECQ7Ky0pVF/D8hyLriYkNtbW3DDEBtbx8bGwNPbvDU3jTS09N/nbXgZrsJL7W9zBTteT/mFaU2wEXhAZnFbLIAQqOxtKzsTLPH0dzcfO6cHSEx4S/jkcnelomJVWAjyBmk7P4fY8XFGYDY0FBRkY18ZqZhZsbtHm1qyiIO9A+RRltpqdfiIZ07vlN7/FdTfNK3DbrHMIQiYBiJOhwo6nA6m5vtTueZsuYv7CRKCgR3a7y3pXViZXV15W7/25zn5txgnrvdAOot35UrV0DmF7Oko1lG0MaR+fm7ssfppB6qfPQJ/9p3aG8fZ/m+raVghJf14LiEkBSGKBLNgqEBSTu/aG52XgbdJETifqS3FZh4Y3Vlvn8E/H7WwO7Psk282PDo0dWrV65du3bl6qNHALXSnRUwEjAOjNTDOKowjCQq0mbasKfD7FtfmGqprq+uG9ZcLo/HCSswCSvS2tqd/3Bmvj9p5VkYT5u0M5Pp/si2217QGuFebESAVABcihAqsAZvEQorPweBC1aqYimFCAg72BGr1KitmGy1jrO1rbM72zax2Rk3bl81naavm/jCpJnsZifp/hX7fK+z3ZfqXiOaGJMPzznnOc8Jir7WVkYc1HrlcvnYl9/CERMEceU66rwAvqt783yJEA4TQvXwn4cHBlJOp/OqSk0Yv+pcrlSmlVTz53JtrzY49sOj/2NkPjrxbOKF2Ww22C6zAgGukSDqGwzOfD8zM7OdOduE33EP9MrHbk1GfYknT0cLPOJNldNpsYAFiHsaxmKpPcBUymKJpVJO0qXhfrTjZ8XnCgWN8kj6/h05eeh2/OWxyO6LdWPIWDLLhfJsnLUyYkVme3s705f5Hq/biqC4oUWqdY3dgor+kr8AxKHKgioVk8VkRLgPhEtLw0TMmEyGv8hEMvXDh+eBuPy7C4ZXf9t6FY97svGtnZ5Pjh96q+xs1OuhkJkbG4uH4h5pu1Rx5kyrLtPXmtnOZDIKMdXV3KZ0u8a+HCn4E34/xuX14vXAgspp4REHCBffhzzh8EDMQggtFov65s0FTHUun0+GyvX1+dk7v78y++BlzyGv149+9tKIfzeGQtNcjUV4ahmUtJ4529QHuowOQy0WYw/SLuTHW1FEGzxPnyRXhgIOx4LKIgMX0Y5UF6hQE9WOETy+B+BKiBi5ZDU/qrey6/Orq/Vi8U3k1KES7vFPI7sb5XrdaDTbbDiVBz9v0TU16XhAgoe2lNC0hJbLH3c/5njEQsFXgncTRLVTPQzEJaIhKg7CpZgotichQUTIWAhUrq9UE75pq4ctF1mcYOxOz5HDIP6q5125WKzVQuaErexxDQ4qm1BlECoyaEmxIqhQMkwjgwHXP+6eNj5NIL1GuUISlX7o5KlAmIqRRhzg+zD2VkQe2QdGbMGhpP+p22V10fRYfH3+Qe3liUMsmaOn1t4Uy+VaDSqaa7VpOXUGmSED7RTwbqKholGj0bQLJC7TLVi3HxNdmIpOVXNDgT+cR/PxGqK4Kb7iS2/fdnTc6OjoACMgnVedKtKMi/lkdbCLdrU3mEzKmfvru5FPD2OJO0WOq9XrZhR6wuhhTpNByaDADERUMAwWjESpEQiULtPtSYyLv5p8WsBcp4cq/X+8NLw0PLAEQKyVgWHwEUD+IYwgRJRccNwLLObT6dG2ZnmjpBjXNrd7yu96DnwnHP3FmuF+mautr5vN9gmDSXj6bKtOp9MwYvh1UMxgFWK1SJRiqsVlmpwe8fn9T/LJRKmaTOau99/7guw61BYLBowE8e0eIGSU7SGqUOjAUBrx93azdbPLVM5a5d1f/7h27PjBDed+rV4rm+sGiKhvPk21CgUaRgMJg5BQGQwSE5dKFEy73OQZgS0mnrzOreST48n0cj9PqEY1Yd5qbL1UTNTBP+jFDr7OIFSrHP2dubu5pDleXN0arNfjbHyruPPogDIeheEUQ6GQEYUev5AFIcNIxBrsPCIhDyjWMEple5eQ7nZ/xyFFJJIri7m7+Xz+bq7zi0vEbCzEvOfmLp1XO2NA6xD99EBFDAvZ1IHO5VylOsl62CvleLGIsd7YjRw7aNLe+TsXjUaNKLS9yHRJtOKZ4NmzOtKFpNAaikLJNYzg9GnczLe5UYxLFUdBejyfzuXO3bsEs8GmG1AjG85BT4sMjP9DtDj5tBZ2dFby40PdXUGl9S+0/rHc49IX3/UcaFUfPfFyqmjkQkbz+ryNbWkwFfWK1madgsBJtAoNJRT0ZYBJCai2Brkep98occVEMl8tjUPFwHlsFz5/hckdqIbHiD482H9ERLJf7nVWhowhVikICjc2m55Lpe7ezd3IgVLZzx+9t4bg2Db7+oPZ9fg0a5IKhOKgVCrW0FpGSFHoSiF+tAmUGorWW6dJM45Gp3ylkr96F0lClXIiHaLM/cvnznU6ziNWECGJlPxIIweRRIZeTJeycY9QGdx8cUajpz0er+ddz0G88cjaj/Gp0LWLlw32eXDW9LQ0KFVKgmKx18sIhRoQIoFTTENDo6Dd63Z5RriCbzQ6PZqoJvM5JMY5ErHVqaWBuf5zyxdwlfJKWmQEkww1PzDhQOeFXCJaZNnetj9pN7YEXrnXY9p8H/n4ICHsB47Ljph/89t5s91usNetuKsktJaWuvVioVCnE+BGoAQMblUBE3R56e5JjpyAo9HESi4HEcM4VeYQIOCMzkDFgZqqeB1lJOWQ7z1EzHO6NGnysPGGRnfL/a0ZrxSXsOHZqf0r/XHkfZHLZkdCExfv2A0Gu62ul3itLq3XZFVQQl0fRR4BA9/GBpTKvY0SU7TgT+ZLI8Y0Tzg3MEyOATLJskBFBSfk6X7aLURPNe6Ghc50tWSrW93ZoqnxeZPw61fPlbRJv/Gv/QPP8WNrIZabCrEjUfvFK2C0TdQ8eq/b48lKKQqEQnwBUKMRK5QtjVpkoO6RkA+u7YuWcB+jzEg46jmYTUokC19XQTaR6L++yC9A3nTClbS/dK0ez1rjbLebaaY2XwVbXHr5m8gn+36udwIBgoUrhqK+y/NERkONY8uwVjek07UK+XlhEHj6GImWpuV0I40bECdqvjCa+8pxLxwmB1/YoYrBD1VDDl4/sgE79lhFMYIYdiBEVO0mfdZEPqwRU4zQY1VK9dnay5NH963zbojj2CzLcaFrl3EXGAzrtonLeLstLWJdEyGkcKH2wRdh4jRNaxsaH8N2yLE/VUg7HJ39YUzL3NDiAubXsrx8lafbYwQkeXHyQSdfMpS75VraHbdatV1MU5C1anvZ1X9Efr0P4rG1N1CQi8dDBmQIgwFbenZ2dqLGahulTFMTRbViXVMCAeqMyIPQKG1o7I4WcL0k875vR/O5lcVlQDrDT17/9cYNUWXFIboh48k6iI6WvevAoiJBx1xmb3dLWtyb+s02lMZUjPfqV/8ZObJfgnhnNCJrlzmj3WY2Gm02MM6vThisDVKtDoRNrTpA9vWh0LAfiVSpbJB0T09NJXKV/s98k9O+anplMTBnEU1M9X/zTUfneL/sRnhZRbqQXy28QcaQxipDdxM+H2t1t+D4/U6qoTQmrn6bvXPu2cnj+8UwZEQIWMNlZTTY7TYcqYb5a//hy1p/0srTcLrT3bbTnb1MstwURA7QHhBoRcEQVBA96NHFFlgQD4oWb5RRAdUpCjjgHYrFW63a6ihtVGprjS5qE6um1diaJpPtfGvSDzPZZL/s/7DvcTMf9RdyAgkJD+/7Ppf3nEmEYyBQlIZC9GYBTBPKgv/N56XS+fxyRf9Wl2sm6+f2Bl9zq9s5AalRmtPTPCBdXbVZcjPabWuejJz/Z25yMnNIiL2VTqf3pX+YbzDzYT9XZDP4xo6AMk114+M356v3hZpjHIqHwyVgteJ6TOmLKfMwfQSRKSQwhygMIqwIKMpCgdMSCT0zVSC6b69w5fY1pOesFrotDk/u7IRHl36zuXYiY/VBfWdGu6rWIYWM0wLkhgWhpSWjJesWOY2QaSuQVLNEpJDli4X8IqPxep+24D+lX58vOe8sODhKIAIbtDrPqvZhmA97irvUCkW+BOYQki2QBg5Qm5HN52YyJIr8YXueLzf3WuXC6Ghw3Ds7Y/MEdYXJ/vnjZI70+Hi0vWHwpU5K1g/g3dXZpip10w+qH/TaZmEm6lIkCFKEGAwa4e3u+M3n2pH/nj+Ml/78RU32l6QJXKHZeAhTYrhPXRcxciA2onKx+LSKpMPQU+gMuiwfUq19b329dmnY4hgYAA8M5np0SedQ/0vPT6PHDk/hXbslWEnec5qWJoMT4173RHBhVFddPevuXPCWZ/IVRvOGMZMuCjy78y9twY1X596E+mvpv3E/MFmtxHw+ZUDtB+mO4koYyBiWz6exQLs5JphDFEyGS64vKYjIkK9QGAgOETaxaIKiOjswx+lxeurv1Xa9DHq6uo4XkvbBiXGI2F6vz9oxXCwSiebVwaRuBnKEc8GekmK4bV4uM4sM3S0PVdqCqfOH8XLp53USoNoawfQwj2rcn4elzWF4rArrMGez5HITF1YEIA0D/I/D55DPUBOEuE0shu1azmSyaECgZkuFpaJ/qLZ2cG2gYmjreEE9/9Ky1jUs43FBWOFLKFfS5E9C1pmdTbp/SJWVc3fKihT3ow0qLZxfzh3GKzUfygJlzUq/WhmxRshWw1t/z0jM74pGjASL3KVBF6HTUEQBIuGZw5DBycMB3CyURaVQhMIUXlPx2/Lh/qX5obWgf752wntvy17MZQE4OcqEPaiNkCFN1lGdzZY7mhQJDTx6oii/qE47fQ0QPvq19Oy085dL37z7EIiA//kxdVm3GiiNYSGX0q8fieKheJkMpcqBLKTyoPQUnhkRmAmoq8kEXQ6LT8sLVGdpKBQKWyPkI0vNg47CDN/bLcf9TAYskSiVTYUXm0Jh0sLIW4dOV2mT/mSnyPhcgicqqkubniIhfqo58+ngH373p9IvedZWqJxPSe5/kYA1EqqqasTqGx+O4KGAwUSREygLthjwF75Zhpg5GioNNZFVbDOJEwSUiAkANRoGQ8Om/NDl7hxtX13FM5uaABZ5UFp45/XKRgI8GRH1e+5WV95s1zMQCR3JRPLxvr5FrVb16NOrsxfBS9+WfrHa1RaLH1QHtCcQmAS6+FyNjX7XdyN6vCibahKDZNMg76TIZAKzhE2B3onbUBbTlHj95s2Tnc2wmFe0a8/PZAPEtcfBdHC9ZEUTT8AzryQSmzsvDm02W7Vt7ulO8VDzQCUky/YphYwrRBiIUXVrsQ8gqqY+/vGrs6LEV+AtEZLP6u5ICH+K45OTeCjkw/QFPUoMBtLIpZpMTLBoyN08hFfOY0DjWKDlJnF45fWT+GH88PCwp+DaRKddQNdoUlodlRntdx4EJ+q5SN7u/snJga6wt3JUKk0mR21V6/NbTumtrHRtnYKjQcoVkZLTPmu1ix9L/3YWp7+FmDNpLQuAuYDO4Hg8BpdoWjSqT9M2YmnROg6VI2dC1CFjDk8goKGAECYQeryxsrMcn+tRaXtief2i/rIORWomr9bhzMpJ7519XC/kdw52nRztHiQXnOPu8XHyARKWP+yR3mz5OatMIWObm43Rxb7FRW0BlPGXmstn7dNfX6z5vG7tzvMHOiaj0XgsGsdCISxUpdeH9KqxaFogm0WgVBTMmQZrNMJFTUwKCnmiDSBu7LyA7y8rDPeWzASRTdNo6IJaR+dMenrvhNObyd623iPaWNztvfXd7aPtDYUZsuGQO3mz4eHdMkRBSdj7p6ZPR1GlKvm15uJZT4suX3n1ubvMDoLdEYhFY/FoDMf0jdGYq6oxhFWNabuFcoJFReVcrpwrEfBQUiBR8n4egQgQw0aC4GZvxnsOl9+8WFkhhHT6sOOxLSOn99i5MCw8JQtp76BMQiZ8QIy1rZ2jEIB1HfT8FM6S+tkpW7SqxZJPr66cJTsXL/z4oa4uL8+Ou3zxOB6PknuBvnFszOuuCvnSHq0IaSaAxCU4JMQ2FokQ+ixnMankkYs54nCYQ0U5Gzvx16mpwiGLN7chp9DtADeUCDUaym+HJU/s7u0q9/cPbLbK3G4NH0nt/8ezvsUZUrpnAOKFs2Tn4tUf69cjgYAyMBmdi05ORvX4JOwuY9+P6L0u1/WxsJCBmsJicRggijng07DwowAPfpTKAs9gkT/Peb98tLS3TBAM4VDrgDPrzp1ra7lJR9dusXlzI9zWBn8jkdj1rW//c+bg4MCTG3RHOBQJf/gGWUXwv74+gHj1LIhXrr7zP1UH1HhHNwxhKBadgzAG4t1YUNDo0qcVbGo0TA6INAGyJskWysMCAY9LZ7ApoHpsNhVEk0i8f7J8tH5ysskJM+nFrY7ZBw0NtrVxaaXbMth8dLQDZ0VhPtrfH9orzKmeOZh1erytRRrIS9dv9ZWQfFb9/TlAPGvHugJRrDsQUSqNkVAMi82NRUm6QKBwpT16VFVVsqJhszkwcYRYDozRiN8bbhd1FKdq2EwoJtlmIryxvbT9Yv/7J0RCLOYJBh2z1d8919X7e6XSa/UV60fbS0vbu3svbOknWwWrOTerwaSdjuLboIqK2LPpEhU0WlXyfPrV78+BWN8dAHuOhKLRuVBs7H+Em91PYukdxy/atN3ORbMXewbAFURQBBUQZWAQRXzFHZTBMCoKrEfhCOh4QKqiB3FEFfFdcdhR1KIa6ogzYxzUNTFCnJppSJNN6l3vmjTZm/4P/R27t8Mm54LLT35vz/f7ex50jXU4TpCMXLVKp/wRYlX8lsXmdYDQofElPZXPe7Z7ivh85oujo2Dw7KOkNTZL+JZNJ2exj8UtAgFMHXNfn2m9XWyvkW561olEIpFOpkRS001CGr9HRSAkIl6OoJbDq2x882YKEMN7UxkRH32y7IM+HB+vA0RsZ2cRxg2OT5JJN8qwzW3IJxQiRLGMks3n82qfFvVsj401lyCPj063909vTvbTS2hO/c3l3d3bYCWV1z/jMB8fTzlmDDmoNEfh2TKvgotGpaKEdzkHvb9/uQkGZiD3bW1r7gLjgfCXKH4x0b999OldI+iGqp6NlZUd3ZoPEm3Uw1gE0kkGd3O/GqlmdbDYxYMUUCyPqQ1PW/98sDE2N0JH2NfXO8NpX339cH3qphJmX+tdQ0nuxbuQ4rhvSmEbOreDezFWpVObInth/UnCVCMqtaLo5pCtrauoAxpp41CkhKEIhOrjDO0CQ+fzykZVI1mB+2SiuXgjyAiSEdPpGHs6KkJjkdv4wSfsJyBbJM+bazcObubmpptprbHbk+TfTk6up0+h2K5jZ929VE6/bcjQ93rZ7LRF7dqcOIpDmtPY/hjhF4u0pcsikXmLGL1ozeO11K5oNWqSUa0m2+WLQ+cPX/3lX/v4ZPn4AYYtwgeJ5urA5wMjhjGwMCMPKSEvXViDFBaLUo1kjRRVPpvvnO3vapvOuh253Q3EbkdO9m/2Ty9jP57RKbxRz1DT6/tlQ6g89JO20B0vTA0pkun9HXEOir4kN6TmfM9o/1NBbu3YvuoXRI3oOMPo/hoOwIM6HFucP1jEGGtQi411eiM+iQMjw4cJwxKEBgORVfaigM2iZiP85oan4AQG2qos7y2zFxeB3f6KteTNSfI0dnk1WEArsjgdptf3IoOrynsO9srtrolG/WK7Hb13u60isd+0uUW0V3XzOGN6mUz98ARArSntgwPwmwwy4oBckOA6bGcNw3Z0+GSdTi7X4RBGBsadqmSSiOyywQI2m0rJZtJHGiqnuwa8OG5Zb7KklAmvwXx6nU4m7q6PCijUkfaIy9T32trk8HZGf9LWSN3S1SgQviQ3E6i9dHnTrCC83k5O3kpNODxFIkIU+0r//f0fvyQjfvPNd/+pm68Cf6/jLvl2FjGIHvnJMYxk5B72MCmQYnoZ6AEWlULhV+eNxBb6Z9vWzXqvNaWKqxNE+d1pKpm4uQs+mZhYaI8oTKI+q9/hLB86b1qVxqVNUftLFCXvEFDQs3D8GWfqnnEkK6X5e1MPhGqR9TCDGCMlbR1oh8ZJ3Q7m8y0uGvPzAdCI+WTYA+JYNZVWxi57MfhtmYBNpVL5/ImGQOBi1KNQzCjdSfSemJ2LJUypxPUZK9hMn7Z4HGbl8rHJEVHMfI5G0bh71eUnDT9amIP6X7lA3sqdxDPJgnyToYEoqiHPor7DDJIWjMGnqkYjtlKO+zBsjatb1OWH9Uaub2mJZORqtqkPW27WIEIRCKiUsrJqJmdkNzBr8STTqfhx0u+9CEynReb2uyDr7C1td9Ti1KfMm4aQ1yS/sL2yx+NiV1RLbsy0WrHBFXIoFAr55Ljk2uUQah5i+P9uefS7DPbqw1BjeSOO49gaA2MwGMRK/p6MofphGH6vMaZ2BHRq9eOC4icILY9D4VNYfKSkmbyQfg/T5FiajHQFLmdTqDlxxCo+OqP3XrQRuFG/tWXzCs8rdtujgBhyNdVIc7R2f9MrR2Roa0svnzxpqbR8Dmtgbqs1kOjjDPbqwaT+N4nXlRN6AOICVr7cqA+H639Qco0yHxZWPi+hVyPfFhcgtCwOSH82BeELbkcC/aNtibTZqhgNxC7bUtJl4qyg4+ojn77b32abITyfLXMzq4qFrhC0tCMU9aOFgGhwRD6HttadxpX5sYXb2TAZRaVGIxL1ZTKppNX/OW2U64k6jLvmYzC4MqFQrhcq1fXA6+PKNOP0EiaSzYIosnOptBKoxmraRNFuoOt94sSjIC52Y9eJpFWbbEWCfw0izKyGuYHRtnfve/nt56+mB1zSeGE05Ir6a8T+VVfEGRkaWncSjePzxO7FsoY8WDQisqG/+zrzwgQGjF6hN2Ikokoly1cIw8NqpQwY17iHKxBEZgGrAGHzJCVUXh6d5MyDchx91z5q6QoEYjeJZKk42YG8vToDpc1uqZ2e3i1BnjvO627fg2OVroZcr6JicZMr5IwAotPjrZqvcBh0qodmEWlEVs0/Mj5++v2fPhH4+rpRT0ZNJlSpVEKhsB6Epoqr9/kYmjUeePhsVjYSrJXQ6Dwe1GYZnXzJ32Vpn53dHZm7vE5soTlpDhK8ugoymQUdtZWVgmqeLaqfW5gRu91uu8PhMqz6DaF1EtHpmQF9Wh6W4pjmIc/Q0G8+ZL5PffTBSXhAOpD9wuWqhpdUYZVKWS+TCSHzxillEbMkizJIQYLPWmnU3F6eIItOzyrJ6m0YGJgO3PZOz13MuKzxVAuSfbT9dza7+Gl3f/eG1xkiOivWI344X3Ki5Ou8JkizcyhCEs6Pd1aJ1OV75ODWlALiP39lk/zV9z/jhAfXyyHRMow7PKyCUIahJGVcLpzSmlqEmguHNFL8rIVGa5bkPiySJ+hZE4HOudve20DXrM0liktPBMzsj1dnrS035W1tnpBrvaLKtBqKopBpcTRqcG1FPDYnENosFZ3d/RVmvY6UYnvqvtJSK5wtmf/mAMWIO2FUMHy+JZlM9YAolIXrhQyGDMMO5xGqREBnZ7N7Wml8XlGzhMPh5OVysvKa57pvJ0agb2wKazyeGr3k5TU3NHQTxMCAx4PL5Smt1N6kdcdz7KtRw/8ot/qntNIrPLudpDPdzPQjHeR+CCiBi1DCDasavBEjxAWTRcT1RlBYRZeoYxDURpBqJVn5MoYkmC2gUVKy1MRstgl14646pNHJmO3Exsa243Ym09rtx3Sm27+h5zWdtj+t5irjTw7PPOec5zznvue9Pgj8DQe7gsPqdqfTqZ7oogEhTC3FdZCKu7xIfv3b6xPuwQnwDrGRqEYFH0hGKg7pSEN61icv5WFykRhsREMpDu1PLpeLhNJSuV/sNzln/d4Fu6+rpe23Rys+drS3B1bDb3W7nfaB7qmWyZbJth8W/AACDSz2IYDDFsewxWINRNqdrmAXatA1kIl1Z5L3vr/LocYbN57Uu90gPLHoiEYT9Xgk3RRFg9ekVSp+PT1ayC0lRYV53F8041qlXA8/xsbSRrnQL9KPG70BgEjVTE72OhxOuzoVsLX8MrDQ11RR29TX19J2FDrzias/PX+tN+iwVJmHIcrjeidka7B3dBRJDtoH+LJ1t635b7X+9QJL1bttqihQqElobLZuitbpaEqlknTUJ3+ElypJIo8314znQfeT6yvlO49RhEm9+rDz4+tTUAlmi6M9FQm3t7QMpVKWgYmppqaKqaaetjev1p4HiEGzuUptcYBV7KxsDwXOTTDHX5IIz58P7LZ88M0D6xeCtjjrdvM1USBRxUgoht4RHyiZ+jhfJJUpSayouZnL4+ByuQktyRuNRqFIJlCgt10tLVO9lgXfJ9bU+PjdR0FXKJz6+RNLEB1rvV/bfa27Dxqf2apWmx0up77T+3a7VV8ej6fTo0i4i+sy93bfb3ujdeDCsJuqsNWrdB7wDwCPYXQ6hBGykcm8jQtkJIEfPoxGA0Un0FgOCI0iMcHRrqYWhqnLxZOWlOtYSK+PDDl8VMHk1JGCJt9gU+bE1b6Ba319165bwAWbzdaIvlPuDNld3khPmh41GMDNFtftHuedSHfYgkMszXR4Eh6NCgikKE2NDkikGD4/Wa/kCDAC7weIPI5SLCqvrjYZhdBoCK1A6A2rBx8ZJl0pV1VELo8M904VfPQRTAQnnvgq2tpq+87X1vY9MdutarPPHjBJ5QFXyGpNqXsMNLBoyED7W2/dfcnk9QP3Jlhmwl3PqjyJREIT3YHooSvi8FfSEU+WcgSyQ7widLaRryWIxnPVeqNUgckwHFw4GDPw4OGU9X55pzw1pDn2ycP7d6sg8XxMwZmm8+++39flgyi77AH4J28k5AuF7GFXlyqdhjhnDDWb9/ayYwLqXT9A0Xw3q0kkPAmdiumu0OmoKYqmNSo+m/mAI9DyBJzTZfl5+fm4kqxuMBlFJCbDweGKw3afedic0t9aLDXOhiOzJFlySFjaaZz99NLRE+9CZ3a4qsxqZ6XR3yk0RUJqtdW+oF9N2ZJpiLPBcPbrTwv+Ox6cWmdtLK2hbbE/aDTQXyiW0uniFEMd90j4tnhmfuftVhl6/8nDMVxUWWkUESVcmQzHMWPApQ4trM5Pf35Y+OObkVm0ytXfz+M1j+WO1l2uHfSpgw51RKgkpPrxSLvPrA45wyTvVhJVSyZpSK4f2MuG4P59rV9p+DAMMNFETAVVraEkGkhFUB3QHUnHJsKoPSflcPK4AIpQCstNIjEu0wq06JsjTmd49fb0/GHhhzU3z83xipaz2WXe6blcW3HT+SHzQK8vICX9pgDanTGjiJNGVV06nTQYMqN3vmzd2y7o907942ZSFQMvlohGQRtBtcGUUTTFMBLAKEk+uHnr5FcmDkfAxbgEiRFCk1GBo2V8GSYC+Q506qenx/rfufueXzx2+PTy9lZ2+XTh4k+OdA8MDnQPPSyVN7zXbrWqLRZUNF7ZxQ2DLj16pBh0cX2Pi/L7D/6pczpjiAGFCQ/yOoyElrAMRBrwSVQUu7mxkdy8CCxiJRhJkoTCKJeSOLcIYZQavQpZeS43ny966BUVli0Di1vba6f7s4nJAXbi2oDbOm5VV4Euov2jUCBFYh2Z4zVpEJzM2V2Py/9H48/+WXZLU6yLRaGmQXcYiqIYFj4gjBIJ6CNAztAyjgAvKUEQSWmpUIxhMLQKBDgplgmaFx8vcmQPZ6YPccqW19ay29vZ5rHHM9BYWwaGLlY51MccIIxqV2ghbJQ1pjM1SBQzZ4rX93zb4DsHb8h5hdM1o9BdQHZGJBQdRygZFhDyVXHkzOIPUEZiBClWkKRfKCUJTMbF0QmQDOPw5nK5fG37ldtl+UXLa1nAuJQdy81cabjy5tTQSXfw2PAxs8UMeRhI+bWf1SVRMSeTZ/ZOIqLx7/1F+WOxOx4A6dHRLKWhqAqGBecNKOk4TfPZjRxEGgeIgFEsBYgkxkVnVgJCxBGM5abzOZ2uxTEEcS2bzUI+5mKLyg96KkBxB4fARZp9wGFYrpR9+CCN7LYhk1x/hSsb+/fd+MtcP2eu7bkHPUiz0Z0fYDHW8RKixJbUoDs5JYRYoVD4RSKASChxnlZGyo0wsyzdzucIPp3J5vGW15bXIBmzW08/GyvMnX3E8G29QbML9ZfwuNcvUHYk46PgcMBAtL7Kvu83Tv2ueW3pluo55CK4WpWOhijDxGrrGEEQKY2KpTZuo+NGEtGoACYJFGoZTggr3yEEnLKdV/Nz/aCKa2tr20tLW1tL29n53PEojEBDZrvT5YNJwusnBI3JzTRwWAxG8dXulLzW+rdnBUdGEs+hT0ugT1cwiEQbmHE+K9kZEyQbV9DxBAEY4dcvhiGGUGKkorza1KjUCrgwI/qVnPyyfkjG7ae/+fXTlZWl7WeekZGR2Ek72EQgUS/CcO3Fjc1Rw6jhSM/eGsv/deqD9y487ok9nTkLJY1m1Z1qYVnbf2p6RMImkyVIGsWAECAiFgmMEHc2VMtNpEw8HvFNdIUO5fF2MC69+OPvV1aeLgFEfmzmLXXAm7KDJJIymbJjIw3TswEEZ98r3jL47qn16OKh5fnHdyAZNRKGqgAWWb6NBQJpGBhUbHoDdUJeoXiHRkQigmhsONdQTnJLTWHz5Ue+Wd5LHrdefPHFi5VnK8+iM5dmwM9fuR8JByJyTKlcTWcAYjGMpq98vWn/a//6FW/s87n5aM2/2znbn7TSLIBj1fqu7rTL2wXunUWBSlxcsrQiccxImLSDs8Yia9JZMzROFj50Mh+mE8yaLH7obGyzSwwTFXeDSwqLoCUZGLUKFStd2qEiCFMViKx01hnd6uzfMOe5MJP5OlbbTuJRCfHTL+ec57zc+5wDNSMfRW5QIxhaKkAtgsHI56/9GfmbBHkj/CFflGCY6uMBS5e4XsXSvd3cPtSv+ujcBfDGp7HtVDQYjcZCE3FzIpWavmYOzbdxmSxx2/j47fHf/BHqh58+RXuqZuuZ1+easd+WSmWtEHFkfBzUaEB2luKC9ibBmhq92RNidaStMUzCAG9UdQ9Y6sWNKobQ8/ol9927rqlbU15vMrixnYlFM7FMOpVKwSFM3bljVHAxHVY3tgaIkJwrDjHbVO3Idntnbllu54YMgREQUfCGYoJEHF/rQq/W6AxMBAUtJkEjZOIuxcACD1OpJES/7Prf/3T14UI47ApHotsbkWAmmNkGSachIyQSzekZ1oN6qv36+DvTX2qqDjXlW+rYdHk5lnG1DM5z63sQFdW9MoEAMjUuMEghB85xqWw2lUPHQI3AB8Jknld0KFgslUIkl1/97Z3lt9yBQMDnD0ZT20Fg3Nje2IjHQxNwrA3ma6Gezgbq1PV/3UDPZQ81e3W6Qvm/e/fGrqiBkU9mFxzOM9nCoAc+t9c6IDByIMUwJDx0bZUhhl9RS7dKx6uHNpuq+0vzHX3InI5FIpHMRjSTCUY3gDEasIzY3p6dSOvN9ot0KhFv/nJVedhxbsjVBxNzvXx+jlEmwwXoeZ4AN5mgkFgzgZWpHDbEb4Ykr0UGAzvf0qMSYS1dLKrw6v3m182jqUwsCBLJRDNRRBhMLozY31xyxqenTQpI6q7rX2kKDr1doKRG8992Nb8VBW7wRz5Z6YCdTXBobqxNQcihsdGUCZDVkXwMdDemUcVj9sAftf6NT9v1CXMcTnLkaTIWjQJiNBhJOu0j7r6LPv0TvQuV73v/P+wYYG6cUvOtERChLZDxpQLwRBlChCSGIyWCnQmCw0ZqlJCIILyGxq46ol4lYlAJ7qLHHQrFAoFI0uvPmTkT9CctIx7PH1SiwJNpJ+TJHWvNcw2blys/+9YAVm5tVUNchD4a9QYmowAfIwM37RzYmUPjoEvKSNA95V91drIIYQ+XQVBpv5/53LUQ9nofPUr6I4C4AUZPhi2WpaUPVCLf6GjkI+oDa9VzjsOXK6GTQYx8CDiAKW1vIpU4J6WBJ9IugC8S0AgiRAiMSJd1DfUYhziv4gnRy/4LF9DY2z2v3++Pbm9nIFF7wwPOvg+G+qecCFFnrSqkUJ6fcXmsFTyxtxdiDso0Wi3eNOcEM4MbgitSwSHRLWDkigz4hLKHKee2cEV0dIsQ5b9H3nDS54+nSE/0hhc6+m5O9swErpmfPntuHeYZ91pBj01Qi6nV0GVBzMHH3plCZDTOOTY7x8gkEelMOoYiOZ3b0tnAbWiYmpm6Bfkv7FpwWgAxDp7odb3f0d2manCFRkPfWGsKKUcg5ZWaveVlVOkAo4wMi9oxKZQ5bHTPDxBp6AtClNDFTBQlofPnzrddnJx/qJhXzHjDTqfTYrelU4l0wBf2Kj6e7G8U3Qqk05tHRAjnukbzVZMUjgsg4lKB1IBrbwzLkQ8CGnomwWbLOehaKCAywOCseh6De/PmJ31ud1/H+90LPsuI3TY8YX6SSMecYZdC0SOqe9cfN36tKT6yxRElZ5Wr/zCoe6HSgRQtwHvx8REUctgodNNyWkSzTxIGicirF2G6q28sLXlsE7aAxTmAdPi3S1DhmOMxv8+3EP487I/hq8qCWsqRSW2B8rM9k7b3sgm6fhyOy+868ohskhE95uGgV0V0BjgjT8TjNSy+Netxm/Tx+ITNZhmwh/SjCagdzOk4KdHYFxplGeVIpVSp+VqtvWyACkeAX8avzOQRaTlENH0uZEJgRM9QWKw6ke6TWZvbpjen9Uaj0eax6aEG06cBMI0+MvZNZc0vKEcshWeUq3tarYEv0F7WzsnoeUQCHRfyYid5YiQMMvpIRJ2TH77pXkH9o6F92hSCLiiVuBQKxECgQXi8paw4hu1op8pAkZ/iuJp/5UovqhSJ7xHZOTWCqckpCdAjg8VtHLr74ez95fsrK/eNZmgkR1PmiRGfH6qeiGXTWllaSzkGOf3aGfDI3vda7SryhhoBxqXltEheGwM9Cjkkp1CIiXT9Q4ue2ZWV2dlhm/GaPjGaCFksfmfyafjxv5XFhZRjktqiKs3qF79GPEgAjiDIb8jScGTyMYjDIcQsnu7B0OKSxz3rnh0eNujNoENLxO8Pf7OuqSk9zrWHhRWV1v1BUmVIhaSFv0dEauVw5DSUdeQM1uBg5/z84tKSGyjdw6GQxelP+h9vaioLjntHX3Wxw7qvI1NKjo3IIxLoOrQ8hw7/ZWKswf7JtoeLIKBMT4cLTPwfjaOgkHLscrq6wmHd3RHnLEwjEQkERZB2ZwtJRCpVLmbV909CEnx4E35m3v3riwLMQRY4NFmkSmreLXOIBLI8qd08I6ZDjPPzkz2dO7tbSkfZCwIkIUvKqiqt6wc6Zs4ZCcRIzZ8dOWnr3BV5uojb2P/PZ/tZa2Vx+akXvBy0trqgplKzvr8zyGT/cEk2Z3vSH8lARCXEDw52s5rKM0UvZ3lp7WtFZ6uU1vXdg51BsVBOo/4IlXNOzBrcOdhdtyprzhZV11JejpxGFi8tKK5yOKzZ9X0AxcSkYCRcVuNwVBWXlb/8paqU2pLy0qIKh0Nj3cpm10Gy2S2rhtz5Wl7yyuymRbtzf0muzq3Ir84tf4U25/5QZZRU/3gBcfWrtn/4RE7kRE7kRE7kZybfAdU5oJ2ZeEtRAAAAAElFTkSuQmCC";
+    this.cellHalfWidth = 0;
     this.spinnerPaddingLeft = 0;
     this.spinnerPaddingTop = 0;
     this.lineColor = 'rgba(60, 0, 129, 0.4)';
@@ -1728,14 +2059,14 @@ export class SlotMachine extends HTMLElement {
       const div = document.createElement('div');
       div.className = i === 0 ? 'active' : '';
       div.dataset.line = i;
-      div.innerHTML = `<label>Linija ${i + 1}</label>`;
+      div.innerHTML = `<label>Line ${i + 1}</label>`;
       div.addEventListener('click', () => this.toggleLine(i, div));
       linesContainer.appendChild(div);
     }
 
     // Game types
     const gameTypeOptions = this.shadowRoot.getElementById('gameTypeOptions');
-    ['Brojevi', 'Rimski', 'Vockice', 'Zivotinje', 'Smajlici'].forEach((type, idx) => {
+    ['Numbers', 'Roman', 'Fruits', 'Animals', 'Emoji'].forEach((type, idx) => {
       const div = document.createElement('div');
       div.className = 'control-group' + (idx === 0 ? ' active' : '');
       div.dataset.value = idx + 1;
@@ -1746,7 +2077,7 @@ export class SlotMachine extends HTMLElement {
 
     // Reward modes
     const rewardModeOptions = this.shadowRoot.getElementById('rewardModeOptions');
-    [{ value: 2, label: '1x5 Srednja' }, { value: 1, label: '3x5 Vise linija' }].forEach((mode, idx) => {
+    [{ value: 2, label: '1x5 Middle' }, { value: 1, label: '3x5 Multi-line' }].forEach((mode, idx) => {
       const div = document.createElement('div');
       div.className = 'control-group' + (idx === 0 ? ' active' : '');
       div.dataset.value = mode.value;
@@ -1814,10 +2145,10 @@ export class SlotMachine extends HTMLElement {
     const contentHeight = spinners.clientHeight - this.spinnerPaddingTop * 2;
 
     // Calculate cell sizes based on content area, not full canvas
-    this.halfStep = (contentHeight / 3) / 2;
-    this.halfStepW = (contentWidth / 5) / 2;
-    this.middle = this.spinnerPaddingTop + 3 * this.halfStep;
-    this.down = this.spinnerPaddingTop + 5 * this.halfStep;
+    this.cellHalfHeight = (contentHeight / 3) / 2;
+    this.cellHalfWidth = (contentWidth / 5) / 2;
+    this.middleRowCenterY = this.spinnerPaddingTop + 3 * this.cellHalfHeight;
+    this.bottomRowCenterY = this.spinnerPaddingTop + 5 * this.cellHalfHeight;
     this.ctx.lineWidth = 10;
     this.ctx.font = '20px Arial';
     this.ctx.strokeStyle = this.lineColor;
@@ -1831,10 +2162,10 @@ export class SlotMachine extends HTMLElement {
       paddingTop: this.spinnerPaddingTop,
       contentWidth,
       contentHeight,
-      halfStep: this.halfStep,
-      halfStepW: this.halfStepW,
-      middle: this.middle,
-      down: this.down
+      cellHalfHeight: this.cellHalfHeight,
+      cellHalfWidth: this.cellHalfWidth,
+      middleRowCenterY: this.middleRowCenterY,
+      bottomRowCenterY: this.bottomRowCenterY
     });
 
     // Draw initial lines
@@ -1852,9 +2183,11 @@ export class SlotMachine extends HTMLElement {
     this.shadowRoot.getElementById('startBtn').addEventListener('click', () => this.startSpin());
     this.shadowRoot.getElementById('stopBtn').addEventListener('click', () => this.stopSpin());
     this.shadowRoot.getElementById('jokerCheckbox').addEventListener('change', (e) => this.toggleJoker(e.target.checked));
-    this.shadowRoot.getElementById('tipIgreBtn').addEventListener('click', () => this.cycleGameType());
-    this.shadowRoot.getElementById('nacinNagradjivanjaBtn').addEventListener('click', () => this.cycleRewardMode());
-    this.shadowRoot.getElementById('ulogBtn').addEventListener('click', () => this.cycleBet());
+    this.shadowRoot.getElementById('confirmJokerBtn').addEventListener('click', () => this.confirmJoker());
+    this.shadowRoot.getElementById('removeJokerBtn').addEventListener('click', () => this.removeJoker());
+    this.shadowRoot.getElementById('gameTypeBtn').addEventListener('click', () => this.cycleGameType());
+    this.shadowRoot.getElementById('rewardModeBtn').addEventListener('click', () => this.cycleRewardMode());
+    this.shadowRoot.getElementById('betBtn').addEventListener('click', () => this.cycleBet());
   }
 
   cycleGameType() {
@@ -1973,11 +2306,11 @@ export class SlotMachine extends HTMLElement {
   }
 
   setCanvasMiddleRow() {
-    if (!this.canvas || !this.halfStep) return;
+    if (!this.canvas || !this.cellHalfHeight) return;
     this.canvas.classList.add('single-line-mode');
     // Middle row starts at padding + 2*halfStep, height is 2*halfStep
-    const topPosition = this.spinnerPaddingTop + (this.halfStep * 2);
-    const rowHeight = this.halfStep * 2;
+    const topPosition = this.spinnerPaddingTop + (this.cellHalfHeight * 2);
+    const rowHeight = this.cellHalfHeight * 2;
     this.canvas.style.top = `${topPosition}px`;
     this.canvas.style.height = `${rowHeight}px`;
   }
@@ -1988,7 +2321,7 @@ export class SlotMachine extends HTMLElement {
 
     // If trying to turn off a line, check if it's the last one
     if (currentlyActive) {
-      const activeCount = this.linez.filter(l => l === 1).length;
+      const activeCount = this.selectedPaylines.filter(l => l === 1).length;
       if (activeCount <= 1) {
         // Can't turn off the last line - do nothing
         return;
@@ -1996,10 +2329,10 @@ export class SlotMachine extends HTMLElement {
     }
 
     const isActive = element.classList.toggle('active');
-    this.linez[index] = isActive ? 1 : 0;
+    this.selectedPaylines[index] = isActive ? 1 : 0;
 
     // Update disabled state for last remaining line
-    const activeCount = this.linez.filter(l => l === 1).length;
+    const activeCount = this.selectedPaylines.filter(l => l === 1).length;
 
     if (activeCount === 1) {
       // Mark the last remaining active line as disabled (can't be turned off)
@@ -2016,19 +2349,19 @@ export class SlotMachine extends HTMLElement {
     // Redraw canvas
     this.clearCanvas();
     if (isActive) {
-      this.nacrtajLiniju(index);
+      this.drawPayline(index);
     }
     this.lineCheck();
 
     // Handle joker if active
     if (this.jokerAdded && this.jokerPosition > 0) {
       // Check if joker is still valid on selected lines
-      const jokerLines = this.getLinjesForPosition(this.jokerPosition - 1);
-      const validLines = jokerLines.filter(line => this.linez[line - 1] === 1);
+      const jokerLines = this.getLinesForJokerPosition(this.jokerPosition - 1);
+      const validLines = jokerLines.filter(line => this.selectedPaylines[line - 1] === 1);
       if (validLines.length === 0) {
         this.removeJoker();
       } else {
-        this.drawJokerAtPosition(this.kkk1, this.kkk2);
+        this.drawJokerAtPosition(this.jokerCanvasX, this.jokerCanvasY);
       }
     }
 
@@ -2038,9 +2371,9 @@ export class SlotMachine extends HTMLElement {
   toggleJoker(checked) {
     if (checked) {
       // Calculate which grid positions are active based on selected lines
-      this.brojacKockica();
-      this.brojacLinija();
-      this.crtacKockica();
+      this.calculateValidJokerPositions();
+      this.countActivePaylines();
+      this.drawJokerSelectionGrid();
       this.shadowRoot.getElementById('linesContainer').style.display = 'none';
     } else {
       this.jokerPosition = 0;
@@ -2050,22 +2383,20 @@ export class SlotMachine extends HTMLElement {
       this.clearCanvas();
       this.lineCheck();
       this.shadowRoot.getElementById('linesContainer').style.display = 'flex';
-      this.shadowRoot.getElementById('jokerStatus').textContent = 'NE (0 $)';
+      this.shadowRoot.getElementById('jokerStatus').textContent = 'NO (0 $)';
 
-      // Remove any joker buttons
-      const snimiBtn = this.shadowRoot.getElementById('snimiDzokera');
-      const izbrisiBtn = this.shadowRoot.getElementById('izbrisiDzokera');
-      if (snimiBtn) snimiBtn.remove();
-      if (izbrisiBtn) izbrisiBtn.remove();
+      // Hide joker buttons
+      this.shadowRoot.getElementById('confirmJokerBtn').style.display = 'none';
+      this.shadowRoot.getElementById('removeJokerBtn').style.display = 'none';
     }
     this.updateDisplay();
   }
 
-  brojacKockica() {
-    this.kockice = new Array(15).fill(0);
+  calculateValidJokerPositions() {
+    this.validJokerPositions = new Array(15).fill(0);
 
     // Grid position mapping for each payline
-    const niz = [
+    const paylineGridPositions = [
       [5, 6, 7, 8, 9],      // Line 0: Middle row
       [0, 1, 2, 3, 4],      // Line 1: Top row
       [10, 11, 12, 13, 14], // Line 2: Bottom row
@@ -2076,24 +2407,24 @@ export class SlotMachine extends HTMLElement {
     ];
 
     for (let i = 0; i < 7; i++) {
-      if (this.linez[i] === 1) {
+      if (this.selectedPaylines[i] === 1) {
         for (let j = 0; j < 5; j++) {
-          this.kockice[niz[i][j]] = 1;
+          this.validJokerPositions[paylineGridPositions[i][j]] = 1;
         }
       }
     }
   }
 
-  brojacLinija() {
-    let y = 0;
-    this.linez.forEach(item => { if (item === 1) y++; });
-    this.shadowRoot.getElementById('lineCount').textContent = y;
-    return y;
+  countActivePaylines() {
+    let count = 0;
+    this.selectedPaylines.forEach(item => { if (item === 1) count++; });
+    this.shadowRoot.getElementById('lineCount').textContent = count;
+    return count;
   }
 
-  crtacKockica() {
+  drawJokerSelectionGrid() {
     // Ensure canvas is initialized
-    if (!this.ctx || !this.halfStep || !this.halfStepW) {
+    if (!this.ctx || !this.cellHalfHeight || !this.cellHalfWidth) {
       this.initCanvas();
     }
 
@@ -2109,28 +2440,27 @@ export class SlotMachine extends HTMLElement {
     const padX = this.spinnerPaddingLeft || 0;
     const padY = this.spinnerPaddingTop || 0;
 
-    console.log('[SLOT_MACHINE] crtacKockica:', { padX, padY, halfStepW: this.halfStepW, halfStep: this.halfStep, kockice: this.kockice });
+    console.log('[SLOT_MACHINE] drawJokerSelectionGrid:', { padX, padY, cellHalfWidth: this.cellHalfWidth, cellHalfHeight: this.cellHalfHeight, validJokerPositions: this.validJokerPositions });
 
     for (let i = 0; i < 15; i++) {
-      if (this.kockice[i] === 1) {
+      if (this.validJokerPositions[i] === 1) {
         let x, y;
         if (i < 5) {
           // Top row
-          x = padX + this.halfStepW * 2 * i;
+          x = padX + this.cellHalfWidth * 2 * i;
           y = padY;
         } else if (i < 10) {
           // Middle row
-          x = padX + this.halfStepW * 2 * (i - 5);
-          y = padY + this.halfStep * 2;
+          x = padX + this.cellHalfWidth * 2 * (i - 5);
+          y = padY + this.cellHalfHeight * 2;
         } else {
           // Bottom row
-          x = padX + this.halfStepW * 2 * (i - 10);
-          y = padY + this.halfStep * 4;
+          x = padX + this.cellHalfWidth * 2 * (i - 10);
+          y = padY + this.cellHalfHeight * 4;
         }
 
-        console.log('[SLOT_MACHINE] Drawing box at:', { i, x, y, width: this.halfStepW * 2, height: this.halfStep * 2 });
         this.ctx.beginPath();
-        this.ctx.rect(x, y, this.halfStepW * 2, this.halfStep * 2);
+        this.ctx.rect(x, y, this.cellHalfWidth * 2, this.cellHalfHeight * 2);
         this.ctx.stroke();
       }
     }
@@ -2162,38 +2492,31 @@ export class SlotMachine extends HTMLElement {
     const contentMouseY = rawMouseY - this.spinnerPaddingTop;
 
     // Determine which grid position was clicked (based on content area)
-    const row = Math.floor(contentMouseY / (2 * this.halfStep));
-    const col = Math.floor(contentMouseX / (this.halfStepW * 2));
-
-    console.log('[SLOT_MACHINE] Canvas click:', { rawMouseX, rawMouseY, contentMouseX, contentMouseY, row, col, halfStep: this.halfStep, halfStepW: this.halfStepW });
+    const row = Math.floor(contentMouseY / (2 * this.cellHalfHeight));
+    const col = Math.floor(contentMouseX / (this.cellHalfWidth * 2));
 
     if (row < 0 || row > 2 || col < 0 || col > 4) return;
 
     const gridPos = row * 5 + col;
-    console.log('[SLOT_MACHINE] Grid position:', gridPos, 'Valid:', this.kockice[gridPos]);
 
     // Check if this position is valid (has a line through it)
-    if (this.kockice[gridPos] === 1) {
+    if (this.validJokerPositions[gridPos] === 1) {
       const jokerNum = gridPos + 1;
       if (this.jokerPosition !== jokerNum) {
-        // Remove old button if exists
-        const oldBtn = this.shadowRoot.getElementById('snimiDzokera');
-        if (oldBtn) oldBtn.remove();
-
         this.jokerPosition = jokerNum;
-        this.pomocniNiz = [];
+        this.jokerAffectedLines = [];
 
         // Calculate x, y for joker image (add padding offset for canvas coordinates)
-        const x = this.spinnerPaddingLeft + this.halfStepW * 2 * col;
-        const y = this.spinnerPaddingTop + row * this.halfStep * 2;
-        this.kkk1 = x;
-        this.kkk2 = y;
+        const x = this.spinnerPaddingLeft + this.cellHalfWidth * 2 * col;
+        const y = this.spinnerPaddingTop + row * this.cellHalfHeight * 2;
+        this.jokerCanvasX = x;
+        this.jokerCanvasY = y;
 
         // Redraw boxes then joker on top
         this.redrawWithJoker(x, y);
 
         // Get which lines this position affects
-        this.pomocniNiz = this.getLinjesForPosition(gridPos);
+        this.jokerAffectedLines = this.getLinesForJokerPosition(gridPos);
       }
     }
   }
@@ -2211,34 +2534,34 @@ export class SlotMachine extends HTMLElement {
     this.ctx.shadowBlur = 18;
 
     for (let i = 0; i < 15; i++) {
-      if (this.kockice[i] === 1) {
+      if (this.validJokerPositions[i] === 1) {
         let bx, by;
         if (i < 5) {
-          bx = padX + this.halfStepW * 2 * i;
+          bx = padX + this.cellHalfWidth * 2 * i;
           by = padY;
         } else if (i < 10) {
-          bx = padX + this.halfStepW * 2 * (i - 5);
-          by = padY + this.halfStep * 2;
+          bx = padX + this.cellHalfWidth * 2 * (i - 5);
+          by = padY + this.cellHalfHeight * 2;
         } else {
-          bx = padX + this.halfStepW * 2 * (i - 10);
-          by = padY + this.halfStep * 4;
+          bx = padX + this.cellHalfWidth * 2 * (i - 10);
+          by = padY + this.cellHalfHeight * 4;
         }
         this.ctx.beginPath();
-        this.ctx.rect(bx, by, this.halfStepW * 2, this.halfStep * 2);
+        this.ctx.rect(bx, by, this.cellHalfWidth * 2, this.cellHalfHeight * 2);
         this.ctx.stroke();
       }
     }
 
     this.ctx.shadowBlur = 0;
     this.ctx.strokeStyle = this.lineColor;
-
+    console.log('kurcina', x, y);
     // Now draw joker image on top using the existing method
     this.drawJokerAtPosition(x, y);
   }
 
-  getLinjesForPosition(pos) {
+  getLinesForJokerPosition(pos) {
     // Map of which lines each position is part of
-    const mapaDzokera = [
+    const jokerLineMapping = [
       [2, 6],         // pos 0
       [2, 5],         // pos 1
       [2, 7],         // pos 2
@@ -2256,69 +2579,55 @@ export class SlotMachine extends HTMLElement {
       [3, 7]          // pos 14
     ];
 
-    return mapaDzokera[pos] || [];
+    return jokerLineMapping[pos] || [];
   }
 
   drawJokerAtPosition(x, y) {
     // Base64 joker image
-    this.img.src = "data:image/png;base64,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";
+    this.img.src = "data:image/png;base64,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";
 
-    this.img.onload = () => {
-      const w = this.img.width;
-      const h = this.img.height;
-      const sizer = Math.min((2 * this.halfStepW / w), (2 * this.halfStep / h));
 
-      let drawX, drawY;
-      if (this.halfStepW > this.halfStep) {
-        drawX = x + ((2 * this.halfStepW - w * sizer) / 2);
-        drawY = y;
-      } else {
-        drawX = x;
-        drawY = y + ((2 * this.halfStep - h * sizer) / 2);
-      }
+    const w = this.img.width;
+    const h = this.img.height;
+    const sizer = Math.min((2 * this.cellHalfWidth / w), (2 * this.cellHalfHeight / h));
 
-      this.ctx.drawImage(this.img, drawX, drawY, w * sizer, h * sizer);
+    let drawX, drawY;
+    if (this.cellHalfWidth > this.cellHalfHeight) {
+      drawX = x + ((2 * this.cellHalfWidth - w * sizer) / 2);
+      drawY = y;
+    } else {
+      drawX = x;
+      drawY = y + ((2 * this.cellHalfHeight - h * sizer) / 2);
+    }
 
-      // Show "Snimi Dzokera" button if not already confirmed
-      if (!this.shadowRoot.getElementById('snimiDzokera') && !this.shadowRoot.getElementById('izbrisiDzokera')) {
-        const checkbox = this.shadowRoot.getElementById('jokerCheckbox');
-        if (checkbox && checkbox.checked) {
-          const btn = document.createElement('button');
-          btn.textContent = 'Snimi Dzokera';
-          btn.id = 'snimiDzokera';
-          btn.style.marginTop = '8px';
-          btn.style.width = '100%';
-          btn.addEventListener('click', () => this.confirmJoker());
-          this.shadowRoot.getElementById('jokerContainer').appendChild(btn);
-        }
-      }
-    };
+    this.ctx.drawImage(this.img, drawX, drawY, w * sizer, h * sizer);
+
+    // Show "Confirm Joker" button if not already confirmed
+    const confirmBtn = this.shadowRoot.getElementById('confirmJokerBtn');
+    const removeBtn = this.shadowRoot.getElementById('removeJokerBtn');
+    const checkbox = this.shadowRoot.getElementById('jokerCheckbox');
+
+    if (checkbox && checkbox.checked && !this.jokerAdded) {
+      confirmBtn.style.display = 'block';
+      removeBtn.style.display = 'none';
+    }
   }
 
   confirmJoker() {
     this.jokerAdded = true;
     this.jokerCost = this.bet * 5;
-    this.shadowRoot.getElementById('jokerStatus').textContent = `DA (${this.jokerCost} $)`;
+    this.shadowRoot.getElementById('jokerStatus').textContent = `YES (${this.jokerCost} $)`;
 
-    // Remove "Snimi Dzokera" button
-    const snimiBtn = this.shadowRoot.getElementById('snimiDzokera');
-    if (snimiBtn) snimiBtn.remove();
+    // Hide "Confirm Joker" button, show "Remove Joker" button
+    this.shadowRoot.getElementById('confirmJokerBtn').style.display = 'none';
+    this.shadowRoot.getElementById('removeJokerBtn').style.display = 'block';
 
     this.removeCanvasClickListener();
 
     // Clear and redraw lines with joker
     this.clearCanvas();
     this.lineCheck();
-    this.drawJokerAtPosition(this.kkk1, this.kkk2);
-
-    // Create "Izbrisi Dzokera" button
-    const izbrisiBtn = document.createElement('button');
-    izbrisiBtn.textContent = 'Izbrisi Dzokera';
-    izbrisiBtn.id = 'izbrisiDzokera';
-    izbrisiBtn.style.marginTop = '8px';
-    izbrisiBtn.style.width = '100%';
-    izbrisiBtn.addEventListener('click', () => this.removeJoker());
-    this.shadowRoot.getElementById('jokerContainer').appendChild(izbrisiBtn);
+    this.drawJokerAtPosition(this.jokerCanvasX, this.jokerCanvasY);
 
     // Disable checkbox
     this.shadowRoot.getElementById('jokerCheckbox').disabled = true;
@@ -2333,14 +2642,14 @@ export class SlotMachine extends HTMLElement {
     this.jokerPosition = 0;
     this.jokerCost = 0;
     this.jokerAdded = false;
-    this.shadowRoot.getElementById('jokerStatus').textContent = 'NE (0 $)';
+    this.shadowRoot.getElementById('jokerStatus').textContent = 'NO (0 $)';
 
     this.clearCanvas();
     this.lineCheck();
 
-    // Remove "Izbrisi Dzokera" button
-    const izbrisiBtn = this.shadowRoot.getElementById('izbrisiDzokera');
-    if (izbrisiBtn) izbrisiBtn.remove();
+    // Hide both joker buttons
+    this.shadowRoot.getElementById('confirmJokerBtn').style.display = 'none';
+    this.shadowRoot.getElementById('removeJokerBtn').style.display = 'none';
 
     // Re-enable and uncheck checkbox
     const checkbox = this.shadowRoot.getElementById('jokerCheckbox');
@@ -2408,7 +2717,7 @@ export class SlotMachine extends HTMLElement {
       const table = document.createElement('table');
       table.className = 'odds-table';
       table.innerHTML = `
-        <caption>Kvota za ${symLabel}</caption>
+        <caption>Odds for ${symLabel}</caption>
         <tbody>
           ${group.odds.map((odd, row) => {
         const symbolCount = 5 - row; // 5, 4, 3, 2 symbols per row
@@ -2431,7 +2740,7 @@ export class SlotMachine extends HTMLElement {
   updateDisplay() {
     this.shadowRoot.getElementById('credits').textContent = this.credits;
     this.shadowRoot.getElementById('currentBet').textContent = this.bet;
-    const activeLines = this.rewardMode === 2 ? 1 : this.linez.filter(l => l === 1).length;
+    const activeLines = this.rewardMode === 2 ? 1 : this.selectedPaylines.filter(l => l === 1).length;
     this.shadowRoot.getElementById('lineCount').textContent = activeLines;
     const totalBet = this.rewardMode === 2 ? this.bet : (activeLines * this.bet) + this.jokerCost;
     this.shadowRoot.getElementById('totalBet').textContent = totalBet;
@@ -2451,14 +2760,14 @@ export class SlotMachine extends HTMLElement {
     // In single-line mode, the canvas border itself is the highlight
     if (this.rewardMode === 1) {
       for (let i = 0; i < 7; i++) {
-        if (this.linez[i] === 1) {
-          this.nacrtajLiniju(i);
+        if (this.selectedPaylines[i] === 1) {
+          this.drawPayline(i);
         }
       }
     }
   }
 
-  nacrtajLiniju(x) {
+  drawPayline(x) {
     if (!this.ctx) return;
 
     // Padding offsets for proper alignment with reels
@@ -2466,46 +2775,46 @@ export class SlotMachine extends HTMLElement {
     const padY = this.spinnerPaddingTop || 0;
 
     // Calculate Y positions with padding
-    const topY = padY + this.halfStep;  // Center of top row
-    // this.middle and this.down already include padding from initCanvas
+    const topY = padY + this.cellHalfHeight;  // Center of top row
+    // this.middleRowCenterY and this.bottomRowCenterY already include padding from initCanvas
 
     // 7 payline paths with line coordinates and circle positions
     // X coordinates need padding, Y uses precalculated values
     const path = [
       // Line 0: Middle horizontal
       [
-        [[padX, this.middle], [this.canvasWidth - padX, this.middle]],
-        [[padX + 2 * this.halfStepW, this.middle], [padX + 4 * this.halfStepW - 1, this.middle], [padX + 6 * this.halfStepW - 1, this.middle], [padX + 8 * this.halfStepW - 1, this.middle]]
+        [[padX, this.middleRowCenterY], [this.canvasWidth - padX, this.middleRowCenterY]],
+        [[padX + 2 * this.cellHalfWidth, this.middleRowCenterY], [padX + 4 * this.cellHalfWidth - 1, this.middleRowCenterY], [padX + 6 * this.cellHalfWidth - 1, this.middleRowCenterY], [padX + 8 * this.cellHalfWidth - 1, this.middleRowCenterY]]
       ],
       // Line 1: Top horizontal
       [
         [[padX, topY], [this.canvasWidth - padX, topY]],
-        [[padX + 2 * this.halfStepW, topY], [padX + 4 * this.halfStepW - 1, topY], [padX + 6 * this.halfStepW - 1, topY], [padX + 8 * this.halfStepW - 1, topY]]
+        [[padX + 2 * this.cellHalfWidth, topY], [padX + 4 * this.cellHalfWidth - 1, topY], [padX + 6 * this.cellHalfWidth - 1, topY], [padX + 8 * this.cellHalfWidth - 1, topY]]
       ],
       // Line 2: Bottom horizontal
       [
-        [[padX, this.down], [this.canvasWidth - padX, this.down]],
-        [[padX + 2 * this.halfStepW, this.down], [padX + 4 * this.halfStepW - 1, this.down], [padX + 6 * this.halfStepW - 1, this.down], [padX + 8 * this.halfStepW - 1, this.down]]
+        [[padX, this.bottomRowCenterY], [this.canvasWidth - padX, this.bottomRowCenterY]],
+        [[padX + 2 * this.cellHalfWidth, this.bottomRowCenterY], [padX + 4 * this.cellHalfWidth - 1, this.bottomRowCenterY], [padX + 6 * this.cellHalfWidth - 1, this.bottomRowCenterY], [padX + 8 * this.cellHalfWidth - 1, this.bottomRowCenterY]]
       ],
       // Line 3: Diagonal down
       [
-        [[padX, this.middle], [padX + this.halfStepW, this.middle], [padX + 3 * this.halfStepW, this.down], [padX + 7 * this.halfStepW, topY], [padX + 9 * this.halfStepW, this.middle], [this.canvasWidth - padX, this.middle]],
-        [[padX + 2 * this.halfStepW, this.middle + this.halfStep], [padX + 4 * this.halfStepW, this.middle + this.halfStep], [padX + 6 * this.halfStepW, this.middle - this.halfStep], [padX + 8 * this.halfStepW, this.middle - this.halfStep]]
+        [[padX, this.middleRowCenterY], [padX + this.cellHalfWidth, this.middleRowCenterY], [padX + 3 * this.cellHalfWidth, this.bottomRowCenterY], [padX + 7 * this.cellHalfWidth, topY], [padX + 9 * this.cellHalfWidth, this.middleRowCenterY], [this.canvasWidth - padX, this.middleRowCenterY]],
+        [[padX + 2 * this.cellHalfWidth, this.middleRowCenterY + this.cellHalfHeight], [padX + 4 * this.cellHalfWidth, this.middleRowCenterY + this.cellHalfHeight], [padX + 6 * this.cellHalfWidth, this.middleRowCenterY - this.cellHalfHeight], [padX + 8 * this.cellHalfWidth, this.middleRowCenterY - this.cellHalfHeight]]
       ],
       // Line 4: Diagonal up
       [
-        [[padX, this.middle], [padX + this.halfStepW, this.middle], [padX + 3 * this.halfStepW, topY], [padX + 7 * this.halfStepW, this.down], [padX + 9 * this.halfStepW, this.middle], [this.canvasWidth - padX, this.middle]],
-        [[padX + 2 * this.halfStepW, this.middle - this.halfStep], [padX + 4 * this.halfStepW, this.middle - this.halfStep], [padX + 6 * this.halfStepW, this.middle + this.halfStep], [padX + 8 * this.halfStepW, this.middle + this.halfStep]]
+        [[padX, this.middleRowCenterY], [padX + this.cellHalfWidth, this.middleRowCenterY], [padX + 3 * this.cellHalfWidth, topY], [padX + 7 * this.cellHalfWidth, this.bottomRowCenterY], [padX + 9 * this.cellHalfWidth, this.middleRowCenterY], [this.canvasWidth - padX, this.middleRowCenterY]],
+        [[padX + 2 * this.cellHalfWidth, this.middleRowCenterY - this.cellHalfHeight], [padX + 4 * this.cellHalfWidth, this.middleRowCenterY - this.cellHalfHeight], [padX + 6 * this.cellHalfWidth, this.middleRowCenterY + this.cellHalfHeight], [padX + 8 * this.cellHalfWidth, this.middleRowCenterY + this.cellHalfHeight]]
       ],
       // Line 5: Zigzag down
       [
-        [[padX, topY], [padX + this.halfStepW, topY], [padX + 5 * this.halfStepW, this.down], [padX + 9 * this.halfStepW, topY], [this.canvasWidth - padX, topY]],
-        [[padX + this.halfStepW, topY], [padX + 3 * this.halfStepW, this.middle], [padX + 5 * this.halfStepW, this.down], [padX + 7 * this.halfStepW, this.middle], [padX + 9 * this.halfStepW, topY]]
+        [[padX, topY], [padX + this.cellHalfWidth, topY], [padX + 5 * this.cellHalfWidth, this.bottomRowCenterY], [padX + 9 * this.cellHalfWidth, topY], [this.canvasWidth - padX, topY]],
+        [[padX + this.cellHalfWidth, topY], [padX + 3 * this.cellHalfWidth, this.middleRowCenterY], [padX + 5 * this.cellHalfWidth, this.bottomRowCenterY], [padX + 7 * this.cellHalfWidth, this.middleRowCenterY], [padX + 9 * this.cellHalfWidth, topY]]
       ],
       // Line 6: Zigzag up
       [
-        [[padX, this.down], [padX + this.halfStepW, this.down], [padX + 5 * this.halfStepW, topY], [padX + 9 * this.halfStepW, this.down], [this.canvasWidth - padX, this.down]],
-        [[padX + this.halfStepW, this.down], [padX + 3 * this.halfStepW, this.middle], [padX + 5 * this.halfStepW, topY], [padX + 7 * this.halfStepW, this.middle], [padX + 9 * this.halfStepW, this.down]]
+        [[padX, this.bottomRowCenterY], [padX + this.cellHalfWidth, this.bottomRowCenterY], [padX + 5 * this.cellHalfWidth, topY], [padX + 9 * this.cellHalfWidth, this.bottomRowCenterY], [this.canvasWidth - padX, this.bottomRowCenterY]],
+        [[padX + this.cellHalfWidth, this.bottomRowCenterY], [padX + 3 * this.cellHalfWidth, this.middleRowCenterY], [padX + 5 * this.cellHalfWidth, topY], [padX + 7 * this.cellHalfWidth, this.middleRowCenterY], [padX + 9 * this.cellHalfWidth, this.bottomRowCenterY]]
       ]
     ];
 
@@ -2542,18 +2851,18 @@ export class SlotMachine extends HTMLElement {
     this.clearCanvas();
     this.lineCheck();
     if (this.jokerAdded && this.jokerPosition > 0) {
-      this.drawJokerAtPosition(this.kkk1, this.kkk2);
+      this.drawJokerAtPosition(this.jokerCanvasX, this.jokerCanvasY);
     }
   }
 
   getTotalBet() {
     if (this.rewardMode === 2) return this.bet;
-    return this.linez.filter(l => l === 1).length * this.bet + this.jokerCost;
+    return this.selectedPaylines.filter(l => l === 1).length * this.bet + this.jokerCost;
   }
 
   setButtonsEnabled(enabled) {
     // Disable/enable buttons with pointer-events: none
-    const buttons = ['startBtn', 'ulogBtn', 'tipIgreBtn', 'nacinNagradjivanjaBtn'];
+    const buttons = ['startBtn', 'betBtn', 'gameTypeBtn', 'rewardModeBtn'];
     buttons.forEach(id => {
       const btn = this.shadowRoot.getElementById(id);
       if (btn) {
@@ -2623,7 +2932,7 @@ export class SlotMachine extends HTMLElement {
     if (this.isSpinning) return;
     const totalBet = this.getTotalBet();
     if (this.credits < totalBet) {
-      alert('Nemate dovoljno kredita!');
+      alert('Not enough credits!');
       return;
     }
 
@@ -2654,7 +2963,7 @@ export class SlotMachine extends HTMLElement {
   }
 
   async callSpinAPI() {
-    const activeLines = this.rewardMode === 2 ? [1, 0, 0, 0, 0, 0, 0] : this.linez;
+    const activeLines = this.rewardMode === 2 ? [1, 0, 0, 0, 0, 0, 0] : this.selectedPaylines;
     const body = {
       action: 'slot_spin',
       ulog: parseInt(this.bet),
@@ -2786,33 +3095,33 @@ export class SlotMachine extends HTMLElement {
     overlay.className = 'win-overlay';
 
     // Parse the request JSON from data[5] to check game mode
-    let nacin = 2;
+    let gameMode = 2;
     try {
       const requestJson = JSON.parse(data[5]);
-      nacin = requestJson.nacin;
+      gameMode = requestJson.nacin;
     } catch (e) {
       console.warn('Could not parse request JSON:', e);
     }
 
-    let html = `<h1>Cestitamo!</h1>`;
+    let html = `<h1>Congratulations!</h1>`;
 
     // Show winning lines info for multi-line mode
-    if (nacin === 1 && Array.isArray(data[10])) {
+    if (gameMode === 1 && Array.isArray(data[10])) {
       for (let i = 0; i < data[10].length; i++) {
         const winInfo = data[10][i];
-        // Check if it's a valid win (array with line info, not "nema dobitka" string)
+        // Check if it's a valid win (array with line info, not "no win" string)
         if (Array.isArray(winInfo) && winInfo.length >= 6) {
           const lineNum = winInfo[5] + 1;  // Line index is at position 5
-          html += `<p>Pogodak na liniji ${lineNum}!</p>`;
+          html += `<p>Win on line ${lineNum}!</p>`;
         }
       }
     } else {
-      html += `<p>Svaka cast imate pogodak!</p>`;
+      html += `<p>Well done, you have a win!</p>`;
     }
 
-    html += `<h2>Dobitak: ${data[7]} $</h2>`;
+    html += `<h2>Winnings: ${data[7]} $</h2>`;
     if (data[9] === 1) html += '<button id="miniGameBtn">Mini Game</button>';
-    html += '<button id="continueBtn">Nastavi</button>';
+    html += '<button id="continueBtn">Continue</button>';
     overlay.innerHTML = html;
     this.shadowRoot.appendChild(overlay);
 
@@ -2827,7 +3136,7 @@ export class SlotMachine extends HTMLElement {
           this.credits += bonus;
           this.updateDisplay();
         }
-      });
+      }, this.credits); // Pass user balance for mini-game validation
     });
   }
 

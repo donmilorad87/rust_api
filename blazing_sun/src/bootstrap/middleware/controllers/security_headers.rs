@@ -13,11 +13,11 @@ pub fn configure() -> DefaultHeaders {
         .add((
             header::CONTENT_SECURITY_POLICY,
             "default-src 'self'; \
-             script-src 'self' 'unsafe-inline'; \
-             style-src 'self' 'unsafe-inline'; \
+             script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; \
+             style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; \
              img-src 'self' data: blob: https://*.tile.openstreetmap.org; \
-             font-src 'self'; \
-             connect-src 'self'; \
+             font-src 'self' https://cdn.jsdelivr.net; \
+             connect-src 'self' https://cdn.jsdelivr.net; \
              frame-ancestors 'none'",
         ))
         .add((header::REFERRER_POLICY, "strict-origin-when-cross-origin"))

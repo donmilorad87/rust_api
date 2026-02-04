@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Search Analytics - Blog Admin - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BLOG_ANALYTICS/style.css?v={{ assets_version }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="blog-admin">
+        {# Header #}
+        <header class="blog-admin__header">
+            <nav class="blog-admin__breadcrumb" aria-label="Breadcrumb">
+                <a href="/admin/blog">Blog</a>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">Analytics</span>
+            </nav>
+            <div class="blog-admin__title-row">
+                <h1 class="blog-admin__title">Search Analytics</h1>
+                <div class="blog-admin__header-actions">
+                    <select id="dateRange" class="filter-select" aria-label="Date range">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="365">Last year</option>
+                    </select>
+                    <button type="button" id="exportBtn" class="btn btn--secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Export CSV</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        {# Stats Overview #}
+        <section class="stats-grid stats-grid--4" aria-label="Search statistics overview">
+            <article class="stat-card">
+                <div class="stat-card__icon stat-card__icon--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Total Searches</span>
+                    <span class="stat-card__value" id="statTotalSearches">{{ stats.total_searches | default(value=0) | filesizeformat }}</span>
+                    <span class="stat-card__trend stat-card__trend--{% if stats.searches_trend >= 0 %}up{% else %}down{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            {% if stats.searches_trend >= 0 %}
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                            {% else %}
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                            {% endif %}
+                        </svg>
+                        {% if stats.searches_trend >= 0 %}+{% endif %}{{ stats.searches_trend | default(value=0) }}%
+                    </span>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-card__icon stat-card__icon--secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Unique Searchers</span>
+                    <span class="stat-card__value" id="statUniqueSearchers">{{ stats.unique_searchers | default(value=0) }}</span>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-card__icon stat-card__icon--success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Successful Searches</span>
+                    <span class="stat-card__value" id="statSuccessful">{{ stats.successful_searches | default(value=0) }}</span>
+                    <span class="stat-card__subtext">{{ stats.success_rate | default(value=0) }}% success rate</span>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-card__icon stat-card__icon--warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Zero Results</span>
+                    <span class="stat-card__value" id="statZeroResults">{{ stats.zero_results | default(value=0) }}</span>
+                    <span class="stat-card__subtext">{{ stats.zero_rate | default(value=0) }}% of searches</span>
+                </div>
+            </article>
+        </section>
+
+        <div class="analytics-grid">
+            {# Search Volume Chart #}
+            <section class="analytics-panel analytics-panel--chart" aria-label="Search volume over time">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Search Volume</h2>
+                    <span class="panel-header__subtext">Daily search activity</span>
+                </header>
+                <div class="chart-container">
+                    <canvas id="searchVolumeChart" aria-label="Search volume chart showing daily searches over the selected time period"></canvas>
+                </div>
+            </section>
+
+            {# Top Search Terms #}
+            <section class="analytics-panel" aria-label="Top search terms">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Top Search Terms</h2>
+                </header>
+                <div class="search-terms-list" id="topSearchTerms">
+                    {% if top_searches %}
+                    {% for search in top_searches %}
+                    <div class="search-term-item">
+                        <span class="search-term-item__rank">#{{ loop.index }}</span>
+                        <span class="search-term-item__query">"{{ search.query }}"</span>
+                        <div class="search-term-item__stats">
+                            <span class="search-term-item__count">{{ search.count }} searches</span>
+                            <span class="search-term-item__results">{{ search.avg_results }} avg results</span>
+                        </div>
+                        <div class="search-term-item__bar">
+                            <div class="search-term-item__bar-fill" style="width: {{ search.percentage }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>No search data yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Zero Result Searches #}
+            <section class="analytics-panel" aria-label="Searches with no results">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Zero Result Searches</h2>
+                    <span class="panel-header__badge">Content Opportunities</span>
+                </header>
+                <div class="zero-results-list" id="zeroResultSearches">
+                    {% if zero_result_searches %}
+                    {% for search in zero_result_searches %}
+                    <div class="zero-result-item">
+                        <span class="zero-result-item__query">"{{ search.query }}"</span>
+                        <span class="zero-result-item__count">{{ search.count }} times</span>
+                        <button type="button" class="btn btn--icon btn--small create-content-btn" data-query="{{ search.query }}" title="Create content for this search" aria-label="Create content for {{ search.query }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <p>Great! No searches returned zero results.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Click-Through Analysis #}
+            <section class="analytics-panel" aria-label="Search result click-through analysis">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Click-Through Analysis</h2>
+                </header>
+                <div class="ctr-stats">
+                    <div class="ctr-stat">
+                        <span class="ctr-stat__label">Average CTR</span>
+                        <span class="ctr-stat__value" id="avgCtr">{{ stats.avg_ctr | default(value=0) }}%</span>
+                    </div>
+                    <div class="ctr-stat">
+                        <span class="ctr-stat__label">Avg. Time to Click</span>
+                        <span class="ctr-stat__value" id="avgTimeToClick">{{ stats.avg_time_to_click | default(value=0) }}s</span>
+                    </div>
+                    <div class="ctr-stat">
+                        <span class="ctr-stat__label">Avg. Position Clicked</span>
+                        <span class="ctr-stat__value" id="avgPositionClicked">{{ stats.avg_position_clicked | default(value=0) }}</span>
+                    </div>
+                </div>
+            </section>
+
+            {# Recent Searches Table #}
+            <section class="analytics-panel analytics-panel--full" aria-label="Recent search queries">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Recent Searches</h2>
+                    <div class="panel-header__filters">
+                        <select id="filterResultType" class="filter-select filter-select--small" aria-label="Filter by result type">
+                            <option value="">All Results</option>
+                            <option value="with_results">With Results</option>
+                            <option value="zero_results">Zero Results</option>
+                        </select>
+                    </div>
+                </header>
+                <div class="table-container">
+                    <table class="data-table" role="grid" aria-label="Recent searches table">
+                        <thead class="data-table__head">
+                            <tr>
+                                <th class="data-table__header" scope="col">Query</th>
+                                <th class="data-table__header data-table__header--center" scope="col">Results</th>
+                                <th class="data-table__header" scope="col">User</th>
+                                <th class="data-table__header" scope="col">Date</th>
+                                <th class="data-table__header data-table__header--center" scope="col">Clicked</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentSearchesTable" class="data-table__body">
+                            {% if recent_searches %}
+                            {% for search in recent_searches %}
+                            <tr class="data-table__row{% if search.result_count == 0 %} data-table__row--warning{% endif %}">
+                                <td class="data-table__cell">
+                                    <span class="search-query">"{{ search.query }}"</span>
+                                </td>
+                                <td class="data-table__cell data-table__cell--center">
+                                    <span class="result-count{% if search.result_count == 0 %} result-count--zero{% endif %}">
+                                        {{ search.result_count }}
+                                    </span>
+                                </td>
+                                <td class="data-table__cell">
+                                    {% if search.user_id %}
+                                    <span class="user-info">{{ search.user_name | default(value='Registered User') }}</span>
+                                    {% else %}
+                                    <span class="text-muted">Anonymous</span>
+                                    {% endif %}
+                                </td>
+                                <td class="data-table__cell">
+                                    <time datetime="{{ search.searched_at }}">{{ search.searched_at_formatted }}</time>
+                                </td>
+                                <td class="data-table__cell data-table__cell--center">
+                                    {% if search.clicked_post_id %}
+                                    <a href="/admin/blog/posts/{{ search.clicked_post_id }}/edit" class="btn btn--icon btn--small" title="View clicked post" aria-label="View clicked post">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                        </svg>
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="data-table__empty">
+                                    <div class="empty-state empty-state--small">
+                                        <p>No search data for this period</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <nav id="pagination" class="pagination" aria-label="Recent searches pagination"></nav>
+            </section>
+
+            {# Search Trends #}
+            <section class="analytics-panel" aria-label="Search trends">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Trending Searches</h2>
+                    <span class="panel-header__subtext">vs. previous period</span>
+                </header>
+                <div class="trends-list" id="searchTrends">
+                    {% if trending_searches %}
+                    {% for search in trending_searches %}
+                    <div class="trend-item">
+                        <span class="trend-item__query">"{{ search.query }}"</span>
+                        <span class="trend-item__change trend-item__change--{% if search.change >= 0 %}up{% else %}down{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                {% if search.change >= 0 %}
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                                {% else %}
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                                {% endif %}
+                            </svg>
+                            {% if search.change >= 0 %}+{% endif %}{{ search.change }}%
+                        </span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>Not enough data for trends</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Popular Categories from Search #}
+            <section class="analytics-panel" aria-label="Categories found via search">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Categories Discovered</h2>
+                    <span class="panel-header__subtext">via search clicks</span>
+                </header>
+                <div class="category-discovery-list" id="categoryDiscovery">
+                    {% if category_discovery %}
+                    {% for category in category_discovery %}
+                    <div class="discovery-item">
+                        <span class="discovery-item__name">{{ category.name }}</span>
+                        <span class="discovery-item__count">{{ category.click_count }} clicks</span>
+                        <div class="discovery-item__bar">
+                            <div class="discovery-item__bar-fill" style="width: {{ category.percentage }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>No category click data yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+    window.CHART_DATA = {{ chart_data | safe | default(value='{}') }};
+</script>
+{# Chart.js for visualizations #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+<script src="/assets/js/BLOG_ANALYTICS/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

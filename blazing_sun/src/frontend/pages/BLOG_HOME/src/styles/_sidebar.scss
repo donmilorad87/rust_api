@@ -1,0 +1,565 @@
+// ============================================
+// SIDEBAR WIDGETS - Editorial Magazine Style
+// ============================================
+// Elegant sidebar widgets with refined styling
+
+@use 'variables' as *;
+
+// ============================================
+// SIDEBAR CONTAINER
+// ============================================
+.blog-page__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+
+  // Animation on load
+  opacity: 0;
+  animation: fadeInRight $anim-duration-slow $anim-easing-elegant forwards;
+  animation-delay: 0.3s;
+
+  @media (min-width: $breakpoint-lg) {
+    position: sticky;
+    top: calc(70px + $spacing-lg); // Below navbar
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 2px;
+    }
+  }
+}
+
+// ============================================
+// SIDEBAR WIDGET BASE
+// ============================================
+.sidebar-widget {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-editorial-sm;
+  padding: $spacing-lg;
+  overflow: hidden;
+
+  // Elegant top accent line
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      $editorial-accent 0%,
+      $editorial-accent-light 100%
+    );
+    opacity: 0;
+    transition: opacity $anim-duration-fast ease;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+
+  // Widget title
+  &__title {
+    margin: 0 0 $spacing-md 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-lg;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    // Decorative line
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        var(--border-color-light) 0%,
+        transparent 100%
+      );
+    }
+  }
+}
+
+// ============================================
+// SEARCH WIDGET
+// ============================================
+.search-form {
+  &__input-group {
+    display: flex;
+    gap: $spacing-xs;
+    position: relative;
+  }
+
+  &__input {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    padding-right: 48px;
+    border: 2px solid var(--input-border);
+    border-radius: $radius-lg;
+    background: var(--input-bg);
+    color: var(--input-text);
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    transition: all $anim-duration-fast ease;
+
+    &::placeholder {
+      color: var(--input-placeholder);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $editorial-accent;
+      box-shadow: 0 0 0 4px rgba($editorial-accent, 0.15);
+    }
+  }
+
+  &__btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+    border: none;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all $anim-duration-fast ease;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      background: $editorial-accent-dark;
+      transform: translateY(-50%) scale(1.05);
+    }
+
+    &:active {
+      transform: translateY(-50%) scale(0.98);
+    }
+  }
+}
+
+// ============================================
+// TAG CLOUD WIDGET
+// ============================================
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  padding: $spacing-xs 0;
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: $spacing-xs $spacing-md;
+    background: var(--badge-default-bg);
+    color: var(--badge-default-text);
+    font-family: $font-editorial-sans;
+    border-radius: $radius-full;
+    text-decoration: none;
+    transition: all $anim-duration-fast $anim-easing-smooth;
+    cursor: pointer;
+
+    // Weight-based font sizes
+    &--xs {
+      font-size: $font-size-xs;
+      padding: 2px $spacing-sm;
+    }
+
+    &--sm {
+      font-size: $font-size-sm;
+    }
+
+    &--md {
+      font-size: $font-size-base;
+      font-weight: 500;
+    }
+
+    &--lg {
+      font-size: $font-size-lg;
+      font-weight: 600;
+    }
+
+    &--xl {
+      font-size: $font-size-xl;
+      font-weight: 700;
+    }
+
+    &:hover {
+      background: $editorial-accent;
+      color: $editorial-charcoal;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba($editorial-accent, 0.3);
+    }
+
+    // Post count
+    &__count {
+      font-size: 0.75em;
+      opacity: 0.7;
+      margin-left: 2px;
+
+      &::before {
+        content: '(';
+      }
+
+      &::after {
+        content: ')';
+      }
+    }
+  }
+}
+
+// ============================================
+// ARCHIVE WIDGET
+// ============================================
+.archive-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.archive-widget {
+  &__year {
+    margin-bottom: $spacing-sm;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__year-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-md;
+    background: var(--table-header-bg);
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all $anim-duration-fast ease;
+    user-select: none;
+
+    &:hover {
+      background: var(--dropdown-item-hover-bg);
+    }
+  }
+
+  &__year-label {
+    font-family: $font-editorial-serif;
+    font-size: $font-size-base;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  &__year-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 $spacing-xs;
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 700;
+    border-radius: $radius-full;
+  }
+
+  &__year-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+    transition: transform $anim-duration-fast ease;
+
+    &--expanded {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__months {
+    display: none;
+    padding: $spacing-sm $spacing-md;
+    margin-top: $spacing-xs;
+    background: var(--input-bg);
+    border-radius: $radius-md;
+
+    &--expanded {
+      display: block;
+      animation: fadeInUp $anim-duration-fast $anim-easing-elegant forwards;
+    }
+  }
+
+  &__month {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm;
+    color: var(--text-secondary);
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    text-decoration: none;
+    border-radius: $radius-sm;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      background: var(--dropdown-item-hover-bg);
+      color: $editorial-accent;
+      padding-left: $spacing-md;
+    }
+  }
+
+  &__month-name {
+    flex: 1;
+  }
+
+  &__month-count {
+    font-size: $font-size-xs;
+    color: var(--text-muted);
+    background: var(--badge-default-bg);
+    padding: 2px 8px;
+    border-radius: $radius-full;
+  }
+}
+
+// ============================================
+// RECENT POSTS WIDGET
+// ============================================
+.recent-posts {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  &__item {
+    display: flex;
+    gap: $spacing-md;
+    padding-bottom: $spacing-md;
+    border-bottom: 1px solid var(--border-color-light);
+    transition: all $anim-duration-fast ease;
+
+    &:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    &:hover {
+      .recent-posts__title {
+        color: $editorial-accent;
+      }
+
+      .recent-posts__image img {
+        transform: scale(1.05);
+      }
+    }
+  }
+
+  &__image {
+    width: 70px;
+    min-width: 70px;
+    height: 70px;
+    border-radius: $radius-md;
+    overflow: hidden;
+    background: var(--skeleton-bg);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $anim-duration-fast ease;
+    }
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    display: block;
+    margin-bottom: $spacing-xs;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    line-height: 1.4;
+    transition: color $anim-duration-fast ease;
+
+    // Clamp to 2 lines
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__date {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    color: var(--text-muted);
+  }
+}
+
+// ============================================
+// CATEGORIES WIDGET
+// ============================================
+.categories-widget {
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__item {
+    margin-bottom: 2px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-md;
+    color: var(--text-secondary);
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    text-decoration: none;
+    border-radius: $radius-md;
+    transition: all $anim-duration-fast ease;
+    border-left: 3px solid transparent;
+
+    &:hover {
+      background: var(--dropdown-item-hover-bg);
+      color: $editorial-accent;
+      border-left-color: $editorial-accent;
+      padding-left: calc($spacing-md + 4px);
+    }
+  }
+
+  &__name {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  &__count {
+    font-size: $font-size-xs;
+    color: var(--text-muted);
+    background: var(--badge-default-bg);
+    padding: 2px 10px;
+    border-radius: $radius-full;
+    transition: all $anim-duration-fast ease;
+  }
+
+  &__link:hover &__count {
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+  }
+}
+
+// ============================================
+// NEWSLETTER WIDGET
+// ============================================
+.newsletter-widget {
+  background: linear-gradient(
+    135deg,
+    $editorial-charcoal 0%,
+    $editorial-charcoal-light 100%
+  );
+  color: #ffffff;
+
+  &::before {
+    display: none;
+  }
+
+  .sidebar-widget__title {
+    color: #ffffff;
+
+    &::after {
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.2) 0%,
+        transparent 100%
+      );
+    }
+  }
+
+  &__description {
+    margin: 0 0 $spacing-md 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+
+  &__input {
+    padding: $spacing-sm $spacing-md;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: $radius-md;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    transition: all $anim-duration-fast ease;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $editorial-accent;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  &__btn {
+    padding: $spacing-sm $spacing-md;
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+    border: none;
+    border-radius: $radius-md;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      background: $editorial-accent-light;
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}

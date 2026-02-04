@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Blog Dashboard - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BLOG_ADMIN/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="blog-admin">
+        {# Header #}
+        <header class="blog-admin__header">
+            <div class="blog-admin__title-row">
+                <h1 class="blog-admin__title">Blog Dashboard</h1>
+                <a href="/admin/blog/posts/new" class="btn btn--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>New Post</span>
+                </a>
+            </div>
+        </header>
+
+        {# Stats Overview #}
+        <section class="stats-grid" aria-label="Blog statistics">
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Total Posts</span>
+                    <span class="stat-card__value" id="statTotalPosts">{{ stats.total_posts | default(value=0) }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Published</span>
+                    <span class="stat-card__value" id="statPublished">{{ stats.published | default(value=0) }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Drafts</span>
+                    <span class="stat-card__value" id="statDrafts">{{ stats.drafts | default(value=0) }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--info">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Scheduled</span>
+                    <span class="stat-card__value" id="statScheduled">{{ stats.scheduled | default(value=0) }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Categories</span>
+                    <span class="stat-card__value" id="statCategories">{{ stats.categories | default(value=0) }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--accent">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Tags</span>
+                    <span class="stat-card__value" id="statTags">{{ stats.tags | default(value=0) }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Total Views</span>
+                    <span class="stat-card__value" id="statViews">{{ stats.total_views | default(value=0) }}</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card__icon stat-card__icon--success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <div class="stat-card__content">
+                    <span class="stat-card__label">Searches Today</span>
+                    <span class="stat-card__value" id="statSearches">{{ stats.searches_today | default(value=0) }}</span>
+                </div>
+            </div>
+        </section>
+
+        {# Quick Actions #}
+        <section class="quick-actions" aria-label="Quick actions">
+            <h2 class="quick-actions__title">Quick Actions</h2>
+            <div class="quick-actions__grid">
+                <a href="/admin/blog/posts" class="quick-action">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <span>Manage Posts</span>
+                </a>
+                <a href="/admin/blog/categories" class="quick-action">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Categories</span>
+                </a>
+                <a href="/admin/blog/tags" class="quick-action">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                    </svg>
+                    <span>Tags</span>
+                </a>
+                <a href="/admin/blog/taxonomies" class="quick-action">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span>Taxonomies</span>
+                </a>
+                <a href="/admin/blog/analytics" class="quick-action">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>Analytics</span>
+                </a>
+                <a href="/blog" class="quick-action quick-action--external" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    <span>View Blog</span>
+                </a>
+            </div>
+        </section>
+
+        <div class="blog-admin__grid">
+            {# Recent Posts #}
+            <section class="recent-posts-panel" aria-label="Recent posts">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Recent Posts</h2>
+                    <a href="/admin/blog/posts" class="panel-header__link">View All</a>
+                </header>
+                <div id="recentPostsList" class="recent-posts-list">
+                    {% if recent_posts %}
+                    {% for post in recent_posts %}
+                    <article class="recent-post-item">
+                        <div class="recent-post-item__content">
+                            <h3 class="recent-post-item__title">
+                                <a href="/admin/blog/posts/{{ post.id }}/edit">{{ post.title }}</a>
+                            </h3>
+                            <div class="recent-post-item__meta">
+                                <span class="recent-post-item__status recent-post-item__status--{{ post.status }}">
+                                    {{ post.status | capitalize }}
+                                </span>
+                                <time datetime="{{ post.created_at }}">{{ post.created_at_formatted }}</time>
+                                {% if post.category %}
+                                <span class="recent-post-item__category">{{ post.category.name }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="recent-post-item__actions">
+                            <a href="/blog/{{ post.slug }}" class="btn btn--icon" title="View" target="_blank">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </a>
+                            <a href="/admin/blog/posts/{{ post.id }}/edit" class="btn btn--icon" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </article>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>No posts yet. <a href="/admin/blog/posts/new">Create your first post</a></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Scheduled Posts #}
+            <section class="scheduled-posts-panel" aria-label="Scheduled posts">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Scheduled Posts</h2>
+                </header>
+                <div id="scheduledPostsList" class="scheduled-posts-list">
+                    {% if scheduled_posts %}
+                    {% for post in scheduled_posts %}
+                    <article class="scheduled-post-item">
+                        <div class="scheduled-post-item__date">
+                            <span class="scheduled-post-item__day">{{ post.publish_day }}</span>
+                            <span class="scheduled-post-item__month">{{ post.publish_month }}</span>
+                        </div>
+                        <div class="scheduled-post-item__content">
+                            <h3 class="scheduled-post-item__title">
+                                <a href="/admin/blog/posts/{{ post.id }}/edit">{{ post.title }}</a>
+                            </h3>
+                            <time class="scheduled-post-item__time" datetime="{{ post.scheduled_at }}">
+                                {{ post.scheduled_at_formatted }}
+                            </time>
+                        </div>
+                    </article>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>No scheduled posts</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Popular Posts #}
+            <section class="popular-posts-panel" aria-label="Popular posts">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Popular Posts</h2>
+                </header>
+                <div id="popularPostsList" class="popular-posts-list">
+                    {% if popular_posts %}
+                    {% for post in popular_posts %}
+                    <article class="popular-post-item">
+                        <span class="popular-post-item__rank">#{{ loop.index }}</span>
+                        <div class="popular-post-item__content">
+                            <h3 class="popular-post-item__title">
+                                <a href="/admin/blog/posts/{{ post.id }}/edit">{{ post.title }}</a>
+                            </h3>
+                            <span class="popular-post-item__views">{{ post.view_count }} views</span>
+                        </div>
+                    </article>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>No view data yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Recent Searches #}
+            <section class="recent-searches-panel" aria-label="Recent searches">
+                <header class="panel-header">
+                    <h2 class="panel-header__title">Recent Searches</h2>
+                    <a href="/admin/blog/analytics" class="panel-header__link">View Analytics</a>
+                </header>
+                <div id="recentSearchesList" class="recent-searches-list">
+                    {% if recent_searches %}
+                    {% for search in recent_searches %}
+                    <div class="search-item">
+                        <span class="search-item__query">"{{ search.query }}"</span>
+                        <span class="search-item__count">{{ search.result_count }} results</span>
+                        <time class="search-item__time" datetime="{{ search.searched_at }}">{{ search.searched_at_formatted }}</time>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state--small">
+                        <p>No search data yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/BLOG_ADMIN/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

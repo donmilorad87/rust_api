@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id as \"id!\",\n            name as \"name!\",\n            slug as \"slug!\",\n            description,\n            parent_category_id,\n            sort_order as \"sort_order!\",\n            depth as \"depth!\",\n            post_count as \"post_count!\"\n        FROM sp_get_blog_category_tree()\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "parent_category_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "sort_order!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "depth!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "post_count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "42af225dedab7aa5c2ebe31c0805e68417ccc2ffed3431a2aafef7c01b7c335c"
+}

@@ -1,0 +1,331 @@
+// ============================================
+// FEATURED POST HERO SECTION
+// ============================================
+// Stunning hero-style featured post with dramatic typography
+// and sophisticated gradient overlay
+
+@use 'variables' as *;
+
+.featured-hero {
+  position: relative;
+  min-height: $hero-min-height;
+  max-height: $hero-max-height;
+  margin-bottom: $spacing-3xl;
+  border-radius: $radius-2xl;
+  overflow: hidden;
+  background: $editorial-charcoal;
+  box-shadow: $shadow-editorial-hero;
+
+  // Initial animation state
+  opacity: 0;
+  transform: translateY(20px);
+  animation: scaleFadeIn $anim-duration-slow $anim-easing-elegant forwards;
+
+  @media (min-width: $breakpoint-lg) {
+    min-height: 520px;
+  }
+
+  // ============================================
+  // BACKGROUND IMAGE
+  // ============================================
+  &__image-container {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      // Rich multi-layer gradient overlay
+      background:
+        linear-gradient(
+          180deg,
+          rgba($editorial-charcoal, 0.1) 0%,
+          rgba($editorial-charcoal, 0.4) 40%,
+          rgba($editorial-charcoal, 0.85) 75%,
+          rgba($editorial-charcoal, 0.95) 100%
+        ),
+        linear-gradient(
+          90deg,
+          rgba($editorial-charcoal, 0.6) 0%,
+          transparent 50%
+        );
+      z-index: 1;
+    }
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform $anim-duration-slow $anim-easing-smooth;
+  }
+
+  &:hover &__image {
+    transform: scale(1.03);
+  }
+
+  // ============================================
+  // PLACEHOLDER (no image)
+  // ============================================
+  &__placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      135deg,
+      $editorial-charcoal 0%,
+      $editorial-charcoal-light 50%,
+      $editorial-warm-gray 100%
+    );
+    background-size: 200% 200%;
+    animation: gradientShift 15s ease infinite;
+
+    svg {
+      width: 120px;
+      height: 120px;
+      color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  // ============================================
+  // CONTENT OVERLAY
+  // ============================================
+  &__content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: $spacing-xl $spacing-lg $spacing-lg;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    @media (min-width: $breakpoint-md) {
+      padding: $spacing-3xl $spacing-xl $spacing-xl;
+      max-width: 75%;
+    }
+
+    @media (min-width: $breakpoint-lg) {
+      padding: $spacing-3xl;
+      max-width: 65%;
+    }
+  }
+
+  // ============================================
+  // BADGE
+  // ============================================
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-md;
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-radius: $radius-sm;
+    margin-bottom: $spacing-md;
+    align-self: flex-start;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.2s;
+    opacity: 0;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  // ============================================
+  // CATEGORY
+  // ============================================
+  &__category {
+    display: inline-block;
+    padding: $spacing-xs $spacing-sm;
+    color: $editorial-accent-light;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-decoration: none;
+    margin-bottom: $spacing-sm;
+    border-left: 2px solid $editorial-accent;
+    padding-left: $spacing-sm;
+    transition: color $anim-duration-fast ease;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.3s;
+    opacity: 0;
+
+    &:hover {
+      color: $editorial-accent;
+    }
+  }
+
+  // ============================================
+  // TITLE
+  // ============================================
+  &__title {
+    margin: 0 0 $spacing-md 0;
+    font-family: $font-editorial-serif;
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.4s;
+    opacity: 0;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: color $anim-duration-fast ease;
+
+      &:hover {
+        color: $editorial-accent-light;
+      }
+    }
+  }
+
+  // ============================================
+  // EXCERPT
+  // ============================================
+  &__excerpt {
+    margin: 0 0 $spacing-lg 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-base;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.85);
+    max-width: 600px;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.5s;
+    opacity: 0;
+
+    // Clamp to 3 lines
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+    @media (min-width: $breakpoint-md) {
+      font-size: $font-size-lg;
+    }
+  }
+
+  // ============================================
+  // META INFO
+  // ============================================
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: rgba(255, 255, 255, 0.7);
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.6s;
+    opacity: 0;
+  }
+
+  &__meta-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+  }
+
+  &__meta-divider {
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+  }
+
+  // ============================================
+  // READ MORE LINK
+  // ============================================
+  &__read-more {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-top: $spacing-lg;
+    padding: $spacing-sm $spacing-lg;
+    background: transparent;
+    color: #ffffff;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: $radius-full;
+    transition: all $anim-duration-fast $anim-easing-smooth;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.7s;
+    opacity: 0;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      transition: transform $anim-duration-fast ease;
+    }
+
+    &:hover {
+      background: $editorial-accent;
+      border-color: $editorial-accent;
+      color: $editorial-charcoal;
+
+      svg {
+        transform: translateX(4px);
+      }
+    }
+  }
+
+  // ============================================
+  // CLICK OVERLAY (full card link)
+  // ============================================
+  &__link-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+
+    &:focus-visible {
+      outline: 3px solid $editorial-accent;
+      outline-offset: 4px;
+    }
+  }
+}
+
+// ============================================
+// COMPACT VARIANT (for smaller screens or sidebar)
+// ============================================
+.featured-hero--compact {
+  min-height: 320px;
+  max-height: 400px;
+
+  .featured-hero__content {
+    padding: $spacing-lg;
+  }
+
+  .featured-hero__title {
+    font-size: $font-size-2xl;
+  }
+
+  .featured-hero__excerpt {
+    display: none;
+  }
+}

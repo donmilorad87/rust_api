@@ -1,0 +1,63 @@
+# ======================== Elasticsearch Configuration =========================
+#
+# Blazing Sun - Elasticsearch Configuration
+#
+# For more information, see:
+# https://www.elastic.co/guide/en/elasticsearch/reference/current/settings.html
+#
+# ---------------------------------- Cluster -----------------------------------
+cluster.name: blazing-sun-cluster
+node.name: elasticsearch-node-1
+
+# ---------------------------------- Network -----------------------------------
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+# --------------------------------- Discovery ----------------------------------
+# Single-node configuration (no clustering)
+discovery.type: single-node
+
+# ---------------------------------- Security ----------------------------------
+# Disabled for development (enable in production)
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+xpack.security.http.ssl.enabled: false
+xpack.security.transport.ssl.enabled: false
+
+# ---------------------------------- Memory ------------------------------------
+# Disable swap for better performance
+bootstrap.memory_lock: true
+
+# ---------------------------------- Indexing ----------------------------------
+# Index buffer size (percentage of heap)
+indices.memory.index_buffer_size: 20%
+
+# Query cache size
+indices.queries.cache.size: 20%
+
+# ---------------------------------- Machine Learning --------------------------
+# Disable ML to save memory (enable if needed)
+xpack.ml.enabled: false
+
+# ---------------------------------- Monitoring --------------------------------
+# Disable self-monitoring (use external monitoring if needed)
+xpack.monitoring.collection.enabled: false
+
+# ---------------------------------- Logging -----------------------------------
+logger.level: INFO
+logger.org.elasticsearch.discovery: DEBUG
+
+# ---------------------------------- Action ------------------------------------
+# Destructive operations require explicit index name
+action.destructive_requires_name: true
+
+# ---------------------------------- HTTP --------------------------------------
+# Enable CORS for development
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-methods: OPTIONS, HEAD, GET, POST, PUT, DELETE
+http.cors.allow-headers: X-Requested-With, Content-Type, Content-Length, Authorization
+
+# Maximum content length for HTTP requests (100mb)
+http.max_content_length: 100mb

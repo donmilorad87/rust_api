@@ -1,0 +1,203 @@
+// ============================================
+// EDITORIAL MAGAZINE - Animations
+// ============================================
+// Smooth, sophisticated animations for the editorial experience
+
+@use 'variables' as *;
+
+// ============================================
+// KEYFRAME ANIMATIONS
+// ============================================
+
+// Fade in from bottom (for staggered reveals)
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Fade in from left (sidebar elements)
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Fade in from right
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Scale fade in (hero elements)
+@keyframes scaleFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Subtle float effect
+@keyframes subtleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+// Shimmer effect for loading
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Gradient shift for hero overlay
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+// Text reveal (line by line)
+@keyframes textReveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+// Pulse glow for accent elements
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba($editorial-accent, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba($editorial-accent, 0);
+  }
+}
+
+// Spin animation for loading
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ============================================
+// ANIMATION UTILITY CLASSES
+// ============================================
+
+// Base animation state (hidden before animation)
+.animate-on-scroll {
+  opacity: 0;
+
+  &.is-visible {
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+  }
+}
+
+// Staggered children animation
+.stagger-children {
+  > * {
+    opacity: 0;
+  }
+
+  &.is-visible {
+    > * {
+      animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    }
+
+    @for $i from 1 through 12 {
+      > *:nth-child(#{$i}) {
+        animation-delay: calc(#{$anim-stagger-base} * #{$i});
+      }
+    }
+  }
+}
+
+// Immediate animation variants
+.fade-in-up {
+  animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+}
+
+.fade-in-left {
+  animation: fadeInLeft $anim-duration-normal $anim-easing-elegant forwards;
+}
+
+.fade-in-right {
+  animation: fadeInRight $anim-duration-normal $anim-easing-elegant forwards;
+}
+
+.scale-fade-in {
+  animation: scaleFadeIn $anim-duration-slow $anim-easing-elegant forwards;
+}
+
+// Delay utilities
+@for $i from 1 through 10 {
+  .delay-#{$i} {
+    animation-delay: calc(#{$anim-stagger-base} * #{$i});
+  }
+}
+
+// Hover float effect
+.hover-float {
+  transition: transform $anim-duration-fast $anim-easing-smooth;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+}
+
+// Hover scale effect
+.hover-scale {
+  transition: transform $anim-duration-fast $anim-easing-smooth;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+// Loading skeleton
+.skeleton-loading {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg) 0%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-bg) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

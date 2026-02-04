@@ -1,0 +1,16 @@
+// Search Admin Page Styles
+// Imports GLOBAL variables for consistency
+
+// Import GLOBAL variables (CSS custom properties are already available from GLOBAL)
+// This file extends admin-specific styles
+
+// Admin search page uses CSS variables from GLOBAL (_theme.scss):
+// --card-bg, --card-border, --card-shadow
+// --text-primary, --text-secondary
+// --border-color
+// --btn-primary-bg, --btn-primary-text, --btn-secondary-bg, --btn-secondary-text
+// --color-success, --color-warning, --color-error, --color-info
+// --modal-bg, --modal-backdrop, --modal-border, --modal-shadow
+// --radius-*, --spacing-*, --shadow-*
+
+// No additional styles needed - using inline styles in template for admin

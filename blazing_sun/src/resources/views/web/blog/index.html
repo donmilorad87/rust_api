@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}{% if seo_title %}{{ seo_title }}{% else %}Blog - {{ site_name | default(value='Blazing Sun') }}{% endif %}{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BLOG/style.css?v={{ assets_version }}">
+<link rel="stylesheet" href="/assets/css/BLOG_HOME/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<a href="#main-content" class="skip-to-content">Skip to main content</a>
+
+<main class="blog-page" id="main-content">
+    <div class="blog-page__container">
+        {# ============================================ #}
+        {# PAGE HEADER #}
+        {# ============================================ #}
+        <header class="blog-page__header">
+            <h1 class="blog-page__title">Blog</h1>
+            <p class="blog-page__description">{{ blog_description | default(value='Discover our latest articles, tutorials, and insights from our team of experts.') }}</p>
+        </header>
+
+        <div class="blog-page__layout">
+            {# ============================================ #}
+            {# MAIN CONTENT AREA #}
+            {# ============================================ #}
+            <section class="blog-page__main" aria-label="Blog posts">
+
+                {# ============================================ #}
+                {# FEATURED POST HERO #}
+                {# ============================================ #}
+                {% if featured_post %}
+                <div class="featured-section">
+                    <article class="featured-hero" aria-label="Featured post">
+                        {# Background Image #}
+                        {% if featured_post.featured_image_url %}
+                        <div class="featured-hero__image-container">
+                            <img class="featured-hero__image"
+                                 src="{{ featured_post.featured_image_url }}"
+                                 alt="{{ featured_post.title }}"
+                                 loading="eager">
+                        </div>
+                        {% else %}
+                        <div class="featured-hero__placeholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        {# Content Overlay #}
+                        <div class="featured-hero__content">
+                            <span class="featured-hero__badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                                Featured
+                            </span>
+
+                            {% if featured_post.category %}
+                            <a href="/blog/category/{{ featured_post.category.slug }}" class="featured-hero__category">
+                                {{ featured_post.category.name }}
+                            </a>
+                            {% endif %}
+
+                            <h2 class="featured-hero__title">
+                                <a href="/blog/{{ featured_post.slug }}">{{ featured_post.title }}</a>
+                            </h2>
+
+                            <p class="featured-hero__excerpt">{{ featured_post.excerpt }}</p>
+
+                            <div class="featured-hero__meta">
+                                <span class="featured-hero__meta-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <time datetime="{{ featured_post.published_at }}">{{ featured_post.published_at_formatted }}</time>
+                                </span>
+                                <span class="featured-hero__meta-divider" aria-hidden="true"></span>
+                                <span class="featured-hero__meta-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    {{ featured_post.read_time_minutes }} min read
+                                </span>
+                            </div>
+
+                            <a href="/blog/{{ featured_post.slug }}" class="featured-hero__read-more">
+                                Read Article
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+
+                        {# Full card link for accessibility #}
+                        <a href="/blog/{{ featured_post.slug }}" class="featured-hero__link-overlay" aria-label="Read {{ featured_post.title }}" tabindex="-1"></a>
+                    </article>
+                </div>
+                {% endif %}
+
+                {# ============================================ #}
+                {# LATEST POSTS SECTION #}
+                {# ============================================ #}
+                <div class="latest-section">
+                    {% if posts and posts | length > 0 %}
+                    <div class="section-header">
+                        <h2 class="section-header__title">Latest Articles</h2>
+                        <span class="section-header__line" aria-hidden="true"></span>
+                        <span class="section-header__count">{{ total_posts | default(value=posts | length) }} posts</span>
+                    </div>
+                    {% endif %}
+
+                    {# Posts Grid #}
+                    <div id="postsContainer" class="posts-grid posts-grid--magazine stagger-children is-visible">
+                        {% if posts %}
+                        {% for post in posts %}
+                        <article class="post-card is-visible" aria-label="Blog post">
+                            <a href="/blog/{{ post.slug }}" class="post-card__link">
+                                {# Image #}
+                                {% if post.featured_image_url %}
+                                <div class="post-card__image">
+                                    <img src="{{ post.featured_image_url }}"
+                                         alt="{{ post.title }}"
+                                         loading="lazy">
+                                </div>
+                                {% else %}
+                                <div class="post-card__image post-card__image--placeholder">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <line x1="10" y1="9" x2="8" y2="9"></line>
+                                    </svg>
+                                </div>
+                                {% endif %}
+
+                                {# Content #}
+                                <div class="post-card__content">
+                                    {% if post.category %}
+                                    <span class="post-card__category">{{ post.category.name }}</span>
+                                    {% endif %}
+
+                                    <h3 class="post-card__title">{{ post.title }}</h3>
+
+                                    <p class="post-card__excerpt">{{ post.excerpt }}</p>
+
+                                    <div class="post-card__meta">
+                                        <span class="post-card__date">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                            </svg>
+                                            <time datetime="{{ post.published_at }}">{{ post.published_at_formatted }}</time>
+                                        </span>
+                                        <span class="post-card__read-time">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                            {{ post.read_time_minutes }} min
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+                        {% endfor %}
+                        {% else %}
+                        <div class="empty-state">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <h3>No posts yet</h3>
+                            <p>We're working on some great content. Check back soon for new articles and insights.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {# Pagination #}
+                    <nav id="pagination" class="pagination" aria-label="Blog pagination">
+                        {# Populated by JavaScript or server-side #}
+                    </nav>
+                </div>
+            </section>
+
+            {# ============================================ #}
+            {# SIDEBAR #}
+            {# ============================================ #}
+            <aside class="blog-page__sidebar" aria-label="Blog sidebar">
+                {# Search Widget #}
+                <div id="searchWidget" class="sidebar-widget">
+                    <h3 class="sidebar-widget__title">Search</h3>
+                    <form id="searchForm" class="search-form" action="/blog/search" method="GET" role="search">
+                        <div class="search-form__input-group">
+                            <input type="search"
+                                   name="q"
+                                   id="searchQuery"
+                                   class="search-form__input"
+                                   placeholder="Search articles..."
+                                   aria-label="Search blog posts"
+                                   value="{{ search_query | default(value='') }}">
+                            <button type="submit" class="search-form__btn" aria-label="Submit search">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                {# Tag Cloud Widget #}
+                <div id="tagCloudWidget" class="sidebar-widget">
+                    <h3 class="sidebar-widget__title">Popular Tags</h3>
+                    <div class="tag-cloud" role="list" aria-label="Popular tags">
+                        {# Tags loaded via JavaScript or server-side #}
+                        {% if popular_tags %}
+                        {% for tag in popular_tags %}
+                        <a href="/blog/tag/{{ tag.slug }}"
+                           class="tag-cloud__tag tag-cloud__tag--{{ tag.weight | default(value='md') }}"
+                           role="listitem">
+                            {{ tag.name }}
+                            {% if tag.post_count %}
+                            <span class="tag-cloud__tag__count">{{ tag.post_count }}</span>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Archive Widget #}
+                <div id="archiveWidget" class="sidebar-widget">
+                    <h3 class="sidebar-widget__title">Archives</h3>
+                    <ul class="archive-list" role="list">
+                        {# Archives loaded via JavaScript or server-side #}
+                        {% if archives %}
+                        {% for archive in archives %}
+                        <li class="archive-widget__year">
+                            <div class="archive-widget__year-header" role="button" aria-expanded="false" tabindex="0">
+                                <span class="archive-widget__year-label">{{ archive.year }}</span>
+                                <span class="archive-widget__year-count">{{ archive.total_posts }}</span>
+                                <svg class="archive-widget__year-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                            <ul class="archive-widget__months" role="list">
+                                {% for month in archive.months %}
+                                <li>
+                                    <a href="/blog/archive/{{ archive.year }}/{{ month.month }}" class="archive-widget__month">
+                                        <span class="archive-widget__month-name">{{ month.name }}</span>
+                                        <span class="archive-widget__month-count">{{ month.post_count }}</span>
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    {# Scroll to Top Button #}
+    <button class="scroll-to-top" aria-label="Scroll to top" title="Back to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/BLOG/app.js?v={{ assets_version }}" defer></script>
+<script src="/assets/js/BLOG_HOME/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

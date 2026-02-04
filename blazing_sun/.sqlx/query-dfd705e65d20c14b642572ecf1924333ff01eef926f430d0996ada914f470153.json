@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM blog_post_categories\n        WHERE post_id = $1 AND category_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dfd705e65d20c14b642572ecf1924333ff01eef926f430d0996ada914f470153"
+}

@@ -1,0 +1,837 @@
+// ============================================
+// BLOG_TAXONOMY PAGE - Editorial Magazine Styles
+// ============================================
+// Single taxonomy view page with elegant term cards,
+// smooth animations, and refined editorial design.
+//
+// Design Philosophy:
+// - Elegant taxonomy navigation
+// - Beautiful term cards with icons
+// - Term pills with post counts
+// - Posts grid when viewing a term
+// - Smooth hover animations
+
+@use 'sass:color';
+@use 'sass:math';
+@use 'variables' as *;
+
+// Import base blog styles
+@use '../../../BLOG/src/styles/main' as blog;
+
+// ============================================
+// TAXONOMY HERO SECTION
+// ============================================
+
+.taxonomy-hero {
+  text-align: center;
+  padding: $blog-space-16 $blog-space-6;
+  background: linear-gradient(
+    135deg,
+    var(--blog-surface-warm) 0%,
+    var(--blog-surface-secondary) 100%
+  );
+  border-bottom: 1px solid var(--blog-border-light);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: $blog-space-12;
+
+  // Decorative background pattern
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(
+      var(--blog-border-light) 1px,
+      transparent 1px
+    );
+    background-size: 32px 32px;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+    max-width: $blog-width-narrow;
+    margin: 0 auto;
+  }
+
+  &__icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto $blog-space-6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--blog-accent);
+    color: white;
+    border-radius: $blog-radius-2xl;
+    box-shadow: 0 8px 32px rgba(139, 41, 66, 0.25);
+
+    svg {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  &__title {
+    font-family: $blog-font-serif;
+    font-size: $blog-display-3;
+    font-weight: $blog-weight-bold;
+    color: var(--blog-text-headline);
+    letter-spacing: $blog-tracking-tight;
+    margin: 0 0 $blog-space-4 0;
+
+    @media (max-width: $blog-breakpoint-md) {
+      font-size: $blog-heading-1;
+    }
+  }
+
+  &__description {
+    font-family: $blog-font-sans;
+    font-size: $blog-body-large;
+    color: var(--blog-text-secondary);
+    line-height: $blog-leading-relaxed;
+    margin: 0 0 $blog-space-5 0;
+  }
+
+  &__stats {
+    display: flex;
+    justify-content: center;
+    gap: $blog-space-8;
+    padding-top: $blog-space-5;
+    border-top: 1px solid var(--blog-border-light);
+
+    @media (max-width: $blog-breakpoint-sm) {
+      flex-direction: column;
+      gap: $blog-space-3;
+    }
+  }
+
+  &__stat {
+    display: flex;
+    align-items: center;
+    gap: $blog-space-2;
+    font-family: $blog-font-sans;
+    font-size: $blog-ui-base;
+    color: var(--blog-text-muted);
+
+    svg {
+      width: 18px;
+      height: 18px;
+      opacity: 0.6;
+    }
+
+    strong {
+      font-weight: $blog-weight-semibold;
+      color: var(--blog-text-body);
+    }
+  }
+}
+
+// ============================================
+// TERMS SECTION
+// ============================================
+
+.terms-section {
+  margin-bottom: $blog-space-16;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $blog-space-8;
+    padding-bottom: $blog-space-4;
+    border-bottom: 1px solid var(--blog-border-light);
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: var(--blog-accent);
+    }
+  }
+
+  &__title {
+    font-family: $blog-font-serif;
+    font-size: $blog-heading-3;
+    font-weight: $blog-weight-semibold;
+    color: var(--blog-text-headline);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: $blog-space-3;
+
+    svg {
+      color: var(--blog-accent);
+      opacity: 0.8;
+    }
+  }
+
+  &__count {
+    font-family: $blog-font-sans;
+    font-size: $blog-ui-base;
+    color: var(--blog-text-muted);
+    background: var(--blog-surface-tertiary);
+    padding: $blog-space-2 $blog-space-4;
+    border-radius: $blog-radius-full;
+  }
+}
+
+// ============================================
+// TERMS GRID - Card Layout
+// ============================================
+
+.terms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $blog-space-6;
+
+  @media (max-width: $blog-breakpoint-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ============================================
+// TERM CARD - Elegant Design
+// ============================================
+
+.term-card {
+  position: relative;
+  background: var(--blog-surface-primary);
+  border: 1px solid var(--blog-border-light);
+  border-radius: $blog-card-radius-lg;
+  overflow: hidden;
+  transition: all $blog-transition-normal;
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--blog-shadow-elevated);
+    border-color: var(--blog-border-accent);
+
+    .term-card__icon {
+      transform: scale(1.1);
+      background: var(--blog-accent);
+      color: white;
+    }
+
+    .term-card__title {
+      color: var(--blog-accent);
+    }
+
+    .term-card__arrow {
+      transform: translateX(4px);
+      opacity: 1;
+    }
+  }
+
+  &__link {
+    display: flex;
+    flex-direction: column;
+    padding: $blog-card-padding;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: $blog-space-4;
+    margin-bottom: $blog-space-4;
+  }
+
+  &__icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--blog-accent-muted);
+    color: var(--blog-accent);
+    border-radius: $blog-radius-xl;
+    flex-shrink: 0;
+    transition: all $blog-transition-normal;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-family: $blog-font-serif;
+    font-size: $blog-heading-5;
+    font-weight: $blog-weight-semibold;
+    color: var(--blog-text-headline);
+    margin: 0 0 $blog-space-1 0;
+    line-height: $blog-leading-snug;
+    transition: color $blog-transition-fast;
+    display: flex;
+    align-items: center;
+    gap: $blog-space-2;
+  }
+
+  &__arrow {
+    width: 16px;
+    height: 16px;
+    opacity: 0;
+    transition: all $blog-transition-fast;
+    flex-shrink: 0;
+  }
+
+  &__count {
+    font-family: $blog-font-sans;
+    font-size: $blog-ui-small;
+    color: var(--blog-text-muted);
+    display: flex;
+    align-items: center;
+    gap: $blog-space-2;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.5;
+    }
+  }
+
+  &__description {
+    font-family: $blog-font-sans;
+    font-size: $blog-body-small;
+    color: var(--blog-text-secondary);
+    line-height: $blog-leading-relaxed;
+    margin: 0;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__footer {
+    margin-top: auto;
+    padding-top: $blog-space-4;
+    border-top: 1px solid var(--blog-border-light);
+  }
+
+  // Hierarchical indicator
+  &--child {
+    margin-left: $blog-space-6;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background: var(--blog-accent-muted);
+      border-radius: $blog-radius-full;
+    }
+  }
+
+  // Featured term
+  &--featured {
+    border-color: var(--blog-border-accent);
+    background: linear-gradient(
+      135deg,
+      var(--blog-surface-primary) 0%,
+      var(--blog-surface-warm) 100%
+    );
+
+    .term-card__icon {
+      background: var(--blog-accent);
+      color: white;
+    }
+
+    &::after {
+      content: 'Featured';
+      position: absolute;
+      top: $blog-space-3;
+      right: $blog-space-3;
+      padding: $blog-space-1 $blog-space-3;
+      background: var(--blog-gold);
+      color: white;
+      font-family: $blog-font-sans;
+      font-size: $blog-ui-xs;
+      font-weight: $blog-weight-semibold;
+      letter-spacing: $blog-tracking-wide;
+      text-transform: uppercase;
+      border-radius: $blog-radius-sm;
+    }
+  }
+}
+
+// ============================================
+// TERMS CLOUD - Pill/Tag Layout
+// ============================================
+
+.terms-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $blog-space-3;
+  padding: $blog-card-padding;
+  background: var(--blog-surface-primary);
+  border: 1px solid var(--blog-border-light);
+  border-radius: $blog-card-radius-lg;
+
+  &--large {
+    gap: $blog-space-4;
+    padding: $blog-card-padding-lg;
+  }
+}
+
+.term-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: $blog-space-2;
+  padding: $blog-space-2 $blog-space-4;
+  background: var(--blog-surface-tertiary);
+  color: var(--blog-text-secondary);
+  text-decoration: none;
+  border-radius: $blog-radius-full;
+  font-family: $blog-font-sans;
+  font-size: $blog-ui-base;
+  font-weight: $blog-weight-medium;
+  border: 1px solid transparent;
+  transition: all $blog-transition-fast;
+
+  &:hover {
+    background: var(--blog-accent);
+    color: white;
+    border-color: var(--blog-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 41, 66, 0.2);
+  }
+
+  &__count {
+    padding: $blog-space-1 $blog-space-2;
+    background: rgba(0, 0, 0, 0.1);
+    color: inherit;
+    font-size: $blog-ui-xs;
+    border-radius: $blog-radius-sm;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  // Size variations
+  &--sm {
+    padding: $blog-space-1 $blog-space-3;
+    font-size: $blog-ui-small;
+
+    .term-pill__count {
+      font-size: $blog-ui-xs;
+    }
+  }
+
+  &--lg {
+    padding: $blog-space-3 $blog-space-5;
+    font-size: $blog-body-base;
+  }
+
+  &--xl {
+    padding: $blog-space-3 $blog-space-6;
+    font-size: $blog-heading-6;
+    font-weight: $blog-weight-semibold;
+  }
+
+  // Active state
+  &--active {
+    background: var(--blog-accent);
+    color: white;
+    border-color: var(--blog-accent);
+
+    &:hover {
+      background: var(--blog-accent-dark);
+    }
+  }
+}
+
+// ============================================
+// TERM HEADER (When viewing a specific term)
+// ============================================
+
+.term-header {
+  text-align: center;
+  max-width: $blog-width-narrow;
+  margin: 0 auto $blog-space-12;
+  padding-bottom: $blog-space-8;
+  border-bottom: 1px solid var(--blog-border-light);
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: var(--blog-accent);
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: $blog-space-2;
+    margin-bottom: $blog-space-6;
+    padding: $blog-space-2 $blog-space-4;
+    background: var(--blog-surface-tertiary);
+    color: var(--blog-text-secondary);
+    text-decoration: none;
+    font-family: $blog-font-sans;
+    font-size: $blog-ui-base;
+    font-weight: $blog-weight-medium;
+    border-radius: $blog-radius-full;
+    transition: all $blog-transition-fast;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      transition: transform $blog-transition-fast;
+    }
+
+    &:hover {
+      background: var(--blog-accent-muted);
+      color: var(--blog-accent);
+
+      svg {
+        transform: translateX(-4px);
+      }
+    }
+  }
+
+  &__taxonomy {
+    display: inline-block;
+    padding: $blog-space-2 $blog-space-4;
+    background: var(--blog-accent-muted);
+    color: var(--blog-accent);
+    font-family: $blog-font-sans;
+    font-size: $blog-ui-xs;
+    font-weight: $blog-weight-semibold;
+    letter-spacing: $blog-tracking-caps;
+    text-transform: uppercase;
+    border-radius: $blog-radius-full;
+    margin-bottom: $blog-space-4;
+    text-decoration: none;
+    transition: all $blog-transition-fast;
+
+    &:hover {
+      background: var(--blog-accent);
+      color: white;
+    }
+  }
+
+  &__title {
+    font-family: $blog-font-serif;
+    font-size: $blog-display-3;
+    font-weight: $blog-weight-bold;
+    color: var(--blog-text-headline);
+    letter-spacing: $blog-tracking-tight;
+    margin: 0 0 $blog-space-4 0;
+
+    @media (max-width: $blog-breakpoint-md) {
+      font-size: $blog-heading-1;
+    }
+  }
+
+  &__description {
+    font-family: $blog-font-sans;
+    font-size: $blog-body-large;
+    color: var(--blog-text-secondary);
+    line-height: $blog-leading-relaxed;
+    margin: 0 0 $blog-space-5 0;
+  }
+
+  &__meta {
+    display: flex;
+    justify-content: center;
+    gap: $blog-space-6;
+    font-family: $blog-font-sans;
+    font-size: $blog-ui-base;
+    color: var(--blog-text-muted);
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: $blog-space-2;
+
+      svg {
+        width: 18px;
+        height: 18px;
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
+// ============================================
+// ALL TAXONOMIES LINK
+// ============================================
+
+.all-taxonomies-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $blog-space-3;
+  padding: $blog-space-4 $blog-space-6;
+  background: var(--blog-surface-warm);
+  color: var(--blog-text-secondary);
+  text-decoration: none;
+  border-radius: $blog-radius-lg;
+  font-family: $blog-font-sans;
+  font-size: $blog-ui-base;
+  font-weight: $blog-weight-medium;
+  transition: all $blog-transition-fast;
+  margin-top: $blog-space-8;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    transition: transform $blog-transition-fast;
+  }
+
+  &:hover {
+    background: var(--blog-accent);
+    color: white;
+
+    svg {
+      transform: translateX(-4px);
+    }
+  }
+}
+
+// ============================================
+// VIEW TOGGLE (Grid vs Cloud)
+// ============================================
+
+.view-toggle {
+  display: flex;
+  background: var(--blog-surface-tertiary);
+  border-radius: $blog-radius-lg;
+  padding: $blog-space-1;
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $blog-space-2 $blog-space-4;
+    background: transparent;
+    color: var(--blog-text-muted);
+    border: none;
+    border-radius: $blog-radius-md;
+    cursor: pointer;
+    transition: all $blog-transition-fast;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover:not(&--active) {
+      color: var(--blog-text-body);
+    }
+
+    &--active {
+      background: var(--blog-surface-primary);
+      color: var(--blog-accent);
+      box-shadow: var(--blog-shadow-subtle);
+    }
+  }
+}
+
+// ============================================
+// HIERARCHICAL TERM LIST
+// ============================================
+
+.term-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  &__item {
+    margin-bottom: $blog-space-2;
+  }
+
+  &__children {
+    margin-left: $blog-space-6;
+    padding-left: $blog-space-4;
+    border-left: 2px solid var(--blog-border-light);
+    margin-top: $blog-space-2;
+  }
+}
+
+.term-tree-item {
+  display: flex;
+  align-items: center;
+  gap: $blog-space-3;
+  padding: $blog-space-3 $blog-space-4;
+  background: var(--blog-surface-primary);
+  border: 1px solid var(--blog-border-light);
+  border-radius: $blog-radius-lg;
+  text-decoration: none;
+  color: inherit;
+  transition: all $blog-transition-fast;
+
+  &:hover {
+    background: var(--blog-surface-hover);
+    border-color: var(--blog-border-accent);
+
+    .term-tree-item__name {
+      color: var(--blog-accent);
+    }
+  }
+
+  &__icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--blog-accent-muted);
+    color: var(--blog-accent);
+    border-radius: $blog-radius-md;
+    flex-shrink: 0;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  &__name {
+    font-family: $blog-font-serif;
+    font-size: $blog-heading-6;
+    font-weight: $blog-weight-medium;
+    color: var(--blog-text-body);
+    flex: 1;
+    transition: color $blog-transition-fast;
+  }
+
+  &__count {
+    padding: $blog-space-1 $blog-space-3;
+    background: var(--blog-surface-tertiary);
+    color: var(--blog-text-muted);
+    font-family: $blog-font-sans;
+    font-size: $blog-ui-small;
+    border-radius: $blog-radius-full;
+    min-width: 32px;
+    text-align: center;
+  }
+}
+
+// ============================================
+// TAXONOMY EMPTY STATE
+// ============================================
+
+.taxonomy-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $blog-space-20 $blog-space-8;
+  text-align: center;
+  background: var(--blog-surface-primary);
+  border: 1px dashed var(--blog-border-medium);
+  border-radius: $blog-card-radius-lg;
+
+  &__icon {
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--blog-surface-tertiary);
+    border-radius: $blog-radius-2xl;
+    margin-bottom: $blog-space-6;
+
+    svg {
+      width: 48px;
+      height: 48px;
+      color: var(--blog-text-subtle);
+      opacity: 0.5;
+    }
+  }
+
+  &__title {
+    font-family: $blog-font-serif;
+    font-size: $blog-heading-4;
+    font-weight: $blog-weight-semibold;
+    color: var(--blog-text-headline);
+    margin: 0 0 $blog-space-3 0;
+  }
+
+  &__text {
+    font-family: $blog-font-sans;
+    font-size: $blog-body-base;
+    color: var(--blog-text-secondary);
+    margin: 0 0 $blog-space-6 0;
+    max-width: 400px;
+    line-height: $blog-leading-relaxed;
+  }
+}
+
+// ============================================
+// RESPONSIVE ADJUSTMENTS
+// ============================================
+
+@media (max-width: $blog-breakpoint-md) {
+  .taxonomy-hero {
+    padding: $blog-space-10 $blog-space-4;
+  }
+
+  .terms-section__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $blog-space-3;
+  }
+
+  .term-card {
+    &--child {
+      margin-left: 0;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+
+@media (max-width: $blog-breakpoint-sm) {
+  .taxonomy-hero {
+    &__title {
+      font-size: $blog-heading-2;
+    }
+
+    &__icon {
+      width: 64px;
+      height: 64px;
+
+      svg {
+        width: 32px;
+        height: 32px;
+      }
+    }
+  }
+
+  .term-header__title {
+    font-size: $blog-heading-2;
+  }
+
+  .term-pill {
+    flex: 1 1 calc(50% - #{$blog-space-3});
+    justify-content: center;
+  }
+}

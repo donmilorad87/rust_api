@@ -8,8 +8,10 @@
 //! - Routes (route registry and cron scheduling)
 //! - Includes (shared utilities)
 //! - Utility (static helper functions)
+//! - Elasticsearch (blog search)
 
 pub mod database;
+pub mod elasticsearch;
 pub mod events;
 pub mod includes;
 pub mod middleware;

@@ -16,8 +16,10 @@ use tracing::{error, info, warn};
 use crate::app::db_query::mutations::user as user_mutations;
 use crate::app::db_query::read::user as user_read;
 use crate::app::games::mongodb_slot_machine::MongoSlotMachineClient;
-use crate::app::games::slot_machine::{execute_spin};
-use crate::app::games::slot_machine_minigame::{execute_minigame, MiniGameRequest};
+use crate::app::games::slot_machine::execute_spin;
+use crate::app::games::slot_machine_minigame::{
+    execute_minigame, execute_ticket_minigame, MiniGameRequest, TicketMiniGameRequest,
+};
 use crate::app::games::slot_machine_types::{
     AjaxResponse, SlotHistoryItem, SlotHistoryResponse, SlotSpinRequest, SlotUserStats,
     BALANCE_TO_COIN_RATIO,
@@ -73,6 +75,26 @@ pub struct OddsInfoData {
     pub probability: f64,
     pub odds: f64,
     pub description: String,
+}
+
+/// Response for ticket-based mini-game
+#[derive(Debug, Serialize)]
+pub struct TicketMiniGameResponseData {
+    pub drawn_numbers: Vec<i32>,
+    pub ticket_results: Vec<TicketResultData>,
+    pub total_bet: i64,
+    pub total_payout: i64,
+    pub net_result: i64,
+    pub new_balance: i64,
+}
+
+/// Single ticket result for response
+#[derive(Debug, Serialize)]
+pub struct TicketResultData {
+    pub numbers_played: u8,
+    pub matches: u8,
+    pub bet: i64,
+    pub payout: i64,
 }
 
 /// Helper to get user_id from request extensions (set by JWT middleware)
@@ -264,26 +286,33 @@ impl SlotMachineController {
     }
 
     /// Handle slot_minigame action
+    /// Supports both old format (bets array) and new format (tickets + coin_value)
     async fn minigame(
         state: web::Data<AppState>,
         user_id: i64,
         data: &serde_json::Value,
     ) -> HttpResponse {
-        // Parse mini-game request
-        let mut request: MiniGameRequest = match serde_json::from_value(data.clone()) {
-            Ok(r) => r,
-            Err(e) => {
-                return HttpResponse::BadRequest()
-                    .json(AjaxResponse::<()>::error(format!("Invalid request: {}", e)));
-            }
-        };
+        // Detect request format: new format has "tickets" field
+        if data.get("tickets").is_some() {
+            // New ticket-based format
+            return Self::minigame_tickets(&state, user_id, data).await;
+        }
 
-        // Get user's current balance for validation
+        // Get user's current balance for validation (old format)
         let db = state.db.lock().await;
         let user_balance_coins = match user_read::get_by_id(&db, user_id).await {
             Ok(u) => u.balance / BALANCE_TO_COIN_RATIO,
             Err(_) => {
                 return HttpResponse::NotFound().json(AjaxResponse::<()>::error("User not found"));
+            }
+        };
+
+        // Old format with individual bets
+        let mut request: MiniGameRequest = match serde_json::from_value(data.clone()) {
+            Ok(r) => r,
+            Err(e) => {
+                return HttpResponse::BadRequest()
+                    .json(AjaxResponse::<()>::error(format!("Invalid request: {}", e)));
             }
         };
 
@@ -301,7 +330,9 @@ impl SlotMachineController {
         // Deduct total bet from balance
         if result.total_bet > 0 {
             let bet_balance = result.total_bet * BALANCE_TO_COIN_RATIO;
-            if let Err(e) = user_mutations::deduct_balance_if_sufficient(&db, user_id, bet_balance).await {
+            if let Err(e) =
+                user_mutations::deduct_balance_if_sufficient(&db, user_id, bet_balance).await
+            {
                 error!(
                     "Failed to deduct mini-game bet from user {}: {}. Bet: {}",
                     user_id, e, result.total_bet
@@ -381,6 +412,108 @@ impl SlotMachineController {
                 odds: result.odds_info.odds,
                 description: result.odds_info.description,
             },
+        }))
+    }
+
+    /// Handle ticket-based mini-game (new format)
+    async fn minigame_tickets(
+        state: &web::Data<AppState>,
+        user_id: i64,
+        data: &serde_json::Value,
+    ) -> HttpResponse {
+        // Parse ticket-based request
+        let mut request: TicketMiniGameRequest = match serde_json::from_value(data.clone()) {
+            Ok(r) => r,
+            Err(e) => {
+                return HttpResponse::BadRequest()
+                    .json(AjaxResponse::<()>::error(format!("Invalid request: {}", e)));
+            }
+        };
+
+        // Get user's current balance for validation
+        let db = state.db.lock().await;
+        let user_balance_coins = match user_read::get_by_id(&db, user_id).await {
+            Ok(u) => u.balance / BALANCE_TO_COIN_RATIO,
+            Err(_) => {
+                return HttpResponse::NotFound().json(AjaxResponse::<()>::error("User not found"));
+            }
+        };
+
+        // Set user_coins for validation
+        request.user_coins = user_balance_coins;
+
+        // Execute ticket mini-game (includes validation)
+        let result = match execute_ticket_minigame(&request) {
+            Ok(r) => r,
+            Err(e) => {
+                return HttpResponse::BadRequest().json(AjaxResponse::<()>::error(e));
+            }
+        };
+
+        // Deduct total bet from balance
+        if result.total_bet > 0 {
+            let bet_balance = result.total_bet * BALANCE_TO_COIN_RATIO;
+            if let Err(e) =
+                user_mutations::deduct_balance_if_sufficient(&db, user_id, bet_balance).await
+            {
+                error!(
+                    "Failed to deduct ticket mini-game bet from user {}: {}. Bet: {}",
+                    user_id, e, result.total_bet
+                );
+                return HttpResponse::BadRequest()
+                    .json(AjaxResponse::<()>::error("Insufficient balance"));
+            }
+        }
+
+        // Add winnings to balance if any
+        if result.total_payout > 0 {
+            let payout_balance = result.total_payout * BALANCE_TO_COIN_RATIO;
+            if let Err(e) = user_mutations::add_balance(&db, user_id, payout_balance).await {
+                error!(
+                    "Failed to add ticket mini-game winnings to user {}: {}. Payout: {}",
+                    user_id, e, result.total_payout
+                );
+            }
+        }
+
+        // Get updated balance (in coins)
+        let new_balance_coins = match user_read::get_by_id(&db, user_id).await {
+            Ok(u) => u.balance / BALANCE_TO_COIN_RATIO,
+            Err(_) => 0,
+        };
+
+        // Calculate total matches for logging
+        let total_matches: u8 = result.ticket_results.iter().map(|t| t.matches).sum();
+
+        info!(
+            user_id = %user_id,
+            drawn = ?result.drawn_numbers,
+            coin_value = %request.coin_value,
+            total_bet = %result.total_bet,
+            payout = %result.total_payout,
+            matches = %total_matches,
+            "Slot machine ticket mini-game completed"
+        );
+
+        // Convert to response format
+        let ticket_results: Vec<TicketResultData> = result
+            .ticket_results
+            .into_iter()
+            .map(|tr| TicketResultData {
+                numbers_played: tr.numbers_played,
+                matches: tr.matches,
+                bet: tr.bet,
+                payout: tr.payout,
+            })
+            .collect();
+
+        HttpResponse::Ok().json(AjaxResponse::success(TicketMiniGameResponseData {
+            drawn_numbers: result.drawn_numbers,
+            ticket_results,
+            total_bet: result.total_bet,
+            total_payout: result.total_payout,
+            net_result: result.net_result,
+            new_balance: new_balance_coins,
         }))
     }
 

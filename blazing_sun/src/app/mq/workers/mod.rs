@@ -5,6 +5,7 @@ pub mod create_user;
 pub mod delete_upload;
 pub mod delete_user;
 pub mod email;
+pub mod index_blog_post;
 pub mod oauth_delete_gallery;
 pub mod oauth_delete_picture;
 pub mod oauth_list_galleries;
@@ -26,6 +27,7 @@ pub async fn process(
         "delete_user" => delete_user::process(mq, job).await,
         "delete_upload" => delete_upload::process(mq, job).await,
         "send_email" => email::process(mq, job).await,
+        "index_blog_post" => index_blog_post::process(mq, job).await,
         "oauth_list_galleries" => oauth_list_galleries::process(mq, job).await,
         "oauth_list_gallery_images" => oauth_list_gallery_images::process(mq, job).await,
         "oauth_delete_gallery" => oauth_delete_gallery::process(mq, job).await,

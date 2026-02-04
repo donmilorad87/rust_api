@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE search_index_settings\n            SET is_enabled = $2\n            WHERE content_type = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "db83fceda0f9ed8cf69dd5052bbc8734a7e34308ab9ff04e8b34c8d7f1ed00e8"
+}

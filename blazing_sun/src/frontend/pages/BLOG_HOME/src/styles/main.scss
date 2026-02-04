@@ -1,0 +1,375 @@
+// ============================================
+// BLOG_HOME PAGE - Editorial Magazine Stylesheet
+// ============================================
+// A sophisticated editorial magazine experience with
+// refined typography, elegant animations, and premium feel.
+//
+// Design Philosophy:
+// - Clean, editorial magazine aesthetic
+// - Serif headings for sophistication (Playfair Display)
+// - Sans-serif body for readability (Inter)
+// - Warm gold accent color for premium feel
+// - Staggered animations for engaging reveals
+// - Responsive design that maintains elegance at all sizes
+
+// ============================================
+// 1. VARIABLES
+// ============================================
+@use 'variables' as *;
+
+// ============================================
+// 2. ANIMATIONS
+// ============================================
+@use 'animations';
+
+// ============================================
+// 3. COMPONENTS
+// ============================================
+@use 'featured-hero';
+@use 'post-card';
+@use 'sidebar';
+@use 'pagination';
+@use 'states';
+
+// ============================================
+// GOOGLE FONTS IMPORT
+// ============================================
+// Playfair Display for editorial serif headings
+// Inter for clean sans-serif body text
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+// ============================================
+// PAGE BASE STYLES
+// ============================================
+.blog-page {
+  min-height: calc(100vh - 70px);
+  padding: $spacing-lg 0 $spacing-3xl;
+  font-family: $font-editorial-sans;
+
+  // Subtle background texture
+  background:
+    linear-gradient(
+      180deg,
+      var(--card-bg) 0%,
+      transparent 400px
+    ),
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba($editorial-accent, 0.03) 0%,
+      transparent 70%
+    );
+
+  @media (min-width: $breakpoint-md) {
+    padding: $spacing-xl 0 $spacing-3xl;
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    padding: $spacing-xxl 0 $spacing-3xl;
+  }
+
+  // ============================================
+  // CONTAINER
+  // ============================================
+  &__container {
+    max-width: $content-max-width;
+    margin: 0 auto;
+    padding: 0 $spacing-md;
+
+    @media (min-width: $breakpoint-md) {
+      padding: 0 $spacing-lg;
+    }
+
+    @media (min-width: $breakpoint-xl) {
+      padding: 0 $spacing-xl;
+    }
+  }
+
+  // ============================================
+  // PAGE HEADER
+  // ============================================
+  &__header {
+    text-align: center;
+    margin-bottom: $spacing-xl;
+    padding-bottom: $spacing-xl;
+    border-bottom: 1px solid var(--border-color-light);
+
+    // Animation
+    opacity: 0;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+
+    @media (min-width: $breakpoint-md) {
+      margin-bottom: $spacing-xxl;
+      padding-bottom: $spacing-xxl;
+    }
+  }
+
+  &__title {
+    margin: 0 0 $spacing-md 0;
+    font-family: $font-editorial-serif;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+
+    // Decorative accent
+    &::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: $editorial-accent;
+      margin: $spacing-md auto 0;
+      border-radius: 2px;
+    }
+  }
+
+  &__description {
+    margin: 0 auto;
+    max-width: 600px;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-lg;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  // ============================================
+  // TWO-COLUMN LAYOUT
+  // ============================================
+  &__layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $spacing-xl;
+
+    @media (min-width: $breakpoint-lg) {
+      grid-template-columns: 1fr $sidebar-width;
+      gap: $spacing-xxl;
+    }
+  }
+
+  // ============================================
+  // MAIN CONTENT AREA
+  // ============================================
+  &__main {
+    min-width: 0; // Prevent grid blowout
+  }
+}
+
+// ============================================
+// SECTION HEADERS
+// ============================================
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  &__title {
+    margin: 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-2xl;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  &__line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--border-color-light) 0%,
+      transparent 100%
+    );
+  }
+
+  &__count {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+}
+
+// ============================================
+// FEATURED SECTION WRAPPER
+// ============================================
+.featured-section {
+  margin-bottom: $spacing-xl;
+
+  @media (min-width: $breakpoint-md) {
+    margin-bottom: $spacing-xxl;
+  }
+}
+
+// ============================================
+// LATEST POSTS SECTION
+// ============================================
+.latest-section {
+  margin-bottom: $spacing-xl;
+}
+
+// ============================================
+// BREADCRUMB (optional)
+// ============================================
+.blog-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  font-family: $font-editorial-sans;
+  font-size: $font-size-sm;
+  color: var(--text-muted);
+
+  &__link {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color $anim-duration-fast ease;
+
+    &:hover {
+      color: $editorial-accent;
+    }
+  }
+
+  &__separator {
+    color: var(--border-color-light);
+  }
+
+  &__current {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+}
+
+// ============================================
+// DIVIDER
+// ============================================
+.editorial-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+  margin: $spacing-xxl 0;
+  color: var(--border-color-light);
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: currentColor;
+  }
+
+  &__icon {
+    width: 24px;
+    height: 24px;
+    color: $editorial-accent;
+  }
+}
+
+// ============================================
+// SCROLL TO TOP BUTTON
+// ============================================
+.scroll-to-top {
+  position: fixed;
+  bottom: $spacing-xl;
+  right: $spacing-xl;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $editorial-charcoal;
+  color: #ffffff;
+  border: none;
+  border-radius: $radius-full;
+  cursor: pointer;
+  box-shadow: $shadow-editorial-lg;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all $anim-duration-fast $anim-easing-smooth;
+  z-index: $z-fixed;
+
+  &.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  &:hover {
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+    transform: translateY(-4px);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  [data-theme="dark"] & {
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+
+    &:hover {
+      background: $editorial-accent-light;
+    }
+  }
+}
+
+// ============================================
+// ACCESSIBILITY: SKIP LINK
+// ============================================
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: $spacing-md;
+  padding: $spacing-sm $spacing-md;
+  background: $editorial-charcoal;
+  color: #ffffff;
+  font-family: $font-editorial-sans;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: $radius-md;
+  z-index: $z-max;
+  transition: top $anim-duration-fast ease;
+
+  &:focus {
+    top: $spacing-md;
+  }
+}
+
+// ============================================
+// PRINT STYLES
+// ============================================
+@media print {
+  .blog-page {
+    padding: 0;
+    background: none;
+
+    &__sidebar {
+      display: none;
+    }
+
+    &__layout {
+      display: block;
+    }
+  }
+
+  .featured-hero,
+  .pagination,
+  .scroll-to-top,
+  .sidebar-widget {
+    display: none;
+  }
+
+  .post-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ddd;
+    margin-bottom: 1rem;
+  }
+}

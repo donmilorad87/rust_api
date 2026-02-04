@@ -55,6 +55,10 @@ services:
       - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
       # Bigger Dice Game Configuration
       - BIGGER_DICE_WINNING_PERCENTAGE=${BIGGER_DICE_WINNING_PERCENTAGE}
+      # Elasticsearch Configuration
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT}
+      - ELASTICSEARCH_INDEX_PREFIX=${ELASTICSEARCH_INDEX_PREFIX}
     volumes:
       - ./blazing_sun:/home/rust/blazing_sun
       - cargo-cache:/usr/local/cargo/registry
@@ -72,6 +76,8 @@ services:
       redis:
         condition: service_healthy
       mongo:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     networks:
       devnet:
@@ -596,6 +602,48 @@ services:
       devnet:
         ipv4_address: ${WS_GATEWAY_IP:-172.28.0.23}
 
+  elasticsearch:
+    build:
+      context: ./elasticsearch
+      dockerfile: Dockerfile
+      args:
+        ELASTICSEARCH_PORT: ${ELASTICSEARCH_PORT:-9200}
+        ELASTICSEARCH_HEAP_SIZE: ${ELASTICSEARCH_HEAP_SIZE:-512m}
+    image: elasticsearch-search
+    pull_policy: build
+    container_name: elasticsearch
+    hostname: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms${ELASTICSEARCH_HEAP_SIZE:-512m} -Xmx${ELASTICSEARCH_HEAP_SIZE:-512m}"
+      - cluster.name=blazing-sun-cluster
+      - node.name=elasticsearch-node-1
+      - bootstrap.memory_lock=true
+      - xpack.ml.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+      - "9300:9300"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/local/bin/elasticsearch-healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      devnet:
+        ipv4_address: ${ELASTICSEARCH_IP:-172.28.0.27}
+
 volumes:
   pgdata:
   checkout-pgdata:
@@ -613,6 +661,7 @@ volumes:
   ws-gateway-target-cache:
   checkout-cargo-cache:
   checkout-target-cache:
+  esdata:
 
 networks:
   devnet:

@@ -1,0 +1,590 @@
+// ============================================
+// BLOG_TAG PAGE - Editorial Magazine Styles
+// ============================================
+// A sophisticated editorial tag archive page with refined typography,
+// elegant tag header, related tags section, and premium design elements.
+//
+// Design Philosophy:
+// - Prominent tag branding with decorative flourishes
+// - Clear visual hierarchy for tag context
+// - Refined related tags discovery
+// - Seamless integration with editorial post cards
+
+@use 'sass:color';
+@use 'sass:math';
+@use 'variables' as *;
+@use '../../../BLOG/src/styles/variables' as blog;
+
+// Import the main BLOG styles (includes all shared components)
+@use '../../../BLOG/src/styles/main' as blogMain;
+
+// ============================================
+// TAG HEADER - Editorial Hero Section
+// ============================================
+
+.blog-page__header--taxonomy {
+  position: relative;
+  padding: blog.$blog-space-12 blog.$blog-space-6;
+  margin-bottom: blog.$blog-space-10;
+  background: var(--blog-surface-primary);
+  border: 1px solid var(--blog-border-light);
+  border-radius: blog.$blog-card-radius-lg;
+  box-shadow: var(--blog-shadow-soft);
+  overflow: hidden;
+
+  // Decorative background pattern
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+      radial-gradient(circle at 20% 80%, var(--blog-accent-muted) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, var(--blog-gold-muted) 0%, transparent 50%);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  // Subtle top border accent
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 4px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--blog-accent) 20%,
+      var(--blog-gold) 80%,
+      transparent 100%
+    );
+    border-radius: 0 0 blog.$blog-radius-full blog.$blog-radius-full;
+  }
+
+  // Ensure content is above background
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (max-width: blog.$blog-breakpoint-md) {
+    padding: blog.$blog-space-8 blog.$blog-space-4;
+    margin-bottom: blog.$blog-space-8;
+  }
+}
+
+// Tag label styling
+.blog-page__label {
+  display: inline-flex;
+  align-items: center;
+  gap: blog.$blog-space-2;
+  padding: blog.$blog-space-2 blog.$blog-space-4;
+  background: var(--blog-surface-tertiary);
+  border: 1px solid var(--blog-border-light);
+  border-radius: blog.$blog-radius-full;
+  font-family: blog.$blog-font-sans;
+  font-size: blog.$blog-ui-xs;
+  font-weight: blog.$blog-weight-semibold;
+  color: var(--blog-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: blog.$blog-tracking-caps;
+  margin-bottom: blog.$blog-space-4;
+
+  // Tag icon within label
+  svg {
+    width: 14px;
+    height: 14px;
+    color: var(--blog-accent);
+  }
+}
+
+// Tag title with hashtag styling
+.blog-page__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: blog.$blog-space-3;
+  font-family: blog.$blog-font-serif;
+  font-size: blog.$blog-display-3;
+  font-weight: blog.$blog-weight-bold;
+  color: var(--blog-text-headline);
+  line-height: blog.$blog-leading-tight;
+  letter-spacing: blog.$blog-tracking-tight;
+  margin: 0 0 blog.$blog-space-4 0;
+
+  // The hashtag portion
+  span:last-child {
+    color: var(--blog-accent);
+
+    // Decorative underline
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 3px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        var(--blog-accent) 50%,
+        transparent 100%
+      );
+      border-radius: blog.$blog-radius-full;
+    }
+  }
+
+  @media (max-width: blog.$blog-breakpoint-md) {
+    font-size: blog.$blog-heading-1;
+  }
+}
+
+// Tag description
+.blog-page__description {
+  font-family: blog.$blog-font-sans;
+  font-size: blog.$blog-body-large;
+  color: var(--blog-text-secondary);
+  line-height: blog.$blog-leading-relaxed;
+  margin: blog.$blog-space-6 auto 0;
+  max-width: 540px;
+  text-align: center;
+
+  @media (max-width: blog.$blog-breakpoint-md) {
+    font-size: blog.$blog-body-base;
+    margin-top: blog.$blog-space-5;
+  }
+}
+
+// Tag meta info (post count)
+.blog-page__meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: blog.$blog-space-6;
+  margin-top: blog.$blog-space-6;
+  padding-top: blog.$blog-space-5;
+  border-top: 1px solid var(--blog-border-light);
+}
+
+.blog-page__count {
+  display: inline-flex;
+  align-items: center;
+  gap: blog.$blog-space-2;
+  padding: blog.$blog-space-2 blog.$blog-space-4;
+  background: var(--blog-accent-muted);
+  color: var(--blog-accent);
+  font-family: blog.$blog-font-sans;
+  font-size: blog.$blog-ui-base;
+  font-weight: blog.$blog-weight-semibold;
+  border-radius: blog.$blog-radius-full;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+  }
+}
+
+// ============================================
+// RELATED TAGS SECTION - Editorial Discovery
+// ============================================
+
+.sidebar-widget {
+  // Related tags widget specific styling
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: blog.$blog-space-2;
+
+    &__tag {
+      display: inline-flex;
+      align-items: center;
+      gap: blog.$blog-space-1;
+      padding: blog.$blog-space-2 blog.$blog-space-4;
+      background: var(--blog-surface-tertiary);
+      color: var(--blog-text-secondary);
+      font-family: blog.$blog-font-sans;
+      font-size: blog.$blog-ui-small;
+      font-weight: blog.$blog-weight-medium;
+      border-radius: blog.$blog-radius-full;
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all blog.$blog-transition-fast;
+
+      // Hashtag prefix
+      &::before {
+        content: '#';
+        color: var(--blog-text-muted);
+        font-weight: blog.$blog-weight-regular;
+        transition: color blog.$blog-transition-fast;
+      }
+
+      &:hover {
+        background: var(--blog-accent-muted);
+        color: var(--blog-accent);
+        border-color: var(--blog-border-accent);
+        transform: translateY(-2px);
+        box-shadow: var(--blog-shadow-soft);
+
+        &::before {
+          color: var(--blog-accent);
+        }
+      }
+
+      // Active/current tag
+      &--active {
+        background: var(--blog-accent);
+        color: white;
+        border-color: var(--blog-accent);
+
+        &::before {
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        &:hover {
+          background: var(--blog-accent-dark);
+          color: white;
+
+          &::before {
+            color: rgba(255, 255, 255, 0.8);
+          }
+        }
+      }
+
+      // Size variations for tag popularity
+      &--lg {
+        font-size: blog.$blog-ui-base;
+        padding: blog.$blog-space-2 blog.$blog-space-5;
+        font-weight: blog.$blog-weight-semibold;
+      }
+
+      &--sm {
+        font-size: blog.$blog-ui-xs;
+        padding: blog.$blog-space-1 blog.$blog-space-3;
+      }
+    }
+  }
+}
+
+// ============================================
+// POSTS GRID - Tag Archive Enhancement
+// ============================================
+
+.posts-grid {
+  // Staggered animation for post cards
+  .post-card {
+    animation: blog-fade-in-up 0.5s ease-out both;
+
+    @for $i from 1 through 12 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{0.05s * $i};
+      }
+    }
+  }
+}
+
+// Post card tag highlighting
+.post-card__tag {
+  // Highlight the current tag on post cards
+  &--active {
+    background: var(--blog-accent);
+    color: white;
+    position: relative;
+
+    // Subtle glow effect
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: var(--blog-accent);
+      border-radius: inherit;
+      opacity: 0.3;
+      z-index: -1;
+      filter: blur(4px);
+    }
+  }
+}
+
+// ============================================
+// TAG-SPECIFIC SIDEBAR ENHANCEMENTS
+// ============================================
+
+.blog-page__sidebar {
+  // Add visual interest to sidebar on tag pages
+  .sidebar-widget {
+    // Subtle animation on widget appearance
+    animation: blog-fade-in 0.4s ease-out both;
+
+    @for $i from 1 through 5 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{0.1s * $i};
+      }
+    }
+  }
+
+  // Related tags widget gets special treatment
+  .sidebar-widget:has(.tag-cloud) {
+    .sidebar-widget__title {
+      display: flex;
+      align-items: center;
+      gap: blog.$blog-space-2;
+
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%238B2942' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z'%3E%3C/path%3E%3Cline x1='7' y1='7' x2='7.01' y2='7'%3E%3C/line%3E%3C/svg%3E");
+        background-size: contain;
+        background-repeat: no-repeat;
+        flex-shrink: 0;
+      }
+    }
+  }
+}
+
+// ============================================
+// EMPTY STATE - TAG SPECIFIC
+// ============================================
+
+.empty-state {
+  // Tag-specific empty state with tag icon
+  svg {
+    color: var(--blog-accent);
+    opacity: 0.2;
+  }
+
+  h3 {
+    color: var(--blog-text-headline);
+
+    &::before {
+      content: '#';
+      color: var(--blog-accent);
+      margin-right: blog.$blog-space-1;
+    }
+  }
+
+  // Back to blog button
+  .btn--primary {
+    margin-top: blog.$blog-space-4;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-right: blog.$blog-space-2;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5'%3E%3C/path%3E%3Cpath d='M12 19l-7-7 7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+  }
+}
+
+// ============================================
+// BREADCRUMB - TAG CONTEXT
+// ============================================
+
+.breadcrumb {
+  // Slightly more prominent breadcrumb for tag pages
+  margin-bottom: blog.$blog-space-6;
+
+  &__item {
+    &--active {
+      color: var(--blog-accent);
+      font-weight: blog.$blog-weight-semibold;
+
+      // Tag indicator
+      &::before {
+        content: '#';
+        margin-right: 2px;
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
+// ============================================
+// PAGINATION - TAG ARCHIVE STYLING
+// ============================================
+
+.pagination {
+  // Slightly enhanced pagination for tag archives
+  margin-top: blog.$blog-space-10;
+
+  &__item {
+    // Current page gets accent color
+    &--active {
+      background: var(--blog-accent);
+      border-color: var(--blog-accent);
+
+      // Subtle shadow for depth
+      box-shadow: 0 2px 8px rgba(139, 41, 66, 0.25);
+    }
+  }
+}
+
+// ============================================
+// SEARCH FORM IN SIDEBAR
+// ============================================
+
+.search-form {
+  &__input {
+    // Pre-fill with tag context hint
+    &::placeholder {
+      color: var(--blog-text-subtle);
+    }
+  }
+}
+
+// ============================================
+// CATEGORY LIST ENHANCEMENT
+// ============================================
+
+.category-list {
+  &__link {
+    // Add subtle tag icon on hover
+    &:hover {
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        margin-right: blog.$blog-space-2;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238B2942' stroke-width='2'%3E%3Cpath d='M9 18l6-6-6-6'%3E%3C/path%3E%3C/svg%3E");
+        background-size: contain;
+        background-repeat: no-repeat;
+        opacity: 0.7;
+      }
+    }
+  }
+}
+
+// ============================================
+// RESPONSIVE ADJUSTMENTS
+// ============================================
+
+@media (max-width: blog.$blog-breakpoint-lg) {
+  .blog-page__header--taxonomy {
+    padding: blog.$blog-space-10 blog.$blog-space-5;
+
+    &::after {
+      width: 80px;
+    }
+  }
+}
+
+@media (max-width: blog.$blog-breakpoint-md) {
+  .blog-page__header--taxonomy {
+    padding: blog.$blog-space-8 blog.$blog-space-4;
+    border-radius: blog.$blog-card-radius;
+
+    &::before {
+      opacity: 0.4;
+    }
+
+    &::after {
+      width: 60px;
+      height: 3px;
+    }
+  }
+
+  .blog-page__title {
+    font-size: blog.$blog-heading-2;
+
+    span:last-child::after {
+      bottom: -6px;
+      height: 2px;
+    }
+  }
+
+  .blog-page__meta {
+    flex-direction: column;
+    gap: blog.$blog-space-3;
+  }
+
+  .sidebar-widget .tag-cloud {
+    justify-content: center;
+  }
+}
+
+@media (max-width: blog.$blog-breakpoint-sm) {
+  .blog-page__header--taxonomy {
+    padding: blog.$blog-space-6 blog.$blog-space-3;
+    margin-left: -(blog.$blog-space-4);
+    margin-right: -(blog.$blog-space-4);
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .blog-page__title {
+    font-size: blog.$blog-heading-3;
+  }
+
+  .blog-page__description {
+    font-size: blog.$blog-body-small;
+  }
+
+  // Stack tags vertically on mobile
+  .sidebar-widget .tag-cloud__tag {
+    font-size: blog.$blog-ui-xs;
+    padding: blog.$blog-space-2 blog.$blog-space-3;
+  }
+}
+
+// ============================================
+// DARK MODE SPECIFIC ADJUSTMENTS
+// ============================================
+
+[data-theme="dark"] {
+  .blog-page__header--taxonomy {
+    &::before {
+      opacity: 0.4;
+    }
+
+    &::after {
+      opacity: 0.8;
+    }
+  }
+
+  .post-card__tag--active::after {
+    opacity: 0.2;
+  }
+
+  .sidebar-widget:has(.tag-cloud) .sidebar-widget__title::before {
+    filter: brightness(1.3);
+  }
+}
+
+// ============================================
+// PRINT STYLES
+// ============================================
+
+@media print {
+  .blog-page__header--taxonomy {
+    &::before,
+    &::after {
+      display: none;
+    }
+
+    border: 1px solid #ccc;
+    box-shadow: none;
+  }
+
+  .sidebar-widget .tag-cloud__tag {
+    border: 1px solid #ccc;
+    background: none;
+  }
+
+  .pagination,
+  .search-form {
+    display: none;
+  }
+}

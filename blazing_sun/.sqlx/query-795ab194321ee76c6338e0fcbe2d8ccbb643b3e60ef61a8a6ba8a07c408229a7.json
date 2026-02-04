@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM blog_taxonomies WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "795ab194321ee76c6338e0fcbe2d8ccbb643b3e60ef61a8a6ba8a07c408229a7"
+}

@@ -1,0 +1,477 @@
+// ============================================
+// POST CARD COMPONENT - Editorial Magazine Style
+// ============================================
+// Sophisticated magazine-style post cards with elegant
+// typography and smooth interactions
+
+@use 'variables' as *;
+
+.post-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-radius: $radius-xl;
+  overflow: hidden;
+  box-shadow: $shadow-editorial-sm;
+  transition:
+    transform $anim-duration-fast $anim-easing-smooth,
+    box-shadow $anim-duration-fast $anim-easing-smooth;
+
+  // Animation on load
+  opacity: 0;
+  transform: translateY(20px);
+
+  &.is-visible {
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+  }
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: $shadow-editorial-lg;
+  }
+
+  // ============================================
+  // CLICKABLE LINK WRAPPER
+  // ============================================
+  &__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  // ============================================
+  // IMAGE CONTAINER
+  // ============================================
+  &__image {
+    position: relative;
+    width: 100%;
+    padding-top: $card-aspect-ratio;
+    background: var(--skeleton-bg);
+    overflow: hidden;
+
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform $anim-duration-slow $anim-easing-smooth;
+    }
+
+    // Subtle gradient overlay for depth
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60%;
+      background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.15) 0%,
+        transparent 100%
+      );
+      opacity: 0;
+      transition: opacity $anim-duration-fast ease;
+      pointer-events: none;
+    }
+  }
+
+  &:hover &__image img {
+    transform: scale(1.05);
+  }
+
+  &:hover &__image::after {
+    opacity: 1;
+  }
+
+  // ============================================
+  // IMAGE PLACEHOLDER
+  // ============================================
+  &__image--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      135deg,
+      var(--skeleton-bg) 0%,
+      var(--skeleton-shine) 100%
+    );
+
+    svg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      color: var(--text-muted);
+      opacity: 0.4;
+    }
+  }
+
+  // ============================================
+  // FEATURED BADGE
+  // ============================================
+  &__badge {
+    position: absolute;
+    top: $spacing-md;
+    left: $spacing-md;
+    padding: $spacing-xs $spacing-sm;
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xxs;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: $radius-sm;
+    z-index: 2;
+  }
+
+  // ============================================
+  // CONTENT AREA
+  // ============================================
+  &__content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: $spacing-lg;
+
+    @media (min-width: $breakpoint-md) {
+      padding: $spacing-lg $spacing-lg $spacing-md;
+    }
+  }
+
+  // ============================================
+  // CATEGORY
+  // ============================================
+  &__category {
+    display: inline-block;
+    margin-bottom: $spacing-sm;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: $editorial-accent-dark;
+    transition: color $anim-duration-fast ease;
+
+    [data-theme="dark"] & {
+      color: $editorial-accent-light;
+    }
+
+    &:hover {
+      color: $editorial-accent;
+    }
+  }
+
+  // ============================================
+  // TITLE
+  // ============================================
+  &__title {
+    margin: 0 0 $spacing-sm 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-xl;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-primary);
+    transition: color $anim-duration-fast ease;
+
+    // Clamp to 2 lines
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &:hover &__title {
+    color: $editorial-accent-dark;
+
+    [data-theme="dark"] & {
+      color: $editorial-accent-light;
+    }
+  }
+
+  // ============================================
+  // EXCERPT
+  // ============================================
+  &__excerpt {
+    margin: 0 0 $spacing-md 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    flex: 1;
+
+    // Clamp to 3 lines
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  // ============================================
+  // META INFO
+  // ============================================
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    padding-top: $spacing-sm;
+    border-top: 1px solid var(--border-color-light);
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    color: var(--text-muted);
+  }
+
+  &__date,
+  &__read-time {
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+  }
+
+  // ============================================
+  // AUTHOR
+  // ============================================
+  &__author {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+  }
+
+  &__author-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    border: 2px solid var(--border-color-light);
+  }
+
+  // ============================================
+  // TAGS
+  // ============================================
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-xs;
+    margin-top: $spacing-sm;
+  }
+
+  &__tag {
+    padding: 2px $spacing-sm;
+    background: var(--badge-default-bg);
+    color: var(--badge-default-text);
+    font-size: $font-size-xs;
+    border-radius: $radius-sm;
+    text-decoration: none;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      background: $editorial-accent;
+      color: $editorial-charcoal;
+    }
+  }
+}
+
+// ============================================
+// POSTS GRID - Magazine Layout
+// ============================================
+.posts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+
+  @media (min-width: $breakpoint-sm) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-lg;
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-xl;
+  }
+
+  // Staggered animation for children
+  &.stagger-children {
+    .post-card {
+      opacity: 0;
+    }
+
+    &.is-visible {
+      .post-card {
+        animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+      }
+
+      @for $i from 1 through 12 {
+        .post-card:nth-child(#{$i}) {
+          animation-delay: calc(#{$anim-stagger-base} * #{$i});
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// MAGAZINE-STYLE FEATURED LAYOUT
+// ============================================
+// First post is larger in a 2-column layout
+.posts-grid--magazine {
+  @media (min-width: $breakpoint-md) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+
+    // First post spans full width and is larger
+    .post-card:first-child {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+
+      .post-card__image {
+        padding-top: 0;
+        min-height: 320px;
+      }
+
+      .post-card__content {
+        padding: $spacing-xl;
+        justify-content: center;
+      }
+
+      .post-card__title {
+        font-size: $font-size-2xl;
+        -webkit-line-clamp: 3;
+      }
+
+      .post-card__excerpt {
+        -webkit-line-clamp: 4;
+        font-size: $font-size-base;
+      }
+    }
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    grid-template-columns: repeat(3, 1fr);
+
+    .post-card:first-child {
+      grid-column: 1 / 3;
+    }
+  }
+}
+
+// ============================================
+// MASONRY-STYLE LAYOUT
+// ============================================
+.posts-grid--masonry {
+  @media (min-width: $breakpoint-md) {
+    display: block;
+    column-count: 2;
+    column-gap: $spacing-lg;
+
+    .post-card {
+      break-inside: avoid;
+      margin-bottom: $spacing-lg;
+    }
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    column-count: 2;
+    column-gap: $spacing-xl;
+
+    .post-card {
+      margin-bottom: $spacing-xl;
+    }
+  }
+}
+
+// ============================================
+// COMPACT LIST LAYOUT
+// ============================================
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  .post-card {
+    flex-direction: row;
+    border-radius: $radius-lg;
+
+    &__link {
+      flex-direction: row;
+    }
+
+    &__image {
+      width: 140px;
+      min-width: 140px;
+      padding-top: 0;
+      height: 120px;
+      border-radius: $radius-lg 0 0 $radius-lg;
+
+      @media (min-width: $breakpoint-md) {
+        width: 200px;
+        min-width: 200px;
+        height: 150px;
+      }
+    }
+
+    &__content {
+      padding: $spacing-md;
+    }
+
+    &__title {
+      font-size: $font-size-lg;
+    }
+
+    &__excerpt {
+      -webkit-line-clamp: 2;
+    }
+  }
+}
+
+// ============================================
+// EMPTY STATE
+// ============================================
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-3xl $spacing-xl;
+  text-align: center;
+  background: var(--card-bg);
+  border-radius: $radius-xl;
+  border: 2px dashed var(--border-color-light);
+
+  svg {
+    width: 80px;
+    height: 80px;
+    color: var(--text-muted);
+    opacity: 0.4;
+    margin-bottom: $spacing-lg;
+  }
+
+  h3 {
+    margin: 0 0 $spacing-sm 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-xl;
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-base;
+    color: var(--text-muted);
+  }
+}

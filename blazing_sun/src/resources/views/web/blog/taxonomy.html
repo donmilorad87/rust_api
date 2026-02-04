@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{% if seo_title %}{{ seo_title }}{% else %}{% if taxonomy %}{{ taxonomy.name }}{% else %}{{ taxonomy_slug | default(value="Taxonomy") }}{% endif %} - Blog - {{ site_name | default(value='Blazing Sun') }}{% endif %}{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BLOG/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="blog-page">
+    <div class="blog-page__container">
+        {# Taxonomy Header #}
+        <header class="blog-page__header blog-page__header--taxonomy">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <ol class="breadcrumb__list">
+                    <li class="breadcrumb__item"><a href="/blog">Blog</a></li>
+                    <li class="breadcrumb__item breadcrumb__item--active" aria-current="page">{% if taxonomy %}{{ taxonomy.name }}{% else %}{{ taxonomy_slug | default(value="Taxonomy") }}{% endif %}</li>
+                </ol>
+            </nav>
+            <h1 class="blog-page__title"><span id="taxonomyName">{% if taxonomy %}{{ taxonomy.name }}{% else %}{{ taxonomy_slug | default(value="Loading...") }}{% endif %}</span></h1>
+            {% if taxonomy and taxonomy.description %}
+            <p class="blog-page__description">{{ taxonomy.description }}</p>
+            {% endif %}
+        </header>
+
+        <div class="blog-page__layout blog-page__layout--full">
+            {# Main Content Area #}
+            <section class="blog-page__main" aria-label="Taxonomy terms">
+                {# Terms Grid #}
+                <div class="taxonomy-grid">
+                    {% if terms %}
+                    {% for term in terms %}
+                    <article class="taxonomy-card">
+                        <a href="/blog/taxonomy/{{ taxonomy_slug | default(value=taxonomy.slug) }}/{{ term.slug }}" class="taxonomy-card__link">
+                            {% if term.featured_image_url %}
+                            <div class="taxonomy-card__image">
+                                <img src="{{ term.featured_image_url }}" alt="{{ term.name }}" loading="lazy">
+                            </div>
+                            {% else %}
+                            <div class="taxonomy-card__image taxonomy-card__image--placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            {% endif %}
+                            <div class="taxonomy-card__content">
+                                <h3 class="taxonomy-card__title">{{ term.name }}</h3>
+                                {% if term.description %}
+                                <p class="taxonomy-card__description">{{ term.description | truncate(length=100) }}</p>
+                                {% endif %}
+                                <span class="taxonomy-card__count">{{ term.post_count }} {% if term.post_count == 1 %}post{% else %}posts{% endif %}</span>
+                            </div>
+                        </a>
+                    </article>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <h3>No terms in this taxonomy</h3>
+                        <p>Check back soon for new content.</p>
+                        <a href="/blog" class="btn btn--primary">Back to Blog</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        {# Taxonomy Term Posts (if viewing a specific term) #}
+        {% if term and posts %}
+        <section class="taxonomy-posts" aria-label="Posts in {{ term.name }}">
+            <header class="taxonomy-posts__header">
+                <h2 class="taxonomy-posts__title">Posts in "{{ term.name }}"</h2>
+                <span class="taxonomy-posts__count">{{ pagination.total }} {% if pagination.total == 1 %}post{% else %}posts{% endif %}</span>
+            </header>
+
+            <div id="postsGrid" class="posts-grid">
+                {% for post in posts %}
+                <article class="post-card" aria-label="Blog post">
+                    <a href="/blog/{{ post.slug }}" class="post-card__link">
+                        {% if post.featured_image_url %}
+                        <div class="post-card__image">
+                            <img src="{{ post.featured_image_url }}" alt="{{ post.title }}" loading="lazy">
+                        </div>
+                        {% else %}
+                        <div class="post-card__image post-card__image--placeholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        {% endif %}
+                        <div class="post-card__content">
+                            {% if post.category %}
+                            <span class="post-card__category">{{ post.category.name }}</span>
+                            {% endif %}
+                            <h3 class="post-card__title">{{ post.title }}</h3>
+                            <p class="post-card__excerpt">{{ post.excerpt }}</p>
+                            <div class="post-card__meta">
+                                <time datetime="{{ post.published_at }}">{{ post.published_at_formatted }}</time>
+                                <span class="post-card__read-time">{{ post.read_time_minutes }} min read</span>
+                            </div>
+                        </div>
+                    </a>
+                </article>
+                {% endfor %}
+            </div>
+
+            {# Pagination #}
+            <nav id="pagination" class="pagination" aria-label="Taxonomy term pagination">
+                {# Populated by JavaScript or server-side #}
+            </nav>
+        </section>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+    window.TAXONOMY_SLUG = '{{ taxonomy_slug | default(value="") }}';
+    {% if term %}window.TERM_SLUG = '{{ term.slug }}';{% endif %}
+</script>
+<script src="/assets/js/BLOG/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

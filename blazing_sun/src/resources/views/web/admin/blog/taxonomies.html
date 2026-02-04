@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Taxonomies - Blog Admin - Blazing Sun{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BLOG_TAXONOMIES/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="blog-admin">
+        {# Header #}
+        <header class="blog-admin__header">
+            <div class="blog-admin__breadcrumb">
+                <a href="/admin/blog">Blog</a>
+                <span>/</span>
+                <span>Taxonomies</span>
+            </div>
+            <div class="blog-admin__title-row">
+                <h1 class="blog-admin__title">Custom Taxonomies</h1>
+                <button type="button" id="addTaxonomyBtn" class="btn btn--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add Taxonomy</span>
+                </button>
+            </div>
+        </header>
+
+        {# Search #}
+        <div class="blog-admin__controls">
+            <div class="search-input">
+                <svg class="search-input__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="searchInput" class="search-input__field" placeholder="Search taxonomies..." aria-label="Search taxonomies">
+            </div>
+        </div>
+
+        {# Info Box #}
+        <div class="info-box">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <p>Taxonomies allow you to create custom groupings for your posts beyond categories and tags. For example, you could create a "Series" taxonomy to group related posts, or a "Difficulty" taxonomy for tutorials.</p>
+        </div>
+
+        {# Taxonomies List - JS will render content here #}
+        <div id="taxonomyList" class="taxonomies-grid">
+            {% if taxonomies %}
+            {% for taxonomy in taxonomies %}
+            <div class="taxonomy-card" data-id="{{ taxonomy.id }}">
+                <div class="taxonomy-card__header">
+                    <h3 class="taxonomy-card__title">{{ taxonomy.name }}</h3>
+                    <div class="taxonomy-card__actions">
+                        <button type="button" class="btn btn--icon edit-btn" data-id="{{ taxonomy.id }}" title="Edit" aria-label="Edit {{ taxonomy.name }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="btn btn--icon btn--danger delete-btn" data-id="{{ taxonomy.id }}" title="Delete" aria-label="Delete {{ taxonomy.name }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="taxonomy-card__body">
+                    <code class="taxonomy-card__slug">{{ taxonomy.slug }}</code>
+                    {% if taxonomy.description %}
+                    <p class="taxonomy-card__description">{{ taxonomy.description | truncate(length=100) }}</p>
+                    {% endif %}
+                    <div class="taxonomy-card__meta">
+                        <span class="taxonomy-card__count">{{ taxonomy.term_count }} {% if taxonomy.term_count == 1 %}term{% else %}terms{% endif %}</span>
+                    </div>
+                </div>
+                <div class="taxonomy-card__footer">
+                    <button type="button" class="btn btn--secondary btn--small manage-terms-btn" data-id="{{ taxonomy.id }}" data-name="{{ taxonomy.name }}">
+                        Manage Terms
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state empty-state--full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <h3>No custom taxonomies</h3>
+                <p>Create your first custom taxonomy to organize posts in new ways.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+{# Add/Edit Taxonomy Modal #}
+<div id="taxonomyModal" class="modal taxonomy-modal" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="taxonomyModalTitle">
+        <header class="modal__header">
+            <h2 id="taxonomyModalTitle" class="modal__title taxonomy-modal__title">Add Taxonomy</h2>
+            <button type="button" class="modal__close" data-action="close" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <form id="taxonomyForm" class="modal__body">
+            <input type="hidden" id="taxonomyId" name="id">
+
+            <div class="form-group">
+                <label class="form-label" for="taxonomyName">Name <span class="required">*</span></label>
+                <input type="text" id="taxonomyName" name="name" class="form-input" required maxlength="100" placeholder="e.g., Series, Difficulty, Topics">
+                <div id="taxonomyNameError" class="form-error" aria-live="polite"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="taxonomySlug">Slug</label>
+                <input type="text" id="taxonomySlug" name="slug" class="form-input" maxlength="100" placeholder="auto-generated-from-name">
+                <div class="form-hint">URL-friendly version. Leave empty to auto-generate.</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="taxonomyDescription">Description</label>
+                <textarea id="taxonomyDescription" name="description" class="form-textarea" rows="3" maxlength="500" placeholder="Describe the purpose of this taxonomy"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Display Settings</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="taxonomyHierarchical" name="hierarchical">
+                        <span>Hierarchical (like categories)</span>
+                    </label>
+                    <div class="form-hint">Allow parent-child relationships between terms</div>
+                </div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="taxonomyPublic" name="is_public" checked>
+                        <span>Public</span>
+                    </label>
+                    <div class="form-hint">Show in public blog pages and sitemaps</div>
+                </div>
+            </div>
+
+            {# Rules Section #}
+            <div class="form-group">
+                <label class="form-label">Rules</label>
+                <div id="rulesContainer" class="rules-container"></div>
+                <button type="button" class="btn btn--secondary btn--small" data-action="add-rule">Add Rule</button>
+            </div>
+        </form>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--ghost" data-action="cancel">Cancel</button>
+            <button type="button" class="btn btn--primary" data-action="save">Save Taxonomy</button>
+        </footer>
+    </div>
+</div>
+
+{# Manage Terms Modal #}
+<div id="termsModal" class="modal modal--large terms-modal" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--large" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
+        <header class="modal__header">
+            <h2 id="termsModalTitle" class="modal__title terms-modal__title">Manage Terms</h2>
+            <button type="button" class="modal__close" data-action="close" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <input type="hidden" id="currentTaxonomyId">
+
+            {# Add Term Form #}
+            <div class="add-term-form">
+                <div class="form-row">
+                    <div class="form-group form-group--flex">
+                        <input type="text" id="newTermName" class="form-input" placeholder="New term name" maxlength="100" aria-label="New term name">
+                    </div>
+                    <div class="form-group form-group--parent" id="termParentGroup" style="display: none;">
+                        <select id="newTermParent" class="form-select" aria-label="Parent term">
+                            <option value="">No parent</option>
+                        </select>
+                    </div>
+                    <button type="button" id="addTermBtn" class="btn btn--primary">Add Term</button>
+                </div>
+            </div>
+
+            {# Terms List #}
+            <div class="terms-list-container">
+                <table class="data-table data-table--compact" role="grid" aria-label="Terms table">
+                    <thead class="data-table__head">
+                        <tr>
+                            <th class="data-table__header" scope="col">Name</th>
+                            <th class="data-table__header" scope="col">Slug</th>
+                            <th class="data-table__header data-table__header--center" scope="col">Posts</th>
+                            <th class="data-table__header data-table__header--center" scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="termsTable" class="data-table__body">
+                        {# Populated by JavaScript #}
+                        <tr>
+                            <td colspan="4" class="data-table__empty">
+                                <p>No terms yet. Add your first term above.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--ghost" data-action="close">Close</button>
+        </footer>
+    </div>
+</div>
+
+{# Edit Term Modal #}
+<div id="editTermModal" class="modal edit-term-modal" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="editTermModalTitle">
+        <header class="modal__header">
+            <h2 id="editTermModalTitle" class="modal__title edit-term-modal__title">Edit Term</h2>
+            <button type="button" class="modal__close" data-action="close" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <form id="editTermForm" class="modal__body">
+            <input type="hidden" id="editTermId" name="id">
+
+            <div class="form-group">
+                <label class="form-label" for="editTermName">Name <span class="required">*</span></label>
+                <input type="text" id="editTermName" name="name" class="form-input" required maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="editTermSlug">Slug</label>
+                <input type="text" id="editTermSlug" name="slug" class="form-input" maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="editTermDescription">Description</label>
+                <textarea id="editTermDescription" name="description" class="form-textarea" rows="3" maxlength="500"></textarea>
+            </div>
+
+            <div class="form-group" id="editTermParentGroup" style="display: none;">
+                <label class="form-label" for="editTermParent">Parent Term</label>
+                <select id="editTermParent" name="parent_id" class="form-select">
+                    <option value="">No parent</option>
+                </select>
+            </div>
+        </form>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--ghost" data-action="cancel">Cancel</button>
+            <button type="button" class="btn btn--primary" data-action="save">Update Term</button>
+        </footer>
+    </div>
+</div>
+
+{# Delete Confirmation Modal #}
+<div id="confirmModal" class="modal confirm-modal" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog modal__dialog--small" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <header class="modal__header">
+            <h2 id="deleteModalTitle" class="modal__title confirm-modal__title">Delete</h2>
+            <button type="button" class="modal__close" data-action="cancel" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+        <div class="modal__body">
+            <p class="confirm-modal__message">Are you sure you want to delete this item?</p>
+        </div>
+        <footer class="modal__footer">
+            <button type="button" class="btn btn--ghost" data-action="cancel">Cancel</button>
+            <button type="button" class="btn btn--danger" data-action="confirm">Delete</button>
+        </footer>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/BLOG_TAXONOMIES/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

@@ -127,6 +127,7 @@ export default class SlotWeels extends DrawLines {
 	
 	
     getUkupanUlog(x = 0) {
+        
 
         if (x === 0) {
             if (this.slotObject.nag2.checked) {

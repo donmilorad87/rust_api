@@ -4449,14 +4449,24 @@ export class TicTacToe extends HTMLElement {
         console.log('[TicTacToe] Game started:', msg);
         this.isInReadyPhase = false;  // Exit ready phase
 
-        // Store player info for username lookup
-        if (msg.players && Array.isArray(msg.players)) {
-            this.gamePlayers = {};
-            msg.players.forEach(p => {
-                this.gamePlayers[p.user_id] = p;
+        // Store player info for username lookup (use string keys for consistency)
+        this.gamePlayers = {};
+
+        // First, copy from selectedPlayers (set in _onGameStarting) as they have usernames
+        if (this.selectedPlayers && this.selectedPlayers.length > 0) {
+            this.selectedPlayers.forEach(p => {
+                this.gamePlayers[String(p.user_id)] = p;
             });
-            console.log('[TicTacToe] Stored game players:', this.gamePlayers);
         }
+
+        // Then merge/override with players from game_started event
+        if (msg.players && Array.isArray(msg.players)) {
+            msg.players.forEach(p => {
+                this.gamePlayers[String(p.user_id)] = p;
+            });
+        }
+
+        console.log('[TicTacToe] Stored game players:', this.gamePlayers);
 
         this._updateGameStatus('playing');
         this._showGame();
@@ -4474,12 +4484,20 @@ export class TicTacToe extends HTMLElement {
         this.gameNumber = msg.game_number || 1;
         this.isGamePaused = msg.is_paused || false;
 
-        // Update scores
+        // Update scores (use string keys for consistency)
         if (msg.scores) {
             this.scores = {};
             msg.scores.forEach(([playerId, score]) => {
-                this.scores[playerId] = score;
+                this.scores[String(playerId)] = score;
             });
+        }
+
+        // If gamePlayers is empty, try to populate from selectedPlayers
+        if (Object.keys(this.gamePlayers).length === 0 && this.selectedPlayers.length > 0) {
+            this.selectedPlayers.forEach(p => {
+                this.gamePlayers[String(p.user_id)] = p;
+            });
+            console.log('[TicTacToe] Populated gamePlayers from selectedPlayers:', this.gamePlayers);
         }
 
         // Update timer
@@ -4518,11 +4536,11 @@ export class TicTacToe extends HTMLElement {
     _onGameResult(msg) {
         console.log('[TicTacToe] Game result:', msg);
 
-        // Update scores
+        // Update scores (use string keys for consistency)
         if (msg.scores) {
             this.scores = {};
             msg.scores.forEach(([playerId, score]) => {
-                this.scores[playerId] = score;
+                this.scores[String(playerId)] = score;
             });
         }
 
@@ -4563,11 +4581,11 @@ export class TicTacToe extends HTMLElement {
     _onTurnTimeout(msg) {
         console.log('[TicTacToe] Turn timeout:', msg);
 
-        // Update scores
+        // Update scores (use string keys for consistency)
         if (msg.scores) {
             this.scores = {};
             msg.scores.forEach(([playerId, score]) => {
-                this.scores[playerId] = score;
+                this.scores[String(playerId)] = score;
             });
         }
 
@@ -5204,15 +5222,15 @@ export class TicTacToe extends HTMLElement {
     }
 
     _updateMatchInfo() {
-        // Find players
-        const player1 = { id: this.playerXId, score: this.scores[this.playerXId] || 0 };
-        const player2 = { id: this.playerOId, score: this.scores[this.playerOId] || 0 };
+        // Find players (use string keys for scores lookup)
+        const player1 = { id: this.playerXId, score: this.scores[String(this.playerXId)] || 0 };
+        const player2 = { id: this.playerOId, score: this.scores[String(this.playerOId)] || 0 };
 
-        // Get names from stored gamePlayers (set in _onGameStarted) or fallback
-        const player1Info = this.gamePlayers[player1.id];
-        const player2Info = this.gamePlayers[player2.id];
-        const player1Name = player1Info?.username || (player1.id == this.userId ? this.username : 'Player 1');
-        const player2Name = player2Info?.username || (player2.id == this.userId ? this.username : 'Player 2');
+        // Get names from stored gamePlayers (use string key for consistent lookup)
+        const player1Info = this.gamePlayers[String(player1.id)];
+        const player2Info = this.gamePlayers[String(player2.id)];
+        const player1Name = player1Info?.username || (String(player1.id) === String(this.userId) ? this.username : 'Player 1');
+        const player2Name = player2Info?.username || (String(player2.id) === String(this.userId) ? this.username : 'Player 2');
 
         // Update player 1 (X)
         this.els.player1Score.querySelector('.player-score__name').textContent = player1Name;

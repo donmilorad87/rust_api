@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE blog_posts\n            SET status = $1, published_at = COALESCE(published_at, NOW())\n            WHERE id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c8aa270dd34bfbfa2a2a876226f28682c356761fdd43572003e059bdd16e8b18"
+}

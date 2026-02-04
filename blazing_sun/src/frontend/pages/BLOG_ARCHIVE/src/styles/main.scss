@@ -1,0 +1,1014 @@
+// ============================================
+// BLOG_ARCHIVE PAGE - Editorial Magazine Stylesheet
+// ============================================
+// A sophisticated chronological archive with elegant
+// timeline design, like browsing a magazine's back issues.
+//
+// Design Philosophy:
+// - Timeline visual metaphor connecting years/months
+// - Deep burgundy accent (#8B2942) for archive distinction
+// - Playfair Display serif for elegant headings
+// - Smooth expand/collapse animations
+// - Responsive design that maintains elegance
+
+@use 'variables' as *;
+
+// Import shared blog components
+@use '../../../BLOG_HOME/src/styles/post-card';
+@use '../../../BLOG_HOME/src/styles/sidebar';
+@use '../../../BLOG_HOME/src/styles/pagination';
+@use '../../../BLOG_HOME/src/styles/states';
+
+// ============================================
+// GOOGLE FONTS IMPORT
+// ============================================
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+// ============================================
+// KEYFRAME ANIMATIONS
+// ============================================
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba($editorial-burgundy, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba($editorial-burgundy, 0);
+  }
+}
+
+@keyframes timelineDraw {
+  from {
+    height: 0;
+  }
+  to {
+    height: 100%;
+  }
+}
+
+// ============================================
+// PAGE BASE STYLES
+// ============================================
+.blog-page {
+  min-height: calc(100vh - 70px);
+  padding: $spacing-lg 0 $spacing-3xl;
+  font-family: $font-editorial-sans;
+
+  // Subtle textured background
+  background:
+    linear-gradient(
+      180deg,
+      var(--card-bg) 0%,
+      transparent 500px
+    ),
+    radial-gradient(
+      ellipse at 30% 0%,
+      rgba($editorial-burgundy, 0.03) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 70% 20%,
+      rgba($editorial-gold, 0.02) 0%,
+      transparent 50%
+    );
+
+  @media (min-width: $breakpoint-md) {
+    padding: $spacing-xl 0 $spacing-3xl;
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    padding: $spacing-xxl 0 $spacing-3xl;
+  }
+
+  // ============================================
+  // CONTAINER
+  // ============================================
+  &__container {
+    max-width: $content-max-width;
+    margin: 0 auto;
+    padding: 0 $spacing-md;
+
+    @media (min-width: $breakpoint-md) {
+      padding: 0 $spacing-lg;
+    }
+
+    @media (min-width: $breakpoint-xl) {
+      padding: 0 $spacing-xl;
+    }
+  }
+
+  // ============================================
+  // PAGE HEADER
+  // ============================================
+  &__header {
+    text-align: center;
+    margin-bottom: $spacing-xl;
+    padding-bottom: $spacing-xl;
+    position: relative;
+
+    // Animation
+    opacity: 0;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+
+    // Decorative bottom border
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(200px, 40%);
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        $editorial-burgundy,
+        transparent
+      );
+    }
+
+    @media (min-width: $breakpoint-md) {
+      margin-bottom: $spacing-xxl;
+      padding-bottom: $spacing-xxl;
+    }
+
+    // Archive-specific header styling
+    &--archive {
+      .blog-page__title {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: $spacing-sm;
+      }
+    }
+  }
+
+  &__label {
+    display: inline-block;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: $editorial-burgundy;
+    background: rgba($editorial-burgundy, 0.1);
+    padding: $spacing-xs $spacing-md;
+    border-radius: $radius-full;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__title {
+    margin: 0 0 $spacing-md 0;
+    font-family: $font-editorial-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+
+    // Decorative gold accent line
+    &::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, $editorial-burgundy, $editorial-gold);
+      margin: $spacing-md auto 0;
+      border-radius: 2px;
+    }
+  }
+
+  &__meta {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-base;
+    color: var(--text-secondary);
+  }
+
+  &__count {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-md;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color-light);
+    border-radius: $radius-full;
+    font-weight: 500;
+  }
+
+  // ============================================
+  // TWO-COLUMN LAYOUT
+  // ============================================
+  &__layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $spacing-xl;
+
+    @media (min-width: $breakpoint-lg) {
+      grid-template-columns: 1fr $sidebar-width;
+      gap: $spacing-xxl;
+    }
+  }
+
+  &__main {
+    min-width: 0;
+  }
+
+  &__sidebar {
+    @media (max-width: $breakpoint-lg - 1px) {
+      order: -1;
+    }
+  }
+}
+
+// ============================================
+// BREADCRUMB
+// ============================================
+.breadcrumb {
+  margin-bottom: $spacing-lg;
+  font-family: $font-editorial-sans;
+
+  &__list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $spacing-xs;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: $font-size-sm;
+    justify-content: center;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+
+    &::after {
+      content: '/';
+      margin-left: $spacing-xs;
+      color: var(--border-color-light);
+    }
+
+    &:last-child::after {
+      display: none;
+    }
+
+    &--active {
+      color: $editorial-burgundy;
+      font-weight: 500;
+    }
+
+    a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color $anim-duration-fast ease;
+
+      &:hover {
+        color: $editorial-burgundy;
+      }
+    }
+  }
+}
+
+// ============================================
+// FULL ARCHIVE VIEW (Timeline)
+// ============================================
+.archive-full {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  padding-left: $timeline-indent;
+
+  // Vertical timeline line
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: $timeline-line-width;
+    background: linear-gradient(
+      180deg,
+      $editorial-burgundy 0%,
+      rgba($editorial-burgundy, 0.3) 50%,
+      rgba($editorial-burgundy, 0.1) 100%
+    );
+    border-radius: $timeline-line-width;
+  }
+
+  @media (max-width: $breakpoint-sm - 1px) {
+    padding-left: $spacing-lg;
+
+    &::before {
+      left: 2px;
+    }
+  }
+}
+
+// ============================================
+// ARCHIVE YEAR BLOCK
+// ============================================
+.archive-year {
+  position: relative;
+  margin-bottom: $spacing-xxl;
+
+  // Animation for staggered reveal
+  opacity: 0;
+  animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+
+  @for $i from 1 through 10 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.1}s;
+    }
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  // Timeline dot
+  &::before {
+    content: '';
+    position: absolute;
+    left: calc(-#{$timeline-indent} + 1px);
+    top: 8px;
+    width: $timeline-dot-size;
+    height: $timeline-dot-size;
+    background: $editorial-burgundy;
+    border: 3px solid var(--card-bg);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px $editorial-burgundy;
+    z-index: 1;
+    transition: all $anim-duration-fast ease;
+  }
+
+  &:hover::before {
+    transform: scale(1.2);
+    animation: pulseGlow 1.5s ease infinite;
+  }
+
+  @media (max-width: $breakpoint-sm - 1px) {
+    &::before {
+      left: calc(-#{$spacing-lg} + 1px);
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  // ============================================
+  // YEAR TITLE
+  // ============================================
+  &__title {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin: 0 0 $spacing-lg 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-3xl;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+
+    // Year badge
+    &::after {
+      content: attr(data-count);
+      font-family: $font-editorial-sans;
+      font-size: $font-size-xs;
+      font-weight: 600;
+      padding: $spacing-xs $spacing-sm;
+      background: rgba($editorial-burgundy, 0.1);
+      color: $editorial-burgundy;
+      border-radius: $radius-full;
+      letter-spacing: normal;
+    }
+  }
+
+  // ============================================
+  // MONTHS LIST
+  // ============================================
+  &__months {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax($archive-card-min-width, 1fr));
+    gap: $spacing-md;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__month {
+    // Staggered animation
+    opacity: 0;
+    animation: fadeIn $anim-duration-fast ease forwards;
+
+    @for $i from 1 through 12 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{0.3 + ($i * 0.05)}s;
+      }
+    }
+  }
+
+  // ============================================
+  // MONTH LINK CARD
+  // ============================================
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-lg;
+    background: var(--card-bg);
+    border: 1px solid $month-card-border;
+    border-radius: $radius-lg;
+    text-decoration: none;
+    transition: all $anim-duration-fast $anim-easing-smooth;
+    position: relative;
+    overflow: hidden;
+
+    // Decorative left accent
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: $editorial-burgundy;
+      opacity: 0;
+      transition: opacity $anim-duration-fast ease;
+    }
+
+    &:hover {
+      border-color: $editorial-burgundy;
+      box-shadow: $shadow-editorial-hover;
+      transform: translateY(-2px);
+
+      &::before {
+        opacity: 1;
+      }
+
+      .archive-year__label {
+        color: $editorial-burgundy;
+      }
+
+      .archive-year__count {
+        background: $editorial-burgundy;
+        color: #ffffff;
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &__label {
+    font-family: $font-editorial-serif;
+    font-size: $font-size-lg;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: color $anim-duration-fast ease;
+  }
+
+  &__count {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    padding: $spacing-xs $spacing-md;
+    background: rgba($editorial-burgundy, 0.1);
+    color: $editorial-burgundy;
+    border-radius: $radius-full;
+    transition: all $anim-duration-fast ease;
+    white-space: nowrap;
+  }
+}
+
+// ============================================
+// ARCHIVE NAVIGATION (Month View)
+// ============================================
+.archive-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color-light);
+  border-radius: $radius-lg;
+  margin-bottom: $spacing-xl;
+
+  // Animation
+  opacity: 0;
+  animation: fadeInUp $anim-duration-fast $anim-easing-elegant forwards;
+  animation-delay: 0.2s;
+
+  @media (max-width: $breakpoint-sm - 1px) {
+    flex-direction: column;
+    text-align: center;
+    padding: $spacing-md;
+  }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-xs;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-md;
+    transition: all $anim-duration-fast ease;
+    min-width: 140px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      transition: transform $anim-duration-fast ease;
+    }
+
+    &:hover:not(&--disabled) {
+      color: $editorial-burgundy;
+      background: rgba($editorial-burgundy, 0.1);
+
+      svg {
+        color: $editorial-burgundy;
+      }
+    }
+
+    &--prev {
+      justify-content: flex-start;
+
+      &:hover svg {
+        transform: translateX(-4px);
+      }
+    }
+
+    &--next {
+      justify-content: flex-end;
+
+      &:hover svg {
+        transform: translateX(4px);
+      }
+    }
+
+    &--all {
+      justify-content: center;
+      font-weight: 600;
+      color: $editorial-burgundy;
+      border: 1px solid $editorial-burgundy;
+      min-width: auto;
+
+      &:hover {
+        background: $editorial-burgundy;
+        color: #ffffff;
+      }
+
+      @media (max-width: $breakpoint-sm - 1px) {
+        order: -1;
+        width: 100%;
+        margin-bottom: $spacing-sm;
+      }
+    }
+
+    &--disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+  }
+}
+
+// ============================================
+// POSTS GRID (Month View)
+// ============================================
+.posts-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+
+  // Animation
+  opacity: 0;
+  animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+  animation-delay: 0.3s;
+
+  @media (min-width: $breakpoint-sm) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: $breakpoint-md) {
+    gap: $spacing-xl;
+  }
+}
+
+// ============================================
+// SIDEBAR ARCHIVE LIST
+// ============================================
+.archive-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    border-bottom: 1px solid var(--border-color-light);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm 0;
+    text-decoration: none;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      .archive-list__date {
+        color: $editorial-burgundy;
+      }
+    }
+
+    &--active {
+      .archive-list__date {
+        color: $editorial-burgundy;
+        font-weight: 600;
+      }
+
+      .archive-list__count {
+        background: $editorial-burgundy;
+        color: #ffffff;
+      }
+    }
+  }
+
+  &__date {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: var(--text-primary);
+    transition: color $anim-duration-fast ease;
+  }
+
+  &__count {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    padding: 2px $spacing-sm;
+    background: rgba($editorial-burgundy, 0.1);
+    color: $editorial-burgundy;
+    border-radius: $radius-full;
+    transition: all $anim-duration-fast ease;
+  }
+}
+
+// ============================================
+// EMPTY STATE
+// ============================================
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: $spacing-3xl $spacing-lg;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color-light);
+  border-radius: $radius-xl;
+
+  // Animation
+  opacity: 0;
+  animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+  animation-delay: 0.2s;
+
+  svg {
+    width: 80px;
+    height: 80px;
+    color: var(--text-muted);
+    opacity: 0.4;
+    margin-bottom: $spacing-lg;
+  }
+
+  h3 {
+    margin: 0 0 $spacing-sm 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-xl;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0 0 $spacing-lg 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-base;
+    color: var(--text-secondary);
+  }
+}
+
+// ============================================
+// BUTTON STYLES
+// ============================================
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+  font-family: $font-editorial-sans;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: $radius-md;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all $anim-duration-fast $anim-easing-smooth;
+
+  &--primary {
+    background: $editorial-burgundy;
+    color: #ffffff;
+    border-color: $editorial-burgundy;
+
+    &:hover {
+      background: $editorial-burgundy-dark;
+      border-color: $editorial-burgundy-dark;
+      transform: translateY(-2px);
+      box-shadow: $shadow-editorial-md;
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &--outline {
+    background: transparent;
+    color: $editorial-burgundy;
+    border-color: $editorial-burgundy;
+
+    &:hover {
+      background: $editorial-burgundy;
+      color: #ffffff;
+    }
+  }
+}
+
+// ============================================
+// SIDEBAR WIDGETS (Archive-specific overrides)
+// ============================================
+.sidebar-widget {
+  &__title {
+    font-family: $font-editorial-serif;
+    position: relative;
+    padding-bottom: $spacing-sm;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background: $editorial-burgundy;
+      border-radius: 1px;
+    }
+  }
+}
+
+// ============================================
+// CATEGORY LIST (Sidebar)
+// ============================================
+.category-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    border-bottom: 1px solid var(--border-color-light);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm 0;
+    text-decoration: none;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      .category-list__name {
+        color: $editorial-burgundy;
+      }
+    }
+  }
+
+  &__name {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: var(--text-primary);
+    transition: color $anim-duration-fast ease;
+  }
+
+  &__count {
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    padding: 2px $spacing-sm;
+    background: var(--badge-default-bg);
+    color: var(--text-muted);
+    border-radius: $radius-full;
+  }
+}
+
+// ============================================
+// TAG CLOUD (Sidebar)
+// ============================================
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+
+  &__tag {
+    display: inline-block;
+    padding: $spacing-xs $spacing-sm;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    color: var(--text-secondary);
+    background: var(--badge-default-bg);
+    border-radius: $radius-sm;
+    text-decoration: none;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      background: $editorial-burgundy;
+      color: #ffffff;
+    }
+  }
+}
+
+// ============================================
+// SEARCH FORM
+// ============================================
+.search-form {
+  &__input-group {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border-color-light);
+    border-radius: $radius-md;
+    overflow: hidden;
+    transition: border-color $anim-duration-fast ease;
+
+    &:focus-within {
+      border-color: $editorial-burgundy;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    padding: $spacing-sm $spacing-md;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: var(--text-primary);
+    background: var(--input-bg);
+    border: none;
+    outline: none;
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+  }
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-sm $spacing-md;
+    background: $editorial-burgundy;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: background $anim-duration-fast ease;
+
+    &:hover {
+      background: $editorial-burgundy-dark;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+// ============================================
+// DARK MODE ADJUSTMENTS
+// ============================================
+[data-theme="dark"] {
+  .archive-year {
+    &::before {
+      border-color: var(--card-bg);
+    }
+
+    &__link {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.1);
+
+      &:hover {
+        background: rgba($editorial-burgundy, 0.15);
+        border-color: $editorial-burgundy-light;
+      }
+    }
+  }
+
+  .archive-nav {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .empty-state {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+// ============================================
+// PRINT STYLES
+// ============================================
+@media print {
+  .blog-page {
+    padding: 0;
+    background: none;
+
+    &__sidebar {
+      display: none;
+    }
+
+    &__layout {
+      display: block;
+    }
+  }
+
+  .archive-full::before {
+    display: none;
+  }
+
+  .archive-year {
+    &::before {
+      display: none;
+    }
+
+    &__link {
+      box-shadow: none;
+      border: 1px solid #ddd;
+    }
+  }
+
+  .archive-nav,
+  .pagination,
+  .sidebar-widget {
+    display: none;
+  }
+
+  .posts-grid {
+    display: block;
+  }
+
+  .post-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ddd;
+    margin-bottom: 1rem;
+  }
+}

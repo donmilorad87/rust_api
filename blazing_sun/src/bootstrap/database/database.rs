@@ -2,6 +2,7 @@
 //!
 //! This module provides database connection pooling and application state management.
 
+use crate::bootstrap::elasticsearch::SharedElasticsearch;
 use crate::config::{DatabaseConfig, JwtConfig, MongoDbConfig, OAuthConfig};
 use crate::events::SharedEventBus;
 use actix_web::web;
@@ -25,6 +26,7 @@ pub struct AppState {
     pub mq: Option<DynMq>,
     pub events: Option<SharedEventBus>,
     pub mongodb: Option<SharedMongoDb>,
+    pub elasticsearch: Option<SharedElasticsearch>,
     /// OAuth public key path for JWT verification (RS256)
     pub oauth_public_key_path: &'static str,
     /// OAuth private key path for JWT signing (RS256)
@@ -48,6 +50,11 @@ impl AppState {
     /// Get the MongoDB database reference
     pub fn mongo(&self) -> Option<&SharedMongoDb> {
         self.mongodb.as_ref()
+    }
+
+    /// Get the Elasticsearch client reference
+    pub fn elasticsearch(&self) -> Option<&SharedElasticsearch> {
+        self.elasticsearch.as_ref()
     }
 }
 
@@ -92,6 +99,7 @@ pub async fn state() -> web::Data<AppState> {
         mq: None,
         events: None,
         mongodb: None,
+        elasticsearch: None,
         oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
         oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
         oauth_issuer: OAuthConfig::jwt_issuer(),
@@ -109,6 +117,7 @@ pub async fn state_with_mq(mq: DynMq) -> web::Data<AppState> {
         mq: Some(mq),
         events: None,
         mongodb: None,
+        elasticsearch: None,
         oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
         oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
         oauth_issuer: OAuthConfig::jwt_issuer(),
@@ -126,6 +135,7 @@ pub async fn state_with_mq_and_events(mq: DynMq, events: SharedEventBus) -> web:
         mq: Some(mq),
         events: Some(events),
         mongodb: None,
+        elasticsearch: None,
         oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
         oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
         oauth_issuer: OAuthConfig::jwt_issuer(),
@@ -135,11 +145,12 @@ pub async fn state_with_mq_and_events(mq: DynMq, events: SharedEventBus) -> web:
     })
 }
 
-/// Create application state with all services (MQ, Events, MongoDB)
+/// Create application state with all services (MQ, Events, MongoDB, Elasticsearch)
 pub async fn state_full(
     mq: DynMq,
     events: Option<SharedEventBus>,
     mongodb: Option<SharedMongoDb>,
+    elasticsearch: Option<SharedElasticsearch>,
 ) -> web::Data<AppState> {
     web::Data::new(AppState {
         db: Mutex::new(create_pool().await),
@@ -147,6 +158,7 @@ pub async fn state_full(
         mq: Some(mq),
         events,
         mongodb,
+        elasticsearch,
         oauth_public_key_path: OAuthConfig::jwt_public_key_path(),
         oauth_private_key_path: OAuthConfig::jwt_private_key_path(),
         oauth_issuer: OAuthConfig::jwt_issuer(),

@@ -1,0 +1,38 @@
+// ============================================
+// BLOG_TAG PAGE - Editorial Magazine Variables
+// ============================================
+// Extends the shared BLOG variables with tag-specific design tokens
+// for a refined editorial tag archive experience.
+
+@forward '../../../BLOG/src/styles/variables';
+@use '../../../BLOG/src/styles/variables' as blog;
+
+// ============================================
+// TAG-SPECIFIC DESIGN TOKENS
+// ============================================
+
+// Tag badge colors with editorial elegance
+$tag-badge-bg: var(--blog-accent);
+$tag-badge-text: #FFFFFF;
+$tag-badge-size: 2.5rem;
+
+// Tag header decorative elements
+$tag-header-min-height: 280px;
+$tag-header-pattern-opacity: 0.04;
+
+// Related tags section
+$related-tag-gap: blog.$blog-space-2;
+$related-tag-padding-x: blog.$blog-space-4;
+$related-tag-padding-y: blog.$blog-space-2;
+
+// Animation delays for staggered entrance
+$stagger-delay-1: 0.1s;
+$stagger-delay-2: 0.15s;
+$stagger-delay-3: 0.2s;
+$stagger-delay-4: 0.25s;
+$stagger-delay-5: 0.3s;
+
+// Tag icon sizes
+$tag-icon-large: 64px;
+$tag-icon-medium: 48px;
+$tag-icon-small: 24px;

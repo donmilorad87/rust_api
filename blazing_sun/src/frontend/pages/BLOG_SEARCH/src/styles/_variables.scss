@@ -1,0 +1,61 @@
+// ============================================
+// BLOG_SEARCH PAGE - SCSS Variables
+// ============================================
+// Editorial Magazine Search Experience
+// Clean, efficient search with editorial elegance
+
+@use 'sass:color';
+@forward '../../../GLOBAL/src/styles/variables';
+@use '../../../GLOBAL/src/styles/variables' as *;
+
+// ============================================
+// SEARCH PAGE SPECIFIC VARIABLES
+// ============================================
+
+// Search Hero
+$search-hero-padding-y: 5rem;
+$search-hero-padding-y-mobile: 3rem;
+$search-hero-max-width: 720px;
+
+// Search Input
+$search-input-height: 64px;
+$search-input-height-mobile: 56px;
+$search-input-font-size: $font-size-xl;
+$search-input-font-size-mobile: $font-size-lg;
+$search-input-radius: $radius-2xl;
+
+// Filter Bar
+$filter-bar-gap: $spacing-lg;
+$filter-select-min-width: 160px;
+
+// Result Cards
+$result-card-gap: $spacing-xl;
+$result-card-image-width: 280px;
+$result-card-image-width-tablet: 200px;
+$result-card-image-height: 180px;
+$result-card-image-height-tablet: 140px;
+
+// Relevance Indicator
+$relevance-high: #10b981;
+$relevance-medium: #f59e0b;
+$relevance-low: #94a3b8;
+
+// Highlight Colors
+$highlight-bg: rgba(245, 158, 11, 0.15);
+$highlight-bg-dark: rgba(245, 158, 11, 0.25);
+$highlight-border: rgba(245, 158, 11, 0.4);
+
+// Popular Searches
+$popular-pill-padding: $spacing-sm $spacing-md;
+$popular-pill-radius: $radius-full;
+
+// Skeleton Loading
+$skeleton-duration: 1.5s;
+
+// Empty State
+$empty-state-icon-size: 120px;
+$empty-state-max-width: 480px;
+
+// Animation Timings
+$stagger-delay: 0.05s;
+$result-appear-duration: 0.4s;

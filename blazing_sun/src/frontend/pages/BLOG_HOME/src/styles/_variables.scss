@@ -1,0 +1,59 @@
+// ============================================
+// BLOG_HOME PAGE - Editorial Magazine Variables
+// ============================================
+// Variables specific to the editorial magazine design.
+// Extends GLOBAL variables with page-specific values.
+
+@forward '../../../GLOBAL/src/styles/variables';
+@use '../../../GLOBAL/src/styles/variables' as *;
+
+// ============================================
+// EDITORIAL TYPOGRAPHY
+// ============================================
+// Elegant serif font for headings (editorial feel)
+$font-editorial-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+$font-editorial-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+// ============================================
+// EDITORIAL COLOR PALETTE
+// ============================================
+// Rich, sophisticated colors for magazine feel
+$editorial-charcoal: #1a1a2e;
+$editorial-charcoal-light: #2d2d44;
+$editorial-warm-gray: #3d3d56;
+$editorial-cream: #faf8f5;
+$editorial-cream-dark: #f5f2ed;
+$editorial-accent: #c9a227;  // Warm gold accent
+$editorial-accent-dark: #b08d1f;
+$editorial-accent-light: #e8c94b;
+$editorial-burgundy: #722f37;
+$editorial-navy: #1e3a5f;
+
+// ============================================
+// ANIMATION TIMING
+// ============================================
+$anim-stagger-base: 0.1s;
+$anim-duration-fast: 0.3s;
+$anim-duration-normal: 0.5s;
+$anim-duration-slow: 0.8s;
+$anim-easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+$anim-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+$anim-easing-elegant: cubic-bezier(0.22, 1, 0.36, 1);
+
+// ============================================
+// LAYOUT DIMENSIONS
+// ============================================
+$hero-min-height: 480px;
+$hero-max-height: 600px;
+$sidebar-width: 340px;
+$content-max-width: 1400px;
+$card-aspect-ratio: 66.67%;  // 3:2 ratio
+
+// ============================================
+// SHADOWS (Editorial depth)
+// ============================================
+$shadow-editorial-sm: 0 2px 8px rgba(26, 26, 46, 0.08);
+$shadow-editorial-md: 0 4px 20px rgba(26, 26, 46, 0.12);
+$shadow-editorial-lg: 0 8px 40px rgba(26, 26, 46, 0.16);
+$shadow-editorial-xl: 0 16px 60px rgba(26, 26, 46, 0.2);
+$shadow-editorial-hero: 0 20px 80px rgba(26, 26, 46, 0.25);

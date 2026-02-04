@@ -13,7 +13,7 @@
 
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 // =============================================================================
 // Constants
@@ -30,6 +30,15 @@ pub const MAX_BETS: usize = 30;
 
 /// Valid bet amounts
 pub const BET_AMOUNTS: [i64; 7] = [10, 50, 100, 200, 300, 500, 1000];
+
+/// Valid coin values for ticket-based mini-game
+pub const COIN_VALUES: [i64; 7] = [10, 20, 50, 100, 200, 500, 1000];
+
+/// Maximum tickets per game
+pub const MAX_TICKETS: usize = 5;
+
+/// Maximum numbers per ticket
+pub const MAX_NUMBERS_PER_TICKET: usize = 5;
 
 /// Payout odds for matched numbers
 /// P(match) = 12/30 = 40%, fair odds = 2.5x
@@ -114,6 +123,91 @@ pub struct MiniGameReport {
     pub total_bet: i64,
     /// Total payout
     pub total_payout: i64,
+}
+
+// =============================================================================
+// Ticket-Based Request/Response Types (New System)
+// =============================================================================
+
+/// Ticket-based mini-game request from frontend
+/// Numbers must be unique across ALL tickets (not just within one ticket)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TicketMiniGameRequest {
+    /// 5 tickets, each containing up to 5 numbers (1-30)
+    pub tickets: Vec<Vec<i32>>,
+    /// Global coin value for all bets
+    pub coin_value: i64,
+    /// User's available coins (for validation, set by controller)
+    #[serde(default)]
+    pub user_coins: i64,
+}
+
+/// Result for a single ticket
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TicketResult {
+    /// How many numbers were played on this ticket
+    pub numbers_played: u8,
+    /// How many numbers matched
+    pub matches: u8,
+    /// Bet amount for this ticket
+    pub bet: i64,
+    /// Payout for this ticket
+    pub payout: i64,
+}
+
+/// Complete result for ticket-based mini-game
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TicketMiniGameResult {
+    /// The 12 drawn numbers
+    pub drawn_numbers: Vec<i32>,
+    /// Results for each ticket
+    pub ticket_results: Vec<TicketResult>,
+    /// Total bet across all tickets
+    pub total_bet: i64,
+    /// Total payout across all tickets
+    pub total_payout: i64,
+    /// Net result (payout - bet)
+    pub net_result: i64,
+}
+
+// =============================================================================
+// Bet Multipliers and Odds
+// =============================================================================
+
+/// Get bet multiplier for number of selections on a ticket
+/// Each number costs 1x the coin value
+pub fn bet_multiplier(numbers_count: usize) -> i64 {
+    match numbers_count {
+        1 => 1,
+        2 => 2,
+        3 => 3,
+        4 => 4,
+        5 => 5,
+        _ => 0,
+    }
+}
+
+/// Odds table: (played, matches) -> multiplier
+/// Based on hypergeometric distribution: P(k of n) = C(12,k) × C(18,n-k) / C(30,n)
+pub fn find_odds(played: u8, matches: u8) -> f64 {
+    match (played, matches) {
+        (1, 1) => 2.5,     // 40% probability
+        (2, 1) => 0.62,    // 49.66% probability
+        (2, 2) => 6.59,    // 15.17% probability
+        (3, 1) => 0.27,    // 45.22% probability
+        (3, 2) => 2.89,    // 29.26% probability
+        (3, 3) => 18.45,   // 5.42% probability
+        (4, 1) => 0.15,    // 35.73% probability
+        (4, 2) => 1.64,    // 36.85% probability
+        (4, 3) => 10.64,   // 14.45% probability
+        (4, 4) => 55.36,   // 1.81% probability
+        (5, 1) => 0.10,    // 25.77% probability
+        (5, 2) => 1.05,    // 37.79% probability
+        (5, 3) => 7.33,    // 23.62% probability
+        (5, 4) => 35.43,   // 6.25% probability
+        (5, 5) => 179.94,  // 0.56% probability
+        _ => 0.0,
+    }
 }
 
 // =============================================================================
@@ -269,6 +363,143 @@ pub fn generate_report(result: &MiniGameResult) -> MiniGameReport {
 /// Get valid bet amounts (for frontend display)
 pub fn get_bet_amounts() -> Vec<i64> {
     BET_AMOUNTS.to_vec()
+}
+
+// =============================================================================
+// Ticket-Based Mini-Game Functions
+// =============================================================================
+
+/// Validate ticket-based mini-game request
+/// CRITICAL: Numbers must be unique across ALL tickets
+pub fn validate_ticket_request(request: &TicketMiniGameRequest) -> Result<(), String> {
+    // Validate coin value
+    if !COIN_VALUES.contains(&request.coin_value) {
+        return Err(format!(
+            "Invalid coin value {}. Valid values: {:?}",
+            request.coin_value, COIN_VALUES
+        ));
+    }
+
+    // Must have at least one ticket with numbers
+    let has_numbers = request.tickets.iter().any(|t| !t.is_empty());
+    if !has_numbers {
+        return Err("Must have at least one number selected".to_string());
+    }
+
+    // Validate ticket count
+    if request.tickets.len() > MAX_TICKETS {
+        return Err(format!(
+            "Maximum {} tickets allowed, got {}",
+            MAX_TICKETS,
+            request.tickets.len()
+        ));
+    }
+
+    // Track ALL used numbers for uniqueness across all tickets
+    let mut all_used_numbers: HashSet<i32> = HashSet::new();
+
+    for (idx, ticket) in request.tickets.iter().enumerate() {
+        // Validate ticket size
+        if ticket.len() > MAX_NUMBERS_PER_TICKET {
+            return Err(format!(
+                "Ticket {} exceeds maximum of {} numbers",
+                idx + 1,
+                MAX_NUMBERS_PER_TICKET
+            ));
+        }
+
+        for &num in ticket {
+            // Validate number range
+            if num < 1 || num > NUMBER_POOL_SIZE {
+                return Err(format!(
+                    "Invalid number {} in ticket {}. Must be 1-{}",
+                    num,
+                    idx + 1,
+                    NUMBER_POOL_SIZE
+                ));
+            }
+
+            // CRITICAL: Check uniqueness across ALL tickets
+            if all_used_numbers.contains(&num) {
+                return Err(format!(
+                    "Number {} is used multiple times - each number can only appear once across all tickets",
+                    num
+                ));
+            }
+            all_used_numbers.insert(num);
+        }
+    }
+
+    // Calculate total bet and check against user's coins
+    let total_bet = calculate_ticket_total_bet(&request.tickets, request.coin_value);
+    if total_bet > request.user_coins {
+        return Err(format!(
+            "Insufficient balance. Need {} coins, have {}",
+            total_bet, request.user_coins
+        ));
+    }
+
+    Ok(())
+}
+
+/// Calculate total bet for all tickets
+pub fn calculate_ticket_total_bet(tickets: &[Vec<i32>], coin_value: i64) -> i64 {
+    tickets
+        .iter()
+        .filter(|t| !t.is_empty())
+        .map(|t| bet_multiplier(t.len()) * coin_value)
+        .sum()
+}
+
+/// Execute ticket-based mini-game
+pub fn execute_ticket_minigame(
+    request: &TicketMiniGameRequest,
+) -> Result<TicketMiniGameResult, String> {
+    validate_ticket_request(request)?;
+
+    let drawn_numbers = draw_numbers();
+    let mut ticket_results = Vec::with_capacity(request.tickets.len());
+    let mut total_payout: i64 = 0;
+
+    for ticket in &request.tickets {
+        if ticket.is_empty() {
+            ticket_results.push(TicketResult {
+                numbers_played: 0,
+                matches: 0,
+                bet: 0,
+                payout: 0,
+            });
+            continue;
+        }
+
+        let played = ticket.len();
+        let matches = ticket.iter().filter(|n| drawn_numbers.contains(n)).count();
+        let bet = bet_multiplier(played) * request.coin_value;
+        let odds = find_odds(played as u8, matches as u8);
+        let payout = if matches > 0 && odds > 0.0 {
+            (bet as f64 * odds).round() as i64
+        } else {
+            0
+        };
+
+        total_payout += payout;
+        ticket_results.push(TicketResult {
+            numbers_played: played as u8,
+            matches: matches as u8,
+            bet,
+            payout,
+        });
+    }
+
+    let total_bet = calculate_ticket_total_bet(&request.tickets, request.coin_value);
+
+    Ok(TicketMiniGameResult {
+        drawn_numbers,
+        ticket_results,
+        total_bet,
+        total_payout,
+        net_result: total_payout - total_bet,
+    })
 }
 
 // =============================================================================

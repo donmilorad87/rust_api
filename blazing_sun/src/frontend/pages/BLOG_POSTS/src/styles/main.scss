@@ -1,0 +1,1964 @@
+// ============================================
+// BLOG_POSTS PAGE - Editorial Magazine Design
+// ============================================
+// Admin posts list with elegant editorial aesthetic
+
+@use 'variables' as *;
+
+// ============================================
+// ADMIN CONTENT LAYOUT
+// ============================================
+
+.admin-content {
+  min-height: calc(100vh - 60px);
+  background: linear-gradient(180deg, $editorial-gray-50 0%, $editorial-gray-100 100%);
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+// ============================================
+// BLOG ADMIN CONTAINER
+// ============================================
+
+.blog-admin {
+  max-width: 1400px;
+  margin: 0 auto;
+
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: $editorial-gray-500;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+
+    a {
+      color: $editorial-burgundy;
+      text-decoration: none;
+      transition: $transition-editorial-fast;
+
+      &:hover {
+        color: $editorial-burgundy-dark;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+    }
+
+    span {
+      color: $editorial-gray-400;
+    }
+  }
+
+  &__title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: $editorial-gray-900;
+    margin: 0;
+    letter-spacing: -0.02em;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 48px;
+      height: 3px;
+      background: $editorial-burgundy;
+      border-radius: 2px;
+    }
+  }
+
+  &__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    background: white;
+    border: 1px solid $editorial-gray-200;
+    border-radius: $radius-xl;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    box-shadow: $shadow-editorial-sm;
+  }
+}
+
+// ============================================
+// STATUS TABS - Editorial Design
+// ============================================
+
+.status-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: white;
+  border: 1px solid $editorial-gray-200;
+  border-radius: $radius-xl;
+  padding: 0.375rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  box-shadow: $shadow-editorial-sm;
+
+  // Hide scrollbar but allow scroll
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &__tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $editorial-gray-600;
+    background: transparent;
+    border: none;
+    border-radius: $radius-lg;
+    cursor: pointer;
+    transition: $transition-editorial;
+    white-space: nowrap;
+    position: relative;
+
+    &:hover:not(&--active) {
+      color: $editorial-gray-800;
+      background: $editorial-gray-100;
+    }
+
+    &--active {
+      color: white;
+      background: $editorial-burgundy;
+      box-shadow: 0 2px 8px rgba(139, 41, 66, 0.25);
+    }
+  }
+
+  &__count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    background: $editorial-gray-200;
+    border-radius: $radius-full;
+    color: $editorial-gray-600;
+    min-width: 24px;
+    text-align: center;
+
+    .status-tabs__tab--active & {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+    }
+  }
+}
+
+// ============================================
+// SEARCH INPUT - Editorial Style
+// ============================================
+
+.search-input {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+
+  &__icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $editorial-gray-400;
+    pointer-events: none;
+    transition: $transition-editorial-fast;
+  }
+
+  &__field {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: $editorial-gray-800;
+    background: $editorial-gray-50;
+    border: 1px solid $editorial-gray-200;
+    border-radius: $radius-lg;
+    transition: $transition-editorial;
+
+    &:focus {
+      outline: none;
+      background: white;
+      border-color: $editorial-burgundy;
+      box-shadow: $shadow-editorial-glow;
+    }
+
+    &:focus + .search-input__icon,
+    &:not(:placeholder-shown) + .search-input__icon {
+      color: $editorial-burgundy;
+    }
+
+    &::placeholder {
+      color: $editorial-gray-400;
+      font-weight: 400;
+    }
+  }
+}
+
+// ============================================
+// FILTER SELECT - Editorial Style
+// ============================================
+
+.filter-select {
+  padding: 0.75rem 2.25rem 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $editorial-gray-700;
+  background: $editorial-gray-50 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2378716C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.75rem center;
+  background-size: 16px;
+  border: 1px solid $editorial-gray-200;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  appearance: none;
+  min-width: 150px;
+  transition: $transition-editorial;
+
+  &:hover {
+    border-color: $editorial-gray-300;
+    background-color: white;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $editorial-burgundy;
+    box-shadow: $shadow-editorial-glow;
+    background-color: white;
+  }
+}
+
+// ============================================
+// BULK ACTIONS - Editorial Style
+// ============================================
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  padding-left: 1rem;
+  border-left: 1px solid $editorial-gray-200;
+}
+
+.bulk-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: $radius-md;
+  transition: $transition-editorial-fast;
+
+  &:hover {
+    background: $editorial-gray-100;
+  }
+
+  &__checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: $editorial-burgundy;
+    cursor: pointer;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $editorial-gray-700;
+  }
+}
+
+.bulk-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $editorial-burgundy;
+  background: $editorial-burgundy-subtle;
+  padding: 0.375rem 0.75rem;
+  border-radius: $radius-full;
+}
+
+.bulk-action-select {
+  min-width: 140px;
+}
+
+// ============================================
+// DATA TABLE - Editorial Magazine Style
+// ============================================
+
+.table-container {
+  background: white;
+  border: 1px solid $editorial-gray-200;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  box-shadow: $shadow-editorial-md;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  &__head {
+    background: linear-gradient(180deg, $editorial-gray-50 0%, $editorial-gray-100 100%);
+    border-bottom: 2px solid $editorial-gray-200;
+  }
+
+  &__header {
+    padding: 1rem 1.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $editorial-gray-500;
+    text-align: left;
+
+    &--select {
+      width: 48px;
+      text-align: center;
+    }
+
+    &--center {
+      text-align: center;
+    }
+  }
+
+  &__body {
+    .data-table__row {
+      border-bottom: 1px solid $editorial-gray-100;
+      transition: $transition-editorial;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background: linear-gradient(90deg, $editorial-burgundy-subtle 0%, transparent 100%);
+
+        .post-title-cell__title {
+          color: $editorial-burgundy;
+        }
+      }
+    }
+  }
+
+  &__row {
+    &:hover .data-table__cell--actions .btn--icon {
+      opacity: 1;
+    }
+  }
+
+  &__cell {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+    color: $editorial-gray-700;
+
+    &--select {
+      width: 48px;
+      text-align: center;
+
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: $editorial-burgundy;
+        cursor: pointer;
+      }
+    }
+
+    &--center {
+      text-align: center;
+    }
+
+    &--actions {
+      white-space: nowrap;
+      text-align: right;
+
+      .btn--icon {
+        opacity: 0.3;
+        transition: $transition-editorial-fast;
+      }
+    }
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 4rem 2rem !important;
+  }
+}
+
+// ============================================
+// POST TITLE CELL - Editorial Style
+// ============================================
+
+.post-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  &__thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: $radius-lg;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid $editorial-gray-100;
+    transition: $transition-editorial;
+
+    .data-table__row:hover & {
+      border-color: $editorial-burgundy-muted;
+    }
+
+    &--placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, $editorial-gray-100 0%, $editorial-gray-200 100%);
+      color: $editorial-gray-400;
+
+      svg {
+        width: 22px;
+        height: 22px;
+      }
+    }
+  }
+
+  &__content {
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: $editorial-gray-800;
+    text-decoration: none;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: $transition-editorial-fast;
+    line-height: 1.4;
+
+    &:hover {
+      color: $editorial-burgundy;
+    }
+  }
+
+  &__slug {
+    font-size: 0.75rem;
+    color: $editorial-gray-400;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: $font-family-mono;
+    margin-top: 0.25rem;
+  }
+}
+
+// ============================================
+// BADGES - Editorial Style
+// ============================================
+
+.author-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $editorial-gray-700;
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  background: $editorial-burgundy-subtle;
+  color: $editorial-burgundy;
+  border-radius: $radius-full;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid $editorial-burgundy-muted;
+}
+
+.tags-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  background: $editorial-gray-100;
+  color: $editorial-gray-600;
+  border-radius: $radius-full;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  transition: $transition-editorial-fast;
+
+  &:hover {
+    background: $editorial-gray-200;
+    color: $editorial-gray-700;
+  }
+
+  &--more {
+    background: $editorial-gray-200;
+    color: $editorial-gray-500;
+    font-style: italic;
+  }
+}
+
+// ============================================
+// STATUS BADGES - Editorial Magazine Colors
+// ============================================
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: $radius-full;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  // Published - Elegant Green
+  &--published {
+    background: $editorial-success-light;
+    color: $editorial-success;
+    border: 1px solid rgba(5, 150, 105, 0.2);
+
+    &::before {
+      background: $editorial-success;
+      box-shadow: 0 0 6px rgba(5, 150, 105, 0.4);
+    }
+  }
+
+  // Draft - Warm Yellow/Amber
+  &--draft {
+    background: $editorial-warning-light;
+    color: $editorial-warning;
+    border: 1px solid rgba(217, 119, 6, 0.2);
+
+    &::before {
+      background: $editorial-warning;
+      box-shadow: 0 0 6px rgba(217, 119, 6, 0.4);
+    }
+  }
+
+  // Scheduled - Editorial Blue
+  &--scheduled {
+    background: $editorial-info-light;
+    color: $editorial-info;
+    border: 1px solid rgba(2, 132, 199, 0.2);
+
+    &::before {
+      background: $editorial-info;
+      box-shadow: 0 0 6px rgba(2, 132, 199, 0.4);
+    }
+  }
+
+  // Archived - Muted Gray
+  &--archived {
+    background: $editorial-muted-light;
+    color: $editorial-muted;
+    border: 1px solid rgba(120, 113, 108, 0.2);
+
+    &::before {
+      background: $editorial-muted;
+    }
+  }
+}
+
+.view-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $editorial-gray-700;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-cell {
+  &__label {
+    display: block;
+    font-size: 0.625rem;
+    color: $editorial-gray-400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  time {
+    font-size: 0.8125rem;
+    color: $editorial-gray-600;
+    font-weight: 500;
+  }
+}
+
+.text-muted {
+  color: $editorial-gray-400;
+}
+
+// ============================================
+// MODAL - Editorial Style
+// ============================================
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(28, 25, 23, 0.6);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+
+  &[aria-hidden="false"] {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  &--confirm {
+    z-index: 1100;
+  }
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+  }
+
+  &__dialog {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    background: white;
+    border-radius: $radius-xl;
+    box-shadow: $shadow-editorial-xl;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(24px) scale(0.96);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    .modal[aria-hidden="false"] & {
+      transform: translateY(0) scale(1);
+    }
+
+    &--small {
+      max-width: 400px;
+    }
+
+    &--large {
+      max-width: 640px;
+    }
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 1rem;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $editorial-gray-900;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  &__close {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: $editorial-gray-400;
+    border-radius: $radius-lg;
+    transition: $transition-editorial-fast;
+
+    &:hover {
+      background: $editorial-gray-100;
+      color: $editorial-gray-700;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__body {
+    padding: 0 1.5rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+
+    p {
+      margin: 0;
+      color: $editorial-gray-600;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 1.5rem;
+    flex-shrink: 0;
+  }
+}
+
+// ============================================
+// BUTTONS - Editorial Style
+// ============================================
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: $radius-lg;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: $transition-editorial;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &--primary {
+    background: $editorial-burgundy;
+    color: white;
+    border-color: $editorial-burgundy;
+
+    &:hover:not(:disabled) {
+      background: $editorial-burgundy-dark;
+      border-color: $editorial-burgundy-dark;
+      box-shadow: 0 4px 12px rgba(139, 41, 66, 0.3);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+  }
+
+  &--secondary {
+    background: white;
+    color: $editorial-gray-700;
+    border-color: $editorial-gray-300;
+
+    &:hover:not(:disabled) {
+      background: $editorial-gray-50;
+      border-color: $editorial-gray-400;
+      color: $editorial-gray-800;
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $editorial-gray-600;
+    border-color: transparent;
+
+    &:hover:not(:disabled) {
+      background: $editorial-gray-100;
+      color: $editorial-gray-800;
+    }
+  }
+
+  &--danger {
+    background: #DC2626;
+    color: white;
+    border-color: #DC2626;
+
+    &:hover:not(:disabled) {
+      background: #B91C1C;
+      border-color: #B91C1C;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+  }
+
+  &--icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    color: $editorial-gray-400;
+    border: none;
+    border-radius: $radius-md;
+
+    &:hover:not(:disabled) {
+      background: $editorial-gray-100;
+      color: $editorial-gray-700;
+    }
+
+    &.btn--danger:hover:not(:disabled) {
+      background: rgba(220, 38, 38, 0.1);
+      color: #DC2626;
+    }
+  }
+
+  &--sm {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  &--hidden {
+    display: none;
+  }
+}
+
+// ============================================
+// EMPTY STATE - Editorial Style
+// ============================================
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: $editorial-gray-500;
+
+  svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1.5rem;
+    opacity: 0.3;
+    stroke: $editorial-gray-400;
+  }
+
+  h3 {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: $editorial-gray-800;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    margin: 0 0 2rem;
+    font-size: 0.9375rem;
+    color: $editorial-gray-500;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+}
+
+// ============================================
+// PAGINATION - Editorial Style
+// ============================================
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 1.25rem;
+  border-top: 1px solid $editorial-gray-100;
+  background: $editorial-gray-50;
+  flex-wrap: wrap;
+
+  &__btn {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.75rem;
+    border: 1px solid $editorial-gray-200;
+    background: white;
+    color: $editorial-gray-600;
+    border-radius: $radius-md;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: $transition-editorial-fast;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover:not(:disabled):not(&--active) {
+      background: $editorial-gray-100;
+      border-color: $editorial-gray-300;
+      color: $editorial-gray-800;
+    }
+
+    &--active {
+      background: $editorial-burgundy;
+      color: white;
+      border-color: $editorial-burgundy;
+      font-weight: 600;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  &__goto {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid $editorial-gray-200;
+  }
+
+  &__input {
+    width: 56px;
+    height: 40px;
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+    text-align: center;
+    border: 1px solid $editorial-gray-200;
+    border-radius: $radius-md;
+    background: white;
+    color: $editorial-gray-700;
+    font-weight: 500;
+
+    &:focus {
+      outline: none;
+      border-color: $editorial-burgundy;
+      box-shadow: $shadow-editorial-glow;
+    }
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    &[type=number] {
+      -moz-appearance: textfield;
+    }
+  }
+}
+
+// ============================================
+// SCREEN READER ONLY
+// ============================================
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// ============================================
+// POST EDITOR LAYOUT (for editor page)
+// ============================================
+
+.post-editor {
+  max-width: 1400px;
+  margin: 0 auto;
+
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: $editorial-gray-500;
+    margin-bottom: 1rem;
+    font-weight: 500;
+
+    a {
+      color: $editorial-burgundy;
+      text-decoration: none;
+      transition: $transition-editorial-fast;
+
+      &:hover {
+        color: $editorial-burgundy-dark;
+        text-decoration: underline;
+      }
+    }
+  }
+
+  &__title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: $editorial-gray-900;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  &__form {
+    margin: 0;
+  }
+
+  &__layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  &__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+}
+
+// ============================================
+// EDITOR PANEL - Editorial Style
+// ============================================
+
+.editor-panel {
+  background: white;
+  border: 1px solid $editorial-gray-200;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  box-shadow: $shadow-editorial-sm;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid $editorial-gray-100;
+    cursor: pointer;
+    text-align: left;
+    transition: $transition-editorial-fast;
+
+    &:hover {
+      background: $editorial-gray-50;
+    }
+
+    &[aria-expanded="true"] .editor-panel__arrow {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: $editorial-gray-800;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__arrow {
+    color: $editorial-gray-400;
+    transition: transform 0.2s ease;
+  }
+
+  &__content {
+    padding: 1.25rem;
+
+    &--collapsed {
+      display: none;
+    }
+  }
+
+  &--collapsible {
+    .editor-panel__content {
+      padding-top: 0;
+    }
+  }
+}
+
+// ============================================
+// FORM STYLES - Editorial
+// ============================================
+
+.form-group {
+  margin-bottom: 1.25rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &--title {
+    margin-bottom: 0.75rem;
+  }
+
+  &--slug {
+    margin-bottom: 1.5rem;
+  }
+
+  &--content {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $editorial-gray-700;
+  margin-bottom: 0.5rem;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  color: $editorial-gray-800;
+  background: white;
+  border: 1px solid $editorial-gray-200;
+  border-radius: $radius-lg;
+  transition: $transition-editorial;
+
+  &:focus {
+    outline: none;
+    border-color: $editorial-burgundy;
+    box-shadow: $shadow-editorial-glow;
+  }
+
+  &::placeholder {
+    color: $editorial-gray-400;
+  }
+}
+
+.form-input--title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  padding: 1rem 1.25rem;
+  border: none;
+  background: transparent;
+  letter-spacing: -0.02em;
+  color: $editorial-gray-900;
+
+  &:focus {
+    box-shadow: none;
+  }
+
+  &::placeholder {
+    color: $editorial-gray-300;
+  }
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: $editorial-gray-400;
+  margin-top: 0.5rem;
+}
+
+.form-error {
+  font-size: 0.75rem;
+  color: #DC2626;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.required {
+  color: $editorial-burgundy;
+}
+
+// ============================================
+// QUILL EDITOR - Editorial Style
+// ============================================
+
+.quill-editor {
+  background: white;
+  border: 1px solid $editorial-gray-200;
+  border-top: none;
+  border-radius: 0 0 $radius-lg $radius-lg;
+  min-height: 400px;
+
+  .ql-editor {
+    min-height: 400px;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: $editorial-gray-800;
+    font-family: $font-family-sans;
+
+    &.ql-blank::before {
+      color: $editorial-gray-400;
+      font-style: normal;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: $radius-md;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.75rem;
+      margin-bottom: 0.75rem;
+      color: $editorial-gray-900;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+    }
+
+    blockquote {
+      border-left: 4px solid $editorial-burgundy;
+      padding-left: 1.25rem;
+      margin: 1.5rem 0;
+      color: $editorial-gray-600;
+      font-style: italic;
+    }
+
+    pre.ql-syntax {
+      background: $editorial-gray-900;
+      color: $editorial-gray-100;
+      border-radius: $radius-lg;
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: $font-family-mono;
+    }
+  }
+}
+
+// Quill toolbar styling - Editorial
+.ql-toolbar.ql-snow {
+  border: 1px solid $editorial-gray-200;
+  border-radius: $radius-lg $radius-lg 0 0;
+  background: $editorial-gray-50;
+  padding: 0.75rem;
+
+  .ql-picker-label {
+    color: $editorial-gray-700;
+  }
+
+  .ql-stroke {
+    stroke: $editorial-gray-600;
+  }
+
+  .ql-fill {
+    fill: $editorial-gray-600;
+  }
+
+  button:hover,
+  button:focus,
+  button.ql-active,
+  .ql-picker-label:hover,
+  .ql-picker-label.ql-active {
+    .ql-stroke {
+      stroke: $editorial-burgundy;
+    }
+
+    .ql-fill {
+      fill: $editorial-burgundy;
+    }
+  }
+}
+
+.ql-container.ql-snow {
+  border: none;
+}
+
+// ============================================
+// SLUG INPUT - Editorial Style
+// ============================================
+
+.slug-input {
+  display: flex;
+  align-items: center;
+  background: $editorial-gray-50;
+  border: 1px solid $editorial-gray-200;
+  border-radius: $radius-lg;
+  overflow: hidden;
+
+  &__prefix {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: $editorial-gray-400;
+    background: $editorial-gray-100;
+    border-right: 1px solid $editorial-gray-200;
+    white-space: nowrap;
+    font-family: $font-family-mono;
+  }
+
+  .form-input {
+    border: none;
+    border-radius: 0;
+    background: white;
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .btn--icon {
+    margin-right: 0.5rem;
+  }
+}
+
+// ============================================
+// IMAGE PICKER - Editorial Style
+// ============================================
+
+.image-picker {
+  &__preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    background: $editorial-gray-100;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  &__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border: 2px dashed $editorial-gray-300;
+    border-radius: $radius-lg;
+    cursor: pointer;
+    transition: $transition-editorial;
+    color: $editorial-gray-400;
+    background: $editorial-gray-50;
+
+    &:hover {
+      border-color: $editorial-burgundy;
+      background: $editorial-burgundy-subtle;
+      color: $editorial-burgundy;
+    }
+
+    svg {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 0.75rem;
+    }
+
+    span {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  &__remove {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: $radius-full;
+    cursor: pointer;
+    color: white;
+    transition: $transition-editorial-fast;
+
+    &:hover {
+      background: #DC2626;
+      transform: scale(1.1);
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// ============================================
+// TAGS INPUT - Editorial Style
+// ============================================
+
+.tags-input {
+  position: relative;
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    min-height: 28px;
+  }
+
+  &__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    background: $editorial-gray-100;
+    border: 1px solid $editorial-gray-200;
+    border-radius: $radius-full;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: $editorial-gray-700;
+  }
+
+  &__tag-remove {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: $editorial-gray-400;
+    border-radius: $radius-full;
+    transition: $transition-editorial-fast;
+
+    &:hover {
+      background: #DC2626;
+      color: white;
+    }
+  }
+
+  &__field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    color: $editorial-gray-800;
+    background: white;
+    border: 1px solid $editorial-gray-200;
+    border-radius: $radius-lg;
+
+    &:focus {
+      outline: none;
+      border-color: $editorial-burgundy;
+      box-shadow: $shadow-editorial-glow;
+    }
+  }
+
+  &__suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid $editorial-gray-200;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-editorial-lg;
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    margin-top: 0.25rem;
+
+    &:not(:empty) {
+      display: block;
+    }
+  }
+
+  &__suggestion {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: $editorial-gray-700;
+    cursor: pointer;
+    transition: $transition-editorial-fast;
+
+    &:hover,
+    &--highlighted {
+      background: $editorial-burgundy-subtle;
+      color: $editorial-burgundy;
+    }
+
+    &--create {
+      color: $editorial-burgundy;
+      font-weight: 600;
+    }
+  }
+}
+
+// ============================================
+// SEO PREVIEW - Editorial Style
+// ============================================
+
+.seo-preview {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid $editorial-gray-200;
+
+  &__title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: $editorial-gray-500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 1rem;
+  }
+
+  &__result {
+    padding: 1.25rem;
+    background: $editorial-gray-50;
+    border-radius: $radius-lg;
+    border: 1px solid $editorial-gray-200;
+  }
+
+  &__url {
+    display: block;
+    font-size: 0.8125rem;
+    color: $editorial-success;
+    margin-bottom: 0.375rem;
+    font-family: $font-family-mono;
+  }
+
+  &__headline {
+    display: block;
+    font-size: 1.125rem;
+    color: #1a0dab;
+    margin-bottom: 0.375rem;
+    font-weight: 600;
+  }
+
+  &__description {
+    display: block;
+    font-size: 0.875rem;
+    color: $editorial-gray-600;
+    line-height: 1.5;
+  }
+}
+
+// ============================================
+// IMAGE MODAL - Editorial Style
+// ============================================
+
+.image-modal-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid $editorial-gray-200;
+  padding-bottom: 1rem;
+
+  &__tab {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $editorial-gray-500;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: $radius-lg;
+    cursor: pointer;
+    transition: $transition-editorial;
+
+    &:hover:not(&--active) {
+      color: $editorial-gray-700;
+      background: $editorial-gray-100;
+    }
+
+    &--active {
+      color: white;
+      background: $editorial-burgundy;
+    }
+  }
+}
+
+.image-modal-panel {
+  min-height: 320px;
+}
+
+.image-modal__search {
+  margin-bottom: 1.25rem;
+}
+
+.image-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.image-grid__item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: $transition-editorial;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover {
+    border-color: $editorial-burgundy-muted;
+    transform: scale(1.02);
+  }
+
+  &--selected {
+    border-color: $editorial-burgundy;
+
+    .image-grid__check {
+      opacity: 1;
+    }
+  }
+}
+
+.image-grid__check {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $editorial-burgundy;
+  border-radius: $radius-full;
+  opacity: 0;
+  transition: $transition-editorial-fast;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    color: white;
+  }
+}
+
+// ============================================
+// UPLOAD ZONE - Editorial Style
+// ============================================
+
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  border: 2px dashed $editorial-gray-300;
+  border-radius: $radius-xl;
+  cursor: pointer;
+  transition: $transition-editorial;
+  text-align: center;
+  background: $editorial-gray-50;
+
+  &:hover,
+  &--dragover {
+    border-color: $editorial-burgundy;
+    background: $editorial-burgundy-subtle;
+
+    svg {
+      color: $editorial-burgundy;
+    }
+  }
+
+  svg {
+    width: 48px;
+    height: 48px;
+    color: $editorial-gray-400;
+    margin-bottom: 1rem;
+    transition: $transition-editorial;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: $editorial-gray-500;
+  }
+
+  &__input {
+    display: none;
+  }
+}
+
+.upload-progress {
+  margin-top: 1.25rem;
+  text-align: center;
+
+  &__bar {
+    width: 100%;
+    height: 8px;
+    background: $editorial-gray-200;
+    border-radius: $radius-full;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+  }
+
+  &__fill {
+    height: 100%;
+    background: $editorial-burgundy;
+    border-radius: $radius-full;
+    transition: width 0.2s ease;
+  }
+
+  span {
+    font-size: 0.8125rem;
+    color: $editorial-gray-500;
+    font-weight: 500;
+  }
+}
+
+// ============================================
+// LINK & SMALL BUTTONS
+// ============================================
+
+.btn--link {
+  background: transparent;
+  border: none;
+  color: $editorial-burgundy;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+  cursor: pointer;
+
+  &:hover {
+    color: $editorial-burgundy-dark;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.btn--small {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+// ============================================
+// LOADING SPINNER - Editorial Style
+// ============================================
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+
+  &__icon {
+    width: 36px;
+    height: 36px;
+    border: 3px solid $editorial-gray-200;
+    border-top-color: $editorial-burgundy;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ============================================
+// UTILITY CLASSES
+// ============================================
+
+.hidden {
+  display: none !important;
+}
+
+.mt2 {
+  margin-top: 0.5rem;
+}
+
+// ============================================
+// RESPONSIVE DESIGN
+// ============================================
+
+@media (max-width: 1024px) {
+  .blog-admin__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input {
+    max-width: 100%;
+  }
+
+  .bulk-actions {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    padding-top: 0.75rem;
+    border-top: 1px solid $editorial-gray-200;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .data-table__cell--actions .btn--icon {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    padding: 1rem;
+  }
+
+  .blog-admin__title-row,
+  .post-editor__title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .blog-admin__title,
+  .post-editor__title {
+    font-size: 1.5rem;
+
+    &::after {
+      width: 36px;
+      height: 2px;
+    }
+  }
+
+  .status-tabs {
+    padding: 0.25rem;
+
+    &__tab {
+      padding: 0.625rem 1rem;
+      font-size: 0.8125rem;
+    }
+  }
+
+  // Hide less important columns on mobile
+  .data-table__header:nth-child(4),
+  .data-table__header:nth-child(5),
+  .data-table__header:nth-child(7),
+  .data-table__cell:nth-child(4),
+  .data-table__cell:nth-child(5),
+  .data-table__cell:nth-child(7) {
+    display: none;
+  }
+
+  .modal__dialog {
+    max-height: 95vh;
+    margin: 0.5rem;
+  }
+
+  .pagination {
+    &__btn--first,
+    &__btn--last {
+      display: none;
+    }
+
+    &__goto {
+      width: 100%;
+      justify-content: center;
+      margin-top: 0.75rem;
+      margin-left: 0;
+      padding-left: 0;
+      border-left: none;
+      padding-top: 0.75rem;
+      border-top: 1px solid $editorial-gray-200;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .post-title-cell {
+    &__thumb {
+      width: 44px;
+      height: 44px;
+    }
+
+    &__title {
+      font-size: 0.875rem;
+    }
+
+    &__slug {
+      display: none;
+    }
+  }
+
+  .bulk-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

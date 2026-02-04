@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            query_normalized as \"query_normalized!\",\n            search_count as \"search_count!\",\n            avg_results::float8 as \"avg_results: f64\",\n            zero_results_count as \"zero_results_count!\",\n            click_count as \"click_count!\",\n            click_rate::float8 as \"click_rate: f64\"\n        FROM sp_get_blog_search_analytics_summary($1, $2)\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "query_normalized!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "search_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "avg_results: f64",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "zero_results_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "click_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "click_rate: f64",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "0b68dbde57f80856f868242b54a7cbdf592d42506b7962a6557da0a60037f225"
+}

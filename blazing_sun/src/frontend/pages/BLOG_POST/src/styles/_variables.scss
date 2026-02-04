@@ -1,0 +1,278 @@
+// ============================================
+// BLOG_POST PAGE - Editorial Magazine Variables
+// ============================================
+// Premium reading experience variables for long-form content
+// Inherits from GLOBAL and extends with editorial-specific values
+
+@forward '../../../GLOBAL/src/styles/variables';
+@use '../../../GLOBAL/src/styles/variables' as global;
+
+// ============================================
+// EDITORIAL TYPOGRAPHY
+// ============================================
+
+// Serif font for headings - elegant, premium feel
+$font-editorial-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+// Sans-serif for body - highly readable
+$font-editorial-sans: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+// Monospace for code
+$font-editorial-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+// ============================================
+// READING-OPTIMIZED TYPOGRAPHY
+// ============================================
+
+// Article title - dramatic, large
+$article-title-size: clamp(2.25rem, 5vw, 3.5rem);
+$article-title-line-height: 1.15;
+$article-title-letter-spacing: -0.02em;
+
+// Section headings
+$article-h2-size: clamp(1.75rem, 3vw, 2.25rem);
+$article-h3-size: clamp(1.375rem, 2.5vw, 1.75rem);
+$article-h4-size: clamp(1.125rem, 2vw, 1.375rem);
+
+// Body text - optimized for reading
+$article-body-size: 1.125rem;  // 18px - comfortable reading size
+$article-body-line-height: 1.8;  // Generous line height for readability
+$article-body-letter-spacing: 0.01em;
+
+// Paragraph spacing
+$article-paragraph-spacing: 1.75em;
+
+// Maximum reading width (characters per line: ~65-75 optimal)
+$article-max-width: 720px;
+$article-wide-max-width: 900px;
+
+// ============================================
+// EDITORIAL SPACING
+// ============================================
+
+$editorial-spacing-xs: 0.5rem;
+$editorial-spacing-sm: 1rem;
+$editorial-spacing-md: 1.5rem;
+$editorial-spacing-lg: 2.5rem;
+$editorial-spacing-xl: 4rem;
+$editorial-spacing-2xl: 6rem;
+$editorial-spacing-3xl: 8rem;
+
+// Section spacing
+$section-margin-top: $editorial-spacing-xl;
+$section-margin-bottom: $editorial-spacing-lg;
+
+// ============================================
+// EDITORIAL COLORS (CSS Custom Properties)
+// ============================================
+// These extend the theme with editorial-specific values
+// Warm, readable palette optimized for long-form reading
+
+:root {
+  // --- Editorial Surface ---
+  --editorial-bg: #fdfbf7;
+  --editorial-bg-alt: #f8f5f0;
+  --editorial-paper: #ffffff;
+
+  // --- Editorial Text ---
+  --editorial-text-primary: #2c2c2c;
+  --editorial-text-secondary: #4a4a4a;
+  --editorial-text-muted: #707070;
+  --editorial-text-caption: #8a8a8a;
+
+  // --- Editorial Accents ---
+  --editorial-accent: #b8860b;  // Dark goldenrod - elegant accent
+  --editorial-accent-light: #daa520;
+  --editorial-accent-muted: rgba(184, 134, 11, 0.1);
+
+  // --- Editorial Links ---
+  --editorial-link: #1a5f7a;
+  --editorial-link-hover: #0d3d4d;
+  --editorial-link-visited: #5b4b8a;
+
+  // --- Editorial Borders ---
+  --editorial-border: #e8e4dc;
+  --editorial-border-light: #f0ede6;
+  --editorial-border-accent: var(--editorial-accent);
+
+  // --- Editorial Shadows ---
+  --editorial-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --editorial-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --editorial-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.04);
+  --editorial-shadow-hero: 0 20px 60px rgba(0, 0, 0, 0.12);
+
+  // --- Blockquote ---
+  --blockquote-border: var(--editorial-accent);
+  --blockquote-bg: var(--editorial-bg-alt);
+  --blockquote-text: var(--editorial-text-secondary);
+
+  // --- Code Blocks ---
+  --editorial-code-bg: #f6f4f0;
+  --editorial-code-text: #c7254e;
+  --editorial-pre-bg: #1e1e2e;
+  --editorial-pre-text: #cdd6f4;
+
+  // --- Progress Bar ---
+  --progress-bg: rgba(0, 0, 0, 0.05);
+  --progress-fill: var(--editorial-accent);
+
+  // --- TOC (Table of Contents) ---
+  --toc-bg: var(--editorial-paper);
+  --toc-border: var(--editorial-border);
+  --toc-link: var(--editorial-text-secondary);
+  --toc-link-hover: var(--editorial-text-primary);
+  --toc-link-active: var(--editorial-accent);
+  --toc-indicator: var(--editorial-accent);
+
+  // --- Author Bio ---
+  --author-bg: var(--editorial-bg-alt);
+  --author-border: var(--editorial-border);
+
+  // --- Share Buttons ---
+  --share-btn-bg: var(--editorial-bg-alt);
+  --share-btn-text: var(--editorial-text-muted);
+  --share-btn-hover-bg: var(--editorial-text-primary);
+  --share-btn-hover-text: #ffffff;
+
+  // --- Tags ---
+  --tag-bg: var(--editorial-bg-alt);
+  --tag-text: var(--editorial-text-secondary);
+  --tag-border: var(--editorial-border);
+  --tag-hover-bg: var(--editorial-accent-muted);
+  --tag-hover-text: var(--editorial-accent);
+  --tag-hover-border: var(--editorial-accent);
+
+  // --- Navigation Cards ---
+  --nav-card-bg: var(--editorial-paper);
+  --nav-card-border: var(--editorial-border);
+  --nav-card-hover-border: var(--editorial-accent);
+  --nav-card-hover-shadow: var(--editorial-shadow-md);
+
+  // --- Related Posts ---
+  --related-card-bg: var(--editorial-paper);
+  --related-card-shadow: var(--editorial-shadow-sm);
+  --related-card-hover-shadow: var(--editorial-shadow-md);
+}
+
+// Dark theme editorial overrides
+[data-theme="dark"] {
+  // --- Editorial Surface ---
+  --editorial-bg: #1a1a2e;
+  --editorial-bg-alt: #16162a;
+  --editorial-paper: #252542;
+
+  // --- Editorial Text ---
+  --editorial-text-primary: #e8e8f0;
+  --editorial-text-secondary: #b8b8c8;
+  --editorial-text-muted: #8888a0;
+  --editorial-text-caption: #6868a0;
+
+  // --- Editorial Accents ---
+  --editorial-accent: #e6b34d;
+  --editorial-accent-light: #f0c060;
+  --editorial-accent-muted: rgba(230, 179, 77, 0.15);
+
+  // --- Editorial Links ---
+  --editorial-link: #7cb8d4;
+  --editorial-link-hover: #a0d0e8;
+  --editorial-link-visited: #b09cd8;
+
+  // --- Editorial Borders ---
+  --editorial-border: #3a3a5a;
+  --editorial-border-light: #2a2a4a;
+  --editorial-border-accent: var(--editorial-accent);
+
+  // --- Editorial Shadows ---
+  --editorial-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+  --editorial-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --editorial-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+  --editorial-shadow-hero: 0 20px 60px rgba(0, 0, 0, 0.4);
+
+  // --- Blockquote ---
+  --blockquote-border: var(--editorial-accent);
+  --blockquote-bg: rgba(230, 179, 77, 0.08);
+  --blockquote-text: var(--editorial-text-secondary);
+
+  // --- Code Blocks ---
+  --editorial-code-bg: #1e1e36;
+  --editorial-code-text: #f472b6;
+  --editorial-pre-bg: #0f0f1a;
+  --editorial-pre-text: #cdd6f4;
+
+  // --- Progress Bar ---
+  --progress-bg: rgba(255, 255, 255, 0.1);
+  --progress-fill: var(--editorial-accent);
+
+  // --- TOC ---
+  --toc-bg: var(--editorial-paper);
+  --toc-border: var(--editorial-border);
+  --toc-link: var(--editorial-text-muted);
+  --toc-link-hover: var(--editorial-text-primary);
+  --toc-link-active: var(--editorial-accent);
+  --toc-indicator: var(--editorial-accent);
+
+  // --- Author Bio ---
+  --author-bg: var(--editorial-bg-alt);
+  --author-border: var(--editorial-border);
+
+  // --- Share Buttons ---
+  --share-btn-bg: var(--editorial-bg-alt);
+  --share-btn-text: var(--editorial-text-muted);
+  --share-btn-hover-bg: var(--editorial-accent);
+  --share-btn-hover-text: #1a1a2e;
+
+  // --- Tags ---
+  --tag-bg: var(--editorial-bg-alt);
+  --tag-text: var(--editorial-text-secondary);
+  --tag-border: var(--editorial-border);
+  --tag-hover-bg: var(--editorial-accent-muted);
+  --tag-hover-text: var(--editorial-accent);
+  --tag-hover-border: var(--editorial-accent);
+
+  // --- Navigation Cards ---
+  --nav-card-bg: var(--editorial-paper);
+  --nav-card-border: var(--editorial-border);
+  --nav-card-hover-border: var(--editorial-accent);
+  --nav-card-hover-shadow: var(--editorial-shadow-md);
+
+  // --- Related Posts ---
+  --related-card-bg: var(--editorial-paper);
+  --related-card-shadow: var(--editorial-shadow-sm);
+  --related-card-hover-shadow: var(--editorial-shadow-md);
+}
+
+// ============================================
+// ANIMATION TIMINGS
+// ============================================
+
+$transition-reading: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-hover: 0.2s ease-out;
+$transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+// ============================================
+// Z-INDEX LAYERS
+// ============================================
+
+$z-progress-bar: 1000;
+$z-toc-sticky: 100;
+$z-hero-content: 10;
+$z-hero-overlay: 5;
+
+// ============================================
+// BREAKPOINTS (Editorial-specific)
+// ============================================
+
+$bp-mobile: 480px;
+$bp-tablet: 768px;
+$bp-desktop: 1024px;
+$bp-wide: 1280px;
+$bp-ultrawide: 1536px;
+
+// ============================================
+// CONTAINER WIDTHS
+// ============================================
+
+$container-article: 720px;
+$container-article-wide: 900px;
+$container-full: 1200px;
+$container-hero: 1400px;

@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}{% if seo_title %}{{ seo_title }}{% else %}Archive{% if archive_label %}: {{ archive_label }}{% endif %} - Blog - {{ site_name | default(value='Blazing Sun') }}{% endif %}{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/BLOG/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="blog-page">
+    <div class="blog-page__container">
+        {# Archive Header #}
+        <header class="blog-page__header blog-page__header--archive">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <ol class="breadcrumb__list">
+                    <li class="breadcrumb__item"><a href="/blog">Blog</a></li>
+                    <li class="breadcrumb__item"><a href="/blog/archive">Archive</a></li>
+                    {% if archive_year and archive_month %}
+                    <li class="breadcrumb__item breadcrumb__item--active" aria-current="page">{{ archive_label | default(value=archive_year ~ "/" ~ archive_month) }}</li>
+                    {% endif %}
+                </ol>
+            </nav>
+
+            <h1 class="blog-page__title">
+                {% if archive_year and archive_month %}
+                <span class="blog-page__label">Archive</span>
+                <span id="archiveLabel">{{ archive_label | default(value=archive_year ~ "/" ~ archive_month) }}</span>
+                {% else %}
+                Blog Archive
+                {% endif %}
+            </h1>
+
+            {% if archive_year and archive_month and pagination %}
+            <div class="blog-page__meta">
+                <span class="blog-page__count">{{ pagination.total }} {% if pagination.total == 1 %}post{% else %}posts{% endif %}</span>
+            </div>
+            {% endif %}
+        </header>
+
+        {% if not archive_year or not archive_month %}
+        {# Full Archive View #}
+        <section class="archive-full" aria-label="Full blog archive">
+            {% if archives_by_year %}
+            {% for year_data in archives_by_year %}
+            <div class="archive-year">
+                <h2 class="archive-year__title">{{ year_data.year }}</h2>
+                <ul class="archive-year__months" role="list">
+                    {% for month in year_data.months %}
+                    <li class="archive-year__month">
+                        <a href="/blog/archive/{{ year_data.year }}/{{ month.month }}" class="archive-year__link">
+                            <span class="archive-year__label">{{ month.label }}</span>
+                            <span class="archive-year__count">{{ month.post_count }} {% if month.post_count == 1 %}post{% else %}posts{% endif %}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <h3>No archived posts</h3>
+                <p>Check back soon for new content.</p>
+                <a href="/blog" class="btn btn--primary">Back to Blog</a>
+            </div>
+            {% endif %}
+        </section>
+
+        {% else %}
+        {# Specific Month Archive #}
+        <div class="blog-page__layout">
+            {# Main Content Area #}
+            <section class="blog-page__main" aria-label="Posts from {{ archive_label | default(value='') }}">
+                {# Month Navigation #}
+                <nav class="archive-nav" aria-label="Archive navigation">
+                    {% if prev_month %}
+                    <a href="/blog/archive/{{ prev_month.year }}/{{ prev_month.month }}" class="archive-nav__link archive-nav__link--prev">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        {{ prev_month.label }}
+                    </a>
+                    {% else %}
+                    <span class="archive-nav__link archive-nav__link--disabled"></span>
+                    {% endif %}
+
+                    <a href="/blog/archive" class="archive-nav__link archive-nav__link--all">
+                        View All Archives
+                    </a>
+
+                    {% if next_month %}
+                    <a href="/blog/archive/{{ next_month.year }}/{{ next_month.month }}" class="archive-nav__link archive-nav__link--next">
+                        {{ next_month.label }}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                    {% else %}
+                    <span class="archive-nav__link archive-nav__link--disabled"></span>
+                    {% endif %}
+                </nav>
+
+                {# Posts Grid #}
+                <div id="postsGrid" class="posts-grid">
+                    {% if posts %}
+                    {% for post in posts %}
+                    <article class="post-card" aria-label="Blog post">
+                        <a href="/blog/{{ post.slug }}" class="post-card__link">
+                            {% if post.featured_image_url %}
+                            <div class="post-card__image">
+                                <img src="{{ post.featured_image_url }}" alt="{{ post.title }}" loading="lazy">
+                            </div>
+                            {% else %}
+                            <div class="post-card__image post-card__image--placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <line x1="10" y1="9" x2="8" y2="9"></line>
+                                </svg>
+                            </div>
+                            {% endif %}
+                            <div class="post-card__content">
+                                {% if post.category %}
+                                <span class="post-card__category">{{ post.category.name }}</span>
+                                {% endif %}
+                                <h3 class="post-card__title">{{ post.title }}</h3>
+                                <p class="post-card__excerpt">{{ post.excerpt }}</p>
+                                <div class="post-card__meta">
+                                    <time datetime="{{ post.published_at }}">{{ post.published_at_formatted }}</time>
+                                    <span class="post-card__read-time">{{ post.read_time_minutes }} min read</span>
+                                </div>
+                                {% if post.tags %}
+                                <div class="post-card__tags">
+                                    {% for tag in post.tags | slice(end=3) %}
+                                    <span class="post-card__tag">{{ tag.name }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </article>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <h3>No posts from this month</h3>
+                        <p>Check back soon for new content.</p>
+                        <a href="/blog/archive" class="btn btn--primary">View All Archives</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {# Pagination #}
+                <nav id="pagination" class="pagination" aria-label="Archive pagination">
+                    {# Populated by JavaScript or server-side #}
+                </nav>
+            </section>
+
+            {# Sidebar #}
+            <aside class="blog-page__sidebar" aria-label="Blog sidebar">
+                {# Search Widget #}
+                <div class="sidebar-widget">
+                    <h3 class="sidebar-widget__title">Search</h3>
+                    <form id="searchForm" class="search-form" action="/blog/search" method="GET" role="search">
+                        <div class="search-form__input-group">
+                            <input type="search"
+                                   name="q"
+                                   id="searchQuery"
+                                   class="search-form__input"
+                                   placeholder="Search posts..."
+                                   aria-label="Search blog posts">
+                            <button type="submit" class="search-form__btn" aria-label="Submit search">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                {# Other Months in Same Year #}
+                {% if same_year_months %}
+                <div class="sidebar-widget">
+                    <h3 class="sidebar-widget__title">{{ archive_year }}</h3>
+                    <ul class="archive-list" role="list">
+                        {% for month in same_year_months %}
+                        <li class="archive-list__item">
+                            <a href="/blog/archive/{{ archive_year }}/{{ month.month }}"
+                               class="archive-list__link{% if month.month == archive_month %} archive-list__link--active{% endif %}"
+                               {% if month.month == archive_month %}aria-current="page"{% endif %}>
+                                <span class="archive-list__date">{{ month.label }}</span>
+                                <span class="archive-list__count">{{ month.post_count }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Categories Widget #}
+                {% if categories %}
+                <div class="sidebar-widget">
+                    <h3 class="sidebar-widget__title">Categories</h3>
+                    <ul class="category-list" role="list">
+                        {% for category in categories %}
+                        <li class="category-list__item">
+                            <a href="/blog/category/{{ category.slug }}" class="category-list__link">
+                                <span class="category-list__name">{{ category.name }}</span>
+                                <span class="category-list__count">{{ category.post_count }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Tag Cloud Widget #}
+                {% if tags %}
+                <div class="sidebar-widget">
+                    <h3 class="sidebar-widget__title">Popular Tags</h3>
+                    <div class="tag-cloud" role="list" aria-label="Popular tags">
+                        {% for tag in tags %}
+                        <a href="/blog/tag/{{ tag.slug }}"
+                           class="tag-cloud__tag"
+                           role="listitem">
+                            {{ tag.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </aside>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url | safe }}';
+    window.PAGE_TYPE = '{{ page_type | default(value="archive") }}';
+    {% if archive_year %}window.ARCHIVE_YEAR = '{{ archive_year }}';{% endif %}
+    {% if archive_month %}window.ARCHIVE_MONTH = '{{ archive_month }}';{% endif %}
+</script>
+<script src="/assets/js/BLOG/app.js?v={{ assets_version }}" defer></script>
+<script src="/assets/js/BLOG_ARCHIVE/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

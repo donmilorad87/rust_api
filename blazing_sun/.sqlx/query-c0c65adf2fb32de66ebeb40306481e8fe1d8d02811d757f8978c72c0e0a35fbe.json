@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM blog_taxonomy_explicit_posts\n        WHERE taxonomy_id = $1 AND post_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c0c65adf2fb32de66ebeb40306481e8fe1d8d02811d757f8978c72c0e0a35fbe"
+}

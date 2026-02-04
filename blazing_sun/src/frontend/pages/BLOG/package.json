@@ -1,0 +1,15 @@
+{
+  "name": "blog",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build:prod": "vite build --mode production",
+    "watch": "vite build --watch"
+  },
+  "devDependencies": {
+    "sass": "^1.69.0",
+    "vite": "^5.0.0"
+  }
+}

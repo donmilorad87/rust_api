@@ -1,0 +1,368 @@
+// ============================================
+// UI STATES - Editorial Magazine Style
+// ============================================
+// Loading, empty, and error states with elegant styling
+
+@use 'variables' as *;
+
+// ============================================
+// LOADING STATE
+// ============================================
+.blog-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-3xl;
+  min-height: 300px;
+
+  &__spinner {
+    position: relative;
+    width: 48px;
+    height: 48px;
+
+    // Outer ring
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 3px solid var(--border-color-light);
+      border-radius: 50%;
+    }
+
+    // Spinning segment
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 3px solid transparent;
+      border-top-color: $editorial-accent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  &__text {
+    margin-top: $spacing-lg;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+// ============================================
+// SKELETON LOADING CARDS
+// ============================================
+.skeleton-card {
+  background: var(--card-bg);
+  border-radius: $radius-xl;
+  overflow: hidden;
+  box-shadow: $shadow-editorial-sm;
+
+  &__image {
+    width: 100%;
+    padding-top: $card-aspect-ratio;
+    background: linear-gradient(
+      90deg,
+      var(--skeleton-bg) 0%,
+      var(--skeleton-shine) 50%,
+      var(--skeleton-bg) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  &__content {
+    padding: $spacing-lg;
+  }
+
+  &__category {
+    width: 80px;
+    height: 12px;
+    background: var(--skeleton-bg);
+    border-radius: $radius-sm;
+    margin-bottom: $spacing-sm;
+    animation: shimmer 1.5s infinite;
+    background-size: 200% 100%;
+  }
+
+  &__title {
+    height: 24px;
+    background: var(--skeleton-bg);
+    border-radius: $radius-sm;
+    margin-bottom: $spacing-xs;
+    animation: shimmer 1.5s infinite;
+    background-size: 200% 100%;
+
+    &:last-of-type {
+      width: 70%;
+    }
+  }
+
+  &__excerpt {
+    height: 14px;
+    background: var(--skeleton-bg);
+    border-radius: $radius-sm;
+    margin-bottom: $spacing-xs;
+    animation: shimmer 1.5s infinite;
+    background-size: 200% 100%;
+
+    &:nth-child(2) {
+      width: 90%;
+    }
+
+    &:nth-child(3) {
+      width: 60%;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    gap: $spacing-md;
+    margin-top: $spacing-md;
+    padding-top: $spacing-sm;
+    border-top: 1px solid var(--border-color-light);
+
+    span {
+      width: 60px;
+      height: 12px;
+      background: var(--skeleton-bg);
+      border-radius: $radius-sm;
+      animation: shimmer 1.5s infinite;
+      background-size: 200% 100%;
+    }
+  }
+}
+
+// Staggered skeleton animation
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: $spacing-lg;
+
+  .skeleton-card {
+    @for $i from 1 through 6 {
+      &:nth-child(#{$i}) {
+        .skeleton-card__image,
+        .skeleton-card__category,
+        .skeleton-card__title,
+        .skeleton-card__excerpt,
+        .skeleton-card__meta span {
+          animation-delay: calc(#{$i} * 0.1s);
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// EMPTY STATE
+// ============================================
+.blog-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-3xl $spacing-xl;
+  text-align: center;
+  background: var(--card-bg);
+  border-radius: $radius-2xl;
+  border: 2px dashed var(--border-color-light);
+
+  &__icon {
+    width: 100px;
+    height: 100px;
+    margin-bottom: $spacing-lg;
+    color: var(--text-muted);
+    opacity: 0.3;
+
+    // Animated illustration
+    animation: subtleFloat 4s ease-in-out infinite;
+  }
+
+  &__title {
+    margin: 0 0 $spacing-sm 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-2xl;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  &__text {
+    margin: 0 0 $spacing-lg 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-base;
+    color: var(--text-muted);
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-lg;
+    background: $editorial-accent;
+    color: $editorial-charcoal;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: $radius-full;
+    transition: all $anim-duration-fast ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: $editorial-accent-dark;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba($editorial-accent, 0.3);
+    }
+  }
+}
+
+// ============================================
+// ERROR STATE
+// ============================================
+.blog-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-xl;
+  text-align: center;
+  background: var(--color-error-light);
+  border-radius: $radius-xl;
+  border: 2px solid var(--color-error);
+
+  [data-theme="dark"] & {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  &__icon {
+    width: 64px;
+    height: 64px;
+    color: var(--color-error);
+    margin-bottom: $spacing-md;
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  &__title {
+    margin: 0 0 $spacing-sm 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-xl;
+    font-weight: 700;
+    color: var(--color-error);
+  }
+
+  &__text {
+    margin: 0 0 $spacing-lg 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-base;
+    color: var(--text-secondary);
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-lg;
+    background: var(--color-error);
+    color: white;
+    border: none;
+    border-radius: $radius-full;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all $anim-duration-fast ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: var(--color-error-dark);
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// ============================================
+// NO RESULTS STATE (for search)
+// ============================================
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-3xl $spacing-xl;
+  text-align: center;
+
+  &__icon {
+    width: 80px;
+    height: 80px;
+    color: var(--text-muted);
+    opacity: 0.4;
+    margin-bottom: $spacing-lg;
+  }
+
+  &__title {
+    margin: 0 0 $spacing-sm 0;
+    font-family: $font-editorial-serif;
+    font-size: $font-size-xl;
+    color: var(--text-primary);
+  }
+
+  &__text {
+    margin: 0 0 $spacing-lg 0;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-base;
+    color: var(--text-muted);
+    max-width: 360px;
+    line-height: 1.6;
+  }
+
+  &__suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: $spacing-sm;
+    max-width: 400px;
+
+    &-label {
+      width: 100%;
+      font-family: $font-editorial-sans;
+      font-size: $font-size-sm;
+      color: var(--text-muted);
+      margin-bottom: $spacing-xs;
+    }
+  }
+
+  &__suggestion {
+    padding: $spacing-xs $spacing-md;
+    background: var(--badge-default-bg);
+    color: var(--badge-default-text);
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    text-decoration: none;
+    border-radius: $radius-full;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      background: $editorial-accent;
+      color: $editorial-charcoal;
+    }
+  }
+}

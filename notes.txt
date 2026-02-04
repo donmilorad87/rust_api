@@ -2,3 +2,6 @@
 
 sqlx migrate run
 cargo sqlx prepare
+
+
+ /* "CLAUDE_CODE_TASK_LIST_ID": "blazing_sun", */

@@ -1,0 +1,348 @@
+// ============================================
+// BLOG - Editorial Magazine Variables
+// ============================================
+// A sophisticated editorial magazine aesthetic with refined typography,
+// warm color palette, and premium design elements.
+//
+// This file extends GLOBAL variables with blog-specific design tokens.
+
+@forward '../../../GLOBAL/src/styles/variables';
+@use '../../../GLOBAL/src/styles/variables' as global;
+
+// ============================================
+// GOOGLE FONTS IMPORT
+// ============================================
+// Playfair Display - Refined serif for headings
+// Source Sans 3 - Clean modern sans-serif for body
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+
+// ============================================
+// EDITORIAL COLOR PALETTE (CSS Custom Properties)
+// ============================================
+// These extend the GLOBAL theme with blog-specific colors
+
+:root {
+  // --- Editorial Brand Colors ---
+  // Deep burgundy as primary accent
+  --blog-accent: #8B2942;
+  --blog-accent-light: #A63D56;
+  --blog-accent-lighter: #C15A73;
+  --blog-accent-dark: #6D1F33;
+  --blog-accent-muted: rgba(139, 41, 66, 0.1);
+
+  // Rich warm palette
+  --blog-gold: #C9A962;
+  --blog-gold-light: #D9C38A;
+  --blog-gold-muted: rgba(201, 169, 98, 0.15);
+
+  // Charcoal text hierarchy
+  --blog-text-headline: #1A1A1A;
+  --blog-text-body: #2D2D2D;
+  --blog-text-secondary: #4A4A4A;
+  --blog-text-tertiary: #6B6B6B;
+  --blog-text-muted: #8A8A8A;
+  --blog-text-subtle: #A8A8A8;
+
+  // Warm grays for surfaces
+  --blog-surface-primary: #FFFFFF;
+  --blog-surface-secondary: #FAFAFA;
+  --blog-surface-tertiary: #F5F3F0;
+  --blog-surface-warm: #F8F6F3;
+  --blog-surface-hover: #F0EDE9;
+
+  // Borders with warmth
+  --blog-border-light: #E8E4E0;
+  --blog-border-medium: #D4CFC9;
+  --blog-border-dark: #B8B0A6;
+  --blog-border-accent: rgba(139, 41, 66, 0.2);
+
+  // Refined shadows
+  --blog-shadow-subtle: 0 1px 3px rgba(26, 26, 26, 0.04);
+  --blog-shadow-soft: 0 2px 8px rgba(26, 26, 26, 0.06);
+  --blog-shadow-medium: 0 4px 16px rgba(26, 26, 26, 0.08);
+  --blog-shadow-elevated: 0 8px 32px rgba(26, 26, 26, 0.10);
+  --blog-shadow-dramatic: 0 16px 48px rgba(26, 26, 26, 0.12);
+
+  // Category accent colors
+  --blog-category-lifestyle: #8B2942;
+  --blog-category-tech: #2D5A7B;
+  --blog-category-travel: #3D6B4F;
+  --blog-category-food: #9B6B3D;
+  --blog-category-culture: #5D4A7B;
+  --blog-category-business: #4A5568;
+}
+
+[data-theme="dark"] {
+  // --- Dark Mode Editorial Colors ---
+  --blog-accent: #C15A73;
+  --blog-accent-light: #D47B91;
+  --blog-accent-lighter: #E39CAE;
+  --blog-accent-dark: #A63D56;
+  --blog-accent-muted: rgba(193, 90, 115, 0.15);
+
+  --blog-gold: #D9C38A;
+  --blog-gold-light: #E6D5A8;
+  --blog-gold-muted: rgba(217, 195, 138, 0.12);
+
+  // Dark mode text hierarchy
+  --blog-text-headline: #F5F5F5;
+  --blog-text-body: #E8E8E8;
+  --blog-text-secondary: #C8C8C8;
+  --blog-text-tertiary: #A0A0A0;
+  --blog-text-muted: #787878;
+  --blog-text-subtle: #5A5A5A;
+
+  // Dark surfaces with warmth
+  --blog-surface-primary: #1C1C1E;
+  --blog-surface-secondary: #242426;
+  --blog-surface-tertiary: #2C2C2E;
+  --blog-surface-warm: #28262A;
+  --blog-surface-hover: #343436;
+
+  // Dark borders
+  --blog-border-light: #3A3A3C;
+  --blog-border-medium: #48484A;
+  --blog-border-dark: #5A5A5C;
+  --blog-border-accent: rgba(193, 90, 115, 0.25);
+
+  // Dark shadows
+  --blog-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --blog-shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --blog-shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --blog-shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --blog-shadow-dramatic: 0 16px 48px rgba(0, 0, 0, 0.4);
+
+  // Dark category colors
+  --blog-category-lifestyle: #D47B91;
+  --blog-category-tech: #5B9DC9;
+  --blog-category-travel: #6BAF7D;
+  --blog-category-food: #D4A76A;
+  --blog-category-culture: #9B85C4;
+  --blog-category-business: #8B9AAE;
+}
+
+// ============================================
+// TYPOGRAPHY - EDITORIAL FONTS
+// ============================================
+$blog-font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+$blog-font-sans: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$blog-font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', monospace;
+
+// Font weights
+$blog-weight-light: 300;
+$blog-weight-regular: 400;
+$blog-weight-medium: 500;
+$blog-weight-semibold: 600;
+$blog-weight-bold: 700;
+$blog-weight-extrabold: 800;
+
+// ============================================
+// TYPOGRAPHY - EDITORIAL SCALE
+// ============================================
+// Display sizes for hero elements
+$blog-display-1: 4.5rem;     // 72px - Hero headlines
+$blog-display-2: 3.5rem;     // 56px - Section heroes
+$blog-display-3: 2.75rem;    // 44px - Featured titles
+
+// Heading sizes
+$blog-heading-1: 2.25rem;    // 36px
+$blog-heading-2: 1.875rem;   // 30px
+$blog-heading-3: 1.5rem;     // 24px
+$blog-heading-4: 1.25rem;    // 20px
+$blog-heading-5: 1.125rem;   // 18px
+$blog-heading-6: 1rem;       // 16px
+
+// Body sizes
+$blog-body-large: 1.25rem;   // 20px - Lead paragraphs
+$blog-body-base: 1.0625rem;  // 17px - Main body text
+$blog-body-small: 0.9375rem; // 15px - Secondary text
+$blog-body-xs: 0.8125rem;    // 13px - Captions, meta
+
+// UI sizes
+$blog-ui-large: 1rem;        // 16px
+$blog-ui-base: 0.875rem;     // 14px
+$blog-ui-small: 0.75rem;     // 12px
+$blog-ui-xs: 0.6875rem;      // 11px
+
+// ============================================
+// LINE HEIGHTS - EDITORIAL RHYTHM
+// ============================================
+$blog-leading-none: 1;
+$blog-leading-tight: 1.15;
+$blog-leading-snug: 1.3;
+$blog-leading-normal: 1.5;
+$blog-leading-relaxed: 1.65;
+$blog-leading-loose: 1.85;
+$blog-leading-article: 1.75;  // Optimal for long-form reading
+
+// ============================================
+// LETTER SPACING - EDITORIAL REFINEMENT
+// ============================================
+$blog-tracking-tighter: -0.03em;
+$blog-tracking-tight: -0.015em;
+$blog-tracking-normal: 0;
+$blog-tracking-wide: 0.025em;
+$blog-tracking-wider: 0.05em;
+$blog-tracking-widest: 0.1em;
+$blog-tracking-caps: 0.15em;  // For small caps & labels
+
+// ============================================
+// SPACING - EDITORIAL RHYTHM
+// ============================================
+$blog-space-0: 0;
+$blog-space-px: 1px;
+$blog-space-0-5: 0.125rem;   // 2px
+$blog-space-1: 0.25rem;      // 4px
+$blog-space-2: 0.5rem;       // 8px
+$blog-space-3: 0.75rem;      // 12px
+$blog-space-4: 1rem;         // 16px
+$blog-space-5: 1.25rem;      // 20px
+$blog-space-6: 1.5rem;       // 24px
+$blog-space-8: 2rem;         // 32px
+$blog-space-10: 2.5rem;      // 40px
+$blog-space-12: 3rem;        // 48px
+$blog-space-16: 4rem;        // 64px
+$blog-space-20: 5rem;        // 80px
+$blog-space-24: 6rem;        // 96px
+$blog-space-32: 8rem;        // 128px
+
+// ============================================
+// BORDER RADIUS - SOFT & REFINED
+// ============================================
+$blog-radius-none: 0;
+$blog-radius-sm: 4px;
+$blog-radius-md: 8px;
+$blog-radius-lg: 12px;
+$blog-radius-xl: 16px;
+$blog-radius-2xl: 20px;
+$blog-radius-3xl: 24px;
+$blog-radius-full: 9999px;
+
+// ============================================
+// TRANSITIONS - ELEGANT ANIMATIONS
+// ============================================
+$blog-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+$blog-ease-in: cubic-bezier(0.4, 0, 1, 1);
+$blog-ease-out: cubic-bezier(0, 0, 0.2, 1);
+$blog-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+$blog-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+$blog-duration-instant: 75ms;
+$blog-duration-fast: 150ms;
+$blog-duration-normal: 250ms;
+$blog-duration-slow: 400ms;
+$blog-duration-slower: 600ms;
+
+$blog-transition-fast: $blog-duration-fast $blog-ease-smooth;
+$blog-transition-normal: $blog-duration-normal $blog-ease-smooth;
+$blog-transition-slow: $blog-duration-slow $blog-ease-smooth;
+$blog-transition-transform: transform $blog-duration-normal $blog-ease-smooth;
+$blog-transition-colors: color $blog-duration-fast $blog-ease-smooth,
+                         background-color $blog-duration-fast $blog-ease-smooth,
+                         border-color $blog-duration-fast $blog-ease-smooth;
+
+// ============================================
+// BREAKPOINTS
+// ============================================
+$blog-breakpoint-xs: 375px;
+$blog-breakpoint-sm: 480px;
+$blog-breakpoint-md: 768px;
+$blog-breakpoint-lg: 1024px;
+$blog-breakpoint-xl: 1280px;
+$blog-breakpoint-2xl: 1440px;
+
+// ============================================
+// LAYOUT WIDTHS
+// ============================================
+$blog-width-narrow: 680px;   // Single column articles
+$blog-width-content: 780px;  // Content with sidebar
+$blog-width-wide: 1080px;    // Wide content area
+$blog-width-full: 1280px;    // Full container
+$blog-width-max: 1440px;     // Maximum container
+
+// Sidebar widths
+$blog-sidebar-width: 320px;
+$blog-sidebar-gap: 3rem;
+
+// ============================================
+// Z-INDEX SCALE
+// ============================================
+$blog-z-base: 0;
+$blog-z-dropdown: 100;
+$blog-z-sticky: 200;
+$blog-z-fixed: 300;
+$blog-z-modal-backdrop: 400;
+$blog-z-modal: 500;
+$blog-z-popover: 600;
+$blog-z-tooltip: 700;
+$blog-z-toast: 800;
+
+// ============================================
+// CARD DESIGN TOKENS
+// ============================================
+$blog-card-padding: $blog-space-6;
+$blog-card-padding-lg: $blog-space-8;
+$blog-card-radius: $blog-radius-xl;
+$blog-card-radius-lg: $blog-radius-2xl;
+
+// ============================================
+// IMAGE ASPECT RATIOS
+// ============================================
+$blog-aspect-hero: 56.25%;      // 16:9
+$blog-aspect-featured: 66.67%;   // 3:2
+$blog-aspect-card: 75%;          // 4:3
+$blog-aspect-thumbnail: 100%;    // 1:1
+
+// ============================================
+// ANIMATION KEYFRAMES
+// ============================================
+@keyframes blog-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blog-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blog-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes blog-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes blog-pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

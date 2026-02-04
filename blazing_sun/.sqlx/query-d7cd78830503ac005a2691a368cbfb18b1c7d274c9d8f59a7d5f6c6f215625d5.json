@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            id as \"id!\",\n            title as \"title!\",\n            slug as \"slug!\",\n            excerpt,\n            featured_image_id,\n            author_id as \"author_id!\",\n            author_name as \"author_name!\",\n            published_at,\n            view_count as \"view_count!\",\n            total_count as \"total_count!\"\n        FROM sp_get_posts_by_category($1, $2, $3)\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "excerpt",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "featured_image_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "author_id!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "author_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "view_count!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "total_count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "d7cd78830503ac005a2691a368cbfb18b1c7d274c9d8f59a7d5f6c6f215625d5"
+}

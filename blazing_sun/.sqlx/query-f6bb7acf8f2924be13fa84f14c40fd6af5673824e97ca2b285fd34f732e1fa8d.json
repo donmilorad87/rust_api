@@ -1,0 +1,80 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, name, slug, description, display_title, featured_image_id, rule_logic,\n               sort_order, is_active, created_at, updated_at\n        FROM blog_taxonomies\n        WHERE is_active = TRUE\n        ORDER BY sort_order ASC, name ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "display_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "featured_image_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "rule_logic",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "sort_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f6bb7acf8f2924be13fa84f14c40fd6af5673824e97ca2b285fd34f732e1fa8d"
+}

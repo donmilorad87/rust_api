@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM blog_search_analytics\n        WHERE created_at < NOW() - ($1 || ' days')::INTERVAL\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "13bf323149c05675915f0c477770217a5b7c103e72886d47348bc25e301fe00e"
+}

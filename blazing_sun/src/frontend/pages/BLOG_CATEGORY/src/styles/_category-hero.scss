@@ -1,0 +1,315 @@
+// ============================================
+// CATEGORY HERO HEADER - Editorial Magazine Style
+// ============================================
+// Stunning category header with burgundy accent and elegant typography
+
+@use 'sass:color';
+@use 'variables' as *;
+
+// ============================================
+// CATEGORY HERO SECTION
+// ============================================
+.category-hero {
+  position: relative;
+  min-height: $category-hero-min-height;
+  margin-bottom: $spacing-xl;
+  padding: $spacing-xxl $spacing-lg;
+  background: linear-gradient(
+    135deg,
+    $category-burgundy 0%,
+    $category-burgundy-dark 50%,
+    $editorial-charcoal 100%
+  );
+  background-size: 200% 200%;
+  border-radius: $radius-2xl;
+  overflow: hidden;
+  box-shadow: $shadow-category-hero;
+
+  // Animated gradient background
+  animation: gradientShift 15s ease infinite;
+
+  @media (min-width: $breakpoint-md) {
+    min-height: $category-hero-max-height;
+    padding: $spacing-3xl $spacing-xl;
+    border-radius: $radius-3xl;
+    margin-bottom: $spacing-xxl;
+  }
+
+  // Decorative pattern overlay
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+      radial-gradient(
+        circle at 20% 80%,
+        rgba(255, 255, 255, 0.05) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 20%,
+        rgba(255, 255, 255, 0.08) 0%,
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 255, 255, 0.02) 0%,
+        transparent 60%
+      );
+    pointer-events: none;
+  }
+
+  // Subtle noise texture
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+  }
+
+  // ============================================
+  // HERO CONTENT
+  // ============================================
+  &__content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+
+    // Animation
+    opacity: 0;
+    animation: scaleFadeIn $anim-duration-slow $anim-easing-elegant forwards;
+  }
+
+  // ============================================
+  // BREADCRUMB
+  // ============================================
+  &__breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-lg;
+    padding: $spacing-xs $spacing-md;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: $radius-full;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+
+    a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: color $anim-duration-fast ease;
+
+      &:hover {
+        color: #ffffff;
+      }
+    }
+
+    span {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  // ============================================
+  // CATEGORY LABEL
+  // ============================================
+  &__label {
+    display: inline-block;
+    margin-bottom: $spacing-md;
+    padding: $spacing-xs $spacing-lg;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: $radius-full;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.9);
+
+    // Animation
+    opacity: 0;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.1s;
+  }
+
+  // ============================================
+  // CATEGORY TITLE
+  // ============================================
+  &__title {
+    margin: 0 0 $spacing-md 0;
+    font-family: $font-editorial-serif;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+    // Animation
+    opacity: 0;
+    animation: heroTitleReveal $anim-duration-slow $anim-easing-elegant forwards;
+    animation-delay: 0.2s;
+  }
+
+  // ============================================
+  // DECORATIVE LINE
+  // ============================================
+  &__divider {
+    display: block;
+    width: 80px;
+    height: 4px;
+    margin: $spacing-md auto $spacing-lg;
+    background: $editorial-accent;
+    border-radius: 2px;
+    transform-origin: center;
+
+    // Animation
+    animation: lineExpand $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.4s;
+  }
+
+  // ============================================
+  // CATEGORY DESCRIPTION
+  // ============================================
+  &__description {
+    margin: 0 auto $spacing-lg;
+    max-width: 600px;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-lg;
+    font-weight: 400;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.85);
+
+    // Animation
+    opacity: 0;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.5s;
+
+    @media (min-width: $breakpoint-md) {
+      font-size: $font-size-xl;
+    }
+  }
+
+  // ============================================
+  // POST COUNT BADGE
+  // ============================================
+  &__meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-lg;
+
+    // Animation
+    opacity: 0;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.6s;
+  }
+
+  &__count {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-sm;
+    padding: $spacing-sm $spacing-lg;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: $radius-lg;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: #ffffff;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+      opacity: 0.8;
+    }
+  }
+
+  &__count-number {
+    font-weight: 700;
+    font-size: $font-size-lg;
+    color: $editorial-accent;
+  }
+
+  // ============================================
+  // SUBCATEGORIES
+  // ============================================
+  &__subcategories {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: $spacing-sm;
+    margin-top: $spacing-lg;
+    padding-top: $spacing-lg;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+
+    // Animation
+    opacity: 0;
+    animation: fadeInUp $anim-duration-normal $anim-easing-elegant forwards;
+    animation-delay: 0.7s;
+  }
+
+  &__subcategory-label {
+    width: 100%;
+    margin-bottom: $spacing-xs;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+  }
+
+  &__subcategory-link {
+    padding: $spacing-xs $spacing-md;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: $radius-full;
+    font-family: $font-editorial-sans;
+    font-size: $font-size-sm;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    transition: all $anim-duration-fast ease;
+
+    &:hover {
+      background: $editorial-accent;
+      border-color: $editorial-accent;
+      color: $editorial-charcoal;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ============================================
+// DARK MODE ADJUSTMENTS
+// ============================================
+[data-theme="dark"] {
+  .category-hero {
+    background: linear-gradient(
+      135deg,
+      $category-burgundy-dark 0%,
+      $editorial-charcoal 50%,
+      color.adjust($editorial-charcoal, $lightness: -5%) 100%
+    );
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+}

@@ -6,6 +6,7 @@ use actix_web::web::{Data, JsonConfig};
 use actix_web::{App, HttpServer};
 use blazing_sun::bootstrap::middleware::controllers::csrf;
 use blazing_sun::config::{AppConfig, SessionConfig};
+use blazing_sun::bootstrap::elasticsearch::create_elasticsearch;
 use blazing_sun::database::{create_mongodb, create_pool, state_full, AppState};
 use blazing_sun::events;
 use blazing_sun::init_crons;
@@ -39,9 +40,24 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    // Initialize message queue (RabbitMQ for async tasks)
+    // Initialize Elasticsearch (for blog search) - initialized before MQ so MQ workers can use it
+    let elasticsearch = match create_elasticsearch().await {
+        Ok(es) => {
+            info!("Elasticsearch connected successfully");
+            Some(es)
+        }
+        Err(e) => {
+            warn!(
+                "Failed to connect to Elasticsearch (continuing without search): {}",
+                e
+            );
+            None
+        }
+    };
+
+    // Initialize message queue (RabbitMQ for async tasks) - with Elasticsearch for blog indexing
     let mq_pool = create_pool().await;
-    let mq_queue = match mq::init(mq_pool).await {
+    let mq_queue = match mq::init(mq_pool, elasticsearch.clone()).await {
         Ok(queue) => queue,
         Err(e) => {
             error!("Failed to initialize message queue: {}", e);
@@ -98,8 +114,8 @@ async fn main() -> std::io::Result<()> {
     // Cast SharedQueue to DynMq for AppState (avoids circular dependency)
     let dyn_mq: blazing_sun::database::DynMq = mq_queue;
 
-    // Create state with all services (MQ, Events, MongoDB)
-    let state: Data<AppState> = state_full(dyn_mq, event_bus, mongodb).await;
+    // Create state with all services (MQ, Events, MongoDB, Elasticsearch)
+    let state: Data<AppState> = state_full(dyn_mq, event_bus, mongodb, elasticsearch).await;
 
     // Initialize session configuration
     let session_config = SessionConfig::from_env().map_err(|e| {

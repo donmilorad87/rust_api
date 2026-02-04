@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM blog_taxonomy_required_categories\n        WHERE taxonomy_id = $1 AND category_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c38b3b3ce953c0191f522e1e0085f8d30a2e7364c50e2a76b375b3c282314e61"
+}

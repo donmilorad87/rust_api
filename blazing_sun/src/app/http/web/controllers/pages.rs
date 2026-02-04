@@ -13,7 +13,9 @@
 //!
 //! See `bootstrap/utility/template.rs` for available routes and documentation.
 
+use crate::app::db_query::read::blog as db_blog;
 use crate::app::db_query::read::localization as db_localization;
+use crate::app::db_query::read::upload as db_upload;
 use crate::app::db_query::read::page_hreflang as db_page_hreflang;
 use crate::app::db_query::read::page_schema as db_page_schema;
 use crate::app::db_query::read::page_seo as db_page_seo;
@@ -21,7 +23,7 @@ use crate::app::db_query::read::schema_entity as db_schema_entity;
 use crate::bootstrap::routes::controller::api::{
     get_route_registry_snapshot, route_with_lang, DEFAULT_LANG,
 };
-use crate::bootstrap::utility::auth::is_logged;
+use crate::bootstrap::utility::auth::{is_logged, AuthInfo};
 use crate::bootstrap::utility::csrf;
 use crate::bootstrap::utility::template::{
     get_assets_version, get_images_version, register_template_functions,
@@ -379,6 +381,26 @@ impl PagesController {
         path: &str,
         registry: &HashMap<String, HashMap<String, String>>,
     ) -> Option<(String, String, HashMap<String, String>)> {
+        // Two-pass matching: exact routes first, then parameterized routes
+        // This ensures /blog/search matches before /blog/{slug}
+
+        // First pass: Try exact matches (routes without parameters)
+        for (name, lang_map) in registry {
+            if !Self::is_web_route(name) {
+                continue;
+            }
+            for (lang, pattern) in lang_map {
+                // Skip patterns with parameters
+                if pattern.contains('{') {
+                    continue;
+                }
+                if let Some(args) = Self::match_route_pattern(pattern, path) {
+                    return Some((name.clone(), lang.clone(), args));
+                }
+            }
+        }
+
+        // Second pass: Try parameterized routes
         for (name, lang_map) in registry {
             if !Self::is_web_route(name) {
                 continue;
@@ -397,6 +419,26 @@ impl PagesController {
         language: &str,
         registry: &HashMap<String, HashMap<String, String>>,
     ) -> Option<(String, HashMap<String, String>)> {
+        // Two-pass matching: exact routes first, then parameterized routes
+        // This ensures /blog/search matches before /blog/{slug}
+
+        // First pass: Try exact matches (routes without parameters)
+        for (name, lang_map) in registry {
+            if !Self::is_web_route(name) {
+                continue;
+            }
+            if let Some(pattern) = lang_map.get(language) {
+                // Skip patterns with parameters
+                if pattern.contains('{') {
+                    continue;
+                }
+                if let Some(args) = Self::match_route_pattern(pattern, route_path) {
+                    return Some((name.clone(), args));
+                }
+            }
+        }
+
+        // Second pass: Try parameterized routes
         for (name, lang_map) in registry {
             if !Self::is_web_route(name) {
                 continue;
@@ -534,6 +576,57 @@ impl PagesController {
     async fn add_languages_to_context(context: &mut Context, db: &Pool<Postgres>) {
         if let Ok(languages) = db_localization::get_languages_for_dropdown(db).await {
             context.insert("available_languages", &languages);
+        }
+    }
+
+    /// Add user navbar info (avatar and initials) to template context
+    /// Used for the profile dropdown in the navbar
+    async fn add_user_navbar_info(context: &mut Context, db: &Pool<Postgres>, user_id: i64) {
+        use crate::app::db_query::read::user as db_user;
+        use crate::bootstrap::utility::template::asset_by_id;
+
+        if let Ok(user) = db_user::get_by_id(db, user_id).await {
+            // Generate initials from first and last name
+            let first_initial = user
+                .first_name
+                .chars()
+                .next()
+                .map(|c| c.to_uppercase().to_string())
+                .unwrap_or_default();
+            let last_initial = user
+                .last_name
+                .chars()
+                .next()
+                .map(|c| c.to_uppercase().to_string())
+                .unwrap_or_default();
+            let initials = format!("{}{}", first_initial, last_initial);
+            context.insert("user_initials", &initials);
+
+            // Get avatar URL if user has an avatar
+            if let Some(avatar_id) = user.avatar_id {
+                // Use small variant (320px) for avatar - good quality for navbar size
+                if let Some(avatar_url) = asset_by_id(db, avatar_id, Some("small")).await {
+                    context.insert("user_avatar", &avatar_url);
+                }
+            }
+
+            // Also add user name for accessibility/alt text
+            let user_name = format!("{} {}", user.first_name, user.last_name);
+            context.insert("user_name", &user_name);
+        }
+    }
+
+    /// Add common async context (branding, languages, user navbar info)
+    /// This is a convenience wrapper that handles all common async context additions
+    async fn add_common_async_context(
+        context: &mut Context,
+        db: &Pool<Postgres>,
+        auth: &AuthInfo,
+    ) {
+        Self::add_branding_to_context(context, db).await;
+        Self::add_languages_to_context(context, db).await;
+        if let Some(user_id) = auth.user_id {
+            Self::add_user_navbar_info(context, db, user_id).await;
         }
     }
 
@@ -890,8 +983,22 @@ impl PagesController {
                 // Priority 1: Try to match actual routes BEFORE interpreting segments as country/region
                 // This prevents "/en/games/bigger-dice" from being interpreted as homepage with country=games
 
+                // FIRST: Try /{lang}/{route...} (full path without country/region)
+                // This must come FIRST to prevent "/en/admin/blog/posts" from matching "/blog/{slug}"
+                if path_segments.len() >= 2 {
+                    let route_path = format!("/{}", path_segments[1..].join("/"));
+                    for candidate in Self::build_path_aliases(&route_path) {
+                        if let Some((name, args)) =
+                            Self::resolve_route_for_lang(&candidate, &language, &registry)
+                        {
+                            matched = Some((name, None, None, args));
+                            break;
+                        }
+                    }
+                }
+
                 // Try /{lang}/{country}/{region}/{route...} (4+ segments)
-                if path_segments.len() >= 4 {
+                if matched.is_none() && path_segments.len() >= 4 {
                     let route_path = format!("/{}", path_segments[3..].join("/"));
                     for candidate in Self::build_path_aliases(&route_path) {
                         if let Some((name, args)) =
@@ -917,19 +1024,6 @@ impl PagesController {
                         {
                             matched =
                                 Some((name, Some(path_segments[1].to_lowercase()), None, args));
-                            break;
-                        }
-                    }
-                }
-
-                // Try /{lang}/{route...} (2+ segments, no country/region)
-                if matched.is_none() && path_segments.len() >= 2 {
-                    let route_path = format!("/{}", path_segments[1..].join("/"));
-                    for candidate in Self::build_path_aliases(&route_path) {
-                        if let Some((name, args)) =
-                            Self::resolve_route_for_lang(&candidate, &language, &registry)
-                        {
-                            matched = Some((name, None, None, args));
                             break;
                         }
                     }
@@ -1056,9 +1150,9 @@ impl PagesController {
             "web.balance" => Self::balance(req, session, state).await,
             "oauth.applications" => Self::oauth_applications(req, session, state).await,
             "web.galleries" => Self::galleries(req, session, state).await,
-            "web.geo_galleries" => Self::geo_galleries(req, session, state).await,
+            "web.geo_galleries.gallery" => Self::geo_galleries(req, session, state).await,
             "web.geo_gallery" => Self::geo_gallery(req, session, state).await,
-            "web.competitions" => Self::competitions(req, session, state).await,
+            "web.geo_galleries.competitions" => Self::competitions(req, session, state).await,
             "web.games" => Self::games(req, session, state).await,
             "web.games.bigger_dice_lobby" => Self::bigger_dice_lobby(req, session, state).await,
             "web.games.bigger_dice" => Self::bigger_dice_game(req, session, state).await,
@@ -1075,6 +1169,26 @@ impl PagesController {
             "admin.theme" => Self::theme(req, session, state).await,
             "admin.game_chat" => Self::game_chat_config(req, session, state).await,
             "superadmin.users" => Self::registered_users(req, session, state).await,
+            // Blog routes (public)
+            "web.blog" => Self::blog_home(req, session, state).await,
+            "web.blog.category" => Self::blog_category(req, session, state).await,
+            "web.blog.tag" => Self::blog_tag(req, session, state).await,
+            "web.blog.taxonomy" => Self::blog_taxonomy(req, session, state).await,
+            "web.blog.post" => Self::blog_post(req, session, state).await,
+            "web.blog.search" => Self::blog_search(req, session, state).await,
+            "web.blog.archive_index" => Self::blog_archive_index(req, session, state).await,
+            "web.blog.archive" => Self::blog_archive(req, session, state).await,
+            // Admin blog routes
+            "admin.blog" => Self::admin_blog(req, session, state).await,
+            "admin.blog.categories" => Self::admin_blog_categories(req, session, state).await,
+            "admin.blog.tags" => Self::admin_blog_tags(req, session, state).await,
+            "admin.blog.posts" => Self::admin_blog_posts(req, session, state).await,
+            "admin.blog.posts.new" => Self::admin_blog_post_editor(req, session, state).await,
+            "admin.blog.posts.edit" => Self::admin_blog_post_editor(req, session, state).await,
+            "admin.blog.taxonomies" => Self::admin_blog_taxonomies(req, session, state).await,
+            "admin.blog.analytics" => Self::admin_blog_analytics(req, session, state).await,
+            // Admin search index management
+            "admin.search" => Self::admin_search(req, session, state).await,
             _ => Self::not_found(req, session, state).await,
         }
     }
@@ -1088,10 +1202,9 @@ impl PagesController {
         let auth = is_logged(&req);
         let mut context = Self::base_context(&req, &session);
 
-        // Add branding (logo, favicon, site name)
+        // Add branding, languages, and user navbar info
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.home").await;
         drop(db);
 
@@ -1181,9 +1294,8 @@ impl PagesController {
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
 
-        // Add branding (logo, favicon, site name)
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        // Add branding, languages, and user navbar info
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.profile").await;
 
         // Fetch user data if we have a user_id
@@ -1228,8 +1340,7 @@ impl PagesController {
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
 
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.balance").await;
 
         if let Some(user_id) = auth.user_id {
@@ -1259,9 +1370,8 @@ impl PagesController {
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
 
-        // Add branding (logo, favicon, site name)
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        // Add branding, languages, and user navbar info
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "oauth.applications").await;
 
         // Fetch user data if we have a user_id
@@ -1322,8 +1432,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "admin.uploads").await;
         drop(db);
 
@@ -1350,8 +1459,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "admin.theme").await;
         drop(db);
 
@@ -1378,8 +1486,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "admin.game_chat").await;
         drop(db);
 
@@ -1406,8 +1513,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "admin.users").await;
         drop(db);
 
@@ -1432,8 +1538,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.galleries").await;
         drop(db);
 
@@ -1455,9 +1560,8 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
-        Self::add_seo_to_context(&req, &mut context, &db, "web.geo_galleries").await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.geo_galleries.gallery").await;
         drop(db);
 
         Ok(Self::render("geo_galleries.html", &context))
@@ -1477,8 +1581,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.geo_gallery").await;
         drop(db);
 
@@ -1505,9 +1608,8 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
-        Self::add_seo_to_context(&req, &mut context, &db, "web.competitions").await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.geo_galleries.competitions").await;
         drop(db);
 
         Ok(Self::render("competitions.html", &context))
@@ -1528,8 +1630,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games").await;
 
         // Fetch user data if we have a user_id
@@ -1574,8 +1675,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.bigger_dice_lobby").await;
 
         // Fetch user data
@@ -1645,8 +1745,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.bigger_dice").await;
 
         // Fetch user data
@@ -1708,8 +1807,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.tic_tac_toe_lobby").await;
 
         // Fetch user data
@@ -1779,8 +1877,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.tic_tac_toe").await;
 
         // Fetch user data
@@ -1842,8 +1939,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.roulette_lobby").await;
 
         // Fetch user data
@@ -1916,8 +2012,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.roulette").await;
 
         // Fetch user data
@@ -1978,8 +2073,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.roulette_multiplayer").await;
 
         // Fetch user data for template
@@ -2038,8 +2132,7 @@ impl PagesController {
 
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         Self::add_seo_to_context(&req, &mut context, &db, "web.games.slot_machine").await;
 
         // Fetch user data for template
@@ -2078,16 +2171,533 @@ impl PagesController {
         Ok(Self::render("slot_machine.html", &context))
     }
 
+    // ============================================================================
+    // Blog Pages (Public)
+    // ============================================================================
+
+    /// Blog homepage - shows recent posts and widgets
+    pub async fn blog_home(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog").await;
+        drop(db);
+
+        Ok(Self::render("blog/index.html", &context))
+    }
+
+    /// Blog category page - shows posts in a category
+    pub async fn blog_category(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        // Extract slug from route args
+        let route_ctx = req.extensions();
+        let route_context = route_ctx.get::<RouteContext>();
+        let slug = route_context
+            .and_then(|ctx| ctx.args.get("slug"))
+            .cloned()
+            .unwrap_or_default();
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog.category").await;
+        drop(db);
+
+        context.insert("category_slug", &slug);
+
+        Ok(Self::render("blog/category.html", &context))
+    }
+
+    /// Blog tag page - shows posts with a tag
+    pub async fn blog_tag(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        // Extract slug from route args
+        let route_ctx = req.extensions();
+        let route_context = route_ctx.get::<RouteContext>();
+        let slug = route_context
+            .and_then(|ctx| ctx.args.get("slug"))
+            .cloned()
+            .unwrap_or_default();
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog.tag").await;
+        drop(db);
+
+        context.insert("tag_slug", &slug);
+
+        Ok(Self::render("blog/tag.html", &context))
+    }
+
+    /// Blog taxonomy page - shows posts matching a taxonomy
+    pub async fn blog_taxonomy(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        // Extract slug from route args
+        let route_ctx = req.extensions();
+        let route_context = route_ctx.get::<RouteContext>();
+        let slug = route_context
+            .and_then(|ctx| ctx.args.get("slug"))
+            .cloned()
+            .unwrap_or_default();
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog.taxonomy").await;
+        drop(db);
+
+        context.insert("taxonomy_slug", &slug);
+
+        Ok(Self::render("blog/taxonomy.html", &context))
+    }
+
+    /// Blog post page - shows a single post
+    pub async fn blog_post(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        // Extract slug from route args
+        let route_ctx = req.extensions();
+        let route_context = route_ctx.get::<RouteContext>();
+        let slug = route_context
+            .and_then(|ctx| ctx.args.get("slug"))
+            .cloned()
+            .unwrap_or_default();
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog.post").await;
+
+        context.insert("post_slug", &slug);
+
+        // Add current_url for share buttons
+        let base_url = Self::get_base_url(&req);
+        let current_url = format!("{}{}", base_url, req.uri().path());
+        context.insert("current_url", &current_url);
+
+        // Load the post data server-side for better SEO
+        if !slug.is_empty() {
+            if let Ok(post) = db_blog::post_get_detail_by_slug(&db, &slug).await {
+                // Increment view count (fire and forget)
+                let _ = db_blog::post_increment_view_count(&db, post.id).await;
+
+                // Build featured image URL if present
+                let featured_image_url = if let Some(image_id) = post.featured_image_id {
+                    if let Ok(upload) = db_upload::get_by_id(&db, image_id).await {
+                        Some(format!(
+                            "/api/v1/upload/download/public/{}?variant=large",
+                            upload.uuid
+                        ))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                // Format published_at
+                let published_at_formatted = post
+                    .published_at
+                    .map(|dt| dt.format("%B %d, %Y").to_string())
+                    .unwrap_or_default();
+
+                // Estimate read time (average 200 words per minute)
+                let word_count = post.content.split_whitespace().count();
+                let read_time_minutes = ((word_count as f64 / 200.0).ceil() as i32).max(1);
+
+                // Build post context
+                let mut post_data = serde_json::json!({
+                    "id": post.id,
+                    "title": post.title,
+                    "slug": post.slug,
+                    "excerpt": post.excerpt,
+                    "content": post.content,
+                    "featured_image_url": featured_image_url,
+                    "author_id": post.author_id,
+                    "author_name": post.author_name,
+                    "author": {
+                        "name": post.author_name,
+                        "avatar_url": null,
+                        "bio": null
+                    },
+                    "status": post.status,
+                    "meta_title": post.meta_title,
+                    "meta_description": post.meta_description,
+                    "published_at": post.published_at,
+                    "published_at_formatted": published_at_formatted,
+                    "view_count": post.view_count,
+                    "is_featured": post.is_featured,
+                    "allow_comments": post.allow_comments,
+                    "read_time_minutes": read_time_minutes,
+                    "categories": post.categories,
+                    "tags": post.tags,
+                });
+
+                // Get primary category for breadcrumb
+                if let Some(categories_array) = post.categories.as_array() {
+                    if let Some(first_cat) = categories_array.first() {
+                        if let Some(category_obj) = first_cat.as_object() {
+                            post_data["category"] = serde_json::json!({
+                                "name": category_obj.get("name").and_then(|v| v.as_str()).unwrap_or(""),
+                                "slug": category_obj.get("slug").and_then(|v| v.as_str()).unwrap_or("")
+                            });
+                        }
+                    }
+                }
+
+                context.insert("post", &post_data);
+
+                // Override SEO title/description with post data
+                if let Some(meta_title) = &post.meta_title {
+                    context.insert("seo_title", meta_title);
+                } else {
+                    context.insert("seo_title", &post.title);
+                }
+                if let Some(meta_desc) = &post.meta_description {
+                    context.insert("seo_description", meta_desc);
+                } else if let Some(excerpt) = &post.excerpt {
+                    context.insert("seo_description", excerpt);
+                }
+
+                // Load sidebar data: categories and tags
+                if let Ok(categories) = db_blog::categories_get_tree(&db).await {
+                    context.insert("categories", &categories);
+                }
+                if let Ok(tags) = db_blog::tags_get_cloud(&db, 20).await {
+                    context.insert("tags", &tags);
+                }
+            }
+        }
+
+        drop(db);
+
+        Ok(Self::render("blog/post.html", &context))
+    }
+
+    /// Blog search page - search results
+    pub async fn blog_search(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog.search").await;
+
+        // Load categories for filter dropdown
+        if let Ok(categories) = db_blog::categories_get_tree(&db).await {
+            context.insert("categories", &categories);
+        }
+
+        // Load tags for sidebar
+        if let Ok(tags) = db_blog::tags_get_cloud(&db, 20).await {
+            context.insert("tags", &tags);
+        }
+
+        drop(db);
+
+        // Extract search query from query string
+        let query_string = req.query_string();
+        let params: HashMap<String, String> = url::form_urlencoded::parse(query_string.as_bytes())
+            .into_owned()
+            .collect();
+        let search_query = params.get("q").cloned().unwrap_or_default();
+        let selected_category = params.get("category").cloned().unwrap_or_default();
+        context.insert("search_query", &search_query);
+        context.insert("selected_category", &selected_category);
+
+        Ok(Self::render("blog/search.html", &context))
+    }
+
+    /// Blog archive index page - shows all years with posts
+    pub async fn blog_archive_index(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog.archive_index").await;
+        drop(db);
+
+        // Archive data will be loaded via JavaScript from API
+        context.insert("page_type", "archive_index");
+
+        Ok(Self::render("blog/archive.html", &context))
+    }
+
+    /// Blog archive page - shows posts by year/month
+    pub async fn blog_archive(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        // Extract year and month from route args
+        let route_ctx = req.extensions();
+        let route_context = route_ctx.get::<RouteContext>();
+        let year = route_context
+            .and_then(|ctx| ctx.args.get("year"))
+            .cloned()
+            .unwrap_or_default();
+        let month = route_context
+            .and_then(|ctx| ctx.args.get("month"))
+            .cloned()
+            .unwrap_or_default();
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.blog.archive").await;
+        drop(db);
+
+        context.insert("archive_year", &year);
+        context.insert("archive_month", &month);
+
+        Ok(Self::render("blog/archive.html", &context))
+    }
+
+    // ============================================================================
+    // Blog Admin Pages (Admin 10+ required)
+    // ============================================================================
+
+    /// Admin blog dashboard
+    pub async fn admin_blog(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.blog").await;
+        drop(db);
+
+        Ok(Self::render("admin/blog/index.html", &context))
+    }
+
+    /// Admin blog categories management
+    pub async fn admin_blog_categories(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.blog.categories").await;
+
+        // Fetch categories for the admin list
+        let categories = db_blog::categories_get_all_admin(&db)
+            .await
+            .unwrap_or_default();
+        context.insert("categories", &categories);
+
+        drop(db);
+
+        Ok(Self::render("admin/blog/categories.html", &context))
+    }
+
+    /// Admin blog tags management
+    pub async fn admin_blog_tags(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.blog.tags").await;
+
+        // Fetch tags for the admin list
+        let tags = db_blog::tags_get_all_admin(&db)
+            .await
+            .unwrap_or_default();
+        context.insert("tags", &tags);
+
+        drop(db);
+
+        Ok(Self::render("admin/blog/tags.html", &context))
+    }
+
+    /// Admin blog posts list
+    pub async fn admin_blog_posts(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.blog.posts").await;
+
+        // Fetch posts for the admin posts list
+        let posts = db_blog::posts_get_admin(&db, 1, 50, None, None)
+            .await
+            .unwrap_or_default();
+        context.insert("posts", &posts);
+
+        drop(db);
+
+        Ok(Self::render("admin/blog/posts.html", &context))
+    }
+
+    /// Admin blog post editor (new/edit)
+    pub async fn admin_blog_post_editor(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        // Check if editing existing post (has id param)
+        let route_ctx = req.extensions();
+        let route_context = route_ctx.get::<RouteContext>();
+        let post_id = route_context
+            .and_then(|ctx| ctx.args.get("id"))
+            .cloned();
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.blog.posts").await;
+
+        // Fetch categories (with depth for hierarchical display)
+        let categories = db_blog::categories_get_tree(&db).await.unwrap_or_default();
+        context.insert("categories", &categories);
+
+        // Fetch tags for tag selection
+        let tags = db_blog::tags_get_all(&db).await.unwrap_or_default();
+        context.insert("tags", &tags);
+
+        drop(db);
+
+        context.insert("is_new", &post_id.is_none());
+        if let Some(id) = post_id {
+            context.insert("post_id", &id);
+        }
+
+        Ok(Self::render("admin/blog/post_editor.html", &context))
+    }
+
+    /// Admin blog taxonomies management
+    pub async fn admin_blog_taxonomies(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.blog.taxonomies").await;
+        drop(db);
+
+        Ok(Self::render("admin/blog/taxonomies.html", &context))
+    }
+
+    /// Admin blog analytics
+    pub async fn admin_blog_analytics(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.blog.analytics").await;
+        drop(db);
+
+        Ok(Self::render("admin/blog/analytics.html", &context))
+    }
+
+    /// Admin search index management page
+    pub async fn admin_search(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.search").await;
+        drop(db);
+
+        Ok(Self::render("admin/search/index.html", &context))
+    }
+
     /// 404 Not Found page
     pub async fn not_found(
         req: HttpRequest,
         session: Session,
         state: web::Data<AppState>,
     ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
         let mut context = Self::base_context(&req, &session);
         let db = state.db.lock().await;
-        Self::add_branding_to_context(&mut context, &db).await;
-        Self::add_languages_to_context(&mut context, &db).await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
         drop(db);
 
         Ok(Self::render_with_status(
