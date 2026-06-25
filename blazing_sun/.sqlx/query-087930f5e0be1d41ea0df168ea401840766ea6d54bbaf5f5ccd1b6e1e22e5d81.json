@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO store_purchases (user_id, product_id, amount_cents, stripe_session_id, license_type, status)\n        VALUES ($1, $2, $3, $4, $5, 'pending')\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8",
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "087930f5e0be1d41ea0df168ea401840766ea6d54bbaf5f5ccd1b6e1e22e5d81"
+}

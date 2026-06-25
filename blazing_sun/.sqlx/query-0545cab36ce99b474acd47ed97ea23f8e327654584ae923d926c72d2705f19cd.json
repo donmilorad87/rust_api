@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(SUM(download_count), 0) as \"sum!\" FROM store_downloads",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "sum!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "0545cab36ce99b474acd47ed97ea23f8e327654584ae923d926c72d2705f19cd"
+}

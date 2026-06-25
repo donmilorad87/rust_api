@@ -1,0 +1,23 @@
+// ============================================
+// PROFILE PURCHASES PAGE - SCSS Variables
+// ============================================
+// Forward all variables from GLOBAL. This file exists only for
+// backward compatibility with component @use statements.
+// All variables are defined in GLOBAL/_variables.scss.
+
+@forward '../../../GLOBAL/src/styles/variables';
+
+// Re-import for local use of page-specific overrides
+@use '../../../GLOBAL/src/styles/variables' as global;
+
+// ============================================
+// PAGE-SPECIFIC VARIABLES
+// ============================================
+
+// Purchase card dimensions
+$purchase-card-min-height: 180px;
+$purchase-image-size: 100px;
+
+// Modal dimensions
+$modal-max-width: 700px;
+$modal-sm-max-width: 400px;

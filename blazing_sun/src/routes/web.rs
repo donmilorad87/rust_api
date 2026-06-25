@@ -62,6 +62,7 @@ fn register_route_names() {
     route!("web.sign_in", "/sign_in");
     route!("web.forgot_password", "/forgot_password");
     route!("web.profile", "/profile");
+    route!("web.profile.purchases", "/profile/purchases");
     route!("web.balance", "/balance");
     route!("oauth.applications", "/oauth/applications");
     route!("web.galleries", "/galleries");
@@ -78,6 +79,17 @@ fn register_route_names() {
     route!("web.games.roulette_multiplayer", "/games/roulette-multiplayer");
     route!("web.games.slot_machine", "/games/slot-machine");
     route!("web.logout", "/logout");
+
+    // Store routes (public)
+    route!("web.store", "/store");
+    route!("web.store.product", "/store/product/{slug}");
+    route!("web.store.category", "/store/category/{slug}");
+
+    // Legal pages (public)
+    route!("web.about_us", "/about-us");
+    route!("web.contact_us", "/contact-us");
+    route!("web.privacy_policy", "/privacy-policy");
+    route!("web.terms_conditions", "/terms-and-conditions");
 
     // Blog routes (public)
     route!("web.blog", "/blog");
@@ -96,6 +108,7 @@ fn register_route_names() {
     route!("web.sign_in", "/prijava", "sr");
     route!("web.forgot_password", "/zaboravljena_lozinka", "sr");
     route!("web.profile", "/profil", "sr");
+    route!("web.profile.purchases", "/profil/kupovine", "sr");
     route!("web.balance", "/balans", "sr");
     route!("oauth.applications", "/oauth/aplikacije", "sr");
     route!("web.galleries", "/galerije", "sr");
@@ -112,6 +125,17 @@ fn register_route_names() {
     route!("web.games.roulette_multiplayer", "/igre/rulet-vise-igraca", "sr");
     route!("web.games.slot_machine", "/igre/slot-masina", "sr");
     route!("web.logout", "/odjava", "sr");
+
+    // Store routes (public) - Serbian variants
+    route!("web.store", "/prodavnica", "sr");
+    route!("web.store.product", "/prodavnica/proizvod/{slug}", "sr");
+    route!("web.store.category", "/prodavnica/kategorija/{slug}", "sr");
+
+    // Legal pages (public) - Serbian variants
+    route!("web.about_us", "/o-nama", "sr");
+    route!("web.contact_us", "/kontakt", "sr");
+    route!("web.privacy_policy", "/politika-privatnosti", "sr");
+    route!("web.terms_conditions", "/uslovi-koriscenja", "sr");
 
     // Blog routes (public) - Serbian variants
     route!("web.blog", "/blog", "sr");
@@ -145,6 +169,12 @@ fn register_route_names() {
     // Admin search index management
     route!("admin.search", "/admin/search");
 
+    // Admin store routes (Admin+ can access)
+    route!("admin.store.categories", "/admin/store/categories");
+    route!("admin.store.products", "/admin/store/products");
+    route!("admin.store.products.create", "/admin/store/products/create");
+    route!("admin.store.products.edit", "/admin/store/products/{id}/edit");
+
     // Admin blog routes - Serbian variants
     route!("admin.blog", "/admin/blog", "sr");
     route!("admin.blog.categories", "/admin/blog/kategorije", "sr");
@@ -154,6 +184,12 @@ fn register_route_names() {
     route!("admin.blog.posts.edit", "/admin/blog/clanci/{id}/izmeni", "sr");
     route!("admin.blog.taxonomies", "/admin/blog/taksonomije", "sr");
     route!("admin.blog.analytics", "/admin/blog/analitika", "sr");
+
+    // Admin store routes - Serbian variants
+    route!("admin.store.categories", "/admin/prodavnica/kategorije", "sr");
+    route!("admin.store.products", "/admin/prodavnica/proizvodi", "sr");
+    route!("admin.store.products.create", "/admin/prodavnica/proizvodi/novi", "sr");
+    route!("admin.store.products.edit", "/admin/prodavnica/proizvodi/{id}/izmeni", "sr");
 
     // Super Admin pages (Super Admin only)
     route!("superadmin.users", "/superadmin/users");

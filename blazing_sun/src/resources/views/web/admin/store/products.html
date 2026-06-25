@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Store Products - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/ADMIN_STORE_PRODUCTS/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content" data-page-type="list">
+    <div class="admin-page">
+        {# Header #}
+        <header class="admin-page__header">
+            <div class="admin-page__title-row">
+                <div>
+                    <h1 class="admin-page__title">Store Products</h1>
+                    <p class="admin-page__subtitle">Manage your image store products</p>
+                </div>
+                <a href="{{ route(name='admin.store.products.create') }}" class="btn btn--primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Create Product</span>
+                </a>
+            </div>
+        </header>
+
+        {# Filters #}
+        <div class="filters-bar" aria-label="Filter products">
+            <div class="filter-group">
+                <label class="filter-label" for="statusFilter">Status</label>
+                <select id="statusFilter" class="filter-select" aria-label="Filter by status">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="sold">Sold</option>
+                    <option value="featured">Featured</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="categoryFilter">Category</label>
+                <select id="categoryFilter" class="filter-select" aria-label="Filter by category">
+                    <option value="">All Categories</option>
+                    {# Categories loaded via JS #}
+                </select>
+            </div>
+
+            <div class="filter-group filter-group--search">
+                <label class="filter-label" for="searchInput">Search</label>
+                <input type="text" id="searchInput" class="filter-input" placeholder="Search by title..." aria-label="Search products">
+            </div>
+        </div>
+
+        {# Products Table #}
+        <div class="data-table">
+            <div class="data-table__wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Image</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        {# Products loaded via JS #}
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <div class="spinner"></div>
+                                <p>Loading products...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {# Pagination #}
+            <div id="paginationContainer"></div>
+        </div>
+    </div>
+
+    {# Confirmation Modal #}
+    <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="confirmModalTitle">
+        <div class="modal__content">
+            <h2 class="modal__title" id="confirmModalTitle">Confirm Action</h2>
+            <p class="modal__message" id="confirmModalMessage">Are you sure you want to proceed?</p>
+            <div class="modal__actions">
+                <button type="button" class="btn btn--secondary" id="cancelModalBtn">Cancel</button>
+                <button type="button" class="btn btn--danger" id="confirmModalBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    {# Loading Overlay #}
+    <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+        <div class="spinner"></div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url }}';
+    document.body.dataset.pageType = 'list';
+</script>
+<script src="/assets/js/toastify.min.js?v={{ assets_version }}"></script>
+<script src="/assets/js/ADMIN_STORE_PRODUCTS/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

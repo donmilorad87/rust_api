@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Product - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/ADMIN_STORE_PRODUCTS/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="admin-page">
+        {# Header #}
+        <header class="admin-page__header">
+            <div class="admin-page__title-row">
+                <div>
+                    <h1 class="admin-page__title">Edit Product</h1>
+                    <p class="admin-page__subtitle">Update product information</p>
+                </div>
+                <a href="{{ route(name='admin.store.products') }}" class="btn btn--secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Back to Products</span>
+                </a>
+            </div>
+        </header>
+
+        {# Edit Form #}
+        <div class="wizard">
+            <form id="productEditForm" novalidate>
+                {# Product Type (Read-only) #}
+                <section class="wizard-step" aria-label="Product type">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Product Type</h2>
+                        <p class="content-hint">Product type cannot be changed after creation.</p>
+                        <div class="type-display">
+                            <span id="productTypeDisplay" class="type-badge">Loading...</span>
+                        </div>
+                    </div>
+                </section>
+
+                {# Content Section #}
+                <section class="wizard-step" style="margin-top: 1.5rem;" aria-label="Product content">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Product Content</h2>
+                        <div id="contentSection">
+                            {# Content loaded via JS #}
+                            <p class="empty-state">Loading content...</p>
+                        </div>
+                    </div>
+                </section>
+
+                {# Product Details #}
+                <section class="wizard-step" style="margin-top: 1.5rem;" aria-label="Product details">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Product Details</h2>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="productTitle">Title <span aria-hidden="true">*</span></label>
+                                <input type="text" id="productTitle" class="form-input" maxlength="200" required aria-required="true" placeholder="Enter product title">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="productSlug">URL Slug</label>
+                                <input type="text" id="productSlug" class="form-input" maxlength="200" placeholder="product-url-slug">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="productPrice">Price (EUR) <span aria-hidden="true">*</span></label>
+                                <input type="number" id="productPrice" class="form-input" min="0.01" step="0.01" required aria-required="true" placeholder="29.99">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="productCategory">Category</label>
+                                <select id="productCategory" class="form-select">
+                                    <option value="">Select a category</option>
+                                    {# Categories loaded via JS #}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group form-group--full">
+                            <label class="form-label" for="productDescription">Description</label>
+                            <textarea id="productDescription" class="form-textarea" rows="4" placeholder="Describe your product..."></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                {# Metadata Section #}
+                <section class="wizard-step" style="margin-top: 1.5rem;" aria-label="Product metadata">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Product Metadata</h2>
+
+                        {# Author #}
+                        <div class="form-row">
+                            <div class="form-group form-group--full">
+                                <label class="form-label" for="metaAuthor">Author / Photographer</label>
+                                <input type="text" id="metaAuthor" class="form-input" maxlength="200" placeholder="Photographer name">
+                            </div>
+                        </div>
+
+                        {# Location #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">Location Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaCity">City</label>
+                                <input type="text" id="metaCity" class="form-input" maxlength="100" placeholder="City name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaRegion">Region / State</label>
+                                <input type="text" id="metaRegion" class="form-input" maxlength="100" placeholder="Region or state">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaCountry">Country</label>
+                                <input type="text" id="metaCountry" class="form-input" maxlength="100" placeholder="Country">
+                            </div>
+                        </div>
+
+                        {# Geography #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">Geographic Features</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaMountain">Nearest Mountain</label>
+                                <input type="text" id="metaMountain" class="form-input" maxlength="200" placeholder="Mountain name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaRiver">Nearest River</label>
+                                <input type="text" id="metaRiver" class="form-input" maxlength="200" placeholder="River name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaPark">Natural Park</label>
+                                <input type="text" id="metaPark" class="form-input" maxlength="200" placeholder="Park name">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaAltitude">Altitude (meters)</label>
+                                <input type="number" id="metaAltitude" class="form-input" min="0" max="10000" placeholder="1500">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaSeason">Season</label>
+                                <select id="metaSeason" class="form-select">
+                                    <option value="">Select season</option>
+                                    <option value="spring">Spring</option>
+                                    <option value="summer">Summer</option>
+                                    <option value="autumn">Autumn</option>
+                                    <option value="winter">Winter</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaWeather">Weather Conditions</label>
+                                <input type="text" id="metaWeather" class="form-input" maxlength="200" placeholder="Sunny, cloudy, rainy...">
+                            </div>
+                        </div>
+
+                        {# Camera #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">Camera Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaCamera">Camera Model</label>
+                                <input type="text" id="metaCamera" class="form-input" maxlength="200" placeholder="Canon EOS R5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaCameraSettings">Camera Settings</label>
+                                <input type="text" id="metaCameraSettings" class="form-input" maxlength="500" placeholder="f/2.8, 1/500s, ISO 400">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaDateTaken">Date Taken</label>
+                                <input type="date" id="metaDateTaken" class="form-input">
+                            </div>
+                        </div>
+
+                        {# GPS #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">GPS Coordinates</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaLatitude">Latitude</label>
+                                <input type="number" id="metaLatitude" class="form-input" step="0.000001" min="-90" max="90" placeholder="45.2640">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaLongitude">Longitude</label>
+                                <input type="number" id="metaLongitude" class="form-input" step="0.000001" min="-180" max="180" placeholder="19.8312">
+                            </div>
+                        </div>
+
+                        {# Tags #}
+                        <div class="form-group form-group--full">
+                            <label class="form-label" for="metaTags">Tags</label>
+                            <input type="text" id="metaTags" class="form-input" placeholder="nature, landscape, mountain (comma separated)">
+                            <span class="form-hint">Enter tags separated by commas</span>
+                        </div>
+                    </div>
+                </section>
+
+                {# Form Actions #}
+                <div class="wizard__actions" style="margin-top: 1.5rem;">
+                    <button type="button" class="btn btn--secondary" id="cancelBtn">
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="btn btn--primary" id="updateProductBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Update Product</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Loading Overlay #}
+    <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+        <div class="spinner"></div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url }}';
+    document.body.dataset.pageType = 'edit';
+</script>
+<script src="/assets/js/toastify.min.js?v={{ assets_version }}"></script>
+<script src="/assets/js/ADMIN_STORE_PRODUCTS/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

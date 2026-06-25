@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, purchase_id, user_id, picture_id, download_count, first_downloaded_at, last_downloaded_at\n        FROM store_downloads\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "purchase_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "picture_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "download_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "first_downloaded_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_downloaded_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4b2ad419c3b090e9ef9ed56500ad7d91dffc86716a9d0f5a5275809e437412a8"
+}

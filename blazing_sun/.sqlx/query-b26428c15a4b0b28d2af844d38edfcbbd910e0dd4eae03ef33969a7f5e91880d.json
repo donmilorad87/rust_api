@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_products SET slug = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b26428c15a4b0b28d2af844d38edfcbbd910e0dd4eae03ef33969a7f5e91880d"
+}

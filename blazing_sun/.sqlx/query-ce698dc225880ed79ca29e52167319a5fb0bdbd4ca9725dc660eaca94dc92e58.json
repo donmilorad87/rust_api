@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE store_downloads\n        SET download_count = download_count + 1,\n            last_downloaded_at = NOW()\n        WHERE purchase_id = $1 AND picture_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ce698dc225880ed79ca29e52167319a5fb0bdbd4ca9725dc660eaca94dc92e58"
+}

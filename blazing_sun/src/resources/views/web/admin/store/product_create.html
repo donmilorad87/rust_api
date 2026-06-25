@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Create Product - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/ADMIN_STORE_PRODUCTS/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="admin-page">
+        {# Header #}
+        <header class="admin-page__header">
+            <div class="admin-page__title-row">
+                <div>
+                    <h1 class="admin-page__title">Create New Product</h1>
+                    <p class="admin-page__subtitle">Add a new product to your image store</p>
+                </div>
+                <a href="{{ route(name='admin.store.products') }}" class="btn btn--secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Back to Products</span>
+                </a>
+            </div>
+        </header>
+
+        {# Wizard #}
+        <div class="wizard">
+            {# Step Indicators #}
+            <div class="wizard__header">
+                <div class="step-indicators" role="navigation" aria-label="Form progress">
+                    <div class="step-indicator step-indicator--active" data-step="1">
+                        <span class="step-indicator__number">1</span>
+                        <span class="step-indicator__label">Type</span>
+                    </div>
+                    <div class="step-indicator" data-step="2">
+                        <span class="step-indicator__number">2</span>
+                        <span class="step-indicator__label">Content</span>
+                    </div>
+                    <div class="step-indicator" data-step="3">
+                        <span class="step-indicator__number">3</span>
+                        <span class="step-indicator__label">Details</span>
+                    </div>
+                    <div class="step-indicator" data-step="4">
+                        <span class="step-indicator__number">4</span>
+                        <span class="step-indicator__label">Metadata</span>
+                    </div>
+                    <div class="step-indicator" data-step="5">
+                        <span class="step-indicator__number">5</span>
+                        <span class="step-indicator__label">Review</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="productWizardForm" novalidate>
+                {# Step 1: Choose Type #}
+                <section class="wizard-step" data-step="1" aria-label="Step 1: Choose product type">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Choose Product Type</h2>
+                        <p class="content-hint">Select the type of product you want to create. This cannot be changed later.</p>
+
+                        <div class="type-selector">
+                            <label class="type-option">
+                                <input type="radio" name="product_type" value="single_image">
+                                <div class="type-option__card">
+                                    <div class="type-option__icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                    </div>
+                                    <span class="type-option__name">Single Image</span>
+                                    <span class="type-option__desc">Sell one high-resolution image</span>
+                                </div>
+                            </label>
+
+                            <label class="type-option">
+                                <input type="radio" name="product_type" value="gallery">
+                                <div class="type-option__card">
+                                    <div class="type-option__icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="6" width="16" height="12" rx="2" ry="2"></rect>
+                                            <rect x="6" y="2" width="16" height="12" rx="2" ry="2"></rect>
+                                        </svg>
+                                    </div>
+                                    <span class="type-option__name">Entire Gallery</span>
+                                    <span class="type-option__desc">Sell all images from a gallery</span>
+                                </div>
+                            </label>
+
+                            <label class="type-option">
+                                <input type="radio" name="product_type" value="bundle">
+                                <div class="type-option__card">
+                                    <div class="type-option__icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                        </svg>
+                                    </div>
+                                    <span class="type-option__name">Bundle</span>
+                                    <span class="type-option__desc">Create a custom collection of images</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                {# Step 2: Select Content #}
+                <section class="wizard-step" data-step="2" hidden aria-label="Step 2: Select content">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Select Content</h2>
+
+                        {# Hints for different product types #}
+                        <p class="content-hint" id="singleImageHint" hidden>Select a gallery, then choose one image to sell.</p>
+                        <p class="content-hint" id="galleryHint" hidden>Select a gallery. All its images will be included in the product.</p>
+                        <p class="content-hint" id="bundleHint" hidden>Select one or more galleries, then choose which images to include in the bundle.</p>
+
+                        {# Gallery Selection #}
+                        <h3>Select Gallery</h3>
+                        <div class="gallery-list" id="galleryList">
+                            {# Galleries loaded via JS #}
+                            <p class="empty-state">Loading galleries...</p>
+                        </div>
+
+                        {# Picture Selection #}
+                        <div id="pictureSelectionSection" hidden>
+                            <h3>Select Images</h3>
+                            <div class="picture-grid" id="pictureGrid">
+                                {# Pictures loaded via JS #}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {# Step 3: Product Details #}
+                <section class="wizard-step" data-step="3" hidden aria-label="Step 3: Product details">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Product Details</h2>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="productTitle">Title <span aria-hidden="true">*</span></label>
+                                <input type="text" id="productTitle" class="form-input" maxlength="200" required aria-required="true" placeholder="Enter product title">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="productSlug">URL Slug</label>
+                                <input type="text" id="productSlug" class="form-input" maxlength="200" placeholder="auto-generated-from-title">
+                                <span class="form-hint">Leave blank to auto-generate from title</span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="productPrice">Price (EUR) <span aria-hidden="true">*</span></label>
+                                <input type="number" id="productPrice" class="form-input" min="0.01" step="0.01" required aria-required="true" placeholder="29.99">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="productCategory">Category</label>
+                                <select id="productCategory" class="form-select">
+                                    <option value="">Select a category</option>
+                                    {# Categories loaded via JS #}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group form-group--full">
+                            <label class="form-label" for="productDescription">Description</label>
+                            <textarea id="productDescription" class="form-textarea" rows="4" placeholder="Describe your product..."></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                {# Step 4: Metadata #}
+                <section class="wizard-step" data-step="4" hidden aria-label="Step 4: Metadata">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Product Metadata</h2>
+                        <p class="content-hint">Add additional information about your product. All fields are optional.</p>
+
+                        {# Author #}
+                        <div class="form-row">
+                            <div class="form-group form-group--full">
+                                <label class="form-label" for="metaAuthor">Author / Photographer</label>
+                                <input type="text" id="metaAuthor" class="form-input" maxlength="200" placeholder="Photographer name">
+                            </div>
+                        </div>
+
+                        {# Location #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">Location Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaCity">City</label>
+                                <input type="text" id="metaCity" class="form-input" maxlength="100" placeholder="City name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaRegion">Region / State</label>
+                                <input type="text" id="metaRegion" class="form-input" maxlength="100" placeholder="Region or state">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaCountry">Country</label>
+                                <input type="text" id="metaCountry" class="form-input" maxlength="100" placeholder="Country">
+                            </div>
+                        </div>
+
+                        {# Geography #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">Geographic Features</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaMountain">Nearest Mountain</label>
+                                <input type="text" id="metaMountain" class="form-input" maxlength="200" placeholder="Mountain name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaRiver">Nearest River</label>
+                                <input type="text" id="metaRiver" class="form-input" maxlength="200" placeholder="River name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaPark">Natural Park</label>
+                                <input type="text" id="metaPark" class="form-input" maxlength="200" placeholder="Park name">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaAltitude">Altitude (meters)</label>
+                                <input type="number" id="metaAltitude" class="form-input" min="0" max="10000" placeholder="1500">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaSeason">Season</label>
+                                <select id="metaSeason" class="form-select">
+                                    <option value="">Select season</option>
+                                    <option value="spring">Spring</option>
+                                    <option value="summer">Summer</option>
+                                    <option value="autumn">Autumn</option>
+                                    <option value="winter">Winter</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaWeather">Weather Conditions</label>
+                                <input type="text" id="metaWeather" class="form-input" maxlength="200" placeholder="Sunny, cloudy, rainy...">
+                            </div>
+                        </div>
+
+                        {# Camera #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">Camera Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaCamera">Camera Model</label>
+                                <input type="text" id="metaCamera" class="form-input" maxlength="200" placeholder="Canon EOS R5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaCameraSettings">Camera Settings</label>
+                                <input type="text" id="metaCameraSettings" class="form-input" maxlength="500" placeholder="f/2.8, 1/500s, ISO 400">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaDateTaken">Date Taken</label>
+                                <input type="date" id="metaDateTaken" class="form-input">
+                            </div>
+                        </div>
+
+                        {# GPS #}
+                        <h3 style="margin: 1.5rem 0 1rem; font-size: 0.9rem; font-weight: 600;">GPS Coordinates</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="metaLatitude">Latitude</label>
+                                <input type="number" id="metaLatitude" class="form-input" step="0.000001" min="-90" max="90" placeholder="45.2640">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="metaLongitude">Longitude</label>
+                                <input type="number" id="metaLongitude" class="form-input" step="0.000001" min="-180" max="180" placeholder="19.8312">
+                            </div>
+                        </div>
+
+                        {# Tags #}
+                        <div class="form-group form-group--full">
+                            <label class="form-label" for="metaTags">Tags</label>
+                            <input type="text" id="metaTags" class="form-input" placeholder="nature, landscape, mountain (comma separated)">
+                            <span class="form-hint">Enter tags separated by commas</span>
+                        </div>
+                    </div>
+                </section>
+
+                {# Step 5: Review #}
+                <section class="wizard-step" data-step="5" hidden aria-label="Step 5: Review and create">
+                    <div class="form-section">
+                        <h2 class="form-section__title">Review Your Product</h2>
+                        <p class="content-hint">Please review the information below before creating your product.</p>
+
+                        <div id="reviewContent">
+                            {# Review content rendered via JS #}
+                        </div>
+                    </div>
+                </section>
+
+                {# Navigation Buttons #}
+                <div class="wizard__actions">
+                    <button type="button" class="btn btn--secondary" id="prevStepBtn" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>Previous</span>
+                    </button>
+
+                    <button type="button" class="btn btn--primary" id="nextStepBtn">
+                        <span>Next</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+
+                    <button type="submit" class="btn btn--primary" id="submitBtn" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Create Product</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Loading Overlay #}
+    <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+        <div class="spinner"></div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BASE_URL = '{{ base_url }}';
+    document.body.dataset.pageType = 'create';
+</script>
+<script src="/assets/js/toastify.min.js?v={{ assets_version }}"></script>
+<script src="/assets/js/ADMIN_STORE_PRODUCTS/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

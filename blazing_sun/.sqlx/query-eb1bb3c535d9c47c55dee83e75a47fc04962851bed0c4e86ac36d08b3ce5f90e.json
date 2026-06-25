@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM store_product_items WHERE product_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "eb1bb3c535d9c47c55dee83e75a47fc04962851bed0c4e86ac36d08b3ce5f90e"
+}

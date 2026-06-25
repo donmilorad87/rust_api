@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO store_downloads (purchase_id, user_id, picture_id, download_count, first_downloaded_at, last_downloaded_at)\n        VALUES ($1, $2, $3, 1, NOW(), NOW())\n        ON CONFLICT (purchase_id, picture_id) DO UPDATE SET\n            download_count = store_downloads.download_count + 1,\n            last_downloaded_at = NOW()\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f1c360a4a9b44035746cf98237fdc23cc085cacc2501540dd48a16a6ab61b6ce"
+}

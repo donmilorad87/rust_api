@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            sd.picture_id,\n            p.title as picture_title,\n            SUM(sd.download_count) as \"total_downloads!\",\n            COUNT(DISTINCT sd.user_id) as \"unique_users!\"\n        FROM store_downloads sd\n        INNER JOIN pictures p ON sd.picture_id = p.id\n        GROUP BY sd.picture_id, p.title\n        ORDER BY \"total_downloads!\" DESC\n        LIMIT $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "picture_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "picture_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "total_downloads!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "unique_users!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      null,
+      null
+    ]
+  },
+  "hash": "56301a8320f04063db73b63a4c4062b8cbbac1c19948c886542e25e5e9c5141c"
+}

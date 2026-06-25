@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Store Categories - Blazing Sun Admin{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/ADMIN_STORE_CATEGORIES/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="admin-content">
+    <div class="categories-page">
+        <header class="categories-page__header">
+            <h1 class="categories-page__title">Store Categories</h1>
+            <div class="categories-page__controls">
+                <div class="search-input">
+                    <svg class="search-input__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="searchInput" class="search-input__field" placeholder="Search categories..." aria-label="Search categories by name, slug, or description">
+                </div>
+                <button id="createCategoryBtn" class="btn btn--primary" aria-label="Create new category">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add Category</span>
+                </button>
+            </div>
+        </header>
+
+        {# Stats row - optional, can be populated by JS #}
+        {% if stats %}
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-card__label">Total Categories</div>
+                <div class="stat-card__value">{{ stats.total }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card__label">Active</div>
+                <div class="stat-card__value">{{ stats.active }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card__label">Products</div>
+                <div class="stat-card__value">{{ stats.products }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Categories table #}
+        <div class="table-container">
+            <table class="categories-table" role="grid" aria-label="Store categories">
+                <thead class="categories-table__head">
+                    <tr>
+                        <th class="categories-table__header categories-table__header--drag" scope="col" aria-label="Drag to reorder"></th>
+                        <th class="categories-table__header categories-table__header--cover" scope="col">Cover</th>
+                        <th class="categories-table__header categories-table__header--name" scope="col">Name</th>
+                        <th class="categories-table__header categories-table__header--slug" scope="col">Slug</th>
+                        <th class="categories-table__header categories-table__header--description" scope="col">Description</th>
+                        <th class="categories-table__header categories-table__header--count" scope="col">Products</th>
+                        <th class="categories-table__header categories-table__header--status" scope="col">Status</th>
+                        <th class="categories-table__header categories-table__header--actions" scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="categoriesTable" class="categories-table__body">
+                    {# Populated by JavaScript #}
+                    <tr>
+                        <td colspan="8" class="categories-table__empty">
+                            <div class="loading-state">
+                                <div class="loading-state__spinner"></div>
+                                <p>Loading categories...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set base URL for API requests
+    window.BASE_URL = '{{ base_url | safe }}';
+</script>
+<script src="/assets/js/ADMIN_STORE_CATEGORIES/app.js?v={{ assets_version }}" defer></script>
+{% endblock %}

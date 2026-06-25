@@ -1,0 +1,36 @@
+/**
+ * STORE Page Variables
+ *
+ * SCSS compile-time constants for the store page.
+ * NOTE: Theme colors come from GLOBAL's CSS custom properties.
+ */
+
+// Layout
+$store-max-width: 1400px;
+$sidebar-width: 280px;
+$grid-gap: 1.5rem;
+
+@use 'sass:list';
+
+// Product card
+$card-border-radius: 8px;
+// Use slash-list to avoid division deprecation warning (aspect-ratio: 3 / 4)
+$card-image-aspect-ratio: list.slash(3, 4);
+
+// Breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+
+// Z-index
+$z-sidebar-mobile: 100;
+$z-overlay: 99;
+
+// Transitions
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+
+// Accent color for buy buttons
+$buy-btn-color: #28a745;
+$buy-btn-hover: #218838;

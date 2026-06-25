@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_products SET is_active = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bool",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5abebbe0a50a130a41c0371de4efa8ec58720aff6ed57edb36dd04010c2e3229"
+}

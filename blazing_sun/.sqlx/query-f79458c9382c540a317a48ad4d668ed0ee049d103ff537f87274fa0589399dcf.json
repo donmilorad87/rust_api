@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            spi.id,\n            spi.product_id,\n            spi.item_type,\n            spi.picture_id,\n            spi.gallery_id,\n            spi.display_order,\n            spi.created_at,\n            g.name as gallery_name,\n            g.description as gallery_description,\n            g.cover_image_id as gallery_cover_image_id,\n            (SELECT COUNT(*) FROM pictures WHERE gallery_id = g.id) as gallery_picture_count\n        FROM store_product_items spi\n        LEFT JOIN galleries g ON spi.gallery_id = g.id\n        WHERE spi.product_id = $1 AND spi.item_type = 'gallery'\n        ORDER BY spi.display_order ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "product_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "item_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "picture_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "gallery_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "gallery_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "gallery_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "gallery_cover_image_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "gallery_picture_count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "f79458c9382c540a317a48ad4d668ed0ee049d103ff537f87274fa0589399dcf"
+}

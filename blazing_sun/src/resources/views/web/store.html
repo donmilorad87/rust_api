@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Photo Store - {{ site_name | default(value='Blazing Sun') }}{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/STORE/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="store-page">
+    <!-- Header Section -->
+    <header class="store-header">
+        <h1 class="store-header__title">Photo Store</h1>
+        <div class="store-header__search">
+            <svg class="store-header__search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+                type="search"
+                id="searchInput"
+                class="store-header__search-input"
+                placeholder="Search photos by title, description, or author..."
+                aria-label="Search products"
+            >
+        </div>
+    </header>
+
+    <!-- Featured Products Section -->
+    <section id="featuredSection" class="store-featured" aria-labelledby="featuredTitle">
+        <h2 id="featuredTitle" class="store-featured__title">Featured Photos</h2>
+        <div id="featuredGrid" class="featured-grid"></div>
+    </section>
+
+    <!-- Main Content -->
+    <div id="storeMain" class="store-main">
+        <!-- Filters Sidebar -->
+        <aside id="filtersSidebar" class="store-sidebar" aria-label="Product filters">
+            <div class="store-sidebar__header">
+                <h2 class="store-sidebar__title">Filters</h2>
+                <button type="button" class="store-sidebar__close" aria-label="Close filters" onclick="document.getElementById('filtersSidebar').classList.remove('store-sidebar--open')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="filter-group">
+                <h3 class="filter-group__title">Category</h3>
+                <select id="categoryFilter" class="filter-group__select" aria-label="Filter by category">
+                    <option value="">All Categories</option>
+                    <!-- Categories loaded via JavaScript -->
+                </select>
+            </div>
+
+            <!-- Price Range Filter -->
+            <div class="filter-group">
+                <h3 class="filter-group__title">Price Range</h3>
+                <div class="price-range">
+                    <input
+                        type="number"
+                        id="priceMin"
+                        class="price-range__input"
+                        placeholder="Min"
+                        min="0"
+                        step="0.01"
+                        aria-label="Minimum price"
+                    >
+                    <span class="price-range__separator">-</span>
+                    <input
+                        type="number"
+                        id="priceMax"
+                        class="price-range__input"
+                        placeholder="Max"
+                        min="0"
+                        step="0.01"
+                        aria-label="Maximum price"
+                    >
+                </div>
+            </div>
+
+            <!-- Tags Filter -->
+            <div class="filter-group">
+                <h3 class="filter-group__title">Tags</h3>
+                <div id="tagsContainer" class="tags-cloud">
+                    <!-- Tags loaded via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Location Filters -->
+            <div class="filter-group">
+                <h3 class="filter-group__title">Location</h3>
+                <input
+                    type="text"
+                    id="countryFilter"
+                    class="filter-group__input"
+                    placeholder="Country"
+                    aria-label="Filter by country"
+                    style="margin-bottom: 0.5rem;"
+                >
+                <input
+                    type="text"
+                    id="regionFilter"
+                    class="filter-group__input"
+                    placeholder="Region"
+                    aria-label="Filter by region"
+                >
+            </div>
+
+            <!-- Season Filter -->
+            <div class="filter-group">
+                <h3 class="filter-group__title">Season</h3>
+                <select id="seasonFilter" class="filter-group__select" aria-label="Filter by season">
+                    <option value="">All Seasons</option>
+                    <option value="spring">Spring</option>
+                    <option value="summer">Summer</option>
+                    <option value="autumn">Autumn</option>
+                    <option value="winter">Winter</option>
+                </select>
+            </div>
+
+            <!-- Clear Filters -->
+            <button type="button" id="clearFiltersBtn" class="clear-filters-btn">
+                Clear All Filters
+            </button>
+        </aside>
+
+        <!-- Products Content -->
+        <div class="store-content">
+            <div class="store-content__header">
+                <span id="resultsCount" class="store-content__results">Loading products...</span>
+                <button type="button" id="filterToggleBtn" class="store-content__filter-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                        <line x1="1" y1="14" x2="7" y2="14"></line>
+                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                        <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    Filters
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading products...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state" style="display: none;">
+                <div class="error-state__icon" aria-hidden="true">!</div>
+                <h2 class="error-state__title">Failed to Load Products</h2>
+                <p class="error-state__message"></p>
+                <button id="retryBtn" class="btn--secondary">Retry</button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state__icon" aria-hidden="true">📷</div>
+                <h2 class="empty-state__title">No Products Found</h2>
+                <p class="empty-state__message">Try adjusting your filters or search query</p>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="productsGrid" class="products-grid" style="display: none;"></div>
+
+            <!-- Pagination -->
+            <nav id="paginationContainer" class="pagination" aria-label="Pagination" style="display: none;"></nav>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/STORE/app.js?v={{ assets_version }}"></script>
+{% endblock %}

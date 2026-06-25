@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_purchases SET stripe_payment_intent_id = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "df2f7102d8dc0d214eb5c5176a73e32e493a2f2d033c2a2bdc84b0958928ac33"
+}

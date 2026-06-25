@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            sd.id,\n            sd.purchase_id,\n            sd.user_id,\n            sd.picture_id,\n            sd.download_count,\n            sd.first_downloaded_at,\n            sd.last_downloaded_at,\n            p.title as picture_title,\n            u.uuid as upload_uuid,\n            u.stored_name as upload_stored_name\n        FROM store_downloads sd\n        INNER JOIN pictures p ON sd.picture_id = p.id\n        INNER JOIN uploads u ON p.upload_id = u.id\n        WHERE sd.purchase_id = $1\n        ORDER BY sd.first_downloaded_at ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "purchase_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "picture_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "download_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "first_downloaded_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_downloaded_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "picture_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "upload_uuid",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "upload_stored_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "56e208073a6fceb113b9ce8c0232534c602e12cb37f29884eee66690e180d6d4"
+}

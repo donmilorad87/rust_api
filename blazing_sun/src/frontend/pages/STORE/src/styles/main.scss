@@ -1,0 +1,15 @@
+/**
+ * STORE Page Main Stylesheet
+ *
+ * Entry point for all STORE page styles
+ */
+
+// Import partials
+@use 'variables';
+@use 'store';
+@use 'product';
+
+// Global resets specific to store page
+* {
+  box-sizing: border-box;
+}

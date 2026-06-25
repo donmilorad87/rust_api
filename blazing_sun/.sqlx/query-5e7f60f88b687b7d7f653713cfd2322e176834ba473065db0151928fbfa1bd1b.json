@@ -1,0 +1,45 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO store_products (\n            title, slug, description, price_cents, product_type, category_id, cover_image_id,\n            author_name, city, country, region, nearest_mountain, nearest_river, natural_park,\n            altitude_meters, season, weather_conditions, camera_info, date_taken,\n            latitude, longitude, tags, is_active, is_featured\n        )\n        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Int8",
+        "Varchar",
+        "Int8",
+        "Int8",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Date",
+        "Float8",
+        "Float8",
+        "TextArray",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5e7f60f88b687b7d7f653713cfd2322e176834ba473065db0151928fbfa1bd1b"
+}

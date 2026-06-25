@@ -5,3 +5,6 @@ cargo sqlx prepare
 
 
  /* "CLAUDE_CODE_TASK_LIST_ID": "blazing_sun", */
+
+
+ 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

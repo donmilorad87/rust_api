@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO store_product_items (product_id, item_type, picture_id, display_order)\n        VALUES ($1, 'picture', $2, $3)\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "e08f85cb4d7f6191feba9a5c0d8915806f4b491bee3f8e43ac08e473d6b1eec9"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_product_items SET display_order = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2b3dd64fac80757e378159310c451e2259cf920c97d03d79300de13a8e605027"
+}

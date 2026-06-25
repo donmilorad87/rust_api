@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT DISTINCT country\n        FROM store_products\n        WHERE country IS NOT NULL AND is_active = TRUE AND is_sold = FALSE\n        ORDER BY country\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "country",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "1dfe7b86074caf8ee9fc8d7db6167741dbc4f68f3361a4d219e33be0763bfc5b"
+}

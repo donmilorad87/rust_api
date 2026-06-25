@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE store_purchases\n        SET status = 'completed',\n            purchased_at = NOW(),\n            stripe_payment_intent_id = COALESCE($1, stripe_payment_intent_id)\n        WHERE id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "42d5f0ff2a8f0e8ba3cfe38fdbb472964f16c35c2a5efd14ff98e557dd29cc54"
+}

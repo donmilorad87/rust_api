@@ -15,6 +15,7 @@ pub enum UserEventType {
     PasswordChanged,
     ProfileUpdated,
     BalanceUpdated,
+    StorePurchase,
 }
 
 impl fmt::Display for UserEventType {
@@ -28,6 +29,7 @@ impl fmt::Display for UserEventType {
             UserEventType::PasswordChanged => "user.password_changed",
             UserEventType::ProfileUpdated => "user.profile_updated",
             UserEventType::BalanceUpdated => "user.balance_updated",
+            UserEventType::StorePurchase => "user.store_purchase",
         };
         write!(f, "{}", s)
     }

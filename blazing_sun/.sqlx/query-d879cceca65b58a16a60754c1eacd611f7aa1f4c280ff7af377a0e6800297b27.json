@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) as \"count!\" FROM store_products WHERE is_active = TRUE AND is_sold = FALSE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "d879cceca65b58a16a60754c1eacd611f7aa1f4c280ff7af377a0e6800297b27"
+}

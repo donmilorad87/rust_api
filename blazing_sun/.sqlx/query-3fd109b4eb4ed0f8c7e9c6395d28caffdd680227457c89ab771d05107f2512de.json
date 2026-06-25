@@ -1,0 +1,196 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            p.id, p.title, p.slug, p.description, p.price_cents, p.product_type,\n            p.category_id, c.name as category_name, c.slug as category_slug,\n            p.cover_image_id, p.author_name, p.city, p.country, p.region,\n            p.nearest_mountain, p.nearest_river, p.natural_park,\n            p.altitude_meters, p.season, p.weather_conditions, p.camera_info, p.date_taken,\n            p.latitude, p.longitude, p.tags,\n            p.is_active, p.is_sold, p.is_featured, p.created_at, p.updated_at\n        FROM store_products p\n        LEFT JOIN store_categories c ON p.category_id = c.id\n        WHERE p.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "price_cents",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "product_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "category_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "category_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "category_slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "cover_image_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "author_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "city",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "country",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "region",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 14,
+        "name": "nearest_mountain",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 15,
+        "name": "nearest_river",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 16,
+        "name": "natural_park",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 17,
+        "name": "altitude_meters",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 18,
+        "name": "season",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 19,
+        "name": "weather_conditions",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 20,
+        "name": "camera_info",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 21,
+        "name": "date_taken",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 22,
+        "name": "latitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 23,
+        "name": "longitude",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 24,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 25,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 26,
+        "name": "is_sold",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 27,
+        "name": "is_featured",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 28,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 29,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3fd109b4eb4ed0f8c7e9c6395d28caffdd680227457c89ab771d05107f2512de"
+}

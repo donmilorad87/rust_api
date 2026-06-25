@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE store_products SET\n            author_name = $1,\n            city = $2,\n            country = $3,\n            region = $4,\n            nearest_mountain = $5,\n            nearest_river = $6,\n            natural_park = $7,\n            altitude_meters = $8,\n            season = $9,\n            weather_conditions = $10,\n            camera_info = $11,\n            date_taken = $12\n        WHERE id = $13\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Date",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e1d46f5c53b925ed3c6d889411a2920c01e5fdd49fc819a54aad9ac181debc8c"
+}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Product Detail - {{ site_name | default(value='Blazing Sun') }}{% endblock %}
+
+{% block extra_styles_links %}
+<link rel="stylesheet" href="/assets/css/STORE/style.css?v={{ assets_version }}">
+{% endblock %}
+
+{% block content %}
+<main class="product-page">
+    <!-- Back Navigation -->
+    <nav class="product-nav" aria-label="Breadcrumb">
+        <a href="/store" class="product-nav__back">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back to Store
+        </a>
+    </nav>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading product...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="error-state" style="display: none;">
+        <div class="error-state__icon" aria-hidden="true">!</div>
+        <h2 class="error-state__title">Product Not Found</h2>
+        <p class="error-state__message">The product you're looking for doesn't exist or has been removed.</p>
+        <a href="/store" class="btn btn--secondary">Back to Store</a>
+    </div>
+
+    <!-- Product Content -->
+    <article id="productContent" class="product-detail" style="display: none;" itemscope itemtype="https://schema.org/Product">
+        <!-- Image Gallery -->
+        <section class="product-gallery" aria-label="Product images">
+            <div class="product-gallery__main">
+                <img id="mainImage" src="" alt="" class="product-gallery__main-image" loading="eager">
+                <div id="soldBadge" class="product-gallery__sold-badge" style="display: none;">
+                    <span>SOLD</span>
+                </div>
+                <button type="button" id="lightboxBtn" class="product-gallery__lightbox-btn" aria-label="View full size image">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <polyline points="9 21 3 21 3 15"></polyline>
+                        <line x1="21" y1="3" x2="14" y2="10"></line>
+                        <line x1="3" y1="21" x2="10" y2="14"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="thumbnailStrip" class="product-gallery__thumbnails"></div>
+        </section>
+
+        <!-- Product Info -->
+        <section class="product-info">
+            <h1 id="productTitle" class="product-info__title" itemprop="name"></h1>
+            <p id="productAuthor" class="product-info__author" style="display: none;"></p>
+
+            <div class="product-info__price-row">
+                <span id="productPrice" class="product-info__price" itemprop="price"></span>
+                <meta itemprop="priceCurrency" content="EUR">
+            </div>
+
+            <div id="productCategory" class="product-info__category" style="display: none;">
+                <a href="" class="category-badge"></a>
+            </div>
+
+            <div id="productTags" class="product-info__tags"></div>
+
+            <div id="productDescription" class="product-info__description" itemprop="description"></div>
+
+            <!-- Metadata Section -->
+            <div id="productMetadata" class="product-metadata">
+                <h2 class="product-metadata__title">Photo Details</h2>
+                <dl class="product-metadata__list">
+                    <!-- Location -->
+                    <div id="metaLocation" class="product-metadata__item" style="display: none;">
+                        <dt>Location</dt>
+                        <dd id="metaLocationValue"></dd>
+                    </div>
+
+                    <!-- Geography -->
+                    <div id="metaGeography" class="product-metadata__item" style="display: none;">
+                        <dt>Geography</dt>
+                        <dd id="metaGeographyValue"></dd>
+                    </div>
+
+                    <!-- Altitude -->
+                    <div id="metaAltitude" class="product-metadata__item" style="display: none;">
+                        <dt>Altitude</dt>
+                        <dd id="metaAltitudeValue"></dd>
+                    </div>
+
+                    <!-- Season -->
+                    <div id="metaSeason" class="product-metadata__item" style="display: none;">
+                        <dt>Season</dt>
+                        <dd id="metaSeasonValue"></dd>
+                    </div>
+
+                    <!-- Weather -->
+                    <div id="metaWeather" class="product-metadata__item" style="display: none;">
+                        <dt>Weather</dt>
+                        <dd id="metaWeatherValue"></dd>
+                    </div>
+
+                    <!-- Camera -->
+                    <div id="metaCamera" class="product-metadata__item" style="display: none;">
+                        <dt>Camera</dt>
+                        <dd id="metaCameraValue"></dd>
+                    </div>
+
+                    <!-- Date Taken -->
+                    <div id="metaDateTaken" class="product-metadata__item" style="display: none;">
+                        <dt>Date Taken</dt>
+                        <dd id="metaDateTakenValue"></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Buy Section -->
+            <div class="product-actions">
+                <button type="button" id="buyNowBtn" class="product-actions__buy-btn">
+                    <span id="buyBtnText">Buy Now</span>
+                    <span id="buyBtnSpinner" class="btn-spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </section>
+    </article>
+
+    <!-- Lightbox Modal -->
+    <div id="lightboxModal" class="lightbox" role="dialog" aria-modal="true" aria-label="Image lightbox" style="display: none;">
+        <button type="button" class="lightbox__close" aria-label="Close lightbox">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <button type="button" id="lightboxPrev" class="lightbox__nav lightbox__nav--prev" aria-label="Previous image">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+        <img id="lightboxImage" src="" alt="" class="lightbox__image">
+        <button type="button" id="lightboxNext" class="lightbox__nav lightbox__nav--next" aria-label="Next image">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </button>
+        <div id="lightboxCounter" class="lightbox__counter"></div>
+    </div>
+</main>
+
+<!-- Pass product slug to JavaScript -->
+<script>
+    window.PRODUCT_SLUG = '{{ product_slug | default(value="") }}';
+    window.STORE_PAGE_TYPE = 'product';
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/STORE/app.js?v={{ assets_version }}"></script>
+{% endblock %}

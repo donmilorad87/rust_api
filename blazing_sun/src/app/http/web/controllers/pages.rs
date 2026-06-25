@@ -1147,6 +1147,7 @@ impl PagesController {
             "web.sign_in" => Self::sign_in(req, session, state).await,
             "web.forgot_password" => Self::forgot_password(req, session, state).await,
             "web.profile" => Self::profile(req, session, state).await,
+            "web.profile.purchases" => Self::profile_purchases(req, session, state).await,
             "web.balance" => Self::balance(req, session, state).await,
             "oauth.applications" => Self::oauth_applications(req, session, state).await,
             "web.galleries" => Self::galleries(req, session, state).await,
@@ -1165,6 +1166,11 @@ impl PagesController {
             }
             "web.games.slot_machine" => Self::slot_machine(req, session, state).await,
             "web.logout" => Self::logout(req).await,
+            // Legal pages (public)
+            "web.about_us" => Self::about_us(req, session, state).await,
+            "web.contact_us" => Self::contact_us(req, session, state).await,
+            "web.privacy_policy" => Self::privacy_policy(req, session, state).await,
+            "web.terms_conditions" => Self::terms_conditions(req, session, state).await,
             "admin.uploads" => Self::uploads(req, session, state).await,
             "admin.theme" => Self::theme(req, session, state).await,
             "admin.game_chat" => Self::game_chat_config(req, session, state).await,
@@ -1189,6 +1195,15 @@ impl PagesController {
             "admin.blog.analytics" => Self::admin_blog_analytics(req, session, state).await,
             // Admin search index management
             "admin.search" => Self::admin_search(req, session, state).await,
+            // Admin store routes
+            "admin.store.categories" => Self::admin_store_categories(req, session, state).await,
+            "admin.store.products" => Self::admin_store_products(req, session, state).await,
+            "admin.store.products.create" => Self::admin_store_product_create(req, session, state).await,
+            "admin.store.products.edit" => Self::admin_store_product_edit(req, session, state).await,
+            // Store routes (public)
+            "web.store" => Self::store(req, session, state).await,
+            "web.store.product" => Self::store_product(req, session, state).await,
+            "web.store.category" => Self::store_category(req, session, state).await,
             _ => Self::not_found(req, session, state).await,
         }
     }
@@ -1280,6 +1295,70 @@ impl PagesController {
         Ok(Self::render("forgot_password.html", &context))
     }
 
+    /// About Us page - public page
+    pub async fn about_us(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.about_us").await;
+        drop(db);
+
+        Ok(Self::render("about_us.html", &context))
+    }
+
+    /// Contact Us page - public page
+    pub async fn contact_us(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.contact_us").await;
+        drop(db);
+
+        Ok(Self::render("contact_us.html", &context))
+    }
+
+    /// Privacy Policy page - public page
+    pub async fn privacy_policy(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.privacy_policy").await;
+        drop(db);
+
+        Ok(Self::render("privacy_policy.html", &context))
+    }
+
+    /// Terms and Conditions page - public page
+    pub async fn terms_conditions(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.terms_conditions").await;
+        drop(db);
+
+        Ok(Self::render("terms_conditions.html", &context))
+    }
+
     /// Profile page - redirects to sign-in if not logged in
     pub async fn profile(
         req: HttpRequest,
@@ -1324,6 +1403,29 @@ impl PagesController {
         drop(db);
 
         Ok(Self::render("profile.html", &context))
+    }
+
+    /// Profile Purchases page - shows user's completed purchases
+    pub async fn profile_purchases(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+
+        // Add branding, languages, and user navbar info
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.profile.purchases").await;
+
+        drop(db);
+
+        Ok(Self::render("profile_purchases.html", &context))
     }
 
     /// Balance top-up page - redirects to sign-in if not logged in
@@ -1544,6 +1646,74 @@ impl PagesController {
 
         // JavaScript will fetch galleries via API
         Ok(Self::render("galleries.html", &context))
+    }
+
+    /// Store landing page - public
+    pub async fn store(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.store").await;
+        drop(db);
+
+        // JavaScript will fetch products via API
+        Ok(Self::render("store.html", &context))
+    }
+
+    /// Store product detail page - public
+    pub async fn store_product(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.store.product").await;
+        drop(db);
+
+        // Extract slug from route args
+        if let Some(route_ctx) = req.extensions().get::<RouteContext>() {
+            if let Some(slug) = route_ctx.args.get("slug") {
+                context.insert("product_slug", slug);
+            }
+        }
+
+        // JavaScript will fetch product details via API
+        Ok(Self::render("store_product.html", &context))
+    }
+
+    /// Store category page - public
+    pub async fn store_category(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "web.store.category").await;
+        drop(db);
+
+        // Extract slug from route args
+        if let Some(route_ctx) = req.extensions().get::<RouteContext>() {
+            if let Some(slug) = route_ctx.args.get("slug") {
+                context.insert("category_slug", slug);
+            }
+        }
+
+        // JavaScript will fetch category and products via API
+        Ok(Self::render("store_category.html", &context))
     }
 
     /// Geo galleries map page - public
@@ -2686,6 +2856,86 @@ impl PagesController {
         drop(db);
 
         Ok(Self::render("admin/search/index.html", &context))
+    }
+
+    /// Admin store categories management page
+    pub async fn admin_store_categories(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.store.categories").await;
+        drop(db);
+
+        Ok(Self::render("admin/store_categories.html", &context))
+    }
+
+    /// Admin store products list page
+    pub async fn admin_store_products(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.store.products").await;
+        drop(db);
+
+        Ok(Self::render("admin/store/products.html", &context))
+    }
+
+    /// Admin store product create page
+    pub async fn admin_store_product_create(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.store.products.create").await;
+        drop(db);
+
+        Ok(Self::render("admin/store/product_create.html", &context))
+    }
+
+    /// Admin store product edit page
+    pub async fn admin_store_product_edit(
+        req: HttpRequest,
+        session: Session,
+        state: web::Data<AppState>,
+    ) -> Result<HttpResponse> {
+        let auth = is_logged(&req);
+        if !auth.is_logged || !auth.is_admin() {
+            return Ok(Self::redirect_to_route(&req, "web.sign_in"));
+        }
+
+        let mut context = Self::base_context(&req, &session);
+        let db = state.db.lock().await;
+        Self::add_common_async_context(&mut context, &db, &auth).await;
+        Self::add_seo_to_context(&req, &mut context, &db, "admin.store.products.edit").await;
+        drop(db);
+
+        Ok(Self::render("admin/store/product_edit.html", &context))
     }
 
     /// 404 Not Found page

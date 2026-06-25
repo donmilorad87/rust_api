@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1\n            FROM store_purchases sp\n            INNER JOIN store_product_items spi ON sp.product_id = spi.product_id\n            WHERE sp.user_id = $1\n                AND sp.status = 'completed'\n                AND spi.picture_id = $2\n        ) as \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "d9d5fb24c391bcb1f1cefaa536890f5c447efb851a8619c631521f9ad5e48bb5"
+}

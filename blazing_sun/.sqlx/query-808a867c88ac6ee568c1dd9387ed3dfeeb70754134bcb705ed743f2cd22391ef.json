@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT p.id as picture_id\n        FROM store_product_items spi\n        INNER JOIN pictures p ON p.gallery_id = spi.gallery_id\n        WHERE spi.product_id = $1 AND spi.item_type = 'gallery'\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "picture_id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "808a867c88ac6ee568c1dd9387ed3dfeeb70754134bcb705ed743f2cd22391ef"
+}

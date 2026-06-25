@@ -25,5 +25,6 @@ pub mod schema_entity;
 pub mod search_settings;
 pub mod session_refresh_token;
 pub mod site_config;
+pub mod store;
 pub mod upload;
 pub mod user;

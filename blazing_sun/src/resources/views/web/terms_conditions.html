@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Terms and Conditions - {{ site_name | default(value='Blazing Sun') }}{% endblock %}
+
+{% block content %}
+<main class="container">
+    <article class="page-content">
+        <header class="page-header">
+            <h1 class="page-title">Terms and Conditions</h1>
+        </header>
+        <section class="page-body">
+            <p>Welcome to {{ site_name | default(value='Blazing Sun') }}. By using our services, you agree to these terms and conditions.</p>
+            <p>Please read these terms carefully before using our platform.</p>
+        </section>
+    </article>
+</main>
+{% endblock %}

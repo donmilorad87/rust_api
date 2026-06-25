@@ -204,6 +204,59 @@
             }
         }
 
+        /* ========================================
+           Page Content Styles
+           ======================================== */
+        .page-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-body {
+            font-size: 1.125rem;
+            line-height: 1.75;
+            color: var(--text-secondary);
+        }
+
+        .page-body p {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            .page-content {
+                padding: 1.5rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .page-body {
+                font-size: 1rem;
+            }
+        }
+
         {% block extra_styles %}{% endblock %}
     </style>
 
@@ -237,7 +290,12 @@
     </ul>
     {% endif %}
 
-    {% block content %}{% endblock %}
+    <main class="main-content" role="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    {# Include Footer #}
+    {% include "partials/_footer.html" %}
 
     {# Global JavaScript #}
     <script src="/assets/js/toastify.min.js?v={{ assets_version }}"></script>

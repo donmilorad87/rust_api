@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - {{ site_name | default(value='Blazing Sun') }}{% endblock %}
+
+{% block content %}
+<main class="container">
+    <article class="page-content">
+        <header class="page-header">
+            <h1 class="page-title">About Us</h1>
+        </header>
+        <section class="page-body">
+            <p>Welcome to {{ site_name | default(value='Blazing Sun') }}. We are dedicated to providing the best experience for our users.</p>
+            <p>Learn more about our mission, values, and the team behind this platform.</p>
+        </section>
+    </article>
+</main>
+{% endblock %}

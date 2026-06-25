@@ -1,0 +1,90 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            sp.id,\n            sp.user_id,\n            sp.product_id,\n            sp.amount_cents,\n            sp.status,\n            sp.license_type,\n            sp.purchased_at,\n            sp.created_at,\n            p.title as product_title,\n            p.slug as product_slug,\n            p.product_type,\n            p.cover_image_id as product_cover_image_id\n        FROM store_purchases sp\n        INNER JOIN store_products p ON sp.product_id = p.id\n        WHERE sp.user_id = $1\n        ORDER BY sp.created_at DESC\n        LIMIT $2 OFFSET $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "product_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "amount_cents",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "license_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "purchased_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "product_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "product_slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "product_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "product_cover_image_id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "295c447ac6c4127885b689e8fd75ce7c05202ffe547d6d3b2655146964cf2353"
+}

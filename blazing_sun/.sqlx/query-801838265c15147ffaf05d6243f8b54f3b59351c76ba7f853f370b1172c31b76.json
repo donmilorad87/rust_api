@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_purchases SET status = 'failed' WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "801838265c15147ffaf05d6243f8b54f3b59351c76ba7f853f370b1172c31b76"
+}

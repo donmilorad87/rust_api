@@ -195,10 +195,10 @@
   --bottom-bar-link: #9ca3af;
   --bottom-bar-link-hover: #ffffff;
 
-  // --- Scrollbar ---
-  --scrollbar-track: #f1f1f1;
-  --scrollbar-thumb: #c1c1c1;
-  --scrollbar-thumb-hover: #a1a1a1;
+  // --- Scrollbar (golden, matching minigame popup) ---
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #c8a020;
+  --scrollbar-thumb-hover: #d4a828;
 
   // --- Code/Pre ---
   --code-bg: #f3f4f6;
@@ -444,10 +444,10 @@
   --bottom-bar-link: #64748b;
   --bottom-bar-link-hover: #e2e8f0;
 
-  // --- Scrollbar ---
-  --scrollbar-track: #1e1e36;
-  --scrollbar-thumb: #404060;
-  --scrollbar-thumb-hover: #5a5a7a;
+  // --- Scrollbar (golden, matching minigame popup) ---
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #c8a020;
+  --scrollbar-thumb-hover: #d4a828;
 
   // --- Code/Pre ---
   --code-bg: #1e1e36;
@@ -517,23 +517,26 @@
 }
 
 // ============================================
-// SCROLLBAR STYLES
+// SCROLLBAR STYLES (golden, matching minigame)
 // ============================================
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
+  background: linear-gradient(180deg, #f5d060 0%, #c8a020 40%, #f5d060 60%, #a88418 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(100, 70, 10, 0.5);
+  background-clip: padding-box;
 
   &:hover {
-    background: var(--scrollbar-thumb-hover);
+    background: linear-gradient(180deg, #ffe080 0%, #d4a828 40%, #ffe080 60%, #b8921c 100%);
+    border-color: rgba(100, 70, 10, 0.7);
   }
 }
 

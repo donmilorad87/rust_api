@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, name, slug, description, cover_image_id, display_order, is_active, created_at, updated_at\n        FROM store_categories\n        WHERE is_active = TRUE\n        ORDER BY display_order ASC, name ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "cover_image_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "da60b95bd977e45639cdb31517983168856652b73790233861be2ae95ccd89b1"
+}

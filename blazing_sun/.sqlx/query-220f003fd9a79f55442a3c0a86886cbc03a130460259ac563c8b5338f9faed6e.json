@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            c.id,\n            c.name,\n            c.slug,\n            c.description,\n            c.cover_image_id,\n            c.display_order,\n            c.is_active,\n            c.created_at,\n            c.updated_at,\n            COUNT(p.id) as \"product_count!\"\n        FROM store_categories c\n        LEFT JOIN store_products p ON c.id = p.category_id\n        GROUP BY c.id\n        ORDER BY c.display_order ASC, c.name ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "cover_image_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "product_count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "220f003fd9a79f55442a3c0a86886cbc03a130460259ac563c8b5338f9faed6e"
+}

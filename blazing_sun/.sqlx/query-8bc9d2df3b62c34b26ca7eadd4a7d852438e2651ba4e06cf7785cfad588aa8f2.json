@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            p.id,\n            p.title,\n            p.slug,\n            p.description,\n            p.price_cents,\n            p.product_type,\n            p.category_id,\n            c.name as category_name,\n            p.cover_image_id,\n            p.author_name,\n            p.country,\n            p.is_featured,\n            p.created_at\n        FROM store_products p\n        LEFT JOIN store_categories c ON p.category_id = c.id\n        ORDER BY p.created_at DESC\n        LIMIT $1 OFFSET $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "price_cents",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "product_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "category_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "category_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "cover_image_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 9,
+        "name": "author_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "country",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "is_featured",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "8bc9d2df3b62c34b26ca7eadd4a7d852438e2651ba4e06cf7785cfad588aa8f2"
+}

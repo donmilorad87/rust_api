@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT picture_id\n        FROM store_product_items\n        WHERE product_id = $1 AND item_type = 'picture' AND picture_id IS NOT NULL\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "picture_id",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "6380f16fe5df15641365ac7e573b474c2709edc839caa52bf1e4f77a3b06eb60"
+}

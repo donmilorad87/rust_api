@@ -37,10 +37,13 @@ create_topics() {
     # WebSocket Gateway topics (chat and games)
     WS_TOPICS="chat.commands chat.events games.commands games.events gateway.presence"
 
+    # Roulette game topics
+    ROULETTE_TOPICS="roulette.commands roulette.events roulette.ticks"
+
     # Game-specific topics for checkout service
     GAME_TOPICS="bigger_dice.participation_payed bigger_dice.win_prize tic_tac_toe.participation_payed tic_tac_toe.win_prize tic_tac_toe.match_cancelled"
 
-    TOPICS="$TOPICS $CHECKOUT_TOPICS $WS_TOPICS $GAME_TOPICS"
+    TOPICS="$TOPICS $CHECKOUT_TOPICS $WS_TOPICS $ROULETTE_TOPICS $GAME_TOPICS"
 
     for TOPIC in $TOPICS; do
         echo "Creating topic: $TOPIC"

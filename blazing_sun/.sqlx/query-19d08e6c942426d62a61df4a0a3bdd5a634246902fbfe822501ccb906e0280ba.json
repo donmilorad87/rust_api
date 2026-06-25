@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_purchases SET status = 'completed', purchased_at = NOW() WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "19d08e6c942426d62a61df4a0a3bdd5a634246902fbfe822501ccb906e0280ba"
+}

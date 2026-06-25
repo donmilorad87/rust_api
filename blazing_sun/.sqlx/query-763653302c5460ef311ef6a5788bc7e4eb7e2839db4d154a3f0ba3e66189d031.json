@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(SUM(amount_cents), 0)::BIGINT as \"sum!\" FROM store_purchases WHERE status = 'completed'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "sum!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "763653302c5460ef311ef6a5788bc7e4eb7e2839db4d154a3f0ba3e66189d031"
+}

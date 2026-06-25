@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_products SET tags = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ac21afb1bbc2abfc241bece19eb44e6da7cef88fa1db998d10b5122133812265"
+}

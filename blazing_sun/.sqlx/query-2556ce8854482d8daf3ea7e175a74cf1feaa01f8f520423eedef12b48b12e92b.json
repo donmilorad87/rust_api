@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_purchases SET status = 'refunded' WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2556ce8854482d8daf3ea7e175a74cf1feaa01f8f520423eedef12b48b12e92b"
+}

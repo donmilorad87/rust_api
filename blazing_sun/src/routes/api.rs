@@ -20,9 +20,11 @@ use crate::app::http::api::controllers::schema::SchemaController;
 use crate::app::http::api::controllers::theme::ThemeController;
 use crate::app::http::api::controllers::upload::UploadController;
 use crate::app::http::api::controllers::user::UserController;
+use crate::app::http::api::controllers::store_category::StoreCategoryController;
 use crate::app::http::api::controllers::{
     blog, competitions, gallery, gallery_like, game_config, game_history, geo_place, oauth,
-    oauth_api_product, oauth_client, oauth_gallery, oauth_scope, picture,
+    oauth_api_product, oauth_client, oauth_gallery, oauth_scope, picture, store_product,
+    store_purchase,
 };
 use crate::middleware;
 use crate::middleware::permission::{levels, require_permission};
@@ -669,6 +671,21 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     );
 
     // ============================================
+    // Store Category Admin Routes (Admin+ permission = 10 or 100)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/admin/store/categories")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(StoreCategoryController::admin_list))
+            .route("", web::post().to(StoreCategoryController::admin_create))
+            .route("/reorder", web::post().to(StoreCategoryController::admin_reorder))
+            .route("/{id}", web::get().to(StoreCategoryController::admin_get))
+            .route("/{id}", web::put().to(StoreCategoryController::admin_update))
+            .route("/{id}", web::delete().to(StoreCategoryController::admin_delete)),
+    );
+
+    // ============================================
     // General Admin routes (permission = 10 or 100)
     // NOTE: Less specific scope registered AFTER more specific ones above
     // ============================================
@@ -844,6 +861,82 @@ pub fn register(cfg: &mut web::ServiceConfig) {
     // OAuth 2.0 JWKS Endpoint (Public - for JWT verification)
     // ============================================
     cfg.service(web::scope("/.well-known").route("/jwks.json", web::get().to(oauth::jwks_json)));
+
+    // ============================================
+    // Store Category Routes (Public - no auth required)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/store/categories")
+            .route("", web::get().to(StoreCategoryController::list_public)),
+    );
+
+    // ============================================
+    // Store Product Routes (Public - no auth required)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/store/products")
+            .route("", web::get().to(store_product::StoreProductController::list_public))
+            .route("/featured", web::get().to(store_product::StoreProductController::list_featured))
+            .route("/tags", web::get().to(store_product::StoreProductController::list_tags))
+            .route("/{slug}", web::get().to(store_product::StoreProductController::get_by_slug)),
+    );
+
+    // ============================================
+    // Store Product Admin Routes (Admin+ permission = 10 or 100)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/admin/store/products")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(store_product::StoreProductController::admin_list))
+            .route("", web::post().to(store_product::StoreProductController::admin_create))
+            .route("/{id}", web::get().to(store_product::StoreProductController::admin_get))
+            .route("/{id}", web::put().to(store_product::StoreProductController::admin_update))
+            .route("/{id}", web::delete().to(store_product::StoreProductController::admin_delete))
+            .route("/{id}/feature", web::post().to(store_product::StoreProductController::admin_toggle_featured))
+            .route("/{id}/activate", web::post().to(store_product::StoreProductController::admin_toggle_active)),
+    );
+
+    // ============================================
+    // Store Helper Routes (Admin+ permission = 10 or 100)
+    // For product creation (galleries, pictures selection)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/admin/store/galleries")
+            .wrap(from_fn(require_permission(levels::ADMIN)))
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(store_product::StoreProductController::admin_list_galleries))
+            .route("/{id}/pictures", web::get().to(store_product::StoreProductController::admin_list_gallery_pictures)),
+    );
+
+    // ============================================
+    // Store Checkout Routes (Protected - requires JWT)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/store/checkout")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("/{product_id}", web::post().to(store_purchase::StorePurchaseController::create_checkout)),
+    );
+
+    // ============================================
+    // Store Purchase Routes (Protected - requires JWT)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/store/purchases")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("", web::get().to(store_purchase::StorePurchaseController::list_purchases))
+            .route("/{id}", web::get().to(store_purchase::StorePurchaseController::get_purchase))
+            .route("/{id}/downloads", web::get().to(store_purchase::StorePurchaseController::list_downloads)),
+    );
+
+    // ============================================
+    // Store Download Routes (Protected - requires JWT)
+    // ============================================
+    cfg.service(
+        web::scope("/api/v1/store/downloads")
+            .wrap(from_fn(middleware::auth::verify_jwt))
+            .route("/{purchase_id}/{picture_id}", web::get().to(store_purchase::StorePurchaseController::download_image)),
+    );
 
     // ============================================
     // Blog Public Routes (No auth required)
@@ -1216,6 +1309,101 @@ fn register_route_names() {
     route!("blog.archive", "/api/v1/blog/archive");
     route!("blog.archive.posts", "/api/v1/blog/archive/{year}/{month}");
     route!("blog.search", "/api/v1/blog/search");
+
+    // Store Category routes (Public)
+    route!("store.categories.list", "/api/v1/store/categories");
+
+    // Store Category Admin routes
+    route!(
+        "admin.store.categories.list",
+        "/api/v1/admin/store/categories"
+    );
+    route!(
+        "admin.store.categories.create",
+        "/api/v1/admin/store/categories"
+    );
+    route!(
+        "admin.store.categories.reorder",
+        "/api/v1/admin/store/categories/reorder"
+    );
+    route!(
+        "admin.store.categories.get",
+        "/api/v1/admin/store/categories/{id}"
+    );
+    route!(
+        "admin.store.categories.update",
+        "/api/v1/admin/store/categories/{id}"
+    );
+    route!(
+        "admin.store.categories.delete",
+        "/api/v1/admin/store/categories/{id}"
+    );
+
+    // Store Product routes (Public)
+    route!("store.products.list", "/api/v1/store/products");
+    route!("store.products.featured", "/api/v1/store/products/featured");
+    route!("store.products.tags", "/api/v1/store/products/tags");
+    route!("store.products.get", "/api/v1/store/products/{slug}");
+
+    // Store Product Admin routes
+    route!(
+        "admin.store.products.list",
+        "/api/v1/admin/store/products"
+    );
+    route!(
+        "admin.store.products.create",
+        "/api/v1/admin/store/products"
+    );
+    route!(
+        "admin.store.products.get",
+        "/api/v1/admin/store/products/{id}"
+    );
+    route!(
+        "admin.store.products.update",
+        "/api/v1/admin/store/products/{id}"
+    );
+    route!(
+        "admin.store.products.delete",
+        "/api/v1/admin/store/products/{id}"
+    );
+    route!(
+        "admin.store.products.feature",
+        "/api/v1/admin/store/products/{id}/feature"
+    );
+    route!(
+        "admin.store.products.activate",
+        "/api/v1/admin/store/products/{id}/activate"
+    );
+
+    // Store Helper routes (Admin)
+    route!(
+        "admin.store.galleries.list",
+        "/api/v1/admin/store/galleries"
+    );
+    route!(
+        "admin.store.galleries.pictures",
+        "/api/v1/admin/store/galleries/{id}/pictures"
+    );
+
+    // Store Checkout routes (Protected)
+    route!(
+        "store.checkout",
+        "/api/v1/store/checkout/{product_id}"
+    );
+
+    // Store Purchase routes (Protected)
+    route!("store.purchases.list", "/api/v1/store/purchases");
+    route!("store.purchases.get", "/api/v1/store/purchases/{id}");
+    route!(
+        "store.purchases.downloads",
+        "/api/v1/store/purchases/{id}/downloads"
+    );
+
+    // Store Download routes (Protected)
+    route!(
+        "store.downloads.image",
+        "/api/v1/store/downloads/{purchase_id}/{picture_id}"
+    );
 
     // Webhooks
 }

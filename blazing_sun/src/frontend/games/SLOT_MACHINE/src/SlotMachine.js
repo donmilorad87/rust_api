@@ -126,7 +126,6 @@ template.innerHTML = `
     button:hover { background-color: #eee; }
     button:active {
       background: #e9e9e9;
-      position: relative;
       top: 1px;
       text-shadow: none;
       box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3) inset;

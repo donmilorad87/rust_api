@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE store_categories SET display_order = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7fea039be34b1e1cd1c29811abab1679b20c14b56a18101755e1a50a344a7019"
+}
